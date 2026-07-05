@@ -1,15 +1,7 @@
 import { useRef, useState } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage.js'
+import { readFileAsDataUrl } from '../utils/files.js'
 import './MapsTab.scss'
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
 
 function MapsTab() {
   const [maps, setMaps] = useLocalStorage('dnd-notes-maps', [])

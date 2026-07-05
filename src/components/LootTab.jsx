@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage.js'
 import './LootTab.scss'
 
-const emptyForm = { item: '', foundAt: '', notes: '' }
+const emptyForm = { item: '', foundAt: '', holder: '', notes: '' }
 
 function LootTab() {
   const [loot, setLoot] = useLocalStorage('dnd-notes-loot', [])
@@ -17,7 +17,12 @@ function LootTab() {
   }
 
   function startEditing(entry) {
-    setForm({ item: entry.item, foundAt: entry.foundAt, notes: entry.notes })
+    setForm({
+      item: entry.item,
+      foundAt: entry.foundAt,
+      holder: entry.holder,
+      notes: entry.notes,
+    })
     setIsAdding(false)
     setEditingId(entry.id)
   }
@@ -81,6 +86,16 @@ function LootTab() {
                 placeholder="Chest in the Sunken Crypt"
               />
             </div>
+            <div className="field">
+              <label htmlFor="loot-holder">Who has it</label>
+              <input
+                id="loot-holder"
+                type="text"
+                value={form.holder}
+                onChange={(e) => setForm({ ...form, holder: e.target.value })}
+                placeholder="Party stash / Thessaly"
+              />
+            </div>
           </div>
           <div className="field">
             <label htmlFor="loot-notes">Notes</label>
@@ -116,6 +131,11 @@ function LootTab() {
                   <span className="loot-card__found-at">{entry.foundAt}</span>
                 )}
               </div>
+              {entry.holder && (
+                <p className="loot-card__holder">
+                  <span>Held by</span> {entry.holder}
+                </p>
+              )}
               {entry.notes && <p className="loot-card__notes">{entry.notes}</p>}
               <div className="loot-card__actions">
                 <button
