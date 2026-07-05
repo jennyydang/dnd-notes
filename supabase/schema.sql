@@ -131,6 +131,15 @@ alter table party_members  enable row level security;
 alter table session_notes  enable row level security;
 alter table lore_entries   enable row level security;
 
+drop policy if exists "anon full access campaigns"     on campaigns;
+drop policy if exists "anon full access maps"          on maps;
+drop policy if exists "anon full access npcs"          on npcs;
+drop policy if exists "anon full access loot"          on loot;
+drop policy if exists "anon full access quests"        on quests;
+drop policy if exists "anon full access party_members" on party_members;
+drop policy if exists "anon full access session_notes" on session_notes;
+drop policy if exists "anon full access lore_entries"  on lore_entries;
+
 create policy "anon full access campaigns"     on campaigns     for all to anon using (true) with check (true);
 create policy "anon full access maps"          on maps          for all to anon using (true) with check (true);
 create policy "anon full access npcs"          on npcs          for all to anon using (true) with check (true);
@@ -157,6 +166,11 @@ on conflict (id) do nothing;
 insert into storage.buckets (id, name, public)
 values ('campaign-covers', 'campaign-covers', true)
 on conflict (id) do nothing;
+
+drop policy if exists "anon full access maps bucket" on storage.objects;
+drop policy if exists "anon full access npc-portraits bucket" on storage.objects;
+drop policy if exists "anon full access party-portraits bucket" on storage.objects;
+drop policy if exists "anon full access campaign-covers bucket" on storage.objects;
 
 create policy "anon full access maps bucket"
   on storage.objects for all to anon
