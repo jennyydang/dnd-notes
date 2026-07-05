@@ -98,6 +98,24 @@ create table if not exists lore_entries (
   created_at timestamptz not null default now()
 );
 
+-- User-defined tabs, added from the campaign view. Each one is a simple
+-- title + notes list (custom_tab_entries), scoped to a custom_tabs row
+-- which is itself scoped to a campaign.
+create table if not exists custom_tabs (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists custom_tab_entries (
+  id uuid primary key default gen_random_uuid(),
+  custom_tab_id uuid not null references custom_tabs(id) on delete cascade,
+  title text not null,
+  notes text not null default '',
+  created_at timestamptz not null default now()
+);
+
 -- ── Migration: backfill campaign_id onto tables that already existed ──
 -- No-ops on a fresh database (the columns above already exist and are
 -- already NOT NULL). On a database created before campaigns existed,
@@ -122,32 +140,38 @@ end $$;
 -- public anon key can also read/write directly — acceptable for a small
 -- private link shared with your table, not for a public URL.
 
-alter table campaigns      enable row level security;
-alter table maps           enable row level security;
-alter table npcs           enable row level security;
-alter table loot           enable row level security;
-alter table quests         enable row level security;
-alter table party_members  enable row level security;
-alter table session_notes  enable row level security;
-alter table lore_entries   enable row level security;
+alter table campaigns          enable row level security;
+alter table maps               enable row level security;
+alter table npcs               enable row level security;
+alter table loot                enable row level security;
+alter table quests              enable row level security;
+alter table party_members       enable row level security;
+alter table session_notes       enable row level security;
+alter table lore_entries        enable row level security;
+alter table custom_tabs         enable row level security;
+alter table custom_tab_entries  enable row level security;
 
-drop policy if exists "anon full access campaigns"     on campaigns;
-drop policy if exists "anon full access maps"          on maps;
-drop policy if exists "anon full access npcs"          on npcs;
-drop policy if exists "anon full access loot"          on loot;
-drop policy if exists "anon full access quests"        on quests;
-drop policy if exists "anon full access party_members" on party_members;
-drop policy if exists "anon full access session_notes" on session_notes;
-drop policy if exists "anon full access lore_entries"  on lore_entries;
+drop policy if exists "anon full access campaigns"          on campaigns;
+drop policy if exists "anon full access maps"               on maps;
+drop policy if exists "anon full access npcs"               on npcs;
+drop policy if exists "anon full access loot"               on loot;
+drop policy if exists "anon full access quests"             on quests;
+drop policy if exists "anon full access party_members"      on party_members;
+drop policy if exists "anon full access session_notes"      on session_notes;
+drop policy if exists "anon full access lore_entries"       on lore_entries;
+drop policy if exists "anon full access custom_tabs"        on custom_tabs;
+drop policy if exists "anon full access custom_tab_entries" on custom_tab_entries;
 
-create policy "anon full access campaigns"     on campaigns     for all to anon using (true) with check (true);
-create policy "anon full access maps"          on maps          for all to anon using (true) with check (true);
-create policy "anon full access npcs"          on npcs          for all to anon using (true) with check (true);
-create policy "anon full access loot"          on loot          for all to anon using (true) with check (true);
-create policy "anon full access quests"        on quests        for all to anon using (true) with check (true);
-create policy "anon full access party_members" on party_members for all to anon using (true) with check (true);
-create policy "anon full access session_notes" on session_notes for all to anon using (true) with check (true);
-create policy "anon full access lore_entries"  on lore_entries  for all to anon using (true) with check (true);
+create policy "anon full access campaigns"          on campaigns          for all to anon using (true) with check (true);
+create policy "anon full access maps"               on maps               for all to anon using (true) with check (true);
+create policy "anon full access npcs"               on npcs               for all to anon using (true) with check (true);
+create policy "anon full access loot"               on loot               for all to anon using (true) with check (true);
+create policy "anon full access quests"             on quests             for all to anon using (true) with check (true);
+create policy "anon full access party_members"      on party_members      for all to anon using (true) with check (true);
+create policy "anon full access session_notes"      on session_notes      for all to anon using (true) with check (true);
+create policy "anon full access lore_entries"       on lore_entries       for all to anon using (true) with check (true);
+create policy "anon full access custom_tabs"        on custom_tabs        for all to anon using (true) with check (true);
+create policy "anon full access custom_tab_entries" on custom_tab_entries for all to anon using (true) with check (true);
 
 -- ── Storage buckets ───────────────────────────────────────────────────
 

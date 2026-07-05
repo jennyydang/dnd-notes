@@ -29,7 +29,7 @@ const fromRow = (r) => ({
 
 function PartyTab({ campaignId }) {
   const { items: party, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('party_members', { fromRow, campaignId })
+    useSupabaseTable('party_members', { fromRow, filters: { campaign_id: campaignId } })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)

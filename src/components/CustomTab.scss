@@ -1,0 +1,84 @@
+@use '../styles/variables' as *;
+
+.custom-tab {
+  &__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  &__tab-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__rename {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+
+    input {
+      background: $bg-deep;
+      border: 1px solid $ink-soft;
+      border-radius: $radius;
+      color: $text-light;
+      padding: 0.5rem 0.7rem;
+
+      &:focus {
+        outline: none;
+        border-color: $gold;
+      }
+    }
+  }
+}
+
+.custom-entry-form {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+.custom-entry-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.custom-entry-card {
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__title {
+    font-size: 1.15rem;
+    color: $parchment;
+  }
+
+  &__notes {
+    margin: 0;
+    color: $text-light;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+}

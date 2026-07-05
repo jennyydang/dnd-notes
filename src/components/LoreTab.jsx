@@ -13,7 +13,11 @@ const fromRow = (r) => ({
 
 function LoreTab({ campaignId }) {
   const { items: entries, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('lore_entries', { fromRow, orderBy: 'title', campaignId })
+    useSupabaseTable('lore_entries', {
+      fromRow,
+      orderBy: 'title',
+      filters: { campaign_id: campaignId },
+    })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)

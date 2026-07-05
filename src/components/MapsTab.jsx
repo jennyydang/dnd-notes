@@ -14,7 +14,7 @@ const fromRow = (r) => ({
 
 function MapsTab({ campaignId }) {
   const { items: maps, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('maps', { fromRow, campaignId })
+    useSupabaseTable('maps', { fromRow, filters: { campaign_id: campaignId } })
   const [lightboxMap, setLightboxMap] = useState(null)
   const [uploadError, setUploadError] = useState(null)
   const [captionDrafts, setCaptionDrafts] = useState({})

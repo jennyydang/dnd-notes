@@ -2,8 +2,48 @@
 
 .tab-nav {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
   border-bottom: 2px solid $gold-dim;
+  flex-wrap: wrap;
+
+  &__add {
+    background: transparent;
+    border: 1px dashed rgba($gold-dim, 0.6);
+    border-radius: 50%;
+    width: 1.8rem;
+    height: 1.8rem;
+    color: $text-muted;
+    font-size: 1.1rem;
+    line-height: 1;
+    margin-left: 0.25rem;
+
+    &:hover {
+      color: $gold-light;
+      border-color: $gold;
+    }
+  }
+
+  &__add-form {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.25rem;
+
+    input {
+      background: $bg-deep;
+      border: 1px solid $ink-soft;
+      border-radius: $radius;
+      color: $text-light;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.9rem;
+
+      &:focus {
+        outline: none;
+        border-color: $gold;
+      }
+    }
+  }
 
   &__item {
     background: transparent;

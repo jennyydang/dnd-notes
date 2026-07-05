@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
 
 const identity = (row) => row
+const noFilters = {}
 
 export function useSupabaseTable(
   table,
-  { fromRow = identity, orderBy = 'created_at', ascending = true, campaignId } = {},
+  { fromRow = identity, orderBy = 'created_at', ascending = true, filters = noFilters } = {},
 ) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -14,6 +15,10 @@ export function useSupabaseTable(
   const fromRowRef = useRef(fromRow)
   fromRowRef.current = fromRow
 
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
+  const filterKey = JSON.stringify(filters)
+
   useEffect(() => {
     let cancelled = false
 
@@ -21,7 +26,9 @@ export function useSupabaseTable(
       setLoading(true)
       setError(null)
       let query = supabase.from(table).select('*').order(orderBy, { ascending })
-      if (campaignId) query = query.eq('campaign_id', campaignId)
+      for (const [column, value] of Object.entries(filtersRef.current)) {
+        query = query.eq(column, value)
+      }
       const { data, error: fetchError } = await query
 
       if (cancelled) return
@@ -38,11 +45,11 @@ export function useSupabaseTable(
     return () => {
       cancelled = true
     }
-  }, [table, orderBy, ascending, campaignId])
+  }, [table, orderBy, ascending, filterKey])
 
   const addItem = useCallback(
     async (payload) => {
-      const row = campaignId ? { ...payload, campaign_id: campaignId } : payload
+      const row = { ...payload, ...filtersRef.current }
       const { data, error: insertError } = await supabase
         .from(table)
         .insert(row)
@@ -54,7 +61,7 @@ export function useSupabaseTable(
       setItems((prev) => [...prev, item])
       return item
     },
-    [table, campaignId],
+    [table],
   )
 
   const updateItem = useCallback(

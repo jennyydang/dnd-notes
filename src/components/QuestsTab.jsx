@@ -16,7 +16,7 @@ const fromRow = (r) => ({
 
 function QuestsTab({ campaignId }) {
   const { items: quests, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('quests', { fromRow, campaignId })
+    useSupabaseTable('quests', { fromRow, filters: { campaign_id: campaignId } })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
