@@ -12,9 +12,9 @@ const fromRow = (r) => ({
   src: getPublicUrl(BUCKET, r.image_path),
 })
 
-function MapsTab() {
+function MapsTab({ campaignId }) {
   const { items: maps, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('maps', { fromRow })
+    useSupabaseTable('maps', { fromRow, campaignId })
   const [lightboxMap, setLightboxMap] = useState(null)
   const [uploadError, setUploadError] = useState(null)
   const [captionDrafts, setCaptionDrafts] = useState({})

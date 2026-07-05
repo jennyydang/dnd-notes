@@ -1,0 +1,15 @@
+@use '../styles/variables' as *;
+
+.campaign-view {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  &__name {
+    font-size: 1.3rem;
+    color: $gold-light;
+  }
+}

@@ -27,9 +27,9 @@ const fromRow = (r) => ({
   photo: getPublicUrl(BUCKET, r.photo_path),
 })
 
-function PartyTab() {
+function PartyTab({ campaignId }) {
   const { items: party, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('party_members', { fromRow })
+    useSupabaseTable('party_members', { fromRow, campaignId })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)

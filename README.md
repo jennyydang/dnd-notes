@@ -1,7 +1,8 @@
 # Adventurer's Log
 
-A D&D campaign notes app built with React and SCSS. Organizes your session
-notes into seven tabs:
+A D&D campaign notes app built with React and SCSS. Start at a dashboard
+listing your campaigns — create, edit, archive, or delete them — and open
+one to get its own Adventurer's Log with seven tabs:
 
 - **Maps** — upload and browse map images shared by your DM, with a
   full-size lightbox view.
@@ -27,11 +28,14 @@ so your whole party can share one set of notes from any browser.
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In the Supabase dashboard, go to the **SQL Editor**, paste the contents
    of [`supabase/schema.sql`](./supabase/schema.sql), and run it. This
-   creates the `maps`, `npcs`, `loot`, `quests`, `party_members`,
-   `session_notes`, and `lore_entries` tables plus the `maps`,
-   `npc-portraits`, and `party-portraits` storage buckets. It's safe to
-   re-run the whole file if you've already set up earlier tables — the
-   script is idempotent.
+   creates the `campaigns` table plus `maps`, `npcs`, `loot`, `quests`,
+   `party_members`, `session_notes`, and `lore_entries` (each scoped to a
+   campaign via `campaign_id`), and the `maps`, `npc-portraits`,
+   `party-portraits`, and `campaign-covers` storage buckets. It's safe to
+   re-run the whole file any time — every statement is idempotent. If
+   you're upgrading a database that already had data before campaigns
+   existed, this script automatically creates a "My Campaign" entry and
+   moves all existing rows into it, so nothing is lost.
 3. In **Project Settings → API**, copy the Project URL and the `anon`
    `public` key.
 4. Copy `.env.example` to `.env` and fill in the two values:

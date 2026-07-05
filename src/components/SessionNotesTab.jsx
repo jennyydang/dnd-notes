@@ -11,9 +11,9 @@ const fromRow = (r) => ({
   notes: r.notes,
 })
 
-function SessionNotesTab() {
+function SessionNotesTab({ campaignId }) {
   const { items: sessions, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('session_notes', { fromRow, ascending: false })
+    useSupabaseTable('session_notes', { fromRow, ascending: false, campaignId })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)

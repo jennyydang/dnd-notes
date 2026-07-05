@@ -12,9 +12,9 @@ const fromRow = (r) => ({
   notes: r.notes,
 })
 
-function LootTab() {
+function LootTab({ campaignId }) {
   const { items: loot, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('loot', { fromRow })
+    useSupabaseTable('loot', { fromRow, campaignId })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)

@@ -5,7 +5,7 @@ const identity = (row) => row
 
 export function useSupabaseTable(
   table,
-  { fromRow = identity, orderBy = 'created_at', ascending = true } = {},
+  { fromRow = identity, orderBy = 'created_at', ascending = true, campaignId } = {},
 ) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,10 +20,9 @@ export function useSupabaseTable(
     async function load() {
       setLoading(true)
       setError(null)
-      const { data, error: fetchError } = await supabase
-        .from(table)
-        .select('*')
-        .order(orderBy, { ascending })
+      let query = supabase.from(table).select('*').order(orderBy, { ascending })
+      if (campaignId) query = query.eq('campaign_id', campaignId)
+      const { data, error: fetchError } = await query
 
       if (cancelled) return
 
@@ -39,13 +38,14 @@ export function useSupabaseTable(
     return () => {
       cancelled = true
     }
-  }, [table, orderBy, ascending])
+  }, [table, orderBy, ascending, campaignId])
 
   const addItem = useCallback(
     async (payload) => {
+      const row = campaignId ? { ...payload, campaign_id: campaignId } : payload
       const { data, error: insertError } = await supabase
         .from(table)
-        .insert(payload)
+        .insert(row)
         .select()
         .single()
 
@@ -54,7 +54,7 @@ export function useSupabaseTable(
       setItems((prev) => [...prev, item])
       return item
     },
-    [table],
+    [table, campaignId],
   )
 
   const updateItem = useCallback(

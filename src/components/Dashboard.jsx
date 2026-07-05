@@ -1,16 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
-import './NpcsTab.scss'
+import './Dashboard.scss'
 
-const BUCKET = 'npc-portraits'
-const LIFE_STATUSES = ['Alive', 'Deceased', 'Unknown', 'Missing']
+const BUCKET = 'campaign-covers'
 
 const emptyForm = {
   name: '',
-  race: '',
-  metAt: '',
-  status: 'Alive',
+  description: '',
   photoFile: null,
   photoPreview: '',
   photoRemoved: false,
@@ -19,19 +16,19 @@ const emptyForm = {
 const fromRow = (r) => ({
   id: r.id,
   name: r.name,
-  race: r.race,
-  metAt: r.met_at,
-  status: r.status,
-  photo: getPublicUrl(BUCKET, r.photo_path),
+  description: r.description,
+  archived: r.archived,
+  cover: getPublicUrl(BUCKET, r.cover_image_path),
 })
 
-function NpcsTab({ campaignId }) {
-  const { items: npcs, loading, error, addItem, updateItem, removeItem } =
-    useSupabaseTable('npcs', { fromRow, campaignId })
+function Dashboard({ onOpenCampaign }) {
+  const { items: campaigns, loading, error, addItem, updateItem, removeItem } =
+    useSupabaseTable('campaigns', { fromRow })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
+  const [showArchived, setShowArchived] = useState(false)
   const photoInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 
@@ -56,20 +53,18 @@ function NpcsTab({ campaignId }) {
     setIsAdding(true)
   }
 
-  function startEditing(npc) {
+  function startEditing(campaign) {
     revokeTrackedObjectUrl()
     setForm({
-      name: npc.name,
-      race: npc.race,
-      metAt: npc.metAt,
-      status: npc.status,
+      name: campaign.name,
+      description: campaign.description,
       photoFile: null,
-      photoPreview: npc.photo || '',
+      photoPreview: campaign.cover || '',
       photoRemoved: false,
     })
     setIsAdding(false)
     setFormError(null)
-    setEditingId(npc.id)
+    setEditingId(campaign.id)
   }
 
   function cancelForm() {
@@ -107,22 +102,20 @@ function NpcsTab({ campaignId }) {
 
     const payload = {
       name: form.name,
-      race: form.race,
-      met_at: form.metAt,
-      status: form.status,
+      description: form.description,
     }
 
     try {
       if (form.photoFile) {
-        payload.photo_path = await uploadImage(BUCKET, form.photoFile)
+        payload.cover_image_path = await uploadImage(BUCKET, form.photoFile)
       } else if (form.photoRemoved) {
-        payload.photo_path = null
+        payload.cover_image_path = null
       }
 
       if (editingId) {
         await updateItem(editingId, payload)
       } else {
-        await addItem(payload)
+        await addItem({ ...payload, archived: false })
       }
       cancelForm()
     } catch (err) {
@@ -130,34 +123,51 @@ function NpcsTab({ campaignId }) {
     }
   }
 
-  async function removeNpc(id) {
-    await removeItem(id)
-    if (editingId === id) cancelForm()
+  async function toggleArchived(campaign) {
+    await updateItem(campaign.id, { archived: !campaign.archived })
+  }
+
+  async function deleteCampaign(campaign) {
+    const confirmed = window.confirm(
+      `Delete "${campaign.name}" permanently? This removes everything in it — maps, NPCs, loot, quests, party, lore, and session notes. This can't be undone.`,
+    )
+    if (!confirmed) return
+    await removeItem(campaign.id)
+    if (editingId === campaign.id) cancelForm()
   }
 
   const showForm = isAdding || editingId !== null
+  const visibleCampaigns = campaigns.filter((c) => (showArchived ? c.archived : !c.archived))
+  const archivedCount = campaigns.filter((c) => c.archived).length
 
   return (
-    <section className="npcs-tab">
-      <div className="npcs-tab__toolbar">
+    <section className="dashboard">
+      <div className="dashboard__toolbar">
+        <button
+          type="button"
+          className="btn btn--text"
+          onClick={() => setShowArchived((prev) => !prev)}
+        >
+          {showArchived ? 'Show active campaigns' : `Show archived (${archivedCount})`}
+        </button>
         <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add NPC
+          + New Campaign
         </button>
       </div>
 
       {showForm && (
-        <form className="npc-form panel" onSubmit={submitForm}>
-          <div className="npc-form__layout">
-            <div className="npc-form__photo">
+        <form className="campaign-form panel" onSubmit={submitForm}>
+          <div className="campaign-form__layout">
+            <div className="campaign-form__photo">
               <button
                 type="button"
-                className="npc-form__photo-btn"
+                className="campaign-form__photo-btn"
                 onClick={() => photoInputRef.current?.click()}
               >
                 {form.photoPreview ? (
-                  <img src={form.photoPreview} alt="NPC portrait" />
+                  <img src={form.photoPreview} alt="Campaign cover" />
                 ) : (
-                  <span className="npc-form__photo-placeholder">+ Photo</span>
+                  <span className="campaign-form__photo-placeholder">+ Cover</span>
                 )}
               </button>
               <input
@@ -169,66 +179,41 @@ function NpcsTab({ campaignId }) {
               />
               {form.photoPreview && (
                 <button type="button" className="btn btn--text" onClick={removePhoto}>
-                  Remove photo
+                  Remove cover
                 </button>
               )}
             </div>
 
-            <div className="npc-form__grid">
+            <div className="campaign-form__fields">
               <div className="field">
-                <label htmlFor="npc-name">Name</label>
+                <label htmlFor="campaign-name">Name</label>
                 <input
-                  id="npc-name"
+                  id="campaign-name"
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Elandra Voss"
+                  placeholder="Curse of Strahd"
                   required
                 />
               </div>
               <div className="field">
-                <label htmlFor="npc-race">Race</label>
-                <input
-                  id="npc-race"
-                  type="text"
-                  value={form.race}
-                  onChange={(e) => setForm({ ...form, race: e.target.value })}
-                  placeholder="Half-elf"
+                <label htmlFor="campaign-description">Description</label>
+                <textarea
+                  id="campaign-description"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Homebrew arc set in the shadow of Barovia..."
                 />
-              </div>
-              <div className="field">
-                <label htmlFor="npc-met">Where we met them</label>
-                <input
-                  id="npc-met"
-                  type="text"
-                  value={form.metAt}
-                  onChange={(e) => setForm({ ...form, metAt: e.target.value })}
-                  placeholder="The Rusty Tankard, Waterdeep"
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="npc-status">Life status</label>
-                <select
-                  id="npc-status"
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                >
-                  {LIFE_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
-          <div className="npc-form__actions">
+          <div className="campaign-form__actions">
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
             </button>
             <button type="submit" className="btn btn--primary">
-              {editingId ? 'Save Changes' : 'Add NPC'}
+              {editingId ? 'Save Changes' : 'Create Campaign'}
             </button>
           </div>
         </form>
@@ -237,55 +222,56 @@ function NpcsTab({ campaignId }) {
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
-      {!loading && !error && npcs.length === 0 && (
+      {!loading && !error && visibleCampaigns.length === 0 && (
         <p className="empty-state">
-          No NPCs recorded yet. Add the folks your party has met along the way.
+          {showArchived
+            ? 'No archived campaigns.'
+            : 'No campaigns yet. Create one to start your Adventurer’s Log.'}
         </p>
       )}
 
-      {!loading && !error && npcs.length > 0 && (
-        <div className="npc-list">
-          {npcs.map((npc) => (
-            <article className="npc-card panel" key={npc.id}>
-              <div className="npc-card__main">
-                <div className="npc-card__identity">
-                  <div className="npc-card__avatar">
-                    {npc.photo ? (
-                      <img src={npc.photo} alt={npc.name} />
-                    ) : (
-                      <span>{npc.name.charAt(0).toUpperCase()}</span>
-                    )}
-                  </div>
-                  <h3 className="npc-card__name">{npc.name}</h3>
+      {!loading && !error && visibleCampaigns.length > 0 && (
+        <div className="campaign-list">
+          {visibleCampaigns.map((campaign) => (
+            <article className="campaign-card panel" key={campaign.id}>
+              <button
+                type="button"
+                className="campaign-card__open"
+                onClick={() => onOpenCampaign(campaign)}
+              >
+                <div className="campaign-card__cover">
+                  {campaign.cover ? (
+                    <img src={campaign.cover} alt={campaign.name} />
+                  ) : (
+                    <span>{campaign.name.charAt(0).toUpperCase()}</span>
+                  )}
                 </div>
-                <span
-                  className={`status-badge status-badge--${npc.status.toLowerCase()}`}
-                >
-                  {npc.status}
-                </span>
-              </div>
-              <dl className="npc-card__details">
-                <div>
-                  <dt>Race</dt>
-                  <dd>{npc.race || '—'}</dd>
+                <div className="campaign-card__text">
+                  <h3 className="campaign-card__name">{campaign.name}</h3>
+                  {campaign.description && (
+                    <p className="campaign-card__description">{campaign.description}</p>
+                  )}
                 </div>
-                <div>
-                  <dt>Where we met them</dt>
-                  <dd>{npc.metAt || '—'}</dd>
-                </div>
-              </dl>
-              <div className="npc-card__actions">
+              </button>
+              <div className="campaign-card__actions">
                 <button
                   type="button"
                   className="btn btn--text"
-                  onClick={() => startEditing(npc)}
+                  onClick={() => startEditing(campaign)}
                 >
                   Edit
                 </button>
                 <button
                   type="button"
+                  className="btn btn--text"
+                  onClick={() => toggleArchived(campaign)}
+                >
+                  {campaign.archived ? 'Unarchive' : 'Archive'}
+                </button>
+                <button
+                  type="button"
                   className="btn btn--danger"
-                  onClick={() => removeNpc(npc.id)}
+                  onClick={() => deleteCampaign(campaign)}
                 >
                   Delete
                 </button>
@@ -298,4 +284,4 @@ function NpcsTab({ campaignId }) {
   )
 }
 
-export default NpcsTab
+export default Dashboard
