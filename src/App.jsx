@@ -3,12 +3,14 @@ import TabNav from './components/TabNav.jsx'
 import MapsTab from './components/MapsTab.jsx'
 import NpcsTab from './components/NpcsTab.jsx'
 import LootTab from './components/LootTab.jsx'
+import QuestsTab from './components/QuestsTab.jsx'
 import './App.scss'
 
 const TABS = [
   { id: 'maps', label: 'Maps' },
   { id: 'npcs', label: 'NPCs' },
   { id: 'loot', label: 'Loot' },
+  { id: 'quests', label: 'Quests' },
 ]
 
 function App() {
@@ -27,6 +29,7 @@ function App() {
         {activeTab === 'maps' && <MapsTab />}
         {activeTab === 'npcs' && <NpcsTab />}
         {activeTab === 'loot' && <LootTab />}
+        {activeTab === 'quests' && <QuestsTab />}
       </main>
     </div>
   )
