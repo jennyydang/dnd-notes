@@ -1,10 +1,12 @@
 # Adventurer's Log
 
 A D&D campaign notes app built with React and SCSS. Organizes your session
-notes into five tabs:
+notes into seven tabs:
 
 - **Maps** — upload and browse map images shared by your DM, with a
   full-size lightbox view.
+- **Lore** — world history, locations, deities, and organizations, each
+  with a title, category, and notes.
 - **Party** — roster of who's adventuring together, tagged as a Player
   or an NPC companion, with race/class, a photo, and notes (for Players,
   also tracks the real person playing them).
@@ -14,6 +16,8 @@ notes into five tabs:
   and free-form notes.
 - **Quests** — track quest name, who gave it, status
   (Active / Completed / Failed), and notes.
+- **Session Notes** — a recap log of each game session (title, date, and
+  notes), newest first.
 
 Data is stored in [Supabase](https://supabase.com) (Postgres + Storage),
 so your whole party can share one set of notes from any browser.
@@ -23,10 +27,11 @@ so your whole party can share one set of notes from any browser.
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In the Supabase dashboard, go to the **SQL Editor**, paste the contents
    of [`supabase/schema.sql`](./supabase/schema.sql), and run it. This
-   creates the `maps`, `npcs`, `loot`, `quests`, and `party_members`
-   tables plus the `maps`, `npc-portraits`, and `party-portraits` storage
-   buckets. It's safe to re-run the whole file if you've already set up
-   the earlier tables — the script is idempotent.
+   creates the `maps`, `npcs`, `loot`, `quests`, `party_members`,
+   `session_notes`, and `lore_entries` tables plus the `maps`,
+   `npc-portraits`, and `party-portraits` storage buckets. It's safe to
+   re-run the whole file if you've already set up earlier tables — the
+   script is idempotent.
 3. In **Project Settings → API**, copy the Project URL and the `anon`
    `public` key.
 4. Copy `.env.example` to `.env` and fill in the two values:

@@ -1,19 +1,23 @@
 import { useState } from 'react'
 import TabNav from './components/TabNav.jsx'
 import MapsTab from './components/MapsTab.jsx'
+import LoreTab from './components/LoreTab.jsx'
 import PartyTab from './components/PartyTab.jsx'
 import NpcsTab from './components/NpcsTab.jsx'
 import LootTab from './components/LootTab.jsx'
 import QuestsTab from './components/QuestsTab.jsx'
+import SessionNotesTab from './components/SessionNotesTab.jsx'
 import { isSupabaseConfigured } from './lib/supabaseClient.js'
 import './App.scss'
 
 const TABS = [
   { id: 'maps', label: 'Maps' },
+  { id: 'lore', label: 'Lore' },
   { id: 'party', label: 'Party' },
   { id: 'npcs', label: 'NPCs' },
   { id: 'loot', label: 'Loot' },
   { id: 'quests', label: 'Quests' },
+  { id: 'sessions', label: 'Session Notes' },
 ]
 
 function App() {
@@ -32,10 +36,12 @@ function App() {
 
           <main className="app__content">
             {activeTab === 'maps' && <MapsTab />}
+            {activeTab === 'lore' && <LoreTab />}
             {activeTab === 'party' && <PartyTab />}
             {activeTab === 'npcs' && <NpcsTab />}
             {activeTab === 'loot' && <LootTab />}
             {activeTab === 'quests' && <QuestsTab />}
+            {activeTab === 'sessions' && <SessionNotesTab />}
           </main>
         </>
       ) : (

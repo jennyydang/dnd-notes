@@ -1,0 +1,78 @@
+@use '../styles/variables' as *;
+
+.session-notes-tab {
+  &__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.25rem;
+  }
+}
+
+.session-form {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+// Session recaps are long-form prose, so entries stack full-width in a
+// single column rather than the multi-column card grid used elsewhere.
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.session-card {
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__main {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    font-size: 1.15rem;
+    color: $parchment;
+  }
+
+  &__date {
+    font-size: 0.85rem;
+    color: $text-muted;
+    font-style: italic;
+  }
+
+  &__notes {
+    margin: 0;
+    color: $text-light;
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+}

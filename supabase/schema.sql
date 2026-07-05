@@ -54,6 +54,22 @@ create table if not exists party_members (
   created_at timestamptz not null default now()
 );
 
+create table if not exists session_notes (
+  id uuid primary key default gen_random_uuid(),
+  title text not null default '',
+  session_date text not null default '',
+  notes text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists lore_entries (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  category text not null default '',
+  notes text not null default '',
+  created_at timestamptz not null default now()
+);
+
 -- ── Row Level Security ──────────────────────────────────────────────
 -- No login for this app: everyone who has the app URL shares one
 -- campaign, so the anon role gets full read/write/delete. Anyone who
@@ -65,12 +81,16 @@ alter table npcs          enable row level security;
 alter table loot          enable row level security;
 alter table quests        enable row level security;
 alter table party_members enable row level security;
+alter table session_notes enable row level security;
+alter table lore_entries  enable row level security;
 
 create policy "anon full access maps"          on maps          for all to anon using (true) with check (true);
 create policy "anon full access npcs"          on npcs          for all to anon using (true) with check (true);
 create policy "anon full access loot"          on loot          for all to anon using (true) with check (true);
 create policy "anon full access quests"        on quests        for all to anon using (true) with check (true);
 create policy "anon full access party_members" on party_members for all to anon using (true) with check (true);
+create policy "anon full access session_notes" on session_notes for all to anon using (true) with check (true);
+create policy "anon full access lore_entries"  on lore_entries  for all to anon using (true) with check (true);
 
 -- ── Storage buckets for map images, NPC portraits, and party portraits ──
 
