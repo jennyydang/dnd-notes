@@ -1,67 +1,137 @@
-import { useRef, useState } from 'react'
-import { useLocalStorage } from '../hooks/useLocalStorage.js'
-import { readFileAsDataUrl } from '../utils/files.js'
+import { useEffect, useRef, useState } from 'react'
+import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import './NpcsTab.scss'
 
+const BUCKET = 'npc-portraits'
 const LIFE_STATUSES = ['Alive', 'Deceased', 'Unknown', 'Missing']
 
-const emptyForm = { name: '', race: '', metAt: '', status: 'Alive', photo: '' }
+const emptyForm = {
+  name: '',
+  race: '',
+  metAt: '',
+  status: 'Alive',
+  photoFile: null,
+  photoPreview: '',
+  photoRemoved: false,
+}
+
+const fromRow = (r) => ({
+  id: r.id,
+  name: r.name,
+  race: r.race,
+  metAt: r.met_at,
+  status: r.status,
+  photo: getPublicUrl(BUCKET, r.photo_path),
+})
 
 function NpcsTab() {
-  const [npcs, setNpcs] = useLocalStorage('dnd-notes-npcs', [])
+  const { items: npcs, loading, error, addItem, updateItem, removeItem } =
+    useSupabaseTable('npcs', { fromRow })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
+  const [formError, setFormError] = useState(null)
   const photoInputRef = useRef(null)
+  const objectUrlRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+    }
+  }, [])
+
+  function revokeTrackedObjectUrl() {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
+  }
 
   function startAdding() {
+    revokeTrackedObjectUrl()
     setForm(emptyForm)
     setEditingId(null)
+    setFormError(null)
     setIsAdding(true)
   }
 
   function startEditing(npc) {
+    revokeTrackedObjectUrl()
     setForm({
       name: npc.name,
       race: npc.race,
       metAt: npc.metAt,
       status: npc.status,
-      photo: npc.photo || '',
+      photoFile: null,
+      photoPreview: npc.photo || '',
+      photoRemoved: false,
     })
     setIsAdding(false)
+    setFormError(null)
     setEditingId(npc.id)
   }
 
   function cancelForm() {
+    revokeTrackedObjectUrl()
     setIsAdding(false)
     setEditingId(null)
     setForm(emptyForm)
+    setFormError(null)
   }
 
-  async function handlePhotoSelected(event) {
+  function handlePhotoSelected(event) {
     const file = event.target.files?.[0]
-    if (!file) return
-    const photo = await readFileAsDataUrl(file)
-    setForm((prev) => ({ ...prev, photo }))
     event.target.value = ''
+    if (!file) return
+
+    revokeTrackedObjectUrl()
+    const previewUrl = URL.createObjectURL(file)
+    objectUrlRef.current = previewUrl
+    setForm((prev) => ({
+      ...prev,
+      photoFile: file,
+      photoPreview: previewUrl,
+      photoRemoved: false,
+    }))
   }
 
-  function submitForm(event) {
+  function removePhoto() {
+    revokeTrackedObjectUrl()
+    setForm((prev) => ({ ...prev, photoFile: null, photoPreview: '', photoRemoved: true }))
+  }
+
+  async function submitForm(event) {
     event.preventDefault()
     if (!form.name.trim()) return
 
-    if (editingId) {
-      setNpcs((prev) =>
-        prev.map((n) => (n.id === editingId ? { ...n, ...form } : n)),
-      )
-    } else {
-      setNpcs((prev) => [...prev, { id: crypto.randomUUID(), ...form }])
+    const payload = {
+      name: form.name,
+      race: form.race,
+      met_at: form.metAt,
+      status: form.status,
     }
-    cancelForm()
+
+    try {
+      if (form.photoFile) {
+        payload.photo_path = await uploadImage(BUCKET, form.photoFile)
+      } else if (form.photoRemoved) {
+        payload.photo_path = null
+      }
+
+      if (editingId) {
+        await updateItem(editingId, payload)
+      } else {
+        await addItem(payload)
+      }
+      cancelForm()
+    } catch (err) {
+      setFormError(err.message)
+    }
   }
 
-  function removeNpc(id) {
-    setNpcs((prev) => prev.filter((n) => n.id !== id))
+  async function removeNpc(id) {
+    await removeItem(id)
     if (editingId === id) cancelForm()
   }
 
@@ -84,8 +154,8 @@ function NpcsTab() {
                 className="npc-form__photo-btn"
                 onClick={() => photoInputRef.current?.click()}
               >
-                {form.photo ? (
-                  <img src={form.photo} alt="NPC portrait" />
+                {form.photoPreview ? (
+                  <img src={form.photoPreview} alt="NPC portrait" />
                 ) : (
                   <span className="npc-form__photo-placeholder">+ Photo</span>
                 )}
@@ -97,12 +167,8 @@ function NpcsTab() {
                 hidden
                 onChange={handlePhotoSelected}
               />
-              {form.photo && (
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => setForm((prev) => ({ ...prev, photo: '' }))}
-                >
+              {form.photoPreview && (
+                <button type="button" className="btn btn--text" onClick={removePhoto}>
                   Remove photo
                 </button>
               )}
@@ -156,6 +222,7 @@ function NpcsTab() {
               </div>
             </div>
           </div>
+          {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="npc-form__actions">
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
@@ -167,11 +234,16 @@ function NpcsTab() {
         </form>
       )}
 
-      {npcs.length === 0 ? (
+      {loading && <p className="empty-state">Loading…</p>}
+      {error && <p className="empty-state empty-state--error">{error}</p>}
+
+      {!loading && !error && npcs.length === 0 && (
         <p className="empty-state">
           No NPCs recorded yet. Add the folks your party has met along the way.
         </p>
-      ) : (
+      )}
+
+      {!loading && !error && npcs.length > 0 && (
         <div className="npc-list">
           {npcs.map((npc) => (
             <article className="npc-card panel" key={npc.id}>

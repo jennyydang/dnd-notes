@@ -1,20 +1,31 @@
 import { useState } from 'react'
-import { useLocalStorage } from '../hooks/useLocalStorage.js'
+import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './QuestsTab.scss'
 
 const QUEST_STATUSES = ['Active', 'Completed', 'Failed']
 
 const emptyForm = { name: '', status: 'Active', givenBy: '', notes: '' }
 
+const fromRow = (r) => ({
+  id: r.id,
+  name: r.name,
+  status: r.status,
+  givenBy: r.given_by,
+  notes: r.notes,
+})
+
 function QuestsTab() {
-  const [quests, setQuests] = useLocalStorage('dnd-notes-quests', [])
+  const { items: quests, loading, error, addItem, updateItem, removeItem } =
+    useSupabaseTable('quests', { fromRow })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
+  const [formError, setFormError] = useState(null)
 
   function startAdding() {
     setForm(emptyForm)
     setEditingId(null)
+    setFormError(null)
     setIsAdding(true)
   }
 
@@ -26,6 +37,7 @@ function QuestsTab() {
       notes: quest.notes,
     })
     setIsAdding(false)
+    setFormError(null)
     setEditingId(quest.id)
   }
 
@@ -33,24 +45,34 @@ function QuestsTab() {
     setIsAdding(false)
     setEditingId(null)
     setForm(emptyForm)
+    setFormError(null)
   }
 
-  function submitForm(event) {
+  async function submitForm(event) {
     event.preventDefault()
     if (!form.name.trim()) return
 
-    if (editingId) {
-      setQuests((prev) =>
-        prev.map((q) => (q.id === editingId ? { ...q, ...form } : q)),
-      )
-    } else {
-      setQuests((prev) => [...prev, { id: crypto.randomUUID(), ...form }])
+    const payload = {
+      name: form.name,
+      status: form.status,
+      given_by: form.givenBy,
+      notes: form.notes,
     }
-    cancelForm()
+
+    try {
+      if (editingId) {
+        await updateItem(editingId, payload)
+      } else {
+        await addItem(payload)
+      }
+      cancelForm()
+    } catch (err) {
+      setFormError(err.message)
+    }
   }
 
-  function removeQuest(id) {
-    setQuests((prev) => prev.filter((q) => q.id !== id))
+  async function removeQuest(id) {
+    await removeItem(id)
     if (editingId === id) cancelForm()
   }
 
@@ -112,6 +134,7 @@ function QuestsTab() {
               placeholder="Rumored to be guarded by an undead knight..."
             />
           </div>
+          {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="quest-form__actions">
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
@@ -123,11 +146,16 @@ function QuestsTab() {
         </form>
       )}
 
-      {quests.length === 0 ? (
+      {loading && <p className="empty-state">Loading…</p>}
+      {error && <p className="empty-state empty-state--error">{error}</p>}
+
+      {!loading && !error && quests.length === 0 && (
         <p className="empty-state">
           No quests logged yet. Track what your party is working towards.
         </p>
-      ) : (
+      )}
+
+      {!loading && !error && quests.length > 0 && (
         <div className="quest-list">
           {quests.map((quest) => (
             <article className="quest-card panel" key={quest.id}>

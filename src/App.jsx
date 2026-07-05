@@ -4,6 +4,7 @@ import MapsTab from './components/MapsTab.jsx'
 import NpcsTab from './components/NpcsTab.jsx'
 import LootTab from './components/LootTab.jsx'
 import QuestsTab from './components/QuestsTab.jsx'
+import { isSupabaseConfigured } from './lib/supabaseClient.js'
 import './App.scss'
 
 const TABS = [
@@ -23,14 +24,27 @@ function App() {
         <p className="app__subtitle">Dungeons &amp; Dragons campaign notes</p>
       </header>
 
-      <TabNav tabs={TABS} activeTab={activeTab} onSelect={setActiveTab} />
+      {isSupabaseConfigured ? (
+        <>
+          <TabNav tabs={TABS} activeTab={activeTab} onSelect={setActiveTab} />
 
-      <main className="app__content">
-        {activeTab === 'maps' && <MapsTab />}
-        {activeTab === 'npcs' && <NpcsTab />}
-        {activeTab === 'loot' && <LootTab />}
-        {activeTab === 'quests' && <QuestsTab />}
-      </main>
+          <main className="app__content">
+            {activeTab === 'maps' && <MapsTab />}
+            {activeTab === 'npcs' && <NpcsTab />}
+            {activeTab === 'loot' && <LootTab />}
+            {activeTab === 'quests' && <QuestsTab />}
+          </main>
+        </>
+      ) : (
+        <div className="setup-notice panel">
+          <h2>Supabase isn&rsquo;t configured yet</h2>
+          <p>
+            Copy <code>.env.example</code> to <code>.env</code>, add your
+            Supabase project&rsquo;s URL and anon key, then restart the dev
+            server. See <code>README.md</code> for the full setup steps.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

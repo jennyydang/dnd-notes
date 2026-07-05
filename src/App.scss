@@ -30,3 +30,29 @@
     margin-top: 1.5rem;
   }
 }
+
+.setup-notice {
+  margin-top: 2rem;
+  padding: 2rem;
+  text-align: center;
+
+  h2 {
+    color: $gold-light;
+    font-size: 1.3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  p {
+    color: $text-light;
+    line-height: 1.6;
+  }
+
+  code {
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    padding: 0.1rem 0.4rem;
+    font-family: monospace;
+    color: $gold-light;
+  }
+}

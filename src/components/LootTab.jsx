@@ -1,18 +1,29 @@
 import { useState } from 'react'
-import { useLocalStorage } from '../hooks/useLocalStorage.js'
+import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './LootTab.scss'
 
 const emptyForm = { item: '', foundAt: '', holder: '', notes: '' }
 
+const fromRow = (r) => ({
+  id: r.id,
+  item: r.item,
+  foundAt: r.found_at,
+  holder: r.holder,
+  notes: r.notes,
+})
+
 function LootTab() {
-  const [loot, setLoot] = useLocalStorage('dnd-notes-loot', [])
+  const { items: loot, loading, error, addItem, updateItem, removeItem } =
+    useSupabaseTable('loot', { fromRow })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
+  const [formError, setFormError] = useState(null)
 
   function startAdding() {
     setForm(emptyForm)
     setEditingId(null)
+    setFormError(null)
     setIsAdding(true)
   }
 
@@ -24,6 +35,7 @@ function LootTab() {
       notes: entry.notes,
     })
     setIsAdding(false)
+    setFormError(null)
     setEditingId(entry.id)
   }
 
@@ -31,24 +43,34 @@ function LootTab() {
     setIsAdding(false)
     setEditingId(null)
     setForm(emptyForm)
+    setFormError(null)
   }
 
-  function submitForm(event) {
+  async function submitForm(event) {
     event.preventDefault()
     if (!form.item.trim()) return
 
-    if (editingId) {
-      setLoot((prev) =>
-        prev.map((l) => (l.id === editingId ? { ...l, ...form } : l)),
-      )
-    } else {
-      setLoot((prev) => [...prev, { id: crypto.randomUUID(), ...form }])
+    const payload = {
+      item: form.item,
+      found_at: form.foundAt,
+      holder: form.holder,
+      notes: form.notes,
     }
-    cancelForm()
+
+    try {
+      if (editingId) {
+        await updateItem(editingId, payload)
+      } else {
+        await addItem(payload)
+      }
+      cancelForm()
+    } catch (err) {
+      setFormError(err.message)
+    }
   }
 
-  function removeLoot(id) {
-    setLoot((prev) => prev.filter((l) => l.id !== id))
+  async function removeLoot(id) {
+    await removeItem(id)
     if (editingId === id) cancelForm()
   }
 
@@ -106,6 +128,7 @@ function LootTab() {
               placeholder="Unidentified, seems to hum faintly near water..."
             />
           </div>
+          {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="loot-form__actions">
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
@@ -117,11 +140,16 @@ function LootTab() {
         </form>
       )}
 
-      {loot.length === 0 ? (
+      {loading && <p className="empty-state">Loading…</p>}
+      {error && <p className="empty-state empty-state--error">{error}</p>}
+
+      {!loading && !error && loot.length === 0 && (
         <p className="empty-state">
           No loot logged yet. Track the treasures your party has claimed.
         </p>
-      ) : (
+      )}
+
+      {!loading && !error && loot.length > 0 && (
         <div className="loot-list">
           {loot.map((entry) => (
             <article className="loot-card panel" key={entry.id}>

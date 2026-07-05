@@ -68,6 +68,12 @@
   padding: 3rem 1rem;
   border: 1px dashed rgba($gold-dim, 0.5);
   border-radius: $radius-lg;
+
+  &--error {
+    color: $maroon-light;
+    border-color: rgba($maroon-light, 0.5);
+    font-style: normal;
+  }
 }
 
 .panel {
