@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import TabNav from './components/TabNav.jsx'
 import MapsTab from './components/MapsTab.jsx'
+import PartyTab from './components/PartyTab.jsx'
 import NpcsTab from './components/NpcsTab.jsx'
 import LootTab from './components/LootTab.jsx'
 import QuestsTab from './components/QuestsTab.jsx'
@@ -9,6 +10,7 @@ import './App.scss'
 
 const TABS = [
   { id: 'maps', label: 'Maps' },
+  { id: 'party', label: 'Party' },
   { id: 'npcs', label: 'NPCs' },
   { id: 'loot', label: 'Loot' },
   { id: 'quests', label: 'Quests' },
@@ -30,6 +32,7 @@ function App() {
 
           <main className="app__content">
             {activeTab === 'maps' && <MapsTab />}
+            {activeTab === 'party' && <PartyTab />}
             {activeTab === 'npcs' && <NpcsTab />}
             {activeTab === 'loot' && <LootTab />}
             {activeTab === 'quests' && <QuestsTab />}
