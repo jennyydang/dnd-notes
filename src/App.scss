@@ -1,0 +1,32 @@
+@use './styles/variables' as *;
+@use './styles/base';
+@use './styles/shared';
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  min-height: 100%;
+
+  &__header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  &__title {
+    font-size: 2.4rem;
+    color: $gold-light;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  }
+
+  &__subtitle {
+    margin-top: 0.4rem;
+    color: $text-muted;
+    font-style: italic;
+    letter-spacing: 0.02em;
+  }
+
+  &__content {
+    margin-top: 1.5rem;
+  }
+}

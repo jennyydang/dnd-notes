@@ -1,0 +1,111 @@
+@use 'sass:color';
+@use 'variables' as *;
+
+.btn {
+  font-family: $font-display;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+  padding: 0.6rem 1.1rem;
+  border-radius: $radius;
+  border: $border-gold;
+  background: $bg-panel-raised;
+  color: $gold-light;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+
+  &:hover {
+    background: color.adjust(#2e241d, $lightness: 4%);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &--primary {
+    background: linear-gradient(
+      180deg,
+      $gold-dim,
+      color.adjust($gold-dim, $lightness: -8%)
+    );
+    color: $ink;
+    border-color: $gold;
+
+    &:hover {
+      background: linear-gradient(
+        180deg,
+        $gold,
+        color.adjust($gold-dim, $lightness: -4%)
+      );
+    }
+  }
+
+  &--danger {
+    border-color: rgba($maroon-light, 0.6);
+    color: $maroon-light;
+
+    &:hover {
+      background: rgba($maroon, 0.2);
+    }
+  }
+
+  &--text {
+    background: transparent;
+    border-color: transparent;
+    color: $text-muted;
+
+    &:hover {
+      color: $gold-light;
+      background: transparent;
+    }
+  }
+}
+
+.empty-state {
+  color: $text-muted;
+  font-style: italic;
+  text-align: center;
+  padding: 3rem 1rem;
+  border: 1px dashed rgba($gold-dim, 0.5);
+  border-radius: $radius-lg;
+}
+
+.panel {
+  background: $bg-panel;
+  border: $border-gold;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-panel;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $text-muted;
+  }
+
+  input,
+  select,
+  textarea {
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    color: $text-light;
+    padding: 0.55rem 0.7rem;
+
+    &:focus {
+      outline: none;
+      border-color: $gold;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 4.5rem;
+  }
+}

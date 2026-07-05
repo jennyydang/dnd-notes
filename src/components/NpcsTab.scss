@@ -1,0 +1,109 @@
+@use '../styles/variables' as *;
+
+.npcs-tab {
+  &__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.25rem;
+  }
+}
+
+.npc-form {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+}
+
+.npc-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.npc-card {
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+
+  &__main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__name {
+    font-size: 1.15rem;
+    color: $parchment;
+  }
+
+  &__details {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    dt {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: $text-muted;
+    }
+
+    dd {
+      margin: 0;
+      color: $text-light;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+}
+
+.status-badge {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+
+  &--alive {
+    background: rgba($green-light, 0.18);
+    color: $green-light;
+    border: 1px solid rgba($green-light, 0.4);
+  }
+
+  &--deceased {
+    background: rgba($maroon-light, 0.18);
+    color: $maroon-light;
+    border: 1px solid rgba($maroon-light, 0.4);
+  }
+
+  &--unknown,
+  &--missing {
+    background: rgba($gold-light, 0.15);
+    color: $gold-light;
+    border: 1px solid rgba($gold-light, 0.4);
+  }
+}
