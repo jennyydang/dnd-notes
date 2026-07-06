@@ -60,6 +60,7 @@ function PartyTab({ campaignId, playerId }) {
   const [usernames, setUsernames] = useState({})
   const [expandedNoteIds, setExpandedNoteIds] = useState(() => new Set())
   const [noteDrafts, setNoteDrafts] = useState({})
+  const [noteErrors, setNoteErrors] = useState({})
   const photoInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 
@@ -194,7 +195,11 @@ function PartyTab({ campaignId, playerId }) {
 
   async function unclaimMember(memberId) {
     setClaimError(null)
-    await updateItem(memberId, { claimed_by: null })
+    try {
+      await updateItem(memberId, { claimed_by: null })
+    } catch (err) {
+      setClaimError(err.message)
+    }
   }
 
   function toggleNoteExpanded(memberId) {
@@ -214,10 +219,22 @@ function PartyTab({ campaignId, playerId }) {
   async function savePrivateNote(memberId) {
     const text = noteDrafts[memberId] ?? ''
     const existing = privateNotes.find((note) => note.partyMemberId === memberId)
-    if (existing) {
-      await updatePrivateNote(existing.id, { notes: text })
-    } else {
-      await addPrivateNote({ party_member_id: memberId, notes: text })
+    try {
+      if (existing) {
+        await updatePrivateNote(existing.id, { notes: text })
+      } else {
+        await addPrivateNote({ party_member_id: memberId, notes: text })
+      }
+      setNoteErrors((prev) => ({ ...prev, [memberId]: null }))
+      // Collapsing the editor is the visible "it worked" signal — with no
+      // error, there's otherwise no feedback that anything happened at all.
+      setExpandedNoteIds((prev) => {
+        const next = new Set(prev)
+        next.delete(memberId)
+        return next
+      })
+    } catch (err) {
+      setNoteErrors((prev) => ({ ...prev, [memberId]: err.message }))
     }
   }
 
@@ -428,6 +445,9 @@ function PartyTab({ campaignId, playerId }) {
                         }
                         placeholder="Only you can see this note..."
                       />
+                      {noteErrors[member.id] && (
+                        <p className="empty-state empty-state--error">{noteErrors[member.id]}</p>
+                      )}
                       <button
                         type="button"
                         className="btn btn--primary"
