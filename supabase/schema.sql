@@ -2,7 +2,16 @@
 -- Paste this entire file into Supabase Dashboard -> SQL Editor -> New query -> Run
 -- Safe to re-run in full any time — every statement is idempotent.
 
-create extension if not exists pgcrypto; -- for gen_random_uuid()
+-- pgcrypto provides crypt()/gen_salt() for password hashing below.
+-- Force it into a known, explicit schema rather than trusting wherever
+-- "create extension if not exists" happens to land it (this varies by
+-- project and is the source of "function gen_salt(...) does not exist"
+-- errors if the schema drifts from whatever search_path assumes) — the
+-- function bodies below call extensions.crypt()/extensions.gen_salt()
+-- directly, so this schema choice is the only thing that matters.
+create schema if not exists extensions;
+drop extension if exists pgcrypto;
+create extension pgcrypto with schema extensions;
 
 -- ── Campaigns ─────────────────────────────────────────────────────────
 -- Everything else (maps, npcs, loot, quests, party_members, session_notes,
@@ -286,10 +295,10 @@ create policy "anon full access campaign-covers bucket"
 -- in plaintext in this file — fine for a private repo, not a secret in
 -- any strong sense.
 --
--- `extensions` is included in search_path (alongside `public`) because
--- Supabase installs pgcrypto into an `extensions` schema by default, not
--- `public` — without it, crypt()/gen_salt() below can't be found and
--- create_player/verify_login fail even though the extension exists.
+-- create_player/verify_login call extensions.crypt()/extensions.gen_salt()
+-- fully-qualified (pgcrypto is forced into that schema up top), so
+-- password hashing doesn't depend on search_path guessing correctly.
+-- `extensions` is kept in search_path too as a harmless second layer.
 
 create or replace function verify_admin_password(p_admin_password text)
 returns boolean
@@ -314,7 +323,7 @@ begin
 
   begin
     insert into players (username, password_hash)
-    values (trim(p_username), crypt(p_password, gen_salt('bf', 8)))
+    values (trim(p_username), extensions.crypt(p_password, extensions.gen_salt('bf', 8)))
     returning id into v_id;
   exception when unique_violation then
     raise exception 'That username is already taken';
@@ -333,7 +342,7 @@ declare
 begin
   select * into v_player from players where lower(username) = lower(trim(p_username));
 
-  if v_player.id is null or v_player.password_hash <> crypt(p_password, v_player.password_hash) then
+  if v_player.id is null or v_player.password_hash <> extensions.crypt(p_password, v_player.password_hash) then
     raise exception 'Invalid username or password';
   end if;
 
