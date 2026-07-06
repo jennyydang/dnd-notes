@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
+import { listCampaignMembers } from '../lib/campaigns.js'
 import './PartyTab.scss'
 
 const BUCKET = 'party-portraits'
 const MEMBER_TYPES = ['Player', 'NPC']
+
+// Used to keep the party_notes useSupabaseTable filter valid (a real,
+// well-formed UUID that will never match a real player) when there's no
+// logged-in player (the admin view) — claiming and private notes don't
+// apply there, so this just makes the hook return zero rows.
+const ZERO_UUID = '00000000-0000-0000-0000-000000000000'
 
 const emptyForm = {
   name: '',
@@ -25,17 +32,54 @@ const fromRow = (r) => ({
   raceClass: r.race_class,
   notes: r.notes,
   photo: getPublicUrl(BUCKET, r.photo_path),
+  claimedBy: r.claimed_by,
 })
 
-function PartyTab({ campaignId }) {
+const fromNoteRow = (r) => ({
+  id: r.id,
+  partyMemberId: r.party_member_id,
+  notes: r.notes,
+})
+
+function PartyTab({ campaignId, playerId }) {
   const { items: party, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('party_members', { fromRow, filters: { campaign_id: campaignId } })
+  const {
+    items: privateNotes,
+    addItem: addPrivateNote,
+    updateItem: updatePrivateNote,
+  } = useSupabaseTable('party_notes', {
+    fromRow: fromNoteRow,
+    filters: { author_player_id: playerId || ZERO_UUID },
+  })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
+  const [claimError, setClaimError] = useState(null)
+  const [usernames, setUsernames] = useState({})
+  const [expandedNoteIds, setExpandedNoteIds] = useState(() => new Set())
+  const [noteDrafts, setNoteDrafts] = useState({})
   const photoInputRef = useRef(null)
   const objectUrlRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    listCampaignMembers(campaignId)
+      .then((members) => {
+        if (cancelled) return
+        const map = {}
+        for (const member of members) map[member.playerId] = member.username
+        setUsernames(map)
+      })
+      .catch(() => {
+        // Non-critical: worst case "Claimed by {username}" falls back to
+        // not showing a username. Claiming itself still works.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [campaignId])
 
   useEffect(() => {
     return () => {
@@ -139,7 +183,46 @@ function PartyTab({ campaignId }) {
     if (editingId === id) cancelForm()
   }
 
+  async function claimMember(memberId) {
+    setClaimError(null)
+    try {
+      await updateItem(memberId, { claimed_by: playerId })
+    } catch {
+      setClaimError('You’ve already claimed a character in this campaign.')
+    }
+  }
+
+  async function unclaimMember(memberId) {
+    setClaimError(null)
+    await updateItem(memberId, { claimed_by: null })
+  }
+
+  function toggleNoteExpanded(memberId) {
+    setExpandedNoteIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(memberId)) {
+        next.delete(memberId)
+      } else {
+        next.add(memberId)
+        const existing = privateNotes.find((note) => note.partyMemberId === memberId)
+        setNoteDrafts((drafts) => ({ ...drafts, [memberId]: existing?.notes || '' }))
+      }
+      return next
+    })
+  }
+
+  async function savePrivateNote(memberId) {
+    const text = noteDrafts[memberId] ?? ''
+    const existing = privateNotes.find((note) => note.partyMemberId === memberId)
+    if (existing) {
+      await updatePrivateNote(existing.id, { notes: text })
+    } else {
+      await addPrivateNote({ party_member_id: memberId, notes: text })
+    }
+  }
+
   const showForm = isAdding || editingId !== null
+  const myClaimedMemberId = party.find((m) => m.claimedBy === playerId)?.id
 
   return (
     <section className="party-tab">
@@ -148,6 +231,8 @@ function PartyTab({ campaignId }) {
           + Add Party Member
         </button>
       </div>
+
+      {claimError && <p className="empty-state empty-state--error">{claimError}</p>}
 
       {showForm && (
         <form className="party-form panel" onSubmit={submitForm}>
@@ -293,6 +378,67 @@ function PartyTab({ campaignId }) {
                 )}
               </dl>
               {member.notes && <p className="party-card__notes">{member.notes}</p>}
+              {member.memberType === 'Player' && playerId && (
+                <div className="party-card__claim">
+                  {member.claimedBy === playerId ? (
+                    <>
+                      <span className="party-card__claim-badge party-card__claim-badge--you">
+                        Claimed by you
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn--text"
+                        onClick={() => unclaimMember(member.id)}
+                      >
+                        Unclaim
+                      </button>
+                    </>
+                  ) : member.claimedBy ? (
+                    <span className="party-card__claim-badge">
+                      Claimed by {usernames[member.claimedBy] || 'another player'}
+                    </span>
+                  ) : (
+                    !myClaimedMemberId && (
+                      <button
+                        type="button"
+                        className="btn btn--text"
+                        onClick={() => claimMember(member.id)}
+                      >
+                        Claim this character
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
+              {member.memberType === 'Player' && playerId && member.claimedBy !== playerId && (
+                <div className="party-card__private-notes">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => toggleNoteExpanded(member.id)}
+                  >
+                    {expandedNoteIds.has(member.id) ? 'Hide private note' : 'Private note'}
+                  </button>
+                  {expandedNoteIds.has(member.id) && (
+                    <div className="party-card__private-notes-editor">
+                      <textarea
+                        value={noteDrafts[member.id] ?? ''}
+                        onChange={(e) =>
+                          setNoteDrafts((drafts) => ({ ...drafts, [member.id]: e.target.value }))
+                        }
+                        placeholder="Only you can see this note..."
+                      />
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        onClick={() => savePrivateNote(member.id)}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="party-card__actions">
                 <button
                   type="button"

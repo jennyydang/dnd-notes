@@ -150,6 +150,53 @@
     line-height: 1.5;
   }
 
+  &__claim {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__claim-badge {
+    font-size: 0.78rem;
+    color: $text-muted;
+
+    &--you {
+      color: $gold-light;
+    }
+  }
+
+  &__private-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__private-notes-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    textarea {
+      background: $bg-deep;
+      border: 1px solid $ink-soft;
+      border-radius: $radius;
+      color: $text-light;
+      padding: 0.55rem 0.7rem;
+      resize: vertical;
+      min-height: 4rem;
+
+      &:focus {
+        outline: none;
+        border-color: $gold;
+      }
+    }
+
+    .btn {
+      align-self: flex-end;
+    }
+  }
+
   &__actions {
     display: flex;
     justify-content: flex-end;

@@ -76,7 +76,7 @@ function CampaignView({ campaignId, campaignName, playerId, onBack }) {
         {activeTab === 'sessions' && (
           <SessionNotesTab campaignId={campaignId} playerId={playerId} />
         )}
-        {activeTab === 'party' && <PartyTab campaignId={campaignId} />}
+        {activeTab === 'party' && <PartyTab campaignId={campaignId} playerId={playerId} />}
         {activeTab === 'maps' && <MapsTab campaignId={campaignId} />}
         {activeTab === 'loot' && <LootTab campaignId={campaignId} />}
         {activeTab === 'quests' && <QuestsTab campaignId={campaignId} />}
