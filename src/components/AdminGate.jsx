@@ -3,11 +3,14 @@ import Dashboard from './Dashboard.jsx'
 import {
   clearAdminSession,
   createPlayer,
+  deletePlayer,
   getAdminSession,
   listPlayers,
   setAdminSession,
+  updatePlayer,
   verifyAdminPassword,
 } from '../lib/auth.js'
+import { listAllMemberships } from '../lib/campaigns.js'
 import './AdminGate.scss'
 
 function AdminGate({ onOpenCampaign }) {
@@ -78,18 +81,27 @@ function AdminGate({ onOpenCampaign }) {
 
 function ManagePlayers({ adminPassword }) {
   const [players, setPlayers] = useState([])
+  const [memberships, setMemberships] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [formError, setFormError] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [editUsername, setEditUsername] = useState('')
+  const [editPassword, setEditPassword] = useState('')
+  const [editError, setEditError] = useState(null)
 
-  const loadPlayers = useCallback(async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await listPlayers(adminPassword)
-      setPlayers(data)
+      const [playersData, membershipsData] = await Promise.all([
+        listPlayers(adminPassword),
+        listAllMemberships(),
+      ])
+      setPlayers(playersData)
+      setMemberships(membershipsData)
     } catch (err) {
       setError(err.message)
     }
@@ -97,8 +109,8 @@ function ManagePlayers({ adminPassword }) {
   }, [adminPassword])
 
   useEffect(() => {
-    loadPlayers()
-  }, [loadPlayers])
+    loadAll()
+  }, [loadAll])
 
   async function submitNewPlayer(event) {
     event.preventDefault()
@@ -108,10 +120,55 @@ function ManagePlayers({ adminPassword }) {
       await createPlayer(username, password, adminPassword)
       setUsername('')
       setPassword('')
-      await loadPlayers()
+      await loadAll()
     } catch (err) {
       setFormError(err.message)
     }
+  }
+
+  function startEditing(player) {
+    setEditingId(player.id)
+    setEditUsername(player.username)
+    setEditPassword('')
+    setEditError(null)
+  }
+
+  function cancelEditing() {
+    setEditingId(null)
+    setEditUsername('')
+    setEditPassword('')
+    setEditError(null)
+  }
+
+  async function submitEdit(event, playerId) {
+    event.preventDefault()
+    if (!editUsername.trim()) return
+    try {
+      await updatePlayer(playerId, editUsername, editPassword, adminPassword)
+      cancelEditing()
+      await loadAll()
+    } catch (err) {
+      setEditError(err.message)
+    }
+  }
+
+  async function removePlayer(player) {
+    const confirmed = window.confirm(
+      `Delete player "${player.username}"? This removes their access to every campaign they've joined. Campaigns they created stay, just without an owner.`,
+    )
+    if (!confirmed) return
+    try {
+      await deletePlayer(player.id, adminPassword)
+      await loadAll()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const membershipsByPlayer = {}
+  for (const m of memberships) {
+    if (!membershipsByPlayer[m.playerId]) membershipsByPlayer[m.playerId] = []
+    membershipsByPlayer[m.playerId].push(m)
   }
 
   return (
@@ -154,9 +211,79 @@ function ManagePlayers({ adminPassword }) {
 
       {!loading && !error && players.length > 0 && (
         <ul className="manage-players__list">
-          {players.map((player) => (
-            <li key={player.id}>{player.username}</li>
-          ))}
+          {players.map((player) => {
+            const playerCampaigns = membershipsByPlayer[player.id] || []
+            return (
+              <li key={player.id} className="manage-players__player">
+                {editingId === player.id ? (
+                  <form
+                    className="manage-players__edit-form"
+                    onSubmit={(e) => submitEdit(e, player.id)}
+                  >
+                    <input
+                      type="text"
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value)}
+                      aria-label="Username"
+                      required
+                    />
+                    <input
+                      type="password"
+                      value={editPassword}
+                      onChange={(e) => setEditPassword(e.target.value)}
+                      placeholder="New password (optional)"
+                      aria-label="New password"
+                    />
+                    <button type="submit" className="btn btn--primary">
+                      Save
+                    </button>
+                    <button type="button" className="btn btn--text" onClick={cancelEditing}>
+                      Cancel
+                    </button>
+                    {editError && (
+                      <p className="empty-state empty-state--error">{editError}</p>
+                    )}
+                  </form>
+                ) : (
+                  <div className="manage-players__row">
+                    <span className="manage-players__username">{player.username}</span>
+                    <div className="manage-players__row-actions">
+                      <button
+                        type="button"
+                        className="btn btn--text"
+                        onClick={() => startEditing(player)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--danger"
+                        onClick={() => removePlayer(player)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="manage-players__campaigns">
+                  {playerCampaigns.length === 0 ? (
+                    <span className="manage-players__no-campaigns">No campaigns yet</span>
+                  ) : (
+                    playerCampaigns.map((m) => (
+                      <span key={m.campaignId} className="manage-players__campaign-badge">
+                        {m.campaignName}
+                        {m.joinCode && (
+                          <span className="manage-players__join-code">{m.joinCode}</span>
+                        )}
+                        <span className="manage-players__role">{m.role}</span>
+                      </span>
+                    ))
+                  )}
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>

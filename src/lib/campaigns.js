@@ -33,3 +33,19 @@ export async function listCampaignMembers(campaignId) {
     role: r.role,
   }))
 }
+
+// Every membership across every campaign — used by the admin panel to
+// show which campaigns each player participates in. campaign_memberships
+// carries no secrets (see supabase/schema.sql), so this is a plain anon
+// select, no RPC/admin-password gate needed.
+export async function listAllMemberships() {
+  const { data, error } = await supabase.from('campaign_memberships').select('*')
+  if (error) throw new Error(error.message)
+  return data.map((r) => ({
+    playerId: r.player_id,
+    role: r.role,
+    campaignId: r.id,
+    campaignName: r.name,
+    joinCode: r.join_code,
+  }))
+}

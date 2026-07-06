@@ -18,6 +18,7 @@ const fromRow = (r) => ({
   name: r.name,
   description: r.description,
   archived: r.archived,
+  joinCode: r.join_code,
   cover: getPublicUrl(BUCKET, r.cover_image_path),
 })
 
@@ -247,7 +248,12 @@ function Dashboard({ onOpenCampaign }) {
                   )}
                 </div>
                 <div className="campaign-card__text">
-                  <h3 className="campaign-card__name">{campaign.name}</h3>
+                  <h3 className="campaign-card__name">
+                    {campaign.name}
+                    {campaign.joinCode && (
+                      <span className="campaign-card__join-code">{campaign.joinCode}</span>
+                    )}
+                  </h3>
                   {campaign.description && (
                     <p className="campaign-card__description">{campaign.description}</p>
                   )}

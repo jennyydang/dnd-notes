@@ -65,6 +65,14 @@ create table if not exists campaign_members (
 alter table campaigns add column if not exists join_code text unique;
 alter table campaigns add column if not exists created_by uuid references players(id);
 
+-- Re-pin created_by's FK with ON DELETE SET NULL every run (idempotent
+-- drop+add): without this, deleting a player who created a campaign
+-- would fail with a foreign key violation instead of just clearing the
+-- reference on their campaigns.
+alter table campaigns drop constraint if exists campaigns_created_by_fkey;
+alter table campaigns add constraint campaigns_created_by_fkey
+  foreign key (created_by) references players(id) on delete set null;
+
 -- ── Tables ──────────────────────────────────────────────────────────
 
 create table if not exists maps (
@@ -333,6 +341,52 @@ begin
 end;
 $$;
 grant execute on function create_player(text, text, text) to anon;
+
+create or replace function update_player(
+  p_player_id uuid,
+  p_username text,
+  p_password text,
+  p_admin_password text
+)
+returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+
+  if trim(p_username) = '' then
+    raise exception 'Username is required';
+  end if;
+
+  begin
+    if p_password is not null and p_password <> '' then
+      update players
+      set username = trim(p_username),
+          password_hash = extensions.crypt(p_password, extensions.gen_salt('bf', 8))
+      where id = p_player_id;
+    else
+      update players set username = trim(p_username) where id = p_player_id;
+    end if;
+  exception when unique_violation then
+    raise exception 'That username is already taken';
+  end;
+end;
+$$;
+grant execute on function update_player(uuid, text, text, text) to anon;
+
+create or replace function delete_player(p_player_id uuid, p_admin_password text)
+returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+
+  delete from players where id = p_player_id;
+end;
+$$;
+grant execute on function delete_player(uuid, text) to anon;
 
 create or replace function verify_login(p_username text, p_password text)
 returns uuid

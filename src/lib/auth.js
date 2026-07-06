@@ -63,6 +63,24 @@ export async function listPlayers(adminPassword) {
   return data
 }
 
+export async function updatePlayer(playerId, username, password, adminPassword) {
+  const { error } = await supabase.rpc('update_player', {
+    p_player_id: playerId,
+    p_username: username,
+    p_password: password || null,
+    p_admin_password: adminPassword,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function deletePlayer(playerId, adminPassword) {
+  const { error } = await supabase.rpc('delete_player', {
+    p_player_id: playerId,
+    p_admin_password: adminPassword,
+  })
+  if (error) throw new Error(error.message)
+}
+
 export async function verifyLogin(username, password) {
   const { data, error } = await supabase.rpc('verify_login', {
     p_username: username,
