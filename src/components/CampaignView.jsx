@@ -25,7 +25,7 @@ const customTabPrefix = 'custom:'
 
 const fromCustomTabRow = (r) => ({ id: r.id, name: r.name })
 
-function CampaignView({ campaignId, campaignName, onBack }) {
+function CampaignView({ campaignId, campaignName, playerId, onBack }) {
   const [activeTab, setActiveTab] = useState('sessions')
   const {
     items: customTabs,
@@ -73,7 +73,9 @@ function CampaignView({ campaignId, campaignName, onBack }) {
       <TabNav tabs={tabs} activeTab={activeTab} onSelect={setActiveTab} onAddTab={handleAddTab} />
 
       <main className="app__content">
-        {activeTab === 'sessions' && <SessionNotesTab campaignId={campaignId} />}
+        {activeTab === 'sessions' && (
+          <SessionNotesTab campaignId={campaignId} playerId={playerId} />
+        )}
         {activeTab === 'party' && <PartyTab campaignId={campaignId} />}
         {activeTab === 'maps' && <MapsTab campaignId={campaignId} />}
         {activeTab === 'loot' && <LootTab campaignId={campaignId} />}

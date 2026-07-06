@@ -129,14 +129,34 @@ create table if not exists party_members (
   created_at timestamptz not null default now()
 );
 
+-- Unlike every other tab, session notes are personal to each player —
+-- everyone in a campaign shares the same maps/npcs/loot/etc., but each
+-- player keeps their own private recap. player_id is nullable rather
+-- than NOT NULL: a session_notes row predating this feature (or one
+-- added by the admin, who isn't a player) may have no player attached;
+-- those rows simply won't match any specific player's filter.
 create table if not exists session_notes (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references campaigns(id) on delete cascade,
+  player_id uuid references players(id) on delete cascade,
   title text not null default '',
   session_date text not null default '',
   notes text not null default '',
   created_at timestamptz not null default now()
 );
+
+alter table session_notes add column if not exists player_id uuid references players(id) on delete cascade;
+
+-- Best-effort backfill for rows that predate this column: attribute them
+-- to whichever player created that campaign, if known. Rows in a campaign
+-- with no recorded creator (e.g. the original default "My Campaign") stay
+-- player_id = null and won't show up for any specific player anymore.
+update session_notes sn
+set player_id = c.created_by
+from campaigns c
+where sn.campaign_id = c.id
+  and sn.player_id is null
+  and c.created_by is not null;
 
 create table if not exists lore_entries (
   id uuid primary key default gen_random_uuid(),

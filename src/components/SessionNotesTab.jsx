@@ -11,12 +11,20 @@ const fromRow = (r) => ({
   notes: r.notes,
 })
 
-function SessionNotesTab({ campaignId }) {
+function SessionNotesTab({ campaignId, playerId }) {
+  // Session notes are personal — scoped to this player within the
+  // campaign, not shared like every other tab. Admin has no playerId
+  // (isn't a player account), so it falls back to seeing every note in
+  // the campaign rather than being scoped to nobody.
+  const filters = playerId
+    ? { campaign_id: campaignId, player_id: playerId }
+    : { campaign_id: campaignId }
+
   const { items: sessions, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('session_notes', {
       fromRow,
       ascending: false,
-      filters: { campaign_id: campaignId },
+      filters,
     })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -136,8 +144,8 @@ function SessionNotesTab({ campaignId }) {
 
       {!loading && !error && sessions.length === 0 && (
         <p className="empty-state">
-          No session notes yet. Log a recap after each game to keep track of
-          what happened.
+          No session notes yet. These are personal to you — log a recap
+          after each game to keep track of what happened.
         </p>
       )}
 

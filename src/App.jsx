@@ -37,6 +37,7 @@ function App() {
       <CampaignView
         campaignId={selectedCampaign.id}
         campaignName={selectedCampaign.name}
+        playerId={playerSession?.playerId}
         onBack={() => setSelectedCampaign(null)}
       />
     )
