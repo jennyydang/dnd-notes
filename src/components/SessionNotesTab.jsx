@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './SessionNotesTab.scss'
 
@@ -23,6 +23,18 @@ function formatSessionDate(value) {
   return parsed.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
+// The DB orders session_date as plain text, which only sorts correctly
+// when every row is the same ISO YYYY-MM-DD format. Rows predating the
+// date picker can still hold free-text dates (e.g. "May 24, 2026"), and
+// those sort before any ISO string in text order regardless of the actual
+// date — so re-sort client-side using real parsed timestamps instead.
+function sessionDateTimestamp(value) {
+  if (!value) return -Infinity
+  const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value
+  const parsed = new Date(isoValue)
+  return Number.isNaN(parsed.getTime()) ? -Infinity : parsed.getTime()
+}
+
 function SessionNotesTab({ campaignId, playerId }) {
   // Session notes are personal — scoped to this player within the
   // campaign, not shared like every other tab. Admin has no playerId
@@ -39,6 +51,13 @@ function SessionNotesTab({ campaignId, playerId }) {
       ascending: false,
       filters,
     })
+  const sortedSessions = useMemo(
+    () => [...sessions].sort(
+      (a, b) => sessionDateTimestamp(b.sessionDate) - sessionDateTimestamp(a.sessionDate),
+    ),
+    [sessions],
+  )
+
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -129,7 +148,7 @@ function SessionNotesTab({ campaignId, playerId }) {
               />
             </div>
           </div>
-          <div className="field">
+          <div className="field session-form__notes-field">
             <label htmlFor="session-notes">Recap</label>
             <textarea
               id="session-notes"
@@ -154,16 +173,16 @@ function SessionNotesTab({ campaignId, playerId }) {
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
-      {!loading && !error && sessions.length === 0 && (
+      {!loading && !error && sortedSessions.length === 0 && (
         <p className="empty-state">
           No session notes yet. These are personal to you — log a recap
           after each game to keep track of what happened.
         </p>
       )}
 
-      {!loading && !error && sessions.length > 0 && (
+      {!loading && !error && sortedSessions.length > 0 && (
         <div className="session-list">
-          {sessions.map((session) => (
+          {sortedSessions.map((session) => (
             <article className="session-card panel" key={session.id}>
               <div className="session-card__main">
                 <h3 className="session-card__title">
