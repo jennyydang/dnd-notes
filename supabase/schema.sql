@@ -152,20 +152,36 @@ create table if not exists party_notes (
   unique (party_member_id, author_player_id)
 );
 
--- Each logged-in player's running money total for a campaign, tracked in
--- copper (the smallest unit) regardless of which currency they last used
--- to update it — the Tools tab's currency calculator converts for display.
--- Same privacy model as session_notes/party_notes: RLS is anon-full-access,
--- and the app only ever queries/writes rows scoped to player_id = the
--- logged-in player; admin (no player_id) sees every player's wallet.
+-- Each logged-in player's coin purse for a campaign — five independent
+-- counts, not one converted total: having 15 gold means 15 gold coins
+-- and 0 of everything else, not "15 gold's worth" smeared proportionally
+-- across every denomination (real coins don't auto-convert; the Tools
+-- tab's currency calculator is the separate tool for figuring out
+-- equivalents/making change). Same privacy model as session_notes/
+-- party_notes: RLS is anon-full-access, and the app only ever queries/
+-- writes rows scoped to player_id = the logged-in player; admin (no
+-- player_id) sees every player's wallet.
 create table if not exists player_wallets (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references campaigns(id) on delete cascade,
   player_id uuid not null references players(id) on delete cascade,
-  total_copper numeric not null default 0,
+  platinum integer not null default 0,
+  gold integer not null default 0,
+  silver integer not null default 0,
+  shilling integer not null default 0,
+  copper integer not null default 0,
   created_at timestamptz not null default now(),
   unique (campaign_id, player_id)
 );
+
+-- Superseded-column migration: earlier version of this table stored one
+-- fungible total_copper value instead of five independent coin counts.
+alter table player_wallets add column if not exists platinum integer not null default 0;
+alter table player_wallets add column if not exists gold integer not null default 0;
+alter table player_wallets add column if not exists silver integer not null default 0;
+alter table player_wallets add column if not exists shilling integer not null default 0;
+alter table player_wallets add column if not exists copper integer not null default 0;
+alter table player_wallets drop column if exists total_copper;
 
 -- Unlike every other tab, session notes are personal to each player —
 -- everyone in a campaign shares the same maps/npcs/loot/etc., but each

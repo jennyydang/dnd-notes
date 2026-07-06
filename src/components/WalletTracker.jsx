@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { listCampaignMembers } from '../lib/campaigns.js'
-import { CURRENCIES, formatAmount, toCopper } from '../lib/currency.js'
+import { CURRENCIES, formatAmount } from '../lib/currency.js'
+
+const emptyCounts = { platinum: 0, gold: 0, silver: 0, shilling: 0, copper: 0 }
 
 const fromRow = (r) => ({
   id: r.id,
   playerId: r.player_id,
-  totalCopper: Number(r.total_copper),
+  platinum: r.platinum,
+  gold: r.gold,
+  silver: r.silver,
+  shilling: r.shilling,
+  copper: r.copper,
 })
+
+function totalValue(counts) {
+  return CURRENCIES.reduce((sum, c) => sum + (counts[c.id] || 0) * c.copperValue, 0)
+}
 
 function WalletTracker({ campaignId, playerId }) {
   const {
@@ -23,8 +33,8 @@ function WalletTracker({ campaignId, playerId }) {
       : { campaign_id: campaignId },
   })
   const [usernames, setUsernames] = useState({})
-  const [amount, setAmount] = useState('')
-  const [currency, setCurrency] = useState('gold')
+  const [counts, setCounts] = useState(emptyCounts)
+  const [initialized, setInitialized] = useState(false)
   const [txError, setTxError] = useState(null)
 
   useEffect(() => {
@@ -45,38 +55,40 @@ function WalletTracker({ campaignId, playerId }) {
   }, [campaignId])
 
   const myWallet = playerId ? wallets.find((w) => w.playerId === playerId) : null
-  const myBalance = myWallet?.totalCopper ?? 0
 
-  async function saveBalance(newTotal) {
+  // Seed the editable form from the saved wallet exactly once — after
+  // that, local edits are the source of truth until Save persists them
+  // (re-syncing on every refetch would clobber whatever the player is
+  // mid-typing).
+  useEffect(() => {
+    if (myWallet && !initialized) {
+      setCounts({
+        platinum: myWallet.platinum,
+        gold: myWallet.gold,
+        silver: myWallet.silver,
+        shilling: myWallet.shilling,
+        copper: myWallet.copper,
+      })
+      setInitialized(true)
+    }
+  }, [myWallet, initialized])
+
+  function updateCount(id, value) {
+    const n = Math.max(0, Math.floor(Number(value) || 0))
+    setCounts((prev) => ({ ...prev, [id]: n }))
+  }
+
+  async function saveWallet() {
     setTxError(null)
     try {
       if (myWallet) {
-        await updateItem(myWallet.id, { total_copper: newTotal })
+        await updateItem(myWallet.id, counts)
       } else {
-        await addItem({ total_copper: newTotal })
+        await addItem(counts)
       }
-      setAmount('')
     } catch (err) {
       setTxError(err.message)
     }
-  }
-
-  function handleSet() {
-    const n = parseFloat(amount)
-    if (!Number.isFinite(n) || n < 0) return
-    saveBalance(toCopper(n, currency))
-  }
-
-  function handleSpend() {
-    const n = parseFloat(amount)
-    if (!Number.isFinite(n) || n <= 0) return
-    saveBalance(myBalance - toCopper(n, currency))
-  }
-
-  function handleEarn() {
-    const n = parseFloat(amount)
-    if (!Number.isFinite(n) || n <= 0) return
-    saveBalance(myBalance + toCopper(n, currency))
   }
 
   if (!playerId) {
@@ -96,9 +108,7 @@ function WalletTracker({ campaignId, playerId }) {
                   {usernames[w.playerId] || 'Unknown player'}
                 </span>
                 <span className="wallet-tracker__admin-balance">
-                  {formatAmount(w.totalCopper / 1000)} gold
-                  {' · '}
-                  {formatAmount(w.totalCopper / 1)} copper
+                  {CURRENCIES.map((c) => `${w[c.id]} ${c.label.toLowerCase()}`).join(', ')}
                 </span>
               </li>
             ))}
@@ -116,57 +126,30 @@ function WalletTracker({ campaignId, playerId }) {
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
       {!loading && !error && (
-        <dl className="wallet-tracker__balance">
-          {CURRENCIES.map((c) => (
-            <div key={c.id}>
-              <dt>{c.label}</dt>
-              <dd className={myBalance < 0 ? 'wallet-tracker__balance-value--negative' : ''}>
-                {formatAmount(myBalance / c.copperValue)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      )}
-
-      <div className="wallet-tracker__transaction">
-        <div className="field">
-          <label htmlFor="wallet-amount">Amount</label>
-          <input
-            id="wallet-amount"
-            type="number"
-            min="0"
-            step="any"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="wallet-currency">Currency</label>
-          <select
-            id="wallet-currency"
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-          >
+        <>
+          <div className="wallet-tracker__counts">
             {CURRENCIES.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
+              <div className="field" key={c.id}>
+                <label htmlFor={`wallet-${c.id}`}>{c.label}</label>
+                <input
+                  id={`wallet-${c.id}`}
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={counts[c.id]}
+                  onChange={(e) => updateCount(c.id, e.target.value)}
+                />
+              </div>
             ))}
-          </select>
-        </div>
-        <div className="wallet-tracker__actions">
-          <button type="button" className="btn btn--text" onClick={handleSet}>
-            Set Balance
+          </div>
+          <p className="wallet-tracker__total">
+            Total value: {formatAmount(totalValue(counts) / 1000)} gold-equivalent
+          </p>
+          <button type="button" className="btn btn--primary" onClick={saveWallet}>
+            Save
           </button>
-          <button type="button" className="btn btn--danger" onClick={handleSpend}>
-            Spend
-          </button>
-          <button type="button" className="btn btn--primary" onClick={handleEarn}>
-            Add
-          </button>
-        </div>
-      </div>
+        </>
+      )}
       {txError && <p className="empty-state empty-state--error">{txError}</p>}
     </div>
   )
