@@ -11,6 +11,18 @@ const fromRow = (r) => ({
   notes: r.notes,
 })
 
+// Dates are stored as ISO strings (YYYY-MM-DD) from the native date picker
+// below. Older rows may still hold free-text dates from before this field
+// was a date picker — fall back to the raw value for those rather than
+// showing "Invalid Date".
+function formatSessionDate(value) {
+  if (!value) return ''
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+  const parsed = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
 function SessionNotesTab({ campaignId, playerId }) {
   // Session notes are personal — scoped to this player within the
   // campaign, not shared like every other tab. Admin has no playerId
@@ -23,6 +35,7 @@ function SessionNotesTab({ campaignId, playerId }) {
   const { items: sessions, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('session_notes', {
       fromRow,
+      orderBy: 'session_date',
       ascending: false,
       filters,
     })
@@ -110,10 +123,9 @@ function SessionNotesTab({ campaignId, playerId }) {
               <label htmlFor="session-date">Date</label>
               <input
                 id="session-date"
-                type="text"
+                type="date"
                 value={form.sessionDate}
                 onChange={(e) => setForm({ ...form, sessionDate: e.target.value })}
-                placeholder="March 3, 2026"
               />
             </div>
           </div>
@@ -158,7 +170,7 @@ function SessionNotesTab({ campaignId, playerId }) {
                   {session.title || 'Untitled Session'}
                 </h3>
                 {session.sessionDate && (
-                  <span className="session-card__date">{session.sessionDate}</span>
+                  <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
                 )}
               </div>
               <p className="session-card__notes">{session.notes}</p>

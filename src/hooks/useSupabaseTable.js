@@ -58,10 +58,15 @@ export function useSupabaseTable(
 
       if (insertError) throw new Error(insertError.message)
       const item = fromRowRef.current(data)
-      setItems((prev) => [...prev, item])
+      // Refetch rather than append locally: appending always puts the new
+      // row last, which is wrong whenever orderBy/ascending sorts by
+      // anything other than "oldest first" (e.g. session notes ordered by
+      // date, newest first) — refetching keeps local state in the same
+      // order the server would return it in.
+      await load()
       return item
     },
-    [table],
+    [table, load],
   )
 
   const updateItem = useCallback(
@@ -75,10 +80,13 @@ export function useSupabaseTable(
 
       if (updateError) throw new Error(updateError.message)
       const item = fromRowRef.current(data)
-      setItems((prev) => prev.map((existing) => (existing.id === id ? item : existing)))
+      // Same reasoning as addItem: an edit can change the very column
+      // being ordered by (e.g. a session note's date), so refetch instead
+      // of patching in place to keep the list correctly ordered.
+      await load()
       return item
     },
-    [table],
+    [table, load],
   )
 
   const removeItem = useCallback(
