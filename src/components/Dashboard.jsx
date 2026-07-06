@@ -164,6 +164,7 @@ function Dashboard({ onOpenCampaign }) {
                 type="button"
                 className="campaign-form__photo-btn"
                 onClick={() => photoInputRef.current?.click()}
+                aria-label="Choose a cover photo"
               >
                 {form.photoPreview ? (
                   <img src={form.photoPreview} alt="Campaign cover" />

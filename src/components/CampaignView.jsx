@@ -76,7 +76,7 @@ function CampaignView({ campaignId, campaignName, playerId, onBack }) {
 
       <TabNav tabs={tabs} activeTab={activeTab} onSelect={setActiveTab} onAddTab={handleAddTab} />
 
-      <main className="app__content">
+      <div className="app__content">
         {activeTab === 'sessions' && (
           <SessionNotesTab campaignId={campaignId} playerId={playerId} />
         )}
@@ -97,7 +97,7 @@ function CampaignView({ campaignId, campaignName, playerId, onBack }) {
             onDelete={() => handleDeleteTab(activeCustomTab.id)}
           />
         )}
-      </main>
+      </div>
     </div>
   )
 }

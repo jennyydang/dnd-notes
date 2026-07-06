@@ -153,6 +153,7 @@ function NpcsTab({ campaignId }) {
                 type="button"
                 className="npc-form__photo-btn"
                 onClick={() => photoInputRef.current?.click()}
+                aria-label="Choose a portrait photo"
               >
                 {form.photoPreview ? (
                   <img src={form.photoPreview} alt="NPC portrait" />

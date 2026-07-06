@@ -107,6 +107,7 @@ function NewCampaignForm({ playerId, onDone, onBack }) {
             type="button"
             className="new-or-join__photo-btn"
             onClick={() => photoInputRef.current?.click()}
+            aria-label="Choose a cover photo"
           >
             {photoPreview ? (
               <img src={photoPreview} alt="Campaign cover" />

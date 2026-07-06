@@ -62,7 +62,7 @@ function App() {
         <h1 className="app__title">Adventurer&rsquo;s Log</h1>
         <p className="app__subtitle">Dungeons &amp; Dragons campaign notes</p>
       </header>
-      {content}
+      <main>{content}</main>
     </div>
   )
 }

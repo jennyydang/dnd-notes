@@ -263,6 +263,7 @@ function PartyTab({ campaignId, playerId }) {
                 type="button"
                 className="party-form__photo-btn"
                 onClick={() => photoInputRef.current?.click()}
+                aria-label="Choose a portrait photo"
               >
                 {form.photoPreview ? (
                   <img src={form.photoPreview} alt="Party member portrait" />

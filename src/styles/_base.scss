@@ -40,6 +40,21 @@ select {
   font-family: $font-body;
 }
 
+// A single, explicit, high-contrast focus indicator for every focusable
+// element in the app (buttons, links, form fields, tabs) rather than
+// relying on inconsistent browser defaults — $gold-light passes 7:1+
+// against every background used here, comfortably clearing the 3:1
+// non-text contrast a visible focus ring needs.
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid $gold-light;
+  outline-offset: 2px;
+}
+
 ::selection {
   background: rgba($gold, 0.35);
 }

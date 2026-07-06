@@ -23,8 +23,16 @@ $green-light: #5c8f5c;
 $gray: #5a564f;
 $gray-light: #7d786e;
 
+// WCAG AAA (7:1) text-safe variants of the three colors above. -light is
+// tuned for borders/tinted backgrounds and fails 7:1 as text on our dark
+// panels; these exist only to be used as `color`, never as a background
+// or border tint (which would look washed out at these lightness levels).
+$maroon-text: #e1afaf;
+$green-text: #b1cdb1;
+$gray-text: #c5c3be;
+
 $text-light: #f4ecd8;
-$text-muted: #b7ab8e;
+$text-muted: #bbb094; // nudged from #b7ab8e for 7:1 AAA contrast on the lightest panel bg
 
 // Type
 $font-display: 'Cinzel', 'Georgia', serif;

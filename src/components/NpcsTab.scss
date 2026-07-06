@@ -154,13 +154,13 @@
 .status-badge {
   &--alive {
     background: rgba($green-light, 0.18);
-    color: $green-light;
+    color: $green-text;
     border: 1px solid rgba($green-light, 0.4);
   }
 
   &--deceased {
     background: rgba($maroon-light, 0.18);
-    color: $maroon-light;
+    color: $maroon-text;
     border: 1px solid rgba($maroon-light, 0.4);
   }
 

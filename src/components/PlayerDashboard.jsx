@@ -155,6 +155,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
 
   return (
     <section className="dashboard">
+      <h2>Your Campaigns</h2>
       <div className="dashboard__toolbar">
         <span className="dashboard__welcome">Signed in as {username}</span>
         <div className="dashboard__toolbar-actions">
@@ -190,6 +191,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
                 type="button"
                 className="campaign-form__photo-btn"
                 onClick={() => photoInputRef.current?.click()}
+                aria-label="Choose a cover photo"
               >
                 {form.photoPreview ? (
                   <img src={form.photoPreview} alt="Campaign cover" />

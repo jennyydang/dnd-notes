@@ -187,7 +187,6 @@
       min-height: 4rem;
 
       &:focus {
-        outline: none;
         border-color: $gold;
       }
     }
@@ -216,7 +215,7 @@
 
   &--npc {
     background: rgba($gray-light, 0.18);
-    color: $gray-light;
+    color: $gray-text;
     border: 1px solid rgba($gray-light, 0.4);
   }
 }
