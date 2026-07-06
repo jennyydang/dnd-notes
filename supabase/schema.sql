@@ -285,17 +285,22 @@ create policy "anon full access campaign-covers bucket"
 -- vs. real Supabase Auth). The literal admin password below is stored
 -- in plaintext in this file — fine for a private repo, not a secret in
 -- any strong sense.
+--
+-- `extensions` is included in search_path (alongside `public`) because
+-- Supabase installs pgcrypto into an `extensions` schema by default, not
+-- `public` — without it, crypt()/gen_salt() below can't be found and
+-- create_player/verify_login fail even though the extension exists.
 
 create or replace function verify_admin_password(p_admin_password text)
 returns boolean
-language sql security definer set search_path = public, pg_temp as $$
+language sql security definer set search_path = public, extensions, pg_temp as $$
   select p_admin_password = 'dndrules';
 $$;
 grant execute on function verify_admin_password(text) to anon;
 
 create or replace function create_player(p_username text, p_password text, p_admin_password text)
 returns uuid
-language plpgsql security definer set search_path = public, pg_temp as $$
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 declare
   v_id uuid;
 begin
@@ -322,7 +327,7 @@ grant execute on function create_player(text, text, text) to anon;
 
 create or replace function verify_login(p_username text, p_password text)
 returns uuid
-language plpgsql security definer set search_path = public, pg_temp as $$
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 declare
   v_player players%rowtype;
 begin
@@ -339,7 +344,7 @@ grant execute on function verify_login(text, text) to anon;
 
 create or replace function list_players(p_admin_password text)
 returns table(id uuid, username text, created_at timestamptz)
-language plpgsql security definer set search_path = public, pg_temp as $$
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
   if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
@@ -357,7 +362,7 @@ create or replace function create_campaign(
   p_cover_image_path text default null
 )
 returns table(id uuid, join_code text)
-language plpgsql security definer set search_path = public, pg_temp as $$
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 declare
   v_alphabet text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; -- no 0/O/1/I/L, easy to read aloud
   v_code text;
@@ -394,7 +399,7 @@ grant execute on function create_campaign(uuid, text, text, text) to anon;
 
 create or replace function join_campaign(p_player_id uuid, p_join_code text)
 returns uuid
-language plpgsql security definer set search_path = public, pg_temp as $$
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 declare
   v_campaign_id uuid;
 begin
@@ -417,7 +422,7 @@ grant execute on function join_campaign(uuid, text) to anon;
 
 create or replace function list_campaign_members(p_campaign_id uuid)
 returns table(membership_id uuid, player_id uuid, username text, role text)
-language sql security definer set search_path = public, pg_temp as $$
+language sql security definer set search_path = public, extensions, pg_temp as $$
   select cm.id, cm.player_id, p.username, cm.role
   from campaign_members cm
   join players p on p.id = cm.player_id
