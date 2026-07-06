@@ -1,8 +1,9 @@
 # Adventurer's Log
 
-A D&D campaign notes app built with React and SCSS. Start at a dashboard
-listing your campaigns — create, edit, archive, or delete them — and open
-one to get its own Adventurer's Log with seven built-in tabs, in this order:
+A D&D campaign notes app built with React and SCSS. Players log in and see
+a dashboard of just the campaigns they created or joined — create, edit,
+archive, or delete the ones you created — and open one to get its own
+Adventurer's Log with seven built-in tabs, in this order:
 
 - **Session Notes** — a recap log of each game session (title, date, and
   notes), newest first.
@@ -33,8 +34,10 @@ so your whole party can share one set of notes from any browser.
 2. In the Supabase dashboard, go to the **SQL Editor**, paste the contents
    of [`supabase/schema.sql`](./supabase/schema.sql), and run it. This
    creates the `campaigns` table plus `maps`, `npcs`, `loot`, `quests`,
-   `party_members`, `session_notes`, `lore_entries`, `custom_tabs`, and
-   `custom_tab_entries` (each scoped to a campaign via `campaign_id`), and
+   `party_members`, `session_notes`, `lore_entries`, `custom_tabs`,
+   `custom_tab_entries`, `players`, and `campaign_members` (each of the
+   first group scoped to a campaign via `campaign_id`), a
+   `campaign_memberships` view, several login/join Postgres functions, and
    the `maps`, `npc-portraits`, `party-portraits`, and `campaign-covers`
    storage buckets. It's safe to re-run the whole file any time — every
    statement is idempotent. If you're upgrading a database that already
@@ -53,14 +56,37 @@ so your whole party can share one set of notes from any browser.
    npm install
    npm run dev
    ```
+6. Visit `/admin` on your deployed (or local) app and enter the admin
+   password (`dndrules` — see below to change it) to create the first
+   player account. Without at least one player account, the main app URL
+   only shows a login screen with no way in.
 
-### A note on access
+### Logins and access model
 
-This app has **no login** — it's built for a small group sharing one
-private link, so anyone with the app URL can read and write all the
-data. The Supabase policies grant the public `anon` key full access on
-purpose. Don't post the app URL somewhere public, and don't reuse this
-setup for anything that needs real access control.
+- **Admin**: visiting `/admin` prompts for a password (`dndrules`,
+  hardcoded in `supabase/schema.sql` — search that file for `dndrules`
+  and replace both occurrences, then re-run the script, if you want to
+  change it). The admin can create player accounts and sees every
+  campaign, unrestricted.
+- **Players**: created only by the admin — there's no self-signup. A
+  player logs in at the normal app URL and sees a personal dashboard of
+  just the campaigns they created or joined. Creating a campaign gives it
+  a short join code to share with your group; anyone who enters that code
+  is added as a member. The creator (or admin) can rename/archive/delete
+  a campaign and manage its members; other members can fully edit tab
+  content but don't see those campaign-management controls.
+- **This is a lightweight login, not real database-level security.**
+  Supabase's Row Level Security can only truly isolate individual users
+  with its own built-in Auth system (real signed-in sessions), which this
+  app doesn't use — everything still goes through one shared public
+  `anon` key, same as before logins existed. In practice this means: the
+  `players` table itself is locked down (no anon policies at all — the
+  anon key can never read password hashes or dump usernames), but a
+  technically sophisticated person with access to the deployed app could
+  still bypass the login UI entirely and query campaign data directly.
+  This is the same "small trusted group" tradeoff this app has always
+  made, just now with proper accounts and personalized dashboards on top
+  of it. Don't reuse the admin or player passwords anywhere sensitive.
 
 ## Scripts
 

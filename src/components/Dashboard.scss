@@ -6,6 +6,19 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  &__toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__welcome {
+    color: $text-muted;
+    font-style: italic;
   }
 }
 
@@ -122,6 +135,21 @@
   &__name {
     font-size: 1.2rem;
     color: $parchment;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  &__join-code {
+    font-family: monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: $gold-light;
+    background: rgba($gold, 0.12);
+    border: 1px solid rgba($gold-light, 0.4);
+    border-radius: $radius;
+    padding: 0.1rem 0.45rem;
   }
 
   &__description {
@@ -133,6 +161,7 @@
 
   &__actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.5rem;
     padding: 0.5rem 1.25rem 1rem;

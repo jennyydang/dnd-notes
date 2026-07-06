@@ -24,6 +24,38 @@ insert into campaigns (id, name)
 values ('00000000-0000-0000-0000-000000000001', 'My Campaign')
 on conflict (id) do nothing;
 
+-- ── Players & campaign membership ────────────────────────────────────
+-- Player accounts are created only by the admin (via the create_player
+-- function further down) — there's no self-signup. The players table
+-- deliberately has NO anon policies at all: the only way to read or
+-- write it is through the SECURITY DEFINER functions below, so the
+-- anon key can never read password_hash or dump usernames directly.
+-- If this table ever gets a policy or a raw grant, that protection
+-- is gone.
+
+create table if not exists players (
+  id uuid primary key default gen_random_uuid(),
+  username text not null unique,
+  password_hash text not null,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists players_username_lower_idx on players (lower(username));
+
+create table if not exists campaign_members (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  role text not null default 'player' check (role in ('creator','player')),
+  created_at timestamptz not null default now(),
+  unique (campaign_id, player_id)
+);
+
+-- Nullable: the pre-existing default "My Campaign" row above has neither
+-- (unique allows multiple nulls, so this doesn't block anything).
+alter table campaigns add column if not exists join_code text unique;
+alter table campaigns add column if not exists created_by uuid references players(id);
+
 -- ── Tables ──────────────────────────────────────────────────────────
 
 create table if not exists maps (
@@ -134,6 +166,25 @@ begin
   end loop;
 end $$;
 
+-- ── Campaign memberships view ─────────────────────────────────────────
+-- Lets a player's personal dashboard query "campaigns I belong to" as a
+-- normal select, reusing the app's generic data-fetching hook. Writes
+-- (rename/archive/delete) still go directly against the campaigns
+-- table, since a multi-table join view isn't writable.
+--
+-- GUARDRAIL: never join `players` into any view exposed to anon.
+-- Postgres evaluates a view's underlying RLS as the VIEW OWNER, not the
+-- querying role, so a view joining players would silently let anon
+-- read password_hash despite players having zero anon policies. This
+-- view only touches campaigns + campaign_members, neither of which has
+-- secrets, so it's safe.
+create or replace view campaign_memberships as
+select cm.player_id, cm.role, c.*
+from campaign_members cm
+join campaigns c on c.id = cm.campaign_id;
+
+grant select on campaign_memberships to anon;
+
 -- ── Row Level Security ──────────────────────────────────────────────
 -- No login for this app: everyone who has the app URL shares access, so
 -- the anon role gets full read/write/delete. Anyone who obtains the
@@ -150,6 +201,12 @@ alter table session_notes       enable row level security;
 alter table lore_entries        enable row level security;
 alter table custom_tabs         enable row level security;
 alter table custom_tab_entries  enable row level security;
+alter table campaign_members    enable row level security;
+
+-- players: RLS enabled, but INTENTIONALLY no policy of any kind — this is
+-- what blocks the anon role from reading password_hash. All access goes
+-- through the SECURITY DEFINER functions below. Do not add a policy here.
+alter table players enable row level security;
 
 drop policy if exists "anon full access campaigns"          on campaigns;
 drop policy if exists "anon full access maps"               on maps;
@@ -161,6 +218,7 @@ drop policy if exists "anon full access session_notes"      on session_notes;
 drop policy if exists "anon full access lore_entries"       on lore_entries;
 drop policy if exists "anon full access custom_tabs"        on custom_tabs;
 drop policy if exists "anon full access custom_tab_entries" on custom_tab_entries;
+drop policy if exists "anon full access campaign_members"    on campaign_members;
 
 create policy "anon full access campaigns"          on campaigns          for all to anon using (true) with check (true);
 create policy "anon full access maps"               on maps               for all to anon using (true) with check (true);
@@ -172,6 +230,7 @@ create policy "anon full access session_notes"      on session_notes      for al
 create policy "anon full access lore_entries"       on lore_entries       for all to anon using (true) with check (true);
 create policy "anon full access custom_tabs"        on custom_tabs        for all to anon using (true) with check (true);
 create policy "anon full access custom_tab_entries" on custom_tab_entries for all to anon using (true) with check (true);
+create policy "anon full access campaign_members"   on campaign_members   for all to anon using (true) with check (true);
 
 -- ── Storage buckets ───────────────────────────────────────────────────
 
@@ -212,7 +271,163 @@ create policy "anon full access campaign-covers bucket"
   on storage.objects for all to anon
   using (bucket_id = 'campaign-covers') with check (bucket_id = 'campaign-covers');
 
+-- ── Functions: player accounts, admin gate, and campaign joining ──────
+-- All SECURITY DEFINER (run with the function owner's privileges, which
+-- is what lets them read/write `players` despite it having zero anon
+-- policies) and pinned with `set search_path` to guard against
+-- search-path hijacking. Each admin-only function re-checks the admin
+-- password INSIDE the function body — the client's "admin session" is
+-- just a UI convenience flag, not a security boundary, so this re-check
+-- is what actually stops a random anon caller from doing admin things.
+--
+-- This is a deliberately lightweight, UI-enforced permission model, not
+-- real per-player database security (see README.md for the tradeoffs
+-- vs. real Supabase Auth). The literal admin password below is stored
+-- in plaintext in this file — fine for a private repo, not a secret in
+-- any strong sense.
+
+create or replace function verify_admin_password(p_admin_password text)
+returns boolean
+language sql security definer set search_path = public, pg_temp as $$
+  select p_admin_password = 'dndrules';
+$$;
+grant execute on function verify_admin_password(text) to anon;
+
+create or replace function create_player(p_username text, p_password text, p_admin_password text)
+returns uuid
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_id uuid;
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+
+  if trim(p_username) = '' then
+    raise exception 'Username is required';
+  end if;
+
+  begin
+    insert into players (username, password_hash)
+    values (trim(p_username), crypt(p_password, gen_salt('bf', 8)))
+    returning id into v_id;
+  exception when unique_violation then
+    raise exception 'That username is already taken';
+  end;
+
+  return v_id;
+end;
+$$;
+grant execute on function create_player(text, text, text) to anon;
+
+create or replace function verify_login(p_username text, p_password text)
+returns uuid
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_player players%rowtype;
+begin
+  select * into v_player from players where lower(username) = lower(trim(p_username));
+
+  if v_player.id is null or v_player.password_hash <> crypt(p_password, v_player.password_hash) then
+    raise exception 'Invalid username or password';
+  end if;
+
+  return v_player.id;
+end;
+$$;
+grant execute on function verify_login(text, text) to anon;
+
+create or replace function list_players(p_admin_password text)
+returns table(id uuid, username text, created_at timestamptz)
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+
+  return query select p.id, p.username, p.created_at from players p order by p.created_at;
+end;
+$$;
+grant execute on function list_players(text) to anon;
+
+create or replace function create_campaign(
+  p_player_id uuid,
+  p_name text,
+  p_description text default '',
+  p_cover_image_path text default null
+)
+returns table(id uuid, join_code text)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_alphabet text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; -- no 0/O/1/I/L, easy to read aloud
+  v_code text;
+  v_campaign_id uuid;
+  v_attempts int := 0;
+  i int;
+begin
+  loop
+    v_code := '';
+    for i in 1..6 loop
+      v_code := v_code || substr(v_alphabet, (floor(random() * length(v_alphabet)) + 1)::int, 1);
+    end loop;
+
+    begin
+      insert into campaigns (name, description, cover_image_path, created_by, join_code)
+      values (p_name, p_description, p_cover_image_path, p_player_id, v_code)
+      returning campaigns.id into v_campaign_id;
+      exit;
+    exception when unique_violation then
+      v_attempts := v_attempts + 1;
+      if v_attempts > 20 then
+        raise exception 'Could not generate a unique join code, please try again';
+      end if;
+    end;
+  end loop;
+
+  insert into campaign_members (campaign_id, player_id, role)
+  values (v_campaign_id, p_player_id, 'creator');
+
+  return query select v_campaign_id, v_code;
+end;
+$$;
+grant execute on function create_campaign(uuid, text, text, text) to anon;
+
+create or replace function join_campaign(p_player_id uuid, p_join_code text)
+returns uuid
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_campaign_id uuid;
+begin
+  select campaigns.id into v_campaign_id
+  from campaigns
+  where upper(join_code) = upper(trim(p_join_code));
+
+  if v_campaign_id is null then
+    raise exception 'Invalid join code';
+  end if;
+
+  insert into campaign_members (campaign_id, player_id, role)
+  values (v_campaign_id, p_player_id, 'player')
+  on conflict (campaign_id, player_id) do nothing;
+
+  return v_campaign_id;
+end;
+$$;
+grant execute on function join_campaign(uuid, text) to anon;
+
+create or replace function list_campaign_members(p_campaign_id uuid)
+returns table(membership_id uuid, player_id uuid, username text, role text)
+language sql security definer set search_path = public, pg_temp as $$
+  select cm.id, cm.player_id, p.username, cm.role
+  from campaign_members cm
+  join players p on p.id = cm.player_id
+  where cm.campaign_id = p_campaign_id;
+$$;
+grant execute on function list_campaign_members(uuid) to anon;
+
 -- If inserts/updates fail with "permission denied for schema public",
--- run this once too (RLS policies still apply on top of these grants):
+-- run this once too (RLS policies still apply on top of these grants,
+-- but note this would also grant anon raw table access to `players` if
+-- ever run — re-check the players table has no policies afterward):
 -- grant usage on schema public to anon, authenticated;
 -- grant all on all tables in schema public to anon, authenticated;

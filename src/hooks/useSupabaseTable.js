@@ -19,33 +19,33 @@ export function useSupabaseTable(
   filtersRef.current = filters
   const filterKey = JSON.stringify(filters)
 
+  const requestIdRef = useRef(0)
+
+  const load = useCallback(async () => {
+    const requestId = ++requestIdRef.current
+    setLoading(true)
+    setError(null)
+    let query = supabase.from(table).select('*').order(orderBy, { ascending })
+    for (const [column, value] of Object.entries(filtersRef.current)) {
+      query = query.eq(column, value)
+    }
+    const { data, error: fetchError } = await query
+
+    if (requestIdRef.current !== requestId) return // superseded by a newer load()
+
+    if (fetchError) {
+      setError(fetchError.message)
+    } else {
+      setItems(data.map((row) => fromRowRef.current(row)))
+    }
+    setLoading(false)
+  }, [table, orderBy, ascending])
+
   useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      setLoading(true)
-      setError(null)
-      let query = supabase.from(table).select('*').order(orderBy, { ascending })
-      for (const [column, value] of Object.entries(filtersRef.current)) {
-        query = query.eq(column, value)
-      }
-      const { data, error: fetchError } = await query
-
-      if (cancelled) return
-
-      if (fetchError) {
-        setError(fetchError.message)
-      } else {
-        setItems(data.map((row) => fromRowRef.current(row)))
-      }
-      setLoading(false)
-    }
-
     load()
-    return () => {
-      cancelled = true
-    }
-  }, [table, orderBy, ascending, filterKey])
+    // filterKey deliberately triggers a refetch even though `load` itself
+    // reads filters via a ref (so its own identity doesn't depend on them).
+  }, [load, filterKey])
 
   const addItem = useCallback(
     async (payload) => {
@@ -90,5 +90,5 @@ export function useSupabaseTable(
     [table],
   )
 
-  return { items, loading, error, addItem, updateItem, removeItem }
+  return { items, loading, error, addItem, updateItem, removeItem, refetch: load }
 }
