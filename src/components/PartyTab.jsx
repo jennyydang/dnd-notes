@@ -18,6 +18,7 @@ const emptyForm = {
   memberType: 'Player',
   playerName: '',
   raceClass: '',
+  level: 1,
   notes: '',
   photoFile: null,
   photoPreview: '',
@@ -30,6 +31,7 @@ const fromRow = (r) => ({
   memberType: r.member_type,
   playerName: r.player_name,
   raceClass: r.race_class,
+  level: r.level,
   notes: r.notes,
   photo: getPublicUrl(BUCKET, r.photo_path),
   claimedBy: r.claimed_by,
@@ -110,6 +112,7 @@ function PartyTab({ campaignId, playerId }) {
       memberType: member.memberType,
       playerName: member.playerName,
       raceClass: member.raceClass,
+      level: member.level,
       notes: member.notes,
       photoFile: null,
       photoPreview: member.photo || '',
@@ -158,6 +161,7 @@ function PartyTab({ campaignId, playerId }) {
       member_type: form.memberType,
       player_name: form.memberType === 'Player' ? form.playerName : '',
       race_class: form.raceClass,
+      level: Math.min(20, Math.max(1, Math.floor(Number(form.level)) || 1)),
       notes: form.notes,
     }
 
@@ -328,6 +332,18 @@ function PartyTab({ campaignId, playerId }) {
                   placeholder="Half-elf Ranger"
                 />
               </div>
+              <div className="field">
+                <label htmlFor="party-level">Level</label>
+                <input
+                  id="party-level"
+                  type="number"
+                  min="1"
+                  max="20"
+                  step="1"
+                  value={form.level}
+                  onChange={(e) => setForm({ ...form, level: e.target.value })}
+                />
+              </div>
             </div>
           </div>
           <div className="field">
@@ -386,6 +402,10 @@ function PartyTab({ campaignId, playerId }) {
                 <div>
                   <dt>Race / Class</dt>
                   <dd>{member.raceClass || '—'}</dd>
+                </div>
+                <div>
+                  <dt>Level</dt>
+                  <dd>{member.level}</dd>
                 </div>
                 {member.memberType === 'Player' && (
                   <div>

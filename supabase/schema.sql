@@ -124,6 +124,7 @@ create table if not exists party_members (
   member_type text not null default 'Player'
     check (member_type in ('Player','NPC')),
   race_class text not null default '',
+  level integer not null default 1,       -- character level; drives spell-level availability in the Spells tab
   notes text not null default '',
   photo_path text,                        -- object key in the "party-portraits" bucket, nullable
   claimed_by uuid references players(id) on delete set null, -- the player who claimed this as their character
@@ -131,6 +132,10 @@ create table if not exists party_members (
 );
 
 alter table party_members add column if not exists claimed_by uuid references players(id) on delete set null;
+alter table party_members add column if not exists level integer not null default 1;
+
+alter table party_members drop constraint if exists party_members_level_check;
+alter table party_members add constraint party_members_level_check check (level between 1 and 20);
 
 -- One claimed character per player PER CAMPAIGN — not globally, since a
 -- player in multiple campaigns claims a separate character in each one.
@@ -150,6 +155,25 @@ create table if not exists party_notes (
   notes text not null default '',
   created_at timestamptz not null default now(),
   unique (party_member_id, author_player_id)
+);
+
+-- Each logged-in player's private spellbook for a campaign. Same privacy
+-- model as session_notes/party_notes: RLS is anon-full-access, and the
+-- app only ever queries/writes rows scoped to player_id = the logged-in
+-- player; admin (no player_id) sees every player's spells. level 0 is a
+-- cantrip, 1-9 are spell levels. The Spells tab compares each spell's
+-- level against the player's claimed party_members.level to grey out
+-- spells they can't cast yet — that comparison happens client-side, not
+-- via any constraint here, since a spell's level is independent of
+-- whether it's currently "locked" for a given character.
+create table if not exists spells (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  player_id uuid references players(id) on delete cascade,
+  name text not null,
+  level integer not null default 0 check (level between 0 and 9),
+  details text not null default '',
+  created_at timestamptz not null default now()
 );
 
 -- Each logged-in player's coin purse for a campaign — five independent
@@ -289,6 +313,7 @@ alter table loot                enable row level security;
 alter table quests              enable row level security;
 alter table party_members       enable row level security;
 alter table party_notes         enable row level security;
+alter table spells              enable row level security;
 alter table player_wallets      enable row level security;
 alter table session_notes       enable row level security;
 alter table lore_entries        enable row level security;
@@ -308,6 +333,7 @@ drop policy if exists "anon full access loot"               on loot;
 drop policy if exists "anon full access quests"             on quests;
 drop policy if exists "anon full access party_members"      on party_members;
 drop policy if exists "anon full access party_notes"        on party_notes;
+drop policy if exists "anon full access spells"             on spells;
 drop policy if exists "anon full access player_wallets"     on player_wallets;
 drop policy if exists "anon full access session_notes"      on session_notes;
 drop policy if exists "anon full access lore_entries"       on lore_entries;
@@ -322,6 +348,7 @@ create policy "anon full access loot"               on loot               for al
 create policy "anon full access quests"             on quests             for all to anon using (true) with check (true);
 create policy "anon full access party_members"      on party_members      for all to anon using (true) with check (true);
 create policy "anon full access party_notes"        on party_notes        for all to anon using (true) with check (true);
+create policy "anon full access spells"              on spells             for all to anon using (true) with check (true);
 create policy "anon full access player_wallets"     on player_wallets     for all to anon using (true) with check (true);
 create policy "anon full access session_notes"      on session_notes      for all to anon using (true) with check (true);
 create policy "anon full access lore_entries"       on lore_entries       for all to anon using (true) with check (true);

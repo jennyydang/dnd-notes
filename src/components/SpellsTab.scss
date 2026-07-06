@@ -1,0 +1,123 @@
+@use '../styles/variables' as *;
+
+.spells-tab {
+  &__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.25rem;
+  }
+}
+
+.spell-form {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+.spells-section {
+  margin-bottom: 1.75rem;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: $text-muted;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba($gold-dim, 0.3);
+  }
+
+  &__badge {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $gold-light;
+    background: rgba($gold-light, 0.15);
+    border: 1px solid rgba($gold-light, 0.4);
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+  }
+
+  &--current &__title {
+    color: $gold-light;
+    border-bottom-color: rgba($gold-light, 0.5);
+  }
+}
+
+.spell-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.spell-card {
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__name {
+    font-size: 1.15rem;
+    color: $parchment;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $text-muted;
+    background: rgba($gray-light, 0.18);
+    border: 1px solid rgba($gray-light, 0.4);
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+  }
+
+  &__details {
+    margin: 0;
+    color: $text-light;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+
+  &--locked {
+    opacity: 0.55;
+
+    .spell-card__name {
+      color: $text-muted;
+    }
+  }
+}

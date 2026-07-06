@@ -7,6 +7,7 @@ import NpcsTab from './NpcsTab.jsx'
 import LootTab from './LootTab.jsx'
 import QuestsTab from './QuestsTab.jsx'
 import SessionNotesTab from './SessionNotesTab.jsx'
+import SpellsTab from './SpellsTab.jsx'
 import ToolsTab from './ToolsTab.jsx'
 import CustomTab from './CustomTab.jsx'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
@@ -14,6 +15,7 @@ import './CampaignView.scss'
 
 const BUILT_IN_TABS = [
   { id: 'sessions', label: 'Session Notes' },
+  { id: 'spells', label: 'Spells' },
   { id: 'party', label: 'Party' },
   { id: 'maps', label: 'Maps' },
   { id: 'loot', label: 'Loot' },
@@ -78,6 +80,7 @@ function CampaignView({ campaignId, campaignName, playerId, onBack }) {
         {activeTab === 'sessions' && (
           <SessionNotesTab campaignId={campaignId} playerId={playerId} />
         )}
+        {activeTab === 'spells' && <SpellsTab campaignId={campaignId} playerId={playerId} />}
         {activeTab === 'party' && <PartyTab campaignId={campaignId} playerId={playerId} />}
         {activeTab === 'maps' && <MapsTab campaignId={campaignId} />}
         {activeTab === 'loot' && <LootTab campaignId={campaignId} />}
