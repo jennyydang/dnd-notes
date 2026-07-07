@@ -10,7 +10,7 @@ import {
   updatePlayer,
   verifyAdminPassword,
 } from '../lib/auth.js'
-import { addPlayerToCampaign, listAllMemberships } from '../lib/campaigns.js'
+import { addPlayerToCampaign, listAllMemberships, setMembershipRole } from '../lib/campaigns.js'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './AdminGate.scss'
 
@@ -184,6 +184,16 @@ function ManagePlayers({ adminPassword }) {
     }
   }
 
+  async function toggleDm(playerId, membership) {
+    setError(null)
+    try {
+      await setMembershipRole(playerId, membership.campaignId, membership.role === 'dm' ? 'player' : 'dm')
+      await loadAll()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const membershipsByPlayer = {}
   for (const m of memberships) {
     if (!membershipsByPlayer[m.playerId]) membershipsByPlayer[m.playerId] = []
@@ -311,6 +321,15 @@ function ManagePlayers({ adminPassword }) {
                           <span className="manage-players__join-code">{m.joinCode}</span>
                         )}
                         <span className="manage-players__role">{m.role}</span>
+                        {m.role !== 'creator' && (
+                          <button
+                            type="button"
+                            className="btn btn--text"
+                            onClick={() => toggleDm(player.id, m)}
+                          >
+                            {m.role === 'dm' ? 'Remove DM' : 'Make DM'}
+                          </button>
+                        )}
                       </span>
                     ))
                   )}

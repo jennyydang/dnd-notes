@@ -36,6 +36,19 @@ export async function addPlayerToCampaign(playerId, campaignId) {
   if (error) throw new Error(error.message)
 }
 
+// Promotes/demotes a player's role within one campaign — used by the admin
+// panel to make someone a DM (or undo that). 'dm' gets the same in-app
+// access as 'creator' (see PlayerDashboard's isManager check); 'creator'
+// itself is never reassigned this way, it's fixed at campaign creation.
+export async function setMembershipRole(playerId, campaignId, role) {
+  const { error } = await supabase
+    .from('campaign_members')
+    .update({ role })
+    .eq('campaign_id', campaignId)
+    .eq('player_id', playerId)
+  if (error) throw new Error(error.message)
+}
+
 export async function listCampaignMembers(campaignId) {
   const { data, error } = await supabase.rpc('list_campaign_members', {
     p_campaign_id: campaignId,

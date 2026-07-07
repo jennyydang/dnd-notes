@@ -294,7 +294,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
                   )}
                 </div>
               </button>
-              {campaign.role === 'creator' && (
+              {(campaign.role === 'creator' || campaign.role === 'dm') && (
                 <div className="campaign-card__actions">
                   <button
                     type="button"

@@ -55,10 +55,17 @@ create table if not exists campaign_members (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references campaigns(id) on delete cascade,
   player_id uuid not null references players(id) on delete cascade,
-  role text not null default 'player' check (role in ('creator','player')),
+  role text not null default 'player' check (role in ('creator','player','dm')),
   created_at timestamptz not null default now(),
   unique (campaign_id, player_id)
 );
+
+-- 'dm' is an admin-assignable role (see set_membership_role below) granting
+-- the same in-app access as 'creator' — re-run the check to widen it on
+-- databases that already had this table with only 'creator'/'player'.
+alter table campaign_members drop constraint if exists campaign_members_role_check;
+alter table campaign_members add constraint campaign_members_role_check
+  check (role in ('creator','player','dm'));
 
 -- Nullable: the pre-existing default "My Campaign" row above has neither
 -- (unique allows multiple nulls, so this doesn't block anything).
