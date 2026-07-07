@@ -10,7 +10,8 @@ import {
   updatePlayer,
   verifyAdminPassword,
 } from '../lib/auth.js'
-import { listAllMemberships } from '../lib/campaigns.js'
+import { addPlayerToCampaign, listAllMemberships } from '../lib/campaigns.js'
+import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './AdminGate.scss'
 
 function AdminGate({ onOpenCampaign }) {
@@ -79,6 +80,8 @@ function AdminGate({ onOpenCampaign }) {
   )
 }
 
+const campaignFromRow = (r) => ({ id: r.id, name: r.name, archived: r.archived })
+
 function ManagePlayers({ adminPassword }) {
   const [players, setPlayers] = useState([])
   const [memberships, setMemberships] = useState([])
@@ -86,7 +89,10 @@ function ManagePlayers({ adminPassword }) {
   const [error, setError] = useState(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [campaignId, setCampaignId] = useState('')
   const [formError, setFormError] = useState(null)
+  const { items: campaigns } = useSupabaseTable('campaigns', { fromRow: campaignFromRow })
+  const joinableCampaigns = campaigns.filter((c) => !c.archived)
   const [editingId, setEditingId] = useState(null)
   const [editUsername, setEditUsername] = useState('')
   const [editPassword, setEditPassword] = useState('')
@@ -117,9 +123,22 @@ function ManagePlayers({ adminPassword }) {
     if (!username.trim() || !password) return
     setFormError(null)
     try {
-      await createPlayer(username, password, adminPassword)
+      const newPlayerId = await createPlayer(username, password, adminPassword)
+      if (campaignId) {
+        try {
+          await addPlayerToCampaign(newPlayerId, campaignId)
+        } catch (err) {
+          setFormError(`Player was created, but couldn't be added to that campaign: ${err.message}`)
+          setUsername('')
+          setPassword('')
+          setCampaignId('')
+          await loadAll()
+          return
+        }
+      }
       setUsername('')
       setPassword('')
+      setCampaignId('')
       await loadAll()
     } catch (err) {
       setFormError(err.message)
@@ -195,6 +214,21 @@ function ManagePlayers({ adminPassword }) {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+        </div>
+        <div className="field">
+          <label htmlFor="new-player-campaign">Add to campaign</label>
+          <select
+            id="new-player-campaign"
+            value={campaignId}
+            onChange={(e) => setCampaignId(e.target.value)}
+          >
+            <option value="">No campaign (share the join code instead)</option>
+            {joinableCampaigns.map((campaign) => (
+              <option key={campaign.id} value={campaign.id}>
+                {campaign.name}
+              </option>
+            ))}
+          </select>
         </div>
         <button type="submit" className="btn btn--primary">
           + Add Player

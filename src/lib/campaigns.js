@@ -21,6 +21,21 @@ export async function joinCampaign(playerId, joinCode) {
   return data
 }
 
+// Same effect as joinCampaign, but by campaign id instead of join code —
+// used by the admin panel to add a player straight into a campaign it
+// already knows the id of, so the player never needs to be handed a code.
+// ignoreDuplicates mirrors join_campaign's "on conflict do nothing": adding
+// someone who's already a member is a no-op, not an error.
+export async function addPlayerToCampaign(playerId, campaignId) {
+  const { error } = await supabase
+    .from('campaign_members')
+    .upsert(
+      { campaign_id: campaignId, player_id: playerId, role: 'player' },
+      { onConflict: 'campaign_id,player_id', ignoreDuplicates: true },
+    )
+  if (error) throw new Error(error.message)
+}
+
 export async function listCampaignMembers(campaignId) {
   const { data, error } = await supabase.rpc('list_campaign_members', {
     p_campaign_id: campaignId,
