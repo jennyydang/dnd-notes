@@ -139,7 +139,13 @@ function SpellsTab({ campaignId, playerId }) {
         </button>
       </div>
 
-      <TabNav tabs={SPELL_VIEWS} activeTab={view} onSelect={setView} />
+      <TabNav
+        tabs={SPELL_VIEWS}
+        activeTab={view}
+        onSelect={setView}
+        className="tab-nav--pill"
+        label="Spell level filter"
+      />
 
       {playerId && myLevel === undefined && (
         <p className="empty-state">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './TabNav.scss'
 
-function TabNav({ tabs, activeTab, onSelect, onAddTab }) {
+function TabNav({ tabs, activeTab, onSelect, onAddTab, className, label = 'Campaign sections' }) {
   const [isAdding, setIsAdding] = useState(false)
   const [name, setName] = useState('')
 
@@ -19,8 +19,8 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab }) {
   }
 
   return (
-    <nav className="tab-nav">
-      <div className="tab-nav__list" role="tablist" aria-label="Campaign sections">
+    <nav className={`tab-nav${className ? ` ${className}` : ''}`}>
+      <div className="tab-nav__list" role="tablist" aria-label={label}>
         {tabs.map((tab) => (
           <button
             key={tab.id}

@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .tab-nav {
@@ -71,6 +72,37 @@
     &--active {
       color: $gold-light;
       border-bottom-color: $gold;
+    }
+  }
+
+  // A compact pill segmented control, for using TabNav as an in-page
+  // filter (e.g. Cantrips/Spells, loot by holder) rather than as page-level
+  // navigation — set apart so it doesn't read as another layer of nav
+  // alongside the underlined campaign tab bar.
+  &--pill {
+    display: inline-flex;
+    width: fit-content;
+    border-bottom: none;
+    background: $bg-deep;
+    border: 1px solid rgba($gold-dim, 0.5);
+    border-radius: 999px;
+    padding: 0.3rem;
+    margin-bottom: 1.25rem;
+
+    .tab-nav__list {
+      gap: 0.25rem;
+    }
+
+    .tab-nav__item {
+      border-bottom: none;
+      border-radius: 999px;
+      padding: 0.45rem 1.25rem;
+      font-size: 0.85rem;
+
+      &--active {
+        color: $ink;
+        background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
+      }
     }
   }
 }

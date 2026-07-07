@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import TabNav from './TabNav.jsx'
 import './LootTab.scss'
+
+const ALL_HOLDERS = 'all'
+const UNCLAIMED = '__unclaimed__'
 
 const emptyForm = { item: '', foundAt: '', holder: '', notes: '' }
 
@@ -19,6 +23,33 @@ function LootTab({ campaignId }) {
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
+  const [holderView, setHolderView] = useState(ALL_HOLDERS)
+
+  const holders = [...new Set(loot.map((entry) => entry.holder.trim()).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b),
+  )
+  const hasUnclaimed = loot.some((entry) => !entry.holder.trim())
+
+  const holderTabs = [
+    { id: ALL_HOLDERS, label: 'All' },
+    ...holders.map((holder) => ({ id: holder, label: holder })),
+    ...(hasUnclaimed ? [{ id: UNCLAIMED, label: 'Unclaimed' }] : []),
+  ]
+
+  // A holder tab can disappear (its last item got deleted, edited to a new
+  // holder, or the holder text changed) out from under whatever's
+  // selected — derive the effective view each render instead of syncing
+  // state, so it falls back to "All" rather than silently filtering to
+  // nothing with no tab shown as active.
+  const effectiveHolderView = holderTabs.some((tab) => tab.id === holderView)
+    ? holderView
+    : ALL_HOLDERS
+
+  const visibleLoot = loot.filter((entry) => {
+    if (effectiveHolderView === ALL_HOLDERS) return true
+    if (effectiveHolderView === UNCLAIMED) return !entry.holder.trim()
+    return entry.holder.trim() === effectiveHolderView
+  })
 
   function startAdding() {
     setForm(emptyForm)
@@ -140,6 +171,16 @@ function LootTab({ campaignId }) {
         </form>
       )}
 
+      {!loading && !error && holderTabs.length > 1 && (
+        <TabNav
+          tabs={holderTabs}
+          activeTab={effectiveHolderView}
+          onSelect={setHolderView}
+          className="tab-nav--pill"
+          label="Filter loot by holder"
+        />
+      )}
+
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
@@ -149,9 +190,13 @@ function LootTab({ campaignId }) {
         </p>
       )}
 
-      {!loading && !error && loot.length > 0 && (
+      {!loading && !error && loot.length > 0 && visibleLoot.length === 0 && (
+        <p className="empty-state">Nobody here — try a different holder.</p>
+      )}
+
+      {!loading && !error && visibleLoot.length > 0 && (
         <div className="loot-list">
-          {loot.map((entry) => (
+          {visibleLoot.map((entry) => (
             <article className="loot-card panel" key={entry.id}>
               <div className="loot-card__main">
                 <h3 className="loot-card__item">{entry.item}</h3>
