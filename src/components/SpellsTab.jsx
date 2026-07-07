@@ -57,6 +57,7 @@ function SpellsTab({ campaignId, playerId }) {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
   const [view, setView] = useState('spells')
+  const [flavorSpell, setFlavorSpell] = useState(null)
 
   const myLevel = playerId ? party.find((m) => m.claimedBy === playerId)?.level : undefined
 
@@ -120,6 +121,7 @@ function SpellsTab({ campaignId, playerId }) {
   async function removeSpell(id) {
     await removeItem(id)
     if (editingId === id) cancelForm()
+    if (flavorSpell?.id === id) setFlavorSpell(null)
   }
 
   const showForm = isAdding || editingId !== null
@@ -297,7 +299,18 @@ function SpellsTab({ campaignId, playerId }) {
                     >
                       <div className="spell-card__main">
                         <h4 className="spell-card__name">{spell.name}</h4>
-                        {isLocked && <span className="spell-card__badge">Locked</span>}
+                        <div className="spell-card__main-right">
+                          {isLocked && <span className="spell-card__badge">Locked</span>}
+                          <button
+                            type="button"
+                            className="spell-card__flavor-btn"
+                            onClick={() => setFlavorSpell(spell)}
+                            aria-label={`View flavor text for ${spell.name}`}
+                            title="Flavor text"
+                          >
+                            🔥
+                          </button>
+                        </div>
                       </div>
                       <div className="spell-card__body">
                         {meta.length > 0 && (
@@ -333,6 +346,33 @@ function SpellsTab({ campaignId, playerId }) {
             </div>
           )
         })}
+
+      {flavorSpell && (
+        <div
+          className="spell-flavor-modal__backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="spell-flavor-modal-title"
+          onClick={() => setFlavorSpell(null)}
+        >
+          <div className="spell-flavor-modal panel" onClick={(e) => e.stopPropagation()}>
+            <div className="spell-flavor-modal__header">
+              <h3 id="spell-flavor-modal-title">{flavorSpell.name}</h3>
+              <button
+                type="button"
+                className="spell-flavor-modal__close"
+                onClick={() => setFlavorSpell(null)}
+                aria-label="Close"
+              >
+                &times;
+              </button>
+            </div>
+            <p className="spell-flavor-modal__text">
+              {flavorSpell.details || 'No flavor text recorded yet.'}
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
