@@ -115,7 +115,52 @@ function SessionNotesTab({ campaignId, playerId }) {
     if (editingId === id) cancelForm()
   }
 
-  const showForm = isAdding || editingId !== null
+  function renderSessionForm(standalone) {
+    return (
+    <form className={`session-form panel${standalone ? ' session-form--standalone' : ''}`} onSubmit={submitForm}>
+      <div className="session-form__grid">
+        <div className="field">
+          <label htmlFor="session-title">Title</label>
+          <input
+            id="session-title"
+            type="text"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="Session 12: The Siege of Waterdeep"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="session-date">Date</label>
+          <input
+            id="session-date"
+            type="date"
+            value={form.sessionDate}
+            onChange={(e) => setForm({ ...form, sessionDate: e.target.value })}
+          />
+        </div>
+      </div>
+      <div className="field session-form__notes-field">
+        <label htmlFor="session-notes">Recap</label>
+        <textarea
+          id="session-notes"
+          value={form.notes}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          placeholder="The party arrived at the gates of Waterdeep and..."
+          required
+        />
+      </div>
+      {formError && <p className="empty-state empty-state--error">{formError}</p>}
+      <div className="session-form__actions">
+        <button type="button" className="btn btn--text" onClick={cancelForm}>
+          Cancel
+        </button>
+        <button type="submit" className="btn btn--primary">
+          {editingId ? 'Save Changes' : 'Add Session Notes'}
+        </button>
+      </div>
+    </form>
+    )
+  }
 
   return (
     <section className="session-notes-tab">
@@ -125,55 +170,12 @@ function SessionNotesTab({ campaignId, playerId }) {
         </button>
       </div>
 
-      {showForm && (
-        <form className="session-form panel" onSubmit={submitForm}>
-          <div className="session-form__grid">
-            <div className="field">
-              <label htmlFor="session-title">Title</label>
-              <input
-                id="session-title"
-                type="text"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Session 12: The Siege of Waterdeep"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="session-date">Date</label>
-              <input
-                id="session-date"
-                type="date"
-                value={form.sessionDate}
-                onChange={(e) => setForm({ ...form, sessionDate: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="field session-form__notes-field">
-            <label htmlFor="session-notes">Recap</label>
-            <textarea
-              id="session-notes"
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder="The party arrived at the gates of Waterdeep and..."
-              required
-            />
-          </div>
-          {formError && <p className="empty-state empty-state--error">{formError}</p>}
-          <div className="session-form__actions">
-            <button type="button" className="btn btn--text" onClick={cancelForm}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn--primary">
-              {editingId ? 'Save Changes' : 'Add Session Notes'}
-            </button>
-          </div>
-        </form>
-      )}
+      {isAdding && renderSessionForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
-      {!loading && !error && sortedSessions.length === 0 && (
+      {!loading && !error && sortedSessions.length === 0 && !isAdding && (
         <p className="empty-state">
           No session notes yet. These are personal to you — log a recap
           after each game to keep track of what happened.
@@ -182,35 +184,39 @@ function SessionNotesTab({ campaignId, playerId }) {
 
       {!loading && !error && sortedSessions.length > 0 && (
         <div className="session-list">
-          {sortedSessions.map((session) => (
-            <article className="session-card panel" key={session.id}>
-              <div className="session-card__main">
-                <h3 className="session-card__title">
-                  {session.title || 'Untitled Session'}
-                </h3>
-                {session.sessionDate && (
-                  <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
-                )}
-              </div>
-              <p className="session-card__notes">{session.notes}</p>
-              <div className="session-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(session)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => removeSession(session.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
+          {sortedSessions.map((session) =>
+            editingId === session.id ? (
+              <div key={session.id}>{renderSessionForm(false)}</div>
+            ) : (
+              <article className="session-card panel" key={session.id}>
+                <div className="session-card__main">
+                  <h3 className="session-card__title">
+                    {session.title || 'Untitled Session'}
+                  </h3>
+                  {session.sessionDate && (
+                    <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
+                  )}
+                </div>
+                <p className="session-card__notes">{session.notes}</p>
+                <div className="session-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(session)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeSession(session.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ),
+          )}
         </div>
       )}
     </section>
