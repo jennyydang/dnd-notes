@@ -144,6 +144,20 @@ alter table party_members add constraint party_members_level_check check (level 
 create unique index if not exists party_members_campaign_claimed_by_idx
   on party_members (campaign_id, claimed_by) where claimed_by is not null;
 
+-- The party's own shared goals (e.g. "buy a ship", "find Kael's sister") —
+-- separate from quests, which are plot threads handed to the party by an
+-- NPC. Not tied to any one party_member since these belong to the whole
+-- party.
+create table if not exists party_goals (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  title text not null,
+  status text not null default 'Active'
+    check (status in ('Active','Completed')),
+  notes text not null default '',
+  created_at timestamptz not null default now()
+);
+
 -- Private notes one player keeps about another player's character. Same
 -- trust model as session_notes: RLS below is anon-full-access like every
 -- other table (there's no real per-player DB security without real
@@ -323,6 +337,7 @@ alter table npcs               enable row level security;
 alter table loot                enable row level security;
 alter table quests              enable row level security;
 alter table party_members       enable row level security;
+alter table party_goals         enable row level security;
 alter table party_notes         enable row level security;
 alter table spells              enable row level security;
 alter table player_wallets      enable row level security;
@@ -343,6 +358,7 @@ drop policy if exists "anon full access npcs"               on npcs;
 drop policy if exists "anon full access loot"               on loot;
 drop policy if exists "anon full access quests"             on quests;
 drop policy if exists "anon full access party_members"      on party_members;
+drop policy if exists "anon full access party_goals"        on party_goals;
 drop policy if exists "anon full access party_notes"        on party_notes;
 drop policy if exists "anon full access spells"             on spells;
 drop policy if exists "anon full access player_wallets"     on player_wallets;
@@ -358,6 +374,7 @@ create policy "anon full access npcs"               on npcs               for al
 create policy "anon full access loot"               on loot               for all to anon using (true) with check (true);
 create policy "anon full access quests"             on quests             for all to anon using (true) with check (true);
 create policy "anon full access party_members"      on party_members      for all to anon using (true) with check (true);
+create policy "anon full access party_goals"        on party_goals        for all to anon using (true) with check (true);
 create policy "anon full access party_notes"        on party_notes        for all to anon using (true) with check (true);
 create policy "anon full access spells"              on spells             for all to anon using (true) with check (true);
 create policy "anon full access player_wallets"     on player_wallets     for all to anon using (true) with check (true);

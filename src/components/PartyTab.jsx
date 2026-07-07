@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import { listCampaignMembers } from '../lib/campaigns.js'
+import PartyGoals from './PartyGoals.jsx'
 import './PartyTab.scss'
 
 const BUCKET = 'party-portraits'
@@ -247,6 +248,9 @@ function PartyTab({ campaignId, playerId }) {
 
   return (
     <section className="party-tab">
+      <PartyGoals campaignId={campaignId} />
+
+      <h3 className="party-tab__section-title">Party Members</h3>
       <div className="party-tab__toolbar">
         <button type="button" className="btn btn--primary" onClick={startAdding}>
           + Add Party Member

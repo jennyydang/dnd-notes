@@ -1,6 +1,14 @@
 @use '../styles/variables' as *;
 
 .party-tab {
+  &__section-title {
+    color: $gold-light;
+    font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba($gold-dim, 0.3);
+  }
+
   &__toolbar {
     display: flex;
     justify-content: flex-end;
