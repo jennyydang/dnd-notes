@@ -33,15 +33,21 @@
     gap: 0.75rem;
   }
 
-  // The recap is the one long-form field on this form, so it should fill
-  // the card's full width instead of the shared 65ch cap meant for
-  // shorter fields, and needs more room than the default textarea height.
-  &__notes-field textarea {
-    width: 100%;
-    max-width: none;
-    min-height: 18rem;
-    box-sizing: border-box;
-  }
+}
+
+// The recap is the one long-form field on this form, so it should fill
+// the card's full width instead of the shared 65ch cap meant for shorter
+// fields, and needs more room than the default textarea height. Targeted
+// by id rather than a class: a class selector here ties in specificity
+// with the shared `.field textarea` rule, and whichever one happens to
+// come later in the compiled CSS wins — silently reverting these
+// overrides depending on unrelated import order. An id always outranks
+// a class, so this can't get clobbered the same way.
+#session-notes {
+  width: 100%;
+  max-width: none;
+  min-height: 20rem;
+  box-sizing: border-box;
 }
 
 // Session recaps are long-form prose, so entries stack full-width in a

@@ -139,7 +139,7 @@ function SessionNotesTab({ campaignId, playerId }) {
           />
         </div>
       </div>
-      <div className="field session-form__notes-field">
+      <div className="field">
         <label htmlFor="session-notes">Recap</label>
         <textarea
           id="session-notes"
