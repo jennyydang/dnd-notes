@@ -32,6 +32,11 @@
   font-size: 0.78rem;
   color: $text-muted;
   font-style: italic;
+
+  &--error {
+    color: $maroon-text;
+    font-style: normal;
+  }
 }
 
 .spells-section {

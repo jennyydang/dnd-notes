@@ -67,6 +67,8 @@ function SpellsTab({ campaignId, playerId }) {
   // a lookup failure here shouldn't block manually adding spells.
   const [spellCatalog, setSpellCatalog] = useState([])
   const [isLookingUp, setIsLookingUp] = useState(false)
+  const [lookupError, setLookupError] = useState(null)
+  const [catalogError, setCatalogError] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -75,17 +77,24 @@ function SpellsTab({ campaignId, playerId }) {
       .then((data) => {
         if (!cancelled) setSpellCatalog(data.results || [])
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setCatalogError('Could not reach the D&D 5e API for autocomplete.')
+      })
     return () => {
       cancelled = true
     }
   }, [])
 
+  // Fired on every keystroke rather than on blur: waiting for blur meant a
+  // player who typed a name and immediately clicked "Add Spell" could
+  // submit (and have the form reset) before the async lookup landed, so
+  // the autofill would appear to do nothing.
   async function autofillFromApi(name) {
     const match = spellCatalog.find((s) => s.name.toLowerCase() === name.trim().toLowerCase())
     if (!match) return
 
     setIsLookingUp(true)
+    setLookupError(null)
     try {
       const res = await fetch(`${DND5E_API}/spells/${match.index}`)
       if (!res.ok) throw new Error('lookup failed')
@@ -97,10 +106,16 @@ function SpellsTab({ campaignId, playerId }) {
         details: formatApiSpellDetails(spell),
       }))
     } catch {
-      // Silent: the player can still fill the form in by hand.
+      setLookupError(`Found "${match.name}" but couldn't fetch its details. You can still fill this in by hand.`)
     } finally {
       setIsLookingUp(false)
     }
+  }
+
+  function handleNameChange(e) {
+    const value = e.target.value
+    setForm((prev) => ({ ...prev, name: value }))
+    autofillFromApi(value)
   }
 
   const myLevel = playerId ? party.find((m) => m.claimedBy === playerId)?.level : undefined
@@ -109,6 +124,7 @@ function SpellsTab({ campaignId, playerId }) {
     setForm(emptyForm)
     setEditingId(null)
     setFormError(null)
+    setLookupError(null)
     setIsAdding(true)
   }
 
@@ -116,6 +132,7 @@ function SpellsTab({ campaignId, playerId }) {
     setForm({ name: spell.name, level: spell.level, details: spell.details })
     setIsAdding(false)
     setFormError(null)
+    setLookupError(null)
     setEditingId(spell.id)
   }
 
@@ -124,6 +141,7 @@ function SpellsTab({ campaignId, playerId }) {
     setEditingId(null)
     setForm(emptyForm)
     setFormError(null)
+    setLookupError(null)
   }
 
   async function submitForm(event) {
@@ -186,8 +204,7 @@ function SpellsTab({ campaignId, playerId }) {
                 type="text"
                 list="spell-catalog"
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                onBlur={(e) => autofillFromApi(e.target.value)}
+                onChange={handleNameChange}
                 placeholder="Fireball"
                 required
               />
@@ -197,6 +214,8 @@ function SpellsTab({ campaignId, playerId }) {
                 ))}
               </datalist>
               {isLookingUp && <span className="field__hint">Looking up spell…</span>}
+              {lookupError && <span className="field__hint field__hint--error">{lookupError}</span>}
+              {catalogError && <span className="field__hint field__hint--error">{catalogError}</span>}
             </div>
             <div className="field">
               <label htmlFor="spell-level">Level</label>
@@ -227,8 +246,8 @@ function SpellsTab({ campaignId, playerId }) {
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
             </button>
-            <button type="submit" className="btn btn--primary">
-              {editingId ? 'Save Changes' : 'Add Spell'}
+            <button type="submit" className="btn btn--primary" disabled={isLookingUp}>
+              {isLookingUp ? 'Looking up spell…' : editingId ? 'Save Changes' : 'Add Spell'}
             </button>
           </div>
         </form>
