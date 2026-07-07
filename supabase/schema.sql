@@ -185,6 +185,7 @@ alter table spells add column if not exists casting_time text not null default '
 alter table spells add column if not exists range text not null default '';
 alter table spells add column if not exists components text not null default '';
 alter table spells add column if not exists duration text not null default '';
+alter table spells add column if not exists effect text not null default '';
 
 -- Each logged-in player's coin purse for a campaign — five independent
 -- counts, not one converted total: having 15 gold means 15 gold coins

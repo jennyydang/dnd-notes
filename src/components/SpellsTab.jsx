@@ -9,6 +9,7 @@ const emptyForm = {
   range: '',
   components: '',
   duration: '',
+  effect: '',
   details: '',
 }
 
@@ -20,6 +21,7 @@ const fromRow = (r) => ({
   range: r.range,
   components: r.components,
   duration: r.duration,
+  effect: r.effect,
   details: r.details,
 })
 
@@ -66,6 +68,7 @@ function SpellsTab({ campaignId, playerId }) {
       range: spell.range,
       components: spell.components,
       duration: spell.duration,
+      effect: spell.effect,
       details: spell.details,
     })
     setIsAdding(false)
@@ -91,6 +94,7 @@ function SpellsTab({ campaignId, playerId }) {
       range: form.range,
       components: form.components,
       duration: form.duration,
+      effect: form.effect,
       details: form.details,
     }
 
@@ -206,12 +210,21 @@ function SpellsTab({ campaignId, playerId }) {
             </div>
           </div>
           <div className="field">
+            <label htmlFor="spell-effect">Effect</label>
+            <textarea
+              id="spell-effect"
+              value={form.effect}
+              onChange={(e) => setForm({ ...form, effect: e.target.value })}
+              placeholder="Deals 8d6 fire damage in a 20-foot radius; Dexterity save for half, and any effects at higher levels..."
+            />
+          </div>
+          <div className="field">
             <label htmlFor="spell-details">Description</label>
             <textarea
               id="spell-details"
               value={form.details}
               onChange={(e) => setForm({ ...form, details: e.target.value })}
-              placeholder="What the spell does, and any effects at higher levels..."
+              placeholder="Flavor text, flourishes, or any reminders for how you play it..."
             />
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
@@ -275,6 +288,7 @@ function SpellsTab({ campaignId, playerId }) {
                           ))}
                         </ul>
                       )}
+                      {spell.effect && <p className="spell-card__effect">{spell.effect}</p>}
                       {spell.details && <p className="spell-card__details">{spell.details}</p>}
                       <div className="spell-card__actions">
                         <button
