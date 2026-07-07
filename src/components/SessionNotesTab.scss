@@ -31,8 +31,10 @@
   // the card's full width instead of the shared 65ch cap meant for
   // shorter fields, and needs more room than the default textarea height.
   &__notes-field textarea {
+    width: 100%;
     max-width: none;
-    min-height: 10rem;
+    min-height: 18rem;
+    box-sizing: border-box;
   }
 }
 
