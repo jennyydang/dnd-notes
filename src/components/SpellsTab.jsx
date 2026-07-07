@@ -1,8 +1,33 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './SpellsTab.scss'
 
+const DND5E_API = 'https://www.dnd5eapi.co/api/2014'
+
 const emptyForm = { name: '', level: 0, details: '' }
+
+// Builds the Details textarea content from a dnd5eapi.co spell record, so
+// an autofilled spell reads the same way a hand-typed one would.
+function formatApiSpellDetails(spell) {
+  const componentsLine = spell.material
+    ? `${spell.components.join(', ')} (${spell.material})`
+    : spell.components.join(', ')
+
+  const lines = [
+    `Casting Time: ${spell.casting_time}`,
+    `Range: ${spell.range}`,
+    `Components: ${componentsLine}`,
+    `Duration: ${spell.duration}`,
+    '',
+    ...(spell.desc || []),
+  ]
+
+  if (spell.higher_level?.length) {
+    lines.push('', 'At Higher Levels:', ...spell.higher_level)
+  }
+
+  return lines.join('\n')
+}
 
 const fromRow = (r) => ({
   id: r.id,
@@ -36,6 +61,47 @@ function SpellsTab({ campaignId, playerId }) {
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
+
+  // Spell name -> index catalog, used to recognize an official spell name
+  // and to power the datalist autocomplete. Fetched once and kept around;
+  // a lookup failure here shouldn't block manually adding spells.
+  const [spellCatalog, setSpellCatalog] = useState([])
+  const [isLookingUp, setIsLookingUp] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${DND5E_API}/spells`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('fetch failed'))))
+      .then((data) => {
+        if (!cancelled) setSpellCatalog(data.results || [])
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  async function autofillFromApi(name) {
+    const match = spellCatalog.find((s) => s.name.toLowerCase() === name.trim().toLowerCase())
+    if (!match) return
+
+    setIsLookingUp(true)
+    try {
+      const res = await fetch(`${DND5E_API}/spells/${match.index}`)
+      if (!res.ok) throw new Error('lookup failed')
+      const spell = await res.json()
+      setForm((prev) => ({
+        ...prev,
+        name: spell.name,
+        level: spell.level,
+        details: formatApiSpellDetails(spell),
+      }))
+    } catch {
+      // Silent: the player can still fill the form in by hand.
+    } finally {
+      setIsLookingUp(false)
+    }
+  }
 
   const myLevel = playerId ? party.find((m) => m.claimedBy === playerId)?.level : undefined
 
@@ -118,11 +184,19 @@ function SpellsTab({ campaignId, playerId }) {
               <input
                 id="spell-name"
                 type="text"
+                list="spell-catalog"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onBlur={(e) => autofillFromApi(e.target.value)}
                 placeholder="Fireball"
                 required
               />
+              <datalist id="spell-catalog">
+                {spellCatalog.map((s) => (
+                  <option key={s.index} value={s.name} />
+                ))}
+              </datalist>
+              {isLookingUp && <span className="field__hint">Looking up spell…</span>}
             </div>
             <div className="field">
               <label htmlFor="spell-level">Level</label>
