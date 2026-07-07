@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .spells-tab {
@@ -7,8 +8,35 @@
     margin-bottom: 1.25rem;
   }
 
+  // A pill-style segmented control, set apart from the underlined
+  // campaign-level tab bar this component (TabNav) is also used for, so
+  // this reads as a filter on the Spells tab rather than another layer
+  // of navigation alongside it.
   .tab-nav {
+    display: inline-flex;
+    width: fit-content;
+    border-bottom: none;
+    background: $bg-deep;
+    border: 1px solid rgba($gold-dim, 0.5);
+    border-radius: 999px;
+    padding: 0.3rem;
     margin-bottom: 1.25rem;
+  }
+
+  .tab-nav__list {
+    gap: 0.25rem;
+  }
+
+  .tab-nav__item {
+    border-bottom: none;
+    border-radius: 999px;
+    padding: 0.45rem 1.25rem;
+    font-size: 0.85rem;
+
+    &--active {
+      color: $ink;
+      background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
+    }
   }
 }
 
