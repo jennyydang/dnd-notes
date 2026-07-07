@@ -208,6 +208,11 @@ alter table spells add column if not exists components text not null default '';
 alter table spells add column if not exists duration text not null default '';
 alter table spells add column if not exists effect text not null default '';
 
+-- Narrative flavor text shown in the spell card's flavor-text popup —
+-- separate from `details` (a short reminder shown inline on the card
+-- itself), so the popup isn't just re-showing text already on screen.
+alter table spells add column if not exists flavor text not null default '';
+
 -- Each logged-in player's coin purse for a campaign — five independent
 -- counts, not one converted total: having 15 gold means 15 gold coins
 -- and 0 of everything else, not "15 gold's worth" smeared proportionally

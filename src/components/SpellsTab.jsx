@@ -17,6 +17,7 @@ const emptyForm = {
   duration: '',
   effect: '',
   details: '',
+  flavor: '',
 }
 
 const fromRow = (r) => ({
@@ -29,6 +30,7 @@ const fromRow = (r) => ({
   duration: r.duration,
   effect: r.effect,
   details: r.details,
+  flavor: r.flavor,
 })
 
 const partyFromRow = (r) => ({ id: r.id, claimedBy: r.claimed_by, level: r.level })
@@ -78,6 +80,7 @@ function SpellsTab({ campaignId, playerId }) {
       duration: spell.duration,
       effect: spell.effect,
       details: spell.details,
+      flavor: spell.flavor,
     })
     setIsAdding(false)
     setFormError(null)
@@ -104,6 +107,7 @@ function SpellsTab({ campaignId, playerId }) {
       duration: form.duration,
       effect: form.effect,
       details: form.details,
+      flavor: form.flavor,
     }
 
     try {
@@ -242,7 +246,16 @@ function SpellsTab({ campaignId, playerId }) {
               id="spell-details"
               value={form.details}
               onChange={(e) => setForm({ ...form, details: e.target.value })}
-              placeholder="Flavor text, flourishes, or any reminders for how you play it..."
+              placeholder="A short reminder for how you play it..."
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="spell-flavor">Flavor</label>
+            <textarea
+              id="spell-flavor"
+              value={form.flavor}
+              onChange={(e) => setForm({ ...form, flavor: e.target.value })}
+              placeholder="Read-aloud text, lore, or flourishes — shown in the flavor-text popup..."
             />
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
@@ -368,7 +381,7 @@ function SpellsTab({ campaignId, playerId }) {
               </button>
             </div>
             <p className="spell-flavor-modal__text">
-              {flavorSpell.details || 'No flavor text recorded yet.'}
+              {flavorSpell.flavor || 'No flavor text recorded yet.'}
             </p>
           </div>
         </div>
