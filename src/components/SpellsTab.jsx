@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import TabNav from './TabNav.jsx'
 import './SpellsTab.scss'
+
+const SPELL_VIEWS = [
+  { id: 'cantrips', label: 'Cantrips' },
+  { id: 'spells', label: 'Spells' },
+]
 
 const emptyForm = {
   name: '',
@@ -50,6 +56,7 @@ function SpellsTab({ campaignId, playerId }) {
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
+  const [view, setView] = useState('spells')
 
   const myLevel = playerId ? party.find((m) => m.claimedBy === playerId)?.level : undefined
 
@@ -117,8 +124,9 @@ function SpellsTab({ campaignId, playerId }) {
 
   const showForm = isAdding || editingId !== null
 
+  const levelsInView = view === 'cantrips' ? [0] : Array.from({ length: 9 }, (_, i) => i + 1)
   const sections = []
-  for (let level = 0; level <= 9; level++) {
+  for (const level of levelsInView) {
     const spellsAtLevel = spells.filter((s) => s.level === level)
     if (spellsAtLevel.length > 0) sections.push({ level, spells: spellsAtLevel })
   }
@@ -130,6 +138,8 @@ function SpellsTab({ campaignId, playerId }) {
           + Add Spell
         </button>
       </div>
+
+      <TabNav tabs={SPELL_VIEWS} activeTab={view} onSelect={setView} />
 
       {playerId && myLevel === undefined && (
         <p className="empty-state">
@@ -244,8 +254,10 @@ function SpellsTab({ campaignId, playerId }) {
 
       {!loading && !error && sections.length === 0 && (
         <p className="empty-state">
-          No spells recorded yet. These are personal to you — add the
-          spells your character knows.
+          {view === 'cantrips'
+            ? 'No cantrips recorded yet.'
+            : 'No spells recorded yet.'}{' '}
+          These are personal to you — add the spells your character knows.
         </p>
       )}
 
