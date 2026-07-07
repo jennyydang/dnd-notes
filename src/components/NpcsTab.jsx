@@ -11,6 +11,7 @@ const emptyForm = {
   race: '',
   metAt: '',
   status: 'Alive',
+  description: '',
   photoFile: null,
   photoPreview: '',
   photoRemoved: false,
@@ -22,6 +23,7 @@ const fromRow = (r) => ({
   race: r.race,
   metAt: r.met_at,
   status: r.status,
+  description: r.description,
   photo: getPublicUrl(BUCKET, r.photo_path),
 })
 
@@ -63,6 +65,7 @@ function NpcsTab({ campaignId }) {
       race: npc.race,
       metAt: npc.metAt,
       status: npc.status,
+      description: npc.description,
       photoFile: null,
       photoPreview: npc.photo || '',
       photoRemoved: false,
@@ -110,6 +113,7 @@ function NpcsTab({ campaignId }) {
       race: form.race,
       met_at: form.metAt,
       status: form.status,
+      description: form.description,
     }
 
     try {
@@ -223,6 +227,15 @@ function NpcsTab({ campaignId }) {
               </div>
             </div>
           </div>
+          <div className="field">
+            <label htmlFor="npc-description">Description</label>
+            <textarea
+              id="npc-description"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="What they look like, how they talk, anything worth remembering..."
+            />
+          </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="npc-form__actions">
             <button type="button" className="btn btn--text" onClick={cancelForm}>
@@ -275,6 +288,7 @@ function NpcsTab({ campaignId }) {
                   <dd>{npc.metAt || '—'}</dd>
                 </div>
               </dl>
+              {npc.description && <p className="npc-card__description">{npc.description}</p>}
               <div className="npc-card__actions">
                 <button
                   type="button"

@@ -95,6 +95,8 @@ create table if not exists npcs (
   created_at timestamptz not null default now()
 );
 
+alter table npcs add column if not exists description text not null default '';
+
 create table if not exists loot (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references campaigns(id) on delete cascade,
