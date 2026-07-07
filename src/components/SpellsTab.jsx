@@ -293,15 +293,17 @@ function SpellsTab({ campaignId, playerId }) {
                         <h4 className="spell-card__name">{spell.name}</h4>
                         {isLocked && <span className="spell-card__badge">Locked</span>}
                       </div>
-                      {meta.length > 0 && (
-                        <ul className="spell-card__meta">
-                          {meta.map((line) => (
-                            <li key={line}>{line}</li>
-                          ))}
-                        </ul>
-                      )}
-                      {spell.effect && <p className="spell-card__effect">{spell.effect}</p>}
-                      {spell.details && <p className="spell-card__details">{spell.details}</p>}
+                      <div className="spell-card__body">
+                        {meta.length > 0 && (
+                          <ul className="spell-card__meta">
+                            {meta.map((line) => (
+                              <li key={line}>{line}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {spell.effect && <p className="spell-card__effect">{spell.effect}</p>}
+                        {spell.details && <p className="spell-card__details">{spell.details}</p>}
+                      </div>
                       <div className="spell-card__actions">
                         <button
                           type="button"
