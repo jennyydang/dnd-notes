@@ -1,38 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './SpellsTab.scss'
 
-const DND5E_API = 'https://www.dnd5eapi.co/api/2014'
-
-const emptyForm = { name: '', level: 0, details: '' }
-
-// Builds the Details textarea content from a dnd5eapi.co spell record, so
-// an autofilled spell reads the same way a hand-typed one would.
-function formatApiSpellDetails(spell) {
-  const componentsLine = spell.material
-    ? `${spell.components.join(', ')} (${spell.material})`
-    : spell.components.join(', ')
-
-  const lines = [
-    `Casting Time: ${spell.casting_time}`,
-    `Range: ${spell.range}`,
-    `Components: ${componentsLine}`,
-    `Duration: ${spell.duration}`,
-    '',
-    ...(spell.desc || []),
-  ]
-
-  if (spell.higher_level?.length) {
-    lines.push('', 'At Higher Levels:', ...spell.higher_level)
-  }
-
-  return lines.join('\n')
+const emptyForm = {
+  name: '',
+  level: 0,
+  castingTime: '',
+  range: '',
+  components: '',
+  duration: '',
+  details: '',
 }
 
 const fromRow = (r) => ({
   id: r.id,
   name: r.name,
   level: r.level,
+  castingTime: r.casting_time,
+  range: r.range,
+  components: r.components,
+  duration: r.duration,
   details: r.details,
 })
 
@@ -62,77 +49,27 @@ function SpellsTab({ campaignId, playerId }) {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
 
-  // Spell name -> index catalog, used to recognize an official spell name
-  // and to power the datalist autocomplete. Fetched once and kept around;
-  // a lookup failure here shouldn't block manually adding spells.
-  const [spellCatalog, setSpellCatalog] = useState([])
-  const [isLookingUp, setIsLookingUp] = useState(false)
-  const [lookupError, setLookupError] = useState(null)
-  const [catalogError, setCatalogError] = useState(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch(`${DND5E_API}/spells`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('fetch failed'))))
-      .then((data) => {
-        if (!cancelled) setSpellCatalog(data.results || [])
-      })
-      .catch(() => {
-        if (!cancelled) setCatalogError('Could not reach the D&D 5e API for autocomplete.')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  // Fired on every keystroke rather than on blur: waiting for blur meant a
-  // player who typed a name and immediately clicked "Add Spell" could
-  // submit (and have the form reset) before the async lookup landed, so
-  // the autofill would appear to do nothing.
-  async function autofillFromApi(name) {
-    const match = spellCatalog.find((s) => s.name.toLowerCase() === name.trim().toLowerCase())
-    if (!match) return
-
-    setIsLookingUp(true)
-    setLookupError(null)
-    try {
-      const res = await fetch(`${DND5E_API}/spells/${match.index}`)
-      if (!res.ok) throw new Error('lookup failed')
-      const spell = await res.json()
-      setForm((prev) => ({
-        ...prev,
-        name: spell.name,
-        level: spell.level,
-        details: formatApiSpellDetails(spell),
-      }))
-    } catch {
-      setLookupError(`Found "${match.name}" but couldn't fetch its details. You can still fill this in by hand.`)
-    } finally {
-      setIsLookingUp(false)
-    }
-  }
-
-  function handleNameChange(e) {
-    const value = e.target.value
-    setForm((prev) => ({ ...prev, name: value }))
-    autofillFromApi(value)
-  }
-
   const myLevel = playerId ? party.find((m) => m.claimedBy === playerId)?.level : undefined
 
   function startAdding() {
     setForm(emptyForm)
     setEditingId(null)
     setFormError(null)
-    setLookupError(null)
     setIsAdding(true)
   }
 
   function startEditing(spell) {
-    setForm({ name: spell.name, level: spell.level, details: spell.details })
+    setForm({
+      name: spell.name,
+      level: spell.level,
+      castingTime: spell.castingTime,
+      range: spell.range,
+      components: spell.components,
+      duration: spell.duration,
+      details: spell.details,
+    })
     setIsAdding(false)
     setFormError(null)
-    setLookupError(null)
     setEditingId(spell.id)
   }
 
@@ -141,7 +78,6 @@ function SpellsTab({ campaignId, playerId }) {
     setEditingId(null)
     setForm(emptyForm)
     setFormError(null)
-    setLookupError(null)
   }
 
   async function submitForm(event) {
@@ -151,6 +87,10 @@ function SpellsTab({ campaignId, playerId }) {
     const payload = {
       name: form.name,
       level: Math.min(9, Math.max(0, Math.floor(Number(form.level)) || 0)),
+      casting_time: form.castingTime,
+      range: form.range,
+      components: form.components,
+      duration: form.duration,
       details: form.details,
     }
 
@@ -202,20 +142,11 @@ function SpellsTab({ campaignId, playerId }) {
               <input
                 id="spell-name"
                 type="text"
-                list="spell-catalog"
                 value={form.name}
-                onChange={handleNameChange}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Fireball"
                 required
               />
-              <datalist id="spell-catalog">
-                {spellCatalog.map((s) => (
-                  <option key={s.index} value={s.name} />
-                ))}
-              </datalist>
-              {isLookingUp && <span className="field__hint">Looking up spell…</span>}
-              {lookupError && <span className="field__hint field__hint--error">{lookupError}</span>}
-              {catalogError && <span className="field__hint field__hint--error">{catalogError}</span>}
             </div>
             <div className="field">
               <label htmlFor="spell-level">Level</label>
@@ -232,13 +163,55 @@ function SpellsTab({ campaignId, playerId }) {
               </select>
             </div>
           </div>
+          <div className="spell-form__grid">
+            <div className="field">
+              <label htmlFor="spell-casting-time">Casting Time</label>
+              <input
+                id="spell-casting-time"
+                type="text"
+                value={form.castingTime}
+                onChange={(e) => setForm({ ...form, castingTime: e.target.value })}
+                placeholder="1 action"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="spell-range">Range</label>
+              <input
+                id="spell-range"
+                type="text"
+                value={form.range}
+                onChange={(e) => setForm({ ...form, range: e.target.value })}
+                placeholder="150 feet"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="spell-components">Components</label>
+              <input
+                id="spell-components"
+                type="text"
+                value={form.components}
+                onChange={(e) => setForm({ ...form, components: e.target.value })}
+                placeholder="V, S, M (a tiny ball of bat guano and sulfur)"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="spell-duration">Duration</label>
+              <input
+                id="spell-duration"
+                type="text"
+                value={form.duration}
+                onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                placeholder="Instantaneous"
+              />
+            </div>
+          </div>
           <div className="field">
-            <label htmlFor="spell-details">Details</label>
+            <label htmlFor="spell-details">Description</label>
             <textarea
               id="spell-details"
               value={form.details}
               onChange={(e) => setForm({ ...form, details: e.target.value })}
-              placeholder="Casting time, range, effect, or any reminders..."
+              placeholder="What the spell does, and any effects at higher levels..."
             />
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
@@ -246,8 +219,8 @@ function SpellsTab({ campaignId, playerId }) {
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
             </button>
-            <button type="submit" className="btn btn--primary" disabled={isLookingUp}>
-              {isLookingUp ? 'Looking up spell…' : editingId ? 'Save Changes' : 'Add Spell'}
+            <button type="submit" className="btn btn--primary">
+              {editingId ? 'Save Changes' : 'Add Spell'}
             </button>
           </div>
         </form>
@@ -278,34 +251,50 @@ function SpellsTab({ campaignId, playerId }) {
                 {isCurrent && <span className="spells-section__badge">Current</span>}
               </h3>
               <div className="spell-list">
-                {spellsAtLevel.map((spell) => (
-                  <article
-                    className={`spell-card panel${isLocked ? ' spell-card--locked' : ''}`}
-                    key={spell.id}
-                  >
-                    <div className="spell-card__main">
-                      <h4 className="spell-card__name">{spell.name}</h4>
-                      {isLocked && <span className="spell-card__badge">Locked</span>}
-                    </div>
-                    {spell.details && <p className="spell-card__details">{spell.details}</p>}
-                    <div className="spell-card__actions">
-                      <button
-                        type="button"
-                        className="btn btn--text"
-                        onClick={() => startEditing(spell)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn--danger"
-                        onClick={() => removeSpell(spell.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </article>
-                ))}
+                {spellsAtLevel.map((spell) => {
+                  const meta = [
+                    spell.castingTime && `Casting Time: ${spell.castingTime}`,
+                    spell.range && `Range: ${spell.range}`,
+                    spell.components && `Components: ${spell.components}`,
+                    spell.duration && `Duration: ${spell.duration}`,
+                  ].filter(Boolean)
+
+                  return (
+                    <article
+                      className={`spell-card panel${isLocked ? ' spell-card--locked' : ''}`}
+                      key={spell.id}
+                    >
+                      <div className="spell-card__main">
+                        <h4 className="spell-card__name">{spell.name}</h4>
+                        {isLocked && <span className="spell-card__badge">Locked</span>}
+                      </div>
+                      {meta.length > 0 && (
+                        <ul className="spell-card__meta">
+                          {meta.map((line) => (
+                            <li key={line}>{line}</li>
+                          ))}
+                        </ul>
+                      )}
+                      {spell.details && <p className="spell-card__details">{spell.details}</p>}
+                      <div className="spell-card__actions">
+                        <button
+                          type="button"
+                          className="btn btn--text"
+                          onClick={() => startEditing(spell)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--danger"
+                          onClick={() => removeSpell(spell.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </article>
+                  )
+                })}
               </div>
             </div>
           )
