@@ -1,15 +1,44 @@
 @use '../styles/variables' as *;
 
 .campaign-view {
-  &__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+
+  &__sidebar {
+    flex: 0 0 220px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 1rem;
-    margin-bottom: 1.25rem;
+    position: sticky;
+    top: 2rem;
+  }
+
+  &__back {
+    align-self: flex-start;
+    padding-left: 0;
   }
 
   &__name {
     font-size: 1.3rem;
     color: $gold-light;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid rgba($gold-dim, 0.4);
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+    margin-top: 0;
+  }
+
+  @media (max-width: 720px) {
+    flex-direction: column;
+
+    &__sidebar {
+      flex: none;
+      width: 100%;
+      position: static;
+    }
   }
 }
