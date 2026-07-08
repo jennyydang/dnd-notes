@@ -75,6 +75,33 @@
       background: $maroon;
     }
   }
+
+  &__world-badge {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.4rem;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $gold-light;
+    background: rgba($ink, 0.75);
+    border: 1px solid rgba($gold-light, 0.5);
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+  }
+
+}
+
+// Two-class selector so this reliably beats the shared .btn rule's own
+// padding/border-radius/font-size, regardless of which happens to come
+// later in the compiled CSS (equal-specificity single-class overrides
+// have bitten this app before — see SessionNotesTab.scss history).
+.map-card .map-card__world-toggle {
+  width: 100%;
+  border-top: 1px solid rgba($gold-dim, 0.4);
+  border-radius: 0;
+  font-size: 0.8rem;
+  padding: 0.5rem;
 }
 
 .lightbox {

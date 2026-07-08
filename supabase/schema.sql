@@ -90,6 +90,49 @@ create table if not exists maps (
   created_at timestamptz not null default now()
 );
 
+-- World Map flag: exactly one map per campaign may be flagged as the
+-- interactive World Map (pan/zoom + markers). All other maps keep the
+-- plain static lightbox. Un-flagging/reassigning it never touches
+-- pin_x/pin_y or map_markers below — they stay tied to map_id and just
+-- become unreachable via the interactive UI until re-flagged.
+alter table maps add column if not exists is_world_map boolean not null default false;
+
+-- Shared party "I am here" pin — a single point per map (not one per
+-- player), so plain nullable columns are simpler than a one-row-per-map
+-- side table. Stored as fractions (0..1) of the image's own dimensions
+-- so it stays aligned to the same world-space point across every zoom
+-- level and viewport size.
+alter table maps add column if not exists pin_x double precision;
+alter table maps add column if not exists pin_y double precision;
+
+alter table maps drop constraint if exists maps_pin_x_range_check;
+alter table maps add constraint maps_pin_x_range_check
+  check (pin_x is null or (pin_x >= 0 and pin_x <= 1));
+alter table maps drop constraint if exists maps_pin_y_range_check;
+alter table maps add constraint maps_pin_y_range_check
+  check (pin_y is null or (pin_y >= 0 and pin_y <= 1));
+
+-- DB-level backstop for "at most one World Map per campaign" (the app
+-- also enforces this by clearing the old flag before setting a new one).
+create unique index if not exists maps_one_world_map_per_campaign_idx
+  on maps (campaign_id) where is_world_map;
+
+-- Event markers on the World Map — "what happened here" notes with an
+-- optional photo. x/y are fractions (0..1) of the image's own
+-- dimensions, same reasoning as pin_x/pin_y above. Anon-writable like
+-- every other shared tab in this app (Loot, Quests, NPCs) — no
+-- ownership column, any player can add/edit/delete any marker.
+create table if not exists map_markers (
+  id uuid primary key default gen_random_uuid(),
+  map_id uuid not null references maps(id) on delete cascade,
+  x double precision not null check (x >= 0 and x <= 1),
+  y double precision not null check (y >= 0 and y <= 1),
+  title text not null default '',
+  notes text not null default '',
+  photo_path text,                 -- object key in the "map-marker-photos" bucket, nullable
+  created_at timestamptz not null default now()
+);
+
 create table if not exists npcs (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references campaigns(id) on delete cascade,
@@ -345,6 +388,7 @@ grant select on campaign_memberships to anon;
 
 alter table campaigns          enable row level security;
 alter table maps               enable row level security;
+alter table map_markers         enable row level security;
 alter table npcs               enable row level security;
 alter table loot                enable row level security;
 alter table quests              enable row level security;
@@ -366,6 +410,7 @@ alter table players enable row level security;
 
 drop policy if exists "anon full access campaigns"          on campaigns;
 drop policy if exists "anon full access maps"               on maps;
+drop policy if exists "anon full access map_markers"        on map_markers;
 drop policy if exists "anon full access npcs"               on npcs;
 drop policy if exists "anon full access loot"               on loot;
 drop policy if exists "anon full access quests"             on quests;
@@ -382,6 +427,7 @@ drop policy if exists "anon full access campaign_members"    on campaign_members
 
 create policy "anon full access campaigns"          on campaigns          for all to anon using (true) with check (true);
 create policy "anon full access maps"               on maps               for all to anon using (true) with check (true);
+create policy "anon full access map_markers"        on map_markers        for all to anon using (true) with check (true);
 create policy "anon full access npcs"               on npcs               for all to anon using (true) with check (true);
 create policy "anon full access loot"               on loot               for all to anon using (true) with check (true);
 create policy "anon full access quests"             on quests             for all to anon using (true) with check (true);
@@ -414,10 +460,15 @@ insert into storage.buckets (id, name, public)
 values ('campaign-covers', 'campaign-covers', true)
 on conflict (id) do nothing;
 
+insert into storage.buckets (id, name, public)
+values ('map-marker-photos', 'map-marker-photos', true)
+on conflict (id) do nothing;
+
 drop policy if exists "anon full access maps bucket" on storage.objects;
 drop policy if exists "anon full access npc-portraits bucket" on storage.objects;
 drop policy if exists "anon full access party-portraits bucket" on storage.objects;
 drop policy if exists "anon full access campaign-covers bucket" on storage.objects;
+drop policy if exists "anon full access map-marker-photos bucket" on storage.objects;
 
 create policy "anon full access maps bucket"
   on storage.objects for all to anon
@@ -434,6 +485,10 @@ create policy "anon full access party-portraits bucket"
 create policy "anon full access campaign-covers bucket"
   on storage.objects for all to anon
   using (bucket_id = 'campaign-covers') with check (bucket_id = 'campaign-covers');
+
+create policy "anon full access map-marker-photos bucket"
+  on storage.objects for all to anon
+  using (bucket_id = 'map-marker-photos') with check (bucket_id = 'map-marker-photos');
 
 -- ── Functions: player accounts, admin gate, and campaign joining ──────
 -- All SECURITY DEFINER (run with the function owner's privileges, which

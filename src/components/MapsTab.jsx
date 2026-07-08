@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
+import WorldMapViewer from './WorldMapViewer.jsx'
 import './MapsTab.scss'
 
 const BUCKET = 'maps'
@@ -10,15 +11,20 @@ const fromRow = (r) => ({
   imagePath: r.image_path,
   caption: r.caption,
   src: getPublicUrl(BUCKET, r.image_path),
+  isWorldMap: r.is_world_map,
+  pinX: r.pin_x,
+  pinY: r.pin_y,
 })
 
 function MapsTab({ campaignId }) {
   const { items: maps, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('maps', { fromRow, filters: { campaign_id: campaignId } })
   const [lightboxMap, setLightboxMap] = useState(null)
+  const [activeWorldMapId, setActiveWorldMapId] = useState(null)
   const [uploadError, setUploadError] = useState(null)
   const [captionDrafts, setCaptionDrafts] = useState({})
   const fileInputRef = useRef(null)
+  const activeWorldMap = maps.find((m) => m.id === activeWorldMapId) || null
 
   async function handleFilesSelected(event) {
     const files = Array.from(event.target.files || [])
@@ -58,6 +64,29 @@ function MapsTab({ campaignId }) {
     await removeItem(map.id)
     await removeImage(BUCKET, map.imagePath)
     setLightboxMap((current) => (current?.id === map.id ? null : current))
+    setActiveWorldMapId((current) => (current === map.id ? null : current))
+  }
+
+  function openMap(map) {
+    if (map.isWorldMap) {
+      setActiveWorldMapId(map.id)
+    } else {
+      setLightboxMap(map)
+    }
+  }
+
+  // Only one map per campaign may be the interactive World Map — clear
+  // the old flag before setting the new one, since the DB's partial
+  // unique index rejects two true rows at once.
+  async function setWorldMap(map) {
+    const current = maps.find((m) => m.isWorldMap && m.id !== map.id)
+    if (current) await updateItem(current.id, { is_world_map: false })
+    await updateItem(map.id, { is_world_map: true })
+  }
+
+  async function unsetWorldMap(map) {
+    await updateItem(map.id, { is_world_map: false })
+    setActiveWorldMapId((current) => (current === map.id ? null : current))
   }
 
   return (
@@ -98,10 +127,11 @@ function MapsTab({ campaignId }) {
               <button
                 type="button"
                 className="map-card__image-btn"
-                onClick={() => setLightboxMap(map)}
+                onClick={() => openMap(map)}
               >
                 <img src={map.src} alt={map.caption || 'Campaign map'} />
               </button>
+              {map.isWorldMap && <span className="map-card__world-badge">World Map</span>}
               <input
                 className="map-card__caption"
                 type="text"
@@ -110,6 +140,13 @@ function MapsTab({ campaignId }) {
                 onChange={(e) => draftCaption(map.id, e.target.value)}
                 onBlur={() => commitCaption(map)}
               />
+              <button
+                type="button"
+                className="map-card__world-toggle btn btn--text"
+                onClick={() => (map.isWorldMap ? unsetWorldMap(map) : setWorldMap(map))}
+              >
+                {map.isWorldMap ? 'Unset World Map' : 'Set as World Map'}
+              </button>
               <button
                 type="button"
                 className="map-card__remove"
@@ -141,6 +178,14 @@ function MapsTab({ campaignId }) {
             &times;
           </button>
         </div>
+      )}
+
+      {activeWorldMap && (
+        <WorldMapViewer
+          map={activeWorldMap}
+          onClose={() => setActiveWorldMapId(null)}
+          onMovePin={(x, y) => updateItem(activeWorldMap.id, { pin_x: x, pin_y: y })}
+        />
       )}
     </section>
   )
