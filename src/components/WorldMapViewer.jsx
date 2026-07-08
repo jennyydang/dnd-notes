@@ -457,11 +457,11 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
           className="world-map-viewer__form-backdrop"
           role="dialog"
           aria-modal="true"
-          onClick={cancelMarkerForm}
+          onPointerDown={cancelMarkerForm}
         >
           <form
             className="world-map-viewer__form panel"
-            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
             onSubmit={submitMarkerForm}
           >
             <h3>{editingMarkerId ? 'Edit Event Marker' : 'New Event Marker'}</h3>
@@ -533,9 +533,9 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="marker-details-title"
-          onClick={() => setDetailsMarker(null)}
+          onPointerDown={() => setDetailsMarker(null)}
         >
-          <div className="world-map-viewer__details panel" onClick={(e) => e.stopPropagation()}>
+          <div className="world-map-viewer__details panel" onPointerDown={(e) => e.stopPropagation()}>
             <div className="world-map-viewer__details-header">
               <h3 id="marker-details-title">{detailsMarker.title || 'Untitled marker'}</h3>
               <button
