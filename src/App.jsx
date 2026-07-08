@@ -38,7 +38,9 @@ function App() {
         campaignId={selectedCampaign.id}
         campaignName={selectedCampaign.name}
         playerId={playerSession?.playerId}
+        username={playerSession?.username}
         onBack={() => setSelectedCampaign(null)}
+        onLogOut={logOut}
       />
     )
   } else if (isAdminPath) {

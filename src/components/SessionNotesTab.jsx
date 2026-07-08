@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { getPublicUrl } from '../lib/storage.js'
 import './SessionNotesTab.scss'
+
+const PARTY_BUCKET = 'party-portraits'
 
 const emptyForm = { title: '', sessionDate: '', notes: '' }
 
@@ -9,6 +12,12 @@ const fromRow = (r) => ({
   title: r.title,
   sessionDate: r.session_date,
   notes: r.notes,
+})
+
+const partyFromRow = (r) => ({
+  id: r.id,
+  name: r.name,
+  photo: getPublicUrl(PARTY_BUCKET, r.photo_path),
 })
 
 // Dates are stored as ISO strings (YYYY-MM-DD) from the native date picker
@@ -33,6 +42,43 @@ function sessionDateTimestamp(value) {
   const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value
   const parsed = new Date(isoValue)
   return Number.isNaN(parsed.getTime()) ? -Infinity : parsed.getTime()
+}
+
+function notesPreview(notes) {
+  const oneLine = notes.replace(/\s+/g, ' ').trim()
+  return oneLine.length > 160 ? `${oneLine.slice(0, 160)}…` : oneLine
+}
+
+// The party roster isn't tracked per-session (there's no "who attended"
+// data), so this just shows the campaign's current party as a handy
+// reference alongside the recap rather than claiming to be session-scoped.
+function SessionPartyPanel({ campaignId }) {
+  const { items: party, loading } = useSupabaseTable('party_members', {
+    fromRow: partyFromRow,
+    filters: { campaign_id: campaignId },
+  })
+
+  if (loading || party.length === 0) return null
+
+  return (
+    <aside className="session-detail__party panel">
+      <h4>Party</h4>
+      <ul className="session-detail__party-list">
+        {party.map((member) => (
+          <li key={member.id} className="session-detail__party-member">
+            {member.photo ? (
+              <img src={member.photo} alt="" />
+            ) : (
+              <span className="session-detail__party-fallback" aria-hidden="true">
+                {member.name?.[0]?.toUpperCase() || '?'}
+              </span>
+            )}
+            <span>{member.name}</span>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  )
 }
 
 function SessionNotesTab({ campaignId, playerId }) {
@@ -60,10 +106,12 @@ function SessionNotesTab({ campaignId, playerId }) {
 
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [viewingId, setViewingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
 
   function startAdding() {
+    setViewingId(null)
     setForm(emptyForm)
     setEditingId(null)
     setFormError(null)
@@ -113,6 +161,7 @@ function SessionNotesTab({ campaignId, playerId }) {
   async function removeSession(id) {
     await removeItem(id)
     if (editingId === id) cancelForm()
+    if (viewingId === id) setViewingId(null)
   }
 
   function renderSessionForm(standalone) {
@@ -162,9 +211,18 @@ function SessionNotesTab({ campaignId, playerId }) {
     )
   }
 
+  const viewingSession = sortedSessions.find((s) => s.id === viewingId) || null
+
   return (
     <section className="session-notes-tab">
       <div className="session-notes-tab__toolbar">
+        <div className="session-notes-tab__toolbar-left">
+          {viewingSession && (
+            <button type="button" className="btn btn--text" onClick={() => setViewingId(null)}>
+              &larr; All Sessions
+            </button>
+          )}
+        </div>
         <button type="button" className="btn btn--primary" onClick={startAdding}>
           + Add Session Notes
         </button>
@@ -182,37 +240,84 @@ function SessionNotesTab({ campaignId, playerId }) {
         </p>
       )}
 
-      {!loading && !error && sortedSessions.length > 0 && (
+      {!loading && !error && viewingSession && editingId !== viewingSession.id && (
+        <div className="session-detail">
+          <article className="session-detail__card panel">
+            <div className="session-detail__header">
+              <span className="session-detail__badge" aria-hidden="true">
+                📜
+              </span>
+              <h3 className="session-detail__title">
+                {viewingSession.title || 'Untitled Session'}
+              </h3>
+              {viewingSession.sessionDate && (
+                <span className="session-detail__date">
+                  <span aria-hidden="true">📅</span> {formatSessionDate(viewingSession.sessionDate)}
+                </span>
+              )}
+            </div>
+            <div className="session-detail__divider" aria-hidden="true">
+              ◆
+            </div>
+            <p className="session-detail__notes">{viewingSession.notes}</p>
+            <div className="session-detail__actions">
+              <button type="button" className="btn btn--text" onClick={() => startEditing(viewingSession)}>
+                Edit
+              </button>
+              <button
+                type="button"
+                className="btn btn--danger"
+                onClick={() => removeSession(viewingSession.id)}
+              >
+                Delete
+              </button>
+            </div>
+          </article>
+
+          <SessionPartyPanel campaignId={campaignId} />
+        </div>
+      )}
+
+      {!loading && !error && !viewingSession && sortedSessions.length > 0 && (
         <div className="session-list">
           {sortedSessions.map((session) =>
             editingId === session.id ? (
               <div key={session.id}>{renderSessionForm(false)}</div>
             ) : (
               <article className="session-card panel" key={session.id}>
-                <div className="session-card__main">
-                  <h3 className="session-card__title">
-                    {session.title || 'Untitled Session'}
-                  </h3>
-                  {session.sessionDate && (
-                    <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
-                  )}
-                </div>
-                <p className="session-card__notes">{session.notes}</p>
-                <div className="session-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(session)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeSession(session.id)}
-                  >
-                    Delete
-                  </button>
+                <span className="session-card__badge" aria-hidden="true">
+                  📜
+                </span>
+                <div className="session-card__body">
+                  <div className="session-card__main">
+                    <button
+                      type="button"
+                      className="session-card__title"
+                      onClick={() => setViewingId(session.id)}
+                    >
+                      {session.title || 'Untitled Session'}
+                    </button>
+                    {session.sessionDate && (
+                      <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
+                    )}
+                  </div>
+                  <p className="session-card__notes">{notesPreview(session.notes)}</p>
+                  <div className="session-card__actions">
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => startEditing(session)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--danger"
+                      onClick={() => removeSession(session.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </article>
             ),

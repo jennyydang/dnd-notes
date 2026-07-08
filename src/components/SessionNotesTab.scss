@@ -1,9 +1,11 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .session-notes-tab {
   &__toolbar {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 1.25rem;
   }
 }
@@ -61,8 +63,28 @@
 .session-card {
   padding: 1.1rem 1.25rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  align-items: flex-start;
+  gap: 1rem;
+
+  &__badge {
+    flex-shrink: 0;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: $radius;
+    background: linear-gradient(180deg, $maroon-light, color.adjust($maroon, $lightness: -6%));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
 
   &__main {
     display: flex;
@@ -73,8 +95,18 @@
   }
 
   &__title {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-family: $font-display;
     font-size: 1.15rem;
     color: $parchment;
+    text-align: left;
+
+    &:hover {
+      color: $gold-light;
+      text-decoration: underline;
+    }
   }
 
   &__date {
@@ -85,8 +117,7 @@
 
   &__notes {
     margin: 0;
-    color: $text-light;
-    white-space: pre-wrap;
+    color: $text-muted;
     line-height: 1.6;
   }
 
@@ -96,5 +127,148 @@
     gap: 0.5rem;
     padding-top: 0.5rem;
     border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+}
+
+.session-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+
+  &__card {
+    flex: 1;
+    min-width: 0;
+    padding: 1.5rem 1.75rem;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: $radius;
+    background: linear-gradient(180deg, $maroon-light, color.adjust($maroon, $lightness: -6%));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    font-size: 1.4rem;
+    color: $gold-light;
+  }
+
+  &__date {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    color: $text-muted;
+  }
+
+  &__divider {
+    text-align: center;
+    color: $gold-dim;
+    margin: 1.1rem 0;
+    position: relative;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: calc(50% - 1rem);
+      border-top: 1px solid rgba($gold-dim, 0.4);
+    }
+
+    &::before {
+      left: 0;
+    }
+
+    &::after {
+      right: 0;
+    }
+  }
+
+  &__notes {
+    margin: 0;
+    color: $text-light;
+    white-space: pre-wrap;
+    line-height: 1.7;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+
+  &__party {
+    flex: 0 0 14rem;
+    padding: 1.25rem;
+
+    h4 {
+      color: $gold-light;
+      font-size: 0.95rem;
+      margin-bottom: 0.85rem;
+    }
+  }
+
+  &__party-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  &__party-member {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: $text-light;
+    font-size: 0.9rem;
+
+    img {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+
+  &__party-fallback {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: $bg-panel-raised;
+    border: 1px solid rgba($gold-dim, 0.5);
+    color: $gold-light;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: $font-display;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 720px) {
+    flex-direction: column;
+
+    &__party {
+      flex: none;
+      width: 100%;
+    }
   }
 }
