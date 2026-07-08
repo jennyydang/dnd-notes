@@ -133,6 +133,20 @@ create table if not exists map_markers (
   created_at timestamptz not null default now()
 );
 
+-- 'zoom' markers open a nested map (see maps.source_marker_id below)
+-- instead of the title/notes/photo popup 'event' markers show.
+alter table map_markers add column if not exists kind text not null default 'event';
+alter table map_markers drop constraint if exists map_markers_kind_check;
+alter table map_markers add constraint map_markers_kind_check check (kind in ('event','zoom'));
+
+-- Backs a 'zoom' marker: the nested map it opens is just another maps
+-- row (its own image, its own pin, its own markers — which can
+-- themselves include further 'zoom' markers, nesting arbitrarily deep).
+-- Null for ordinary top-level campaign maps. ON DELETE CASCADE means
+-- deleting the zoom marker on the parent map deletes this nested map
+-- (and, transitively, everything nested under it) automatically.
+alter table maps add column if not exists source_marker_id uuid references map_markers(id) on delete cascade;
+
 create table if not exists npcs (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references campaigns(id) on delete cascade,

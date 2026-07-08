@@ -14,6 +14,7 @@ const fromRow = (r) => ({
   isWorldMap: r.is_world_map,
   pinX: r.pin_x,
   pinY: r.pin_y,
+  sourceMarkerId: r.source_marker_id,
 })
 
 function MapsTab({ campaignId }) {
@@ -25,6 +26,10 @@ function MapsTab({ campaignId }) {
   const [captionDrafts, setCaptionDrafts] = useState({})
   const fileInputRef = useRef(null)
   const activeWorldMap = maps.find((m) => m.id === activeWorldMapId) || null
+  // Zoom-area maps (nested under a 'zoom' marker on another map) aren't
+  // top-level campaign maps — they're only reachable by clicking that
+  // marker, not from this flat grid.
+  const topLevelMaps = maps.filter((m) => !m.sourceMarkerId)
 
   async function handleFilesSelected(event) {
     const files = Array.from(event.target.files || [])
@@ -113,16 +118,16 @@ function MapsTab({ campaignId }) {
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
-      {!loading && !error && maps.length === 0 && (
+      {!loading && !error && topLevelMaps.length === 0 && (
         <p className="empty-state">
           No maps yet. Add images your DM has shared to keep track of where
           your party has been.
         </p>
       )}
 
-      {!loading && !error && maps.length > 0 && (
+      {!loading && !error && topLevelMaps.length > 0 && (
         <div className="maps-tab__grid">
-          {maps.map((map) => (
+          {topLevelMaps.map((map) => (
             <figure className="map-card" key={map.id}>
               <button
                 type="button"
@@ -183,8 +188,8 @@ function MapsTab({ campaignId }) {
       {activeWorldMap && (
         <WorldMapViewer
           map={activeWorldMap}
+          campaignId={campaignId}
           onClose={() => setActiveWorldMapId(null)}
-          onMovePin={(x, y) => updateItem(activeWorldMap.id, { pin_x: x, pin_y: y })}
         />
       )}
     </section>

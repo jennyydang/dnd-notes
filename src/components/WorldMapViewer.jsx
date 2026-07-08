@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { supabase } from '../lib/supabaseClient.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import './WorldMapViewer.scss'
 
 const MARKER_BUCKET = 'map-marker-photos'
+const MAP_BUCKET = 'maps'
 const ZOOM_MIN = 1
 const ZOOM_MAX = 6
 const DRAG_THRESHOLD_PX = 5
 
 const emptyMarkerForm = { title: '', notes: '', photoFile: null, photoPreview: '', photoRemoved: false }
+const emptyZoomForm = { title: '', imageFile: null, imagePreview: '' }
 
 const markerFromRow = (r) => ({
   id: r.id,
@@ -16,18 +19,43 @@ const markerFromRow = (r) => ({
   y: r.y,
   title: r.title,
   notes: r.notes,
+  kind: r.kind,
   photoPath: r.photo_path,
   photo: getPublicUrl(MARKER_BUCKET, r.photo_path),
+})
+
+// Converts a raw `maps` row into the same shape MapsTab hands this
+// component for a top-level map — used when a 'zoom' marker's nested map
+// is fetched on demand, since it isn't loaded through MapsTab's own list.
+const childMapFromRow = (r) => ({
+  id: r.id,
+  imagePath: r.image_path,
+  src: getPublicUrl(MAP_BUCKET, r.image_path),
+  caption: r.caption,
+  pinX: r.pin_x,
+  pinY: r.pin_y,
+  sourceMarkerId: r.source_marker_id,
 })
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value))
 }
 
-// map is the { id, src, caption, pinX, pinY } row from MapsTab. onMovePin
-// persists the shared party pin's position back to the maps table (there's
-// no separate table for it — see supabase/schema.sql).
-function WorldMapViewer({ map, onClose, onMovePin }) {
+// map is the { id, imagePath, src, caption, pinX, pinY, sourceMarkerId }
+// row from MapsTab (or, for a nested zoom area, from childMapFromRow
+// above). sourceMarkerId is only set for a nested zoom area's map — it's
+// the map_markers row (on the *parent* map) that opens this one, and is
+// what lets "Delete This Area" find its way back there.
+//
+// backLabel, when set, means this instance was opened from a 'zoom'
+// marker on another map of that caption — the toolbar shows a "back"
+// button instead of "Close", and onClose() just pops this level rather
+// than leaving the World Map entirely. onDeleteSelf, set alongside it, is
+// the parent's own removeItem bound to the marker that opened this map —
+// routing the delete through the parent's hook (rather than this level
+// deleting the marker directly) is what keeps the parent's marker list in
+// sync, since it's a separate component instance with its own local state.
+function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
   const { items: markers, addItem, updateItem, removeItem } =
     useSupabaseTable('map_markers', { fromRow: markerFromRow, filters: { map_id: map.id } })
 
@@ -37,15 +65,19 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
   // The shared pin's position lives in local state, seeded once from the
   // map row and updated only by our own drags/placements — there's no
   // realtime subscription in this app, so nothing else changes it out from
-  // under us while this viewer is open (see useSupabaseTable's refetch-on-
-  // write behavior: every write already updates the canonical list, this
-  // just avoids waiting on that round trip to show the new position).
+  // under us while this viewer is open (see movePin below: every write
+  // already updates the canonical row, this just avoids waiting on that
+  // round trip to show the new position).
   const [pin, setPin] = useState({ x: map.pinX, y: map.pinY })
-  const [placementMode, setPlacementMode] = useState(null) // null | 'pin' | 'event'
+  const [placementMode, setPlacementMode] = useState(null) // null | 'pin' | 'event' | 'zoom'
   const [pendingMarkerPos, setPendingMarkerPos] = useState(null)
   const [markerForm, setMarkerForm] = useState(null)
   const [editingMarkerId, setEditingMarkerId] = useState(null)
   const [detailsMarker, setDetailsMarker] = useState(null)
+  const [zoomForm, setZoomForm] = useState(null)
+  // The nested map opened by tapping a 'zoom' marker — rendering another
+  // WorldMapViewer for it is what makes zoom areas recursively explorable.
+  const [openZoomMap, setOpenZoomMap] = useState(null)
   const [formError, setFormError] = useState(null)
   // { kind: 'pin' | 'marker', id, x, y } while a pin/marker is being
   // dragged — the live position shown on screen during the gesture,
@@ -55,6 +87,7 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
   const viewportRef = useRef(null)
   const stageRef = useRef(null)
   const photoInputRef = useRef(null)
+  const zoomImageInputRef = useRef(null)
   const objectUrlRef = useRef(null)
   const panStartRef = useRef(null)
   const dragStartRef = useRef(null)
@@ -72,6 +105,11 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
       URL.revokeObjectURL(objectUrlRef.current)
       objectUrlRef.current = null
     }
+  }
+
+  async function movePin(x, y) {
+    const { error } = await supabase.from('maps').update({ pin_x: x, pin_y: y }).eq('id', map.id)
+    if (error) throw new Error(error.message)
   }
 
   // Zooms so that the world-space point currently under (pointX, pointY)
@@ -198,13 +236,19 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
     if (placementMode === 'pin') {
       setPin({ x, y })
       setPlacementMode(null)
-      Promise.resolve(onMovePin(x, y)).catch((err) => setFormError(err.message))
-    } else {
+      movePin(x, y).catch((err) => setFormError(err.message))
+    } else if (placementMode === 'event') {
       setPendingMarkerPos({ x, y })
       setPlacementMode(null)
       revokeTrackedObjectUrl()
       setMarkerForm(emptyMarkerForm)
       setEditingMarkerId(null)
+      setFormError(null)
+    } else if (placementMode === 'zoom') {
+      setPendingMarkerPos({ x, y })
+      setPlacementMode(null)
+      revokeTrackedObjectUrl()
+      setZoomForm(emptyZoomForm)
       setFormError(null)
     }
   }
@@ -238,6 +282,22 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
     setDrag({ kind: start.kind, id: start.id, x: newX, y: newY })
   }
 
+  // A tap (no drag) on an existing marker opens its popup: an 'event'
+  // marker shows the title/notes/photo details, a 'zoom' marker instead
+  // fetches and opens the nested map it points to.
+  async function openZoomArea(marker) {
+    const { data, error } = await supabase
+      .from('maps')
+      .select('*')
+      .eq('source_marker_id', marker.id)
+      .single()
+    if (error) {
+      console.error(error.message)
+      return
+    }
+    setOpenZoomMap(childMapFromRow(data))
+  }
+
   async function endDrag(e) {
     const start = dragStartRef.current
     dragStartRef.current = null
@@ -248,7 +308,10 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
       setDrag(null)
       if (start.kind === 'marker') {
         const marker = markers.find((m) => m.id === start.id)
-        if (marker) setDetailsMarker(marker)
+        if (marker) {
+          if (marker.kind === 'zoom') openZoomArea(marker)
+          else setDetailsMarker(marker)
+        }
       }
       return
     }
@@ -259,7 +322,7 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
       setPin(final)
       setDrag(null)
       try {
-        await onMovePin(final.x, final.y)
+        await movePin(final.x, final.y)
       } catch (err) {
         setFormError(err.message)
       }
@@ -332,7 +395,7 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
       if (editingMarkerId) {
         await updateItem(editingMarkerId, payload)
       } else {
-        await addItem({ ...payload, x: pendingMarkerPos.x, y: pendingMarkerPos.y })
+        await addItem({ ...payload, x: pendingMarkerPos.x, y: pendingMarkerPos.y, kind: 'event' })
       }
       cancelMarkerForm()
     } catch (err) {
@@ -345,6 +408,65 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
     await removeImage(MARKER_BUCKET, marker.photoPath)
     setDetailsMarker(null)
     if (editingMarkerId === marker.id) cancelMarkerForm()
+  }
+
+  function cancelZoomForm() {
+    revokeTrackedObjectUrl()
+    setZoomForm(null)
+    setPendingMarkerPos(null)
+    setFormError(null)
+  }
+
+  function handleZoomImageSelected(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    revokeTrackedObjectUrl()
+    const previewUrl = URL.createObjectURL(file)
+    objectUrlRef.current = previewUrl
+    setZoomForm((prev) => ({ ...prev, imageFile: file, imagePreview: previewUrl }))
+  }
+
+  // Placing a zoom area is a two-table write: the marker on this map, and
+  // the nested map row it points to (see supabase/schema.sql). If the
+  // second insert fails, roll back the marker and the uploaded image
+  // rather than leaving a zoom marker that opens nothing.
+  async function submitZoomForm(event) {
+    event.preventDefault()
+    if (!zoomForm.title.trim() || !zoomForm.imageFile) return
+
+    let imagePath = null
+    let marker = null
+    try {
+      imagePath = await uploadImage(MAP_BUCKET, zoomForm.imageFile)
+      marker = await addItem({ title: zoomForm.title, x: pendingMarkerPos.x, y: pendingMarkerPos.y, kind: 'zoom' })
+      const { error: childMapError } = await supabase
+        .from('maps')
+        .insert({ campaign_id: campaignId, image_path: imagePath, caption: zoomForm.title, source_marker_id: marker.id })
+      if (childMapError) throw new Error(childMapError.message)
+      cancelZoomForm()
+    } catch (err) {
+      if (marker) await removeItem(marker.id)
+      if (imagePath) await removeImage(MAP_BUCKET, imagePath)
+      setFormError(err.message)
+    }
+  }
+
+  // Only shown for a nested zoom area (onDeleteSelf set) — deletes the
+  // marker on the *parent* map via the parent's own removeItem, which
+  // cascades (see schema.sql) to delete this map row and everything
+  // nested under it; only this map's own image needs explicit storage
+  // cleanup here.
+  async function deleteZoomArea() {
+    try {
+      await onDeleteSelf()
+    } catch (err) {
+      setFormError(err.message)
+      return
+    }
+    await removeImage(MAP_BUCKET, map.imagePath)
+    onClose()
   }
 
   const pinPos = drag?.kind === 'pin' ? drag : pin
@@ -379,8 +501,20 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
           >
             {placementMode === 'event' ? 'Click the map to place it' : '+ Drop Event Marker'}
           </button>
+          <button
+            type="button"
+            className="btn btn--text"
+            onClick={() => setPlacementMode((m) => (m === 'zoom' ? null : 'zoom'))}
+          >
+            {placementMode === 'zoom' ? 'Click the map to place it' : '+ Add Zoom Area'}
+          </button>
+          {onDeleteSelf && (
+            <button type="button" className="btn btn--danger" onClick={deleteZoomArea}>
+              Delete This Area
+            </button>
+          )}
           <button type="button" className="btn btn--primary" onClick={onClose}>
-            Close
+            {backLabel ? `← Back to ${backLabel}` : 'Close'}
           </button>
         </div>
       </div>
@@ -429,6 +563,7 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
 
           {markers.map((marker) => {
             const pos = drag?.kind === 'marker' && drag.id === marker.id ? drag : marker
+            const isZoom = marker.kind === 'zoom'
             return (
               <div
                 key={marker.id}
@@ -436,15 +571,15 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
                 style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%` }}
               >
                 <div
-                  className="world-map-viewer__event-marker"
+                  className={isZoom ? 'world-map-viewer__zoom-marker' : 'world-map-viewer__event-marker'}
                   style={{ transform: `translate(-50%, -100%) scale(${1 / zoom})` }}
                   onPointerDown={(e) => startDrag(e, 'marker', marker.id, marker.x, marker.y)}
                   onPointerMove={moveDrag}
                   onPointerUp={endDrag}
                   onPointerCancel={endDrag}
-                  title={marker.title || 'Event marker'}
+                  title={marker.title || (isZoom ? 'Zoom area' : 'Event marker')}
                 >
-                  📌
+                  {isZoom ? '🔍' : '📌'}
                 </div>
               </div>
             )
@@ -457,11 +592,11 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
           className="world-map-viewer__form-backdrop"
           role="dialog"
           aria-modal="true"
-          onClick={cancelMarkerForm}
+          onPointerDown={cancelMarkerForm}
         >
           <form
             className="world-map-viewer__form panel"
-            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
             onSubmit={submitMarkerForm}
           >
             <h3>{editingMarkerId ? 'Edit Event Marker' : 'New Event Marker'}</h3>
@@ -527,15 +662,76 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
         </div>
       )}
 
+      {zoomForm && (
+        <div
+          className="world-map-viewer__form-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onPointerDown={cancelZoomForm}
+        >
+          <form
+            className="world-map-viewer__form panel"
+            onPointerDown={(e) => e.stopPropagation()}
+            onSubmit={submitZoomForm}
+          >
+            <h3>New Zoom Area</h3>
+            <div className="field">
+              <label htmlFor="zoom-title">Title</label>
+              <input
+                id="zoom-title"
+                type="text"
+                value={zoomForm.title}
+                onChange={(e) => setZoomForm({ ...zoomForm, title: e.target.value })}
+                placeholder="Black Forest Region"
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Zoomed-in image</label>
+              <div className="world-map-viewer__photo-picker">
+                <button
+                  type="button"
+                  className="world-map-viewer__photo-btn"
+                  onClick={() => zoomImageInputRef.current?.click()}
+                  aria-label="Choose an image"
+                >
+                  {zoomForm.imagePreview ? (
+                    <img src={zoomForm.imagePreview} alt="Zoom area" />
+                  ) : (
+                    <span>+ Image</span>
+                  )}
+                </button>
+                <input
+                  ref={zoomImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleZoomImageSelected}
+                />
+              </div>
+            </div>
+            {formError && <p className="empty-state empty-state--error">{formError}</p>}
+            <div className="world-map-viewer__form-actions">
+              <button type="button" className="btn btn--text" onClick={cancelZoomForm}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn--primary" disabled={!zoomForm.title.trim() || !zoomForm.imageFile}>
+                Add Zoom Area
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {detailsMarker && (
         <div
           className="world-map-viewer__details-backdrop"
           role="dialog"
           aria-modal="true"
           aria-labelledby="marker-details-title"
-          onClick={() => setDetailsMarker(null)}
+          onPointerDown={() => setDetailsMarker(null)}
         >
-          <div className="world-map-viewer__details panel" onClick={(e) => e.stopPropagation()}>
+          <div className="world-map-viewer__details panel" onPointerDown={(e) => e.stopPropagation()}>
             <div className="world-map-viewer__details-header">
               <h3 id="marker-details-title">{detailsMarker.title || 'Untitled marker'}</h3>
               <button
@@ -567,6 +763,16 @@ function WorldMapViewer({ map, onClose, onMovePin }) {
             </div>
           </div>
         </div>
+      )}
+
+      {openZoomMap && (
+        <WorldMapViewer
+          map={openZoomMap}
+          campaignId={campaignId}
+          backLabel={map.caption || 'World Map'}
+          onClose={() => setOpenZoomMap(null)}
+          onDeleteSelf={() => removeItem(openZoomMap.sourceMarkerId)}
+        />
       )}
     </div>
   )
