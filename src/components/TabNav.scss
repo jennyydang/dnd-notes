@@ -75,6 +75,58 @@
     }
   }
 
+  // The left-hand campaign navigation — same tab semantics as the default
+  // horizontal bar, just stacked vertically with an active bar on the
+  // left edge instead of the bottom.
+  &--sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    border-bottom: none;
+    gap: 0;
+
+    .tab-nav__list {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.15rem;
+    }
+
+    .tab-nav__item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      width: 100%;
+      text-align: left;
+      font-size: 0.95rem;
+      border-bottom: none;
+      border-left: 3px solid transparent;
+      border-radius: 0 $radius $radius 0;
+      padding: 0.55rem 0.9rem;
+
+      &--active {
+        border-bottom-color: transparent;
+        border-left-color: $gold;
+        background: rgba($gold, 0.1);
+      }
+    }
+
+    .tab-nav__icon {
+      flex-shrink: 0;
+      width: 1.3rem;
+      font-size: 1.05rem;
+      text-align: center;
+    }
+
+    .tab-nav__add {
+      margin: 0.5rem 0 0;
+    }
+
+    .tab-nav__add-form {
+      margin: 0.5rem 0 0;
+      flex-wrap: wrap;
+    }
+  }
+
   // A compact pill segmented control, for using TabNav as an in-page
   // filter (e.g. Cantrips/Spells, loot by holder) rather than as page-level
   // navigation — set apart so it doesn't read as another layer of nav

@@ -14,15 +14,15 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './CampaignView.scss'
 
 const BUILT_IN_TABS = [
-  { id: 'sessions', label: 'Session Notes' },
-  { id: 'spells', label: 'Spells' },
-  { id: 'party', label: 'Party' },
-  { id: 'maps', label: 'Maps' },
-  { id: 'loot', label: 'Loot' },
-  { id: 'quests', label: 'Quests' },
-  { id: 'npcs', label: 'NPCs' },
-  { id: 'lore', label: 'Lore' },
-  { id: 'tools', label: 'Tools' },
+  { id: 'sessions', label: 'Session Notes', icon: '📖' },
+  { id: 'spells', label: 'Spells', icon: '✨' },
+  { id: 'party', label: 'Party', icon: '🎭' },
+  { id: 'maps', label: 'Maps', icon: '🗺️' },
+  { id: 'loot', label: 'Loot', icon: '💰' },
+  { id: 'quests', label: 'Quests', icon: '⚔️' },
+  { id: 'npcs', label: 'NPCs', icon: '👥' },
+  { id: 'lore', label: 'Lore', icon: '📔' },
+  { id: 'tools', label: 'Tools', icon: '🛠️' },
 ]
 
 const customTabPrefix = 'custom:'
@@ -43,7 +43,7 @@ function CampaignView({ campaignId, campaignName, playerId, onBack }) {
 
   const tabs = [
     ...BUILT_IN_TABS,
-    ...customTabs.map((tab) => ({ id: `${customTabPrefix}${tab.id}`, label: tab.name })),
+    ...customTabs.map((tab) => ({ id: `${customTabPrefix}${tab.id}`, label: tab.name, icon: '📄' })),
   ]
 
   async function handleAddTab(name) {
@@ -67,16 +67,23 @@ function CampaignView({ campaignId, campaignName, playerId, onBack }) {
 
   return (
     <div className="campaign-view">
-      <div className="campaign-view__header">
-        <button type="button" className="btn btn--text" onClick={onBack}>
+      <aside className="campaign-view__sidebar">
+        <button type="button" className="btn btn--text campaign-view__back" onClick={onBack}>
           &larr; All Campaigns
         </button>
         <h2 className="campaign-view__name">{campaignName}</h2>
-      </div>
 
-      <TabNav tabs={tabs} activeTab={activeTab} onSelect={setActiveTab} onAddTab={handleAddTab} />
+        <TabNav
+          tabs={tabs}
+          activeTab={activeTab}
+          onSelect={setActiveTab}
+          onAddTab={handleAddTab}
+          className="tab-nav--sidebar"
+          vertical
+        />
+      </aside>
 
-      <div className="app__content">
+      <div className="campaign-view__content">
         {activeTab === 'sessions' && (
           <SessionNotesTab campaignId={campaignId} playerId={playerId} />
         )}
