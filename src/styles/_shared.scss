@@ -62,6 +62,11 @@
 }
 
 .empty-state {
+  // Opaque, not transparent: this renders directly on the page background
+  // (the vista photo in _base.scss) rather than inside a .panel, and its
+  // AAA contrast was only ever verified against a flat color — an opaque
+  // backing keeps that true regardless of what's behind it.
+  background: $bg-panel;
   color: $text-muted;
   font-style: italic;
   text-align: center;
