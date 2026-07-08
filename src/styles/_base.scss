@@ -12,9 +12,22 @@ body,
 }
 
 body {
-  background:
+  // A dark scrim sits between the gold glow and the photo — strong enough
+  // that even the photo's brightest spots (lantern flame, lit windows)
+  // stay close to $bg-deep, so text placed directly on body (e.g. the
+  // app header) keeps the AAA contrast already verified against a flat
+  // background. Fixed attachment on the photo only: a gradient with
+  // `fixed` repaints on every scroll frame for no visual benefit since it
+  // already fills the viewport.
+  background-color: $bg-deep;
+  background-image:
     radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
-    $bg-deep;
+    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72)),
+    url('../assets/parchment-vista.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: auto, auto, cover;
+  background-attachment: scroll, scroll, fixed;
   color: $text-light;
   font-family: $font-body;
   font-size: 17px;

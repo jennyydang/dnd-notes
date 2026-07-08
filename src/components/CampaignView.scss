@@ -13,7 +13,7 @@
 
   &__hamburger {
     flex-shrink: 0;
-    background: transparent;
+    background: $bg-panel-raised;
     border: 1px solid rgba($gold-dim, 0.5);
     border-radius: $radius;
     color: $text-muted;
@@ -162,6 +162,13 @@
     gap: 1rem;
     position: sticky;
     top: 2rem;
+    // Opaque: the tab labels here render straight on this background (no
+    // .panel wrapper), so it needs its own backing to keep their contrast
+    // steady now that the page background is a photo, not a flat color.
+    background: $bg-panel;
+    border: $border-gold;
+    border-radius: $radius-lg;
+    padding: 1.25rem 1rem;
   }
 
   &__back {
