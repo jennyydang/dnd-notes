@@ -1,9 +1,159 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .campaign-view {
-  display: flex;
-  align-items: flex-start;
-  gap: 2rem;
+  &__topbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba($gold-dim, 0.4);
+  }
+
+  &__hamburger {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid rgba($gold-dim, 0.5);
+    border-radius: $radius;
+    color: $text-muted;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0.45rem 0.65rem;
+
+    &:hover {
+      color: $gold-light;
+      border-color: $gold;
+    }
+  }
+
+  &__search {
+    position: relative;
+    flex: 1;
+    max-width: 24rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: 999px;
+    padding: 0.5rem 0.9rem;
+
+    &:focus-within {
+      border-color: $gold;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none;
+      color: $text-light;
+      font-size: 0.9rem;
+
+      &:focus {
+        outline: none;
+      }
+    }
+  }
+
+  &__search-icon {
+    color: $text-muted;
+    font-size: 0.9rem;
+  }
+
+  &__search-hint {
+    flex-shrink: 0;
+    font-family: $font-body;
+    font-size: 0.7rem;
+    color: $text-muted;
+    background: $bg-panel-raised;
+    border: 1px solid rgba($gold-dim, 0.4);
+    border-radius: $radius;
+    padding: 0.1rem 0.4rem;
+  }
+
+  &__search-results {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background: $bg-panel;
+    border: $border-gold;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-panel;
+    list-style: none;
+    margin: 0;
+    padding: 0.4rem;
+    z-index: 10;
+
+    button {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      border-radius: $radius;
+      color: $text-light;
+      padding: 0.5rem 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      &:hover {
+        background: rgba($gold, 0.12);
+        color: $gold-light;
+      }
+    }
+  }
+
+  &__account {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  &__avatar {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    background: linear-gradient(180deg, $gold-dim, color.adjust($gold-dim, $lightness: -8%));
+    border: $border-gold;
+    color: $ink;
+    font-family: $font-display;
+    font-size: 1.05rem;
+
+    &:hover {
+      background: linear-gradient(180deg, $gold, color.adjust($gold-dim, $lightness: -4%));
+    }
+  }
+
+  &__account-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 10rem;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+
+  &__account-name {
+    color: $gold-light;
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba($gold-dim, 0.4);
+  }
+
+  &__body {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+
+    &--sidebar-collapsed {
+      gap: 0;
+    }
+  }
 
   &__sidebar {
     flex: 0 0 220px;
@@ -19,21 +169,45 @@
     padding-left: 0;
   }
 
+  &__title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid rgba($gold-dim, 0.4);
+  }
+
   &__name {
     font-size: 1.3rem;
     color: $gold-light;
-    padding-bottom: 0.85rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+  }
+
+  &__status {
+    font-size: 0.72rem;
+    color: $green-text;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
   &__content {
     flex: 1;
     min-width: 0;
-    margin-top: 0;
   }
 
   @media (max-width: 720px) {
-    flex-direction: column;
+    &__topbar {
+      flex-wrap: wrap;
+    }
+
+    &__search {
+      order: 1;
+      max-width: none;
+      flex-basis: 100%;
+    }
+
+    &__body {
+      flex-direction: column;
+    }
 
     &__sidebar {
       flex: none;
