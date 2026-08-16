@@ -44,11 +44,6 @@ function sessionDateTimestamp(value) {
   return Number.isNaN(parsed.getTime()) ? -Infinity : parsed.getTime()
 }
 
-function notesPreview(notes) {
-  const oneLine = notes.replace(/\s+/g, ' ').trim()
-  return oneLine.length > 160 ? `${oneLine.slice(0, 160)}…` : oneLine
-}
-
 // The party roster isn't tracked per-session (there's no "who attended"
 // data), so this just shows the campaign's current party as a handy
 // reference alongside the recap rather than claiming to be session-scoped.
@@ -301,7 +296,7 @@ function SessionNotesTab({ campaignId, playerId }) {
                       <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
                     )}
                   </div>
-                  <p className="session-card__notes">{notesPreview(session.notes)}</p>
+                  <p className="session-card__notes">{session.notes}</p>
                   <div className="session-card__actions">
                     <button
                       type="button"
