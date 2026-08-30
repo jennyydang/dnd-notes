@@ -76,18 +76,9 @@ function QuestsTab({ campaignId }) {
     if (editingId === id) cancelForm()
   }
 
-  const showForm = isAdding || editingId !== null
-
-  return (
-    <section className="quests-tab">
-      <div className="quests-tab__toolbar">
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add Quest
-        </button>
-      </div>
-
-      {showForm && (
-        <form className="quest-form panel" onSubmit={submitForm}>
+  function renderQuestForm(standalone) {
+    return (
+    <form className={`quest-form panel${standalone ? ' quest-form--standalone' : ''}`} onSubmit={submitForm}>
           <div className="quest-form__grid">
             <div className="field">
               <label htmlFor="quest-name">Quest</label>
@@ -144,7 +135,18 @@ function QuestsTab({ campaignId }) {
             </button>
           </div>
         </form>
-      )}
+    )
+  }
+
+  return (
+    <section className="quests-tab">
+      <div className="quests-tab__toolbar">
+        <button type="button" className="btn btn--primary" onClick={startAdding}>
+          + Add Quest
+        </button>
+      </div>
+
+      {isAdding && renderQuestForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -157,38 +159,44 @@ function QuestsTab({ campaignId }) {
 
       {!loading && !error && quests.length > 0 && (
         <div className="quest-list">
-          {quests.map((quest) => (
-            <article className="quest-card panel" key={quest.id}>
-              <div className="quest-card__main">
-                <h3 className="quest-card__name">{quest.name}</h3>
-                <span
-                  className={`status-badge status-badge--${quest.status.toLowerCase()}`}
-                >
-                  {quest.status}
-                </span>
+          {quests.map((quest) =>
+            editingId === quest.id ? (
+              <div className="quest-list__edit-slot" key={quest.id}>
+                {renderQuestForm(false)}
               </div>
-              {quest.givenBy && (
-                <p className="quest-card__given-by">Given by {quest.givenBy}</p>
-              )}
-              {quest.notes && <p className="quest-card__notes">{quest.notes}</p>}
-              <div className="quest-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(quest)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => removeQuest(quest.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
+            ) : (
+              <article className="quest-card panel" key={quest.id}>
+                <div className="quest-card__main">
+                  <h3 className="quest-card__name">{quest.name}</h3>
+                  <span
+                    className={`status-badge status-badge--${quest.status.toLowerCase()}`}
+                  >
+                    {quest.status}
+                  </span>
+                </div>
+                {quest.givenBy && (
+                  <p className="quest-card__given-by">Given by {quest.givenBy}</p>
+                )}
+                {quest.notes && <p className="quest-card__notes">{quest.notes}</p>}
+                <div className="quest-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(quest)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeQuest(quest.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ),
+          )}
         </div>
       )}
     </section>

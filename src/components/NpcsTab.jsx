@@ -139,18 +139,9 @@ function NpcsTab({ campaignId }) {
     if (editingId === id) cancelForm()
   }
 
-  const showForm = isAdding || editingId !== null
-
-  return (
-    <section className="npcs-tab">
-      <div className="npcs-tab__toolbar">
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add NPC
-        </button>
-      </div>
-
-      {showForm && (
-        <form className="npc-form panel" onSubmit={submitForm}>
+  function renderNpcForm(standalone) {
+    return (
+    <form className={`npc-form panel${standalone ? ' npc-form--standalone' : ''}`} onSubmit={submitForm}>
           <div className="npc-form__layout">
             <div className="npc-form__photo">
               <button
@@ -246,7 +237,18 @@ function NpcsTab({ campaignId }) {
             </button>
           </div>
         </form>
-      )}
+    )
+  }
+
+  return (
+    <section className="npcs-tab">
+      <div className="npcs-tab__toolbar">
+        <button type="button" className="btn btn--primary" onClick={startAdding}>
+          + Add NPC
+        </button>
+      </div>
+
+      {isAdding && renderNpcForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -259,54 +261,60 @@ function NpcsTab({ campaignId }) {
 
       {!loading && !error && npcs.length > 0 && (
         <div className="npc-list">
-          {npcs.map((npc) => (
-            <article className="npc-card panel" key={npc.id}>
-              <div className="npc-card__main">
-                <div className="npc-card__identity">
-                  <div className="npc-card__avatar">
-                    {npc.photo ? (
-                      <img src={npc.photo} alt={npc.name} />
-                    ) : (
-                      <span>{npc.name.charAt(0).toUpperCase()}</span>
-                    )}
+          {npcs.map((npc) =>
+            editingId === npc.id ? (
+              <div className="npc-list__edit-slot" key={npc.id}>
+                {renderNpcForm(false)}
+              </div>
+            ) : (
+              <article className="npc-card panel" key={npc.id}>
+                <div className="npc-card__main">
+                  <div className="npc-card__identity">
+                    <div className="npc-card__avatar">
+                      {npc.photo ? (
+                        <img src={npc.photo} alt={npc.name} />
+                      ) : (
+                        <span>{npc.name.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <h3 className="npc-card__name">{npc.name}</h3>
                   </div>
-                  <h3 className="npc-card__name">{npc.name}</h3>
+                  <span
+                    className={`status-badge status-badge--${npc.status.toLowerCase()}`}
+                  >
+                    {npc.status}
+                  </span>
                 </div>
-                <span
-                  className={`status-badge status-badge--${npc.status.toLowerCase()}`}
-                >
-                  {npc.status}
-                </span>
-              </div>
-              <dl className="npc-card__details">
-                <div>
-                  <dt>Race</dt>
-                  <dd>{npc.race || '—'}</dd>
+                <dl className="npc-card__details">
+                  <div>
+                    <dt>Race</dt>
+                    <dd>{npc.race || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Where we met them</dt>
+                    <dd>{npc.metAt || '—'}</dd>
+                  </div>
+                </dl>
+                {npc.description && <p className="npc-card__description">{npc.description}</p>}
+                <div className="npc-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(npc)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeNpc(npc.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
-                <div>
-                  <dt>Where we met them</dt>
-                  <dd>{npc.metAt || '—'}</dd>
-                </div>
-              </dl>
-              {npc.description && <p className="npc-card__description">{npc.description}</p>}
-              <div className="npc-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(npc)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => removeNpc(npc.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
+              </article>
+            ),
+          )}
         </div>
       )}
     </section>

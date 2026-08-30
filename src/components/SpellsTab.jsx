@@ -128,13 +128,130 @@ function SpellsTab({ campaignId, playerId }) {
     if (flavorSpell?.id === id) setFlavorSpell(null)
   }
 
-  const showForm = isAdding || editingId !== null
+  function renderSpellForm(standalone) {
+    return (
+    <form className={`spell-form panel${standalone ? ' spell-form--standalone' : ''}`} onSubmit={submitForm}>
+      <div className="spell-form__grid">
+        <div className="field">
+          <label htmlFor="spell-name">Name</label>
+          <input
+            id="spell-name"
+            type="text"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Fireball"
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="spell-level">Level</label>
+          <select
+            id="spell-level"
+            value={form.level}
+            onChange={(e) => setForm({ ...form, level: e.target.value })}
+          >
+            {Array.from({ length: 10 }, (_, level) => (
+              <option key={level} value={level}>
+                {levelLabel(level)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="spell-form__grid">
+        <div className="field">
+          <label htmlFor="spell-casting-time">Casting Time</label>
+          <input
+            id="spell-casting-time"
+            type="text"
+            value={form.castingTime}
+            onChange={(e) => setForm({ ...form, castingTime: e.target.value })}
+            placeholder="1 action"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="spell-range">Range</label>
+          <input
+            id="spell-range"
+            type="text"
+            value={form.range}
+            onChange={(e) => setForm({ ...form, range: e.target.value })}
+            placeholder="150 feet"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="spell-components">Components</label>
+          <input
+            id="spell-components"
+            type="text"
+            value={form.components}
+            onChange={(e) => setForm({ ...form, components: e.target.value })}
+            placeholder="V, S, M (a tiny ball of bat guano and sulfur)"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="spell-duration">Duration</label>
+          <input
+            id="spell-duration"
+            type="text"
+            value={form.duration}
+            onChange={(e) => setForm({ ...form, duration: e.target.value })}
+            placeholder="Instantaneous"
+          />
+        </div>
+      </div>
+      <div className="field">
+        <label htmlFor="spell-effect">Effect</label>
+        <textarea
+          id="spell-effect"
+          value={form.effect}
+          onChange={(e) => setForm({ ...form, effect: e.target.value })}
+          placeholder="Deals 8d6 fire damage in a 20-foot radius; Dexterity save for half, and any effects at higher levels..."
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="spell-details">Description</label>
+        <textarea
+          id="spell-details"
+          value={form.details}
+          onChange={(e) => setForm({ ...form, details: e.target.value })}
+          placeholder="A short reminder for how you play it..."
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="spell-flavor">Flavor</label>
+        <textarea
+          id="spell-flavor"
+          value={form.flavor}
+          onChange={(e) => setForm({ ...form, flavor: e.target.value })}
+          placeholder="Read-aloud text, lore, or flourishes — shown in the flavor-text popup..."
+        />
+      </div>
+      {formError && <p className="empty-state empty-state--error">{formError}</p>}
+      <div className="spell-form__actions">
+        <button type="button" className="btn btn--text" onClick={cancelForm}>
+          Cancel
+        </button>
+        <button type="submit" className="btn btn--primary">
+          {editingId ? 'Save Changes' : 'Add Spell'}
+        </button>
+      </div>
+    </form>
+    )
+  }
 
   const levelsInView = view === 'cantrips' ? [0] : Array.from({ length: 9 }, (_, i) => i + 1)
   const sections = []
   for (const level of levelsInView) {
     const spellsAtLevel = spells.filter((s) => s.level === level)
     if (spellsAtLevel.length > 0) sections.push({ level, spells: spellsAtLevel })
+  }
+  // Keep an in-progress edit visible even if the Cantrips/Spells toggle
+  // flips away from the spell's own level mid-edit, rather than yanking
+  // the open form out from under whoever's using it.
+  const editingSpell = spells.find((s) => s.id === editingId)
+  if (editingSpell && !levelsInView.includes(editingSpell.level)) {
+    sections.unshift({ level: editingSpell.level, spells: [editingSpell] })
   }
 
   return (
@@ -160,115 +277,7 @@ function SpellsTab({ campaignId, playerId }) {
         </p>
       )}
 
-      {showForm && (
-        <form className="spell-form panel" onSubmit={submitForm}>
-          <div className="spell-form__grid">
-            <div className="field">
-              <label htmlFor="spell-name">Name</label>
-              <input
-                id="spell-name"
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Fireball"
-                required
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="spell-level">Level</label>
-              <select
-                id="spell-level"
-                value={form.level}
-                onChange={(e) => setForm({ ...form, level: e.target.value })}
-              >
-                {Array.from({ length: 10 }, (_, level) => (
-                  <option key={level} value={level}>
-                    {levelLabel(level)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="spell-form__grid">
-            <div className="field">
-              <label htmlFor="spell-casting-time">Casting Time</label>
-              <input
-                id="spell-casting-time"
-                type="text"
-                value={form.castingTime}
-                onChange={(e) => setForm({ ...form, castingTime: e.target.value })}
-                placeholder="1 action"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="spell-range">Range</label>
-              <input
-                id="spell-range"
-                type="text"
-                value={form.range}
-                onChange={(e) => setForm({ ...form, range: e.target.value })}
-                placeholder="150 feet"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="spell-components">Components</label>
-              <input
-                id="spell-components"
-                type="text"
-                value={form.components}
-                onChange={(e) => setForm({ ...form, components: e.target.value })}
-                placeholder="V, S, M (a tiny ball of bat guano and sulfur)"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="spell-duration">Duration</label>
-              <input
-                id="spell-duration"
-                type="text"
-                value={form.duration}
-                onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                placeholder="Instantaneous"
-              />
-            </div>
-          </div>
-          <div className="field">
-            <label htmlFor="spell-effect">Effect</label>
-            <textarea
-              id="spell-effect"
-              value={form.effect}
-              onChange={(e) => setForm({ ...form, effect: e.target.value })}
-              placeholder="Deals 8d6 fire damage in a 20-foot radius; Dexterity save for half, and any effects at higher levels..."
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="spell-details">Description</label>
-            <textarea
-              id="spell-details"
-              value={form.details}
-              onChange={(e) => setForm({ ...form, details: e.target.value })}
-              placeholder="A short reminder for how you play it..."
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="spell-flavor">Flavor</label>
-            <textarea
-              id="spell-flavor"
-              value={form.flavor}
-              onChange={(e) => setForm({ ...form, flavor: e.target.value })}
-              placeholder="Read-aloud text, lore, or flourishes — shown in the flavor-text popup..."
-            />
-          </div>
-          {formError && <p className="empty-state empty-state--error">{formError}</p>}
-          <div className="spell-form__actions">
-            <button type="button" className="btn btn--text" onClick={cancelForm}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn--primary">
-              {editingId ? 'Save Changes' : 'Add Spell'}
-            </button>
-          </div>
-        </form>
-      )}
+      {isAdding && renderSpellForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -304,6 +313,14 @@ function SpellsTab({ campaignId, playerId }) {
                     spell.components && `Components: ${spell.components}`,
                     spell.duration && `Duration: ${spell.duration}`,
                   ].filter(Boolean)
+
+                  if (editingId === spell.id) {
+                    return (
+                      <div className="spell-list__edit-slot" key={spell.id}>
+                        {renderSpellForm(false)}
+                      </div>
+                    )
+                  }
 
                   return (
                     <article

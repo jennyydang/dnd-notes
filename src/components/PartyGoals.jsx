@@ -69,19 +69,9 @@ function PartyGoals({ campaignId }) {
     if (editingId === id) cancelForm()
   }
 
-  const showForm = isAdding || editingId !== null
-
-  return (
-    <section className="party-goals">
-      <h3 className="party-goals__title">Party Goals</h3>
-      <div className="party-goals__toolbar">
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add Party Goal
-        </button>
-      </div>
-
-      {showForm && (
-        <form className="goal-form panel" onSubmit={submitForm}>
+  function renderGoalForm(standalone) {
+    return (
+    <form className={`goal-form panel${standalone ? ' goal-form--standalone' : ''}`} onSubmit={submitForm}>
           <div className="goal-form__grid">
             <div className="field">
               <label htmlFor="goal-title">Goal</label>
@@ -128,7 +118,19 @@ function PartyGoals({ campaignId }) {
             </button>
           </div>
         </form>
-      )}
+    )
+  }
+
+  return (
+    <section className="party-goals">
+      <h3 className="party-goals__title">Party Goals</h3>
+      <div className="party-goals__toolbar">
+        <button type="button" className="btn btn--primary" onClick={startAdding}>
+          + Add Party Goal
+        </button>
+      </div>
+
+      {isAdding && renderGoalForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -142,33 +144,39 @@ function PartyGoals({ campaignId }) {
 
       {!loading && !error && goals.length > 0 && (
         <div className="goal-list">
-          {goals.map((goal) => (
-            <article className="goal-card panel" key={goal.id}>
-              <div className="goal-card__main">
-                <h4 className="goal-card__title">{goal.title}</h4>
-                <span className={`status-badge status-badge--${goal.status.toLowerCase()}`}>
-                  {goal.status}
-                </span>
+          {goals.map((goal) =>
+            editingId === goal.id ? (
+              <div className="goal-list__edit-slot" key={goal.id}>
+                {renderGoalForm(false)}
               </div>
-              {goal.notes && <p className="goal-card__notes">{goal.notes}</p>}
-              <div className="goal-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(goal)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => removeGoal(goal.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
+            ) : (
+              <article className="goal-card panel" key={goal.id}>
+                <div className="goal-card__main">
+                  <h4 className="goal-card__title">{goal.title}</h4>
+                  <span className={`status-badge status-badge--${goal.status.toLowerCase()}`}>
+                    {goal.status}
+                  </span>
+                </div>
+                {goal.notes && <p className="goal-card__notes">{goal.notes}</p>}
+                <div className="goal-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(goal)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeGoal(goal.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ),
+          )}
         </div>
       )}
     </section>

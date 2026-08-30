@@ -137,27 +137,12 @@ function Dashboard({ onOpenCampaign }) {
     if (editingId === campaign.id) cancelForm()
   }
 
-  const showForm = isAdding || editingId !== null
   const visibleCampaigns = campaigns.filter((c) => (showArchived ? c.archived : !c.archived))
   const archivedCount = campaigns.filter((c) => c.archived).length
 
-  return (
-    <section className="dashboard">
-      <div className="dashboard__toolbar">
-        <button
-          type="button"
-          className="btn btn--text"
-          onClick={() => setShowArchived((prev) => !prev)}
-        >
-          {showArchived ? 'Show active campaigns' : `Show archived (${archivedCount})`}
-        </button>
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + New Campaign
-        </button>
-      </div>
-
-      {showForm && (
-        <form className="campaign-form panel" onSubmit={submitForm}>
+  function renderCampaignForm(standalone) {
+    return (
+    <form className={`campaign-form panel${standalone ? ' campaign-form--standalone' : ''}`} onSubmit={submitForm}>
           <div className="campaign-form__layout">
             <div className="campaign-form__photo">
               <button
@@ -219,7 +204,25 @@ function Dashboard({ onOpenCampaign }) {
             </button>
           </div>
         </form>
-      )}
+    )
+  }
+
+  return (
+    <section className="dashboard">
+      <div className="dashboard__toolbar">
+        <button
+          type="button"
+          className="btn btn--text"
+          onClick={() => setShowArchived((prev) => !prev)}
+        >
+          {showArchived ? 'Show active campaigns' : `Show archived (${archivedCount})`}
+        </button>
+        <button type="button" className="btn btn--primary" onClick={startAdding}>
+          + New Campaign
+        </button>
+      </div>
+
+      {isAdding && renderCampaignForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -234,57 +237,63 @@ function Dashboard({ onOpenCampaign }) {
 
       {!loading && !error && visibleCampaigns.length > 0 && (
         <div className="campaign-list">
-          {visibleCampaigns.map((campaign) => (
-            <article className="campaign-card panel" key={campaign.id}>
-              <button
-                type="button"
-                className="campaign-card__open"
-                onClick={() => onOpenCampaign(campaign)}
-              >
-                <div className="campaign-card__cover">
-                  {campaign.cover ? (
-                    <img src={campaign.cover} alt={campaign.name} />
-                  ) : (
-                    <span>{campaign.name.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <div className="campaign-card__text">
-                  <h3 className="campaign-card__name">
-                    {campaign.name}
-                    {campaign.joinCode && (
-                      <span className="campaign-card__join-code">{campaign.joinCode}</span>
-                    )}
-                  </h3>
-                  {campaign.description && (
-                    <p className="campaign-card__description">{campaign.description}</p>
-                  )}
-                </div>
-              </button>
-              <div className="campaign-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(campaign)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => toggleArchived(campaign)}
-                >
-                  {campaign.archived ? 'Unarchive' : 'Archive'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => deleteCampaign(campaign)}
-                >
-                  Delete
-                </button>
+          {visibleCampaigns.map((campaign) =>
+            editingId === campaign.id ? (
+              <div className="campaign-list__edit-slot" key={campaign.id}>
+                {renderCampaignForm(false)}
               </div>
-            </article>
-          ))}
+            ) : (
+              <article className="campaign-card panel" key={campaign.id}>
+                <button
+                  type="button"
+                  className="campaign-card__open"
+                  onClick={() => onOpenCampaign(campaign)}
+                >
+                  <div className="campaign-card__cover">
+                    {campaign.cover ? (
+                      <img src={campaign.cover} alt={campaign.name} />
+                    ) : (
+                      <span>{campaign.name.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="campaign-card__text">
+                    <h3 className="campaign-card__name">
+                      {campaign.name}
+                      {campaign.joinCode && (
+                        <span className="campaign-card__join-code">{campaign.joinCode}</span>
+                      )}
+                    </h3>
+                    {campaign.description && (
+                      <p className="campaign-card__description">{campaign.description}</p>
+                    )}
+                  </div>
+                </button>
+                <div className="campaign-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(campaign)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => toggleArchived(campaign)}
+                  >
+                    {campaign.archived ? 'Unarchive' : 'Archive'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => deleteCampaign(campaign)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ),
+          )}
         </div>
       )}
     </section>

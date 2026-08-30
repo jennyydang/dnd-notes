@@ -86,7 +86,41 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
     if (confirmed) onDelete()
   }
 
-  const showForm = isAdding || editingId !== null
+  function renderEntryForm(standalone) {
+    return (
+    <form className={`custom-entry-form panel${standalone ? ' custom-entry-form--standalone' : ''}`} onSubmit={submitForm}>
+      <div className="field">
+        <label htmlFor="custom-entry-title">Title</label>
+        <input
+          id="custom-entry-title"
+          type="text"
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          placeholder="Entry title"
+          required
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="custom-entry-notes">Notes</label>
+        <textarea
+          id="custom-entry-notes"
+          value={form.notes}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          placeholder="Write your notes here..."
+        />
+      </div>
+      {formError && <p className="empty-state empty-state--error">{formError}</p>}
+      <div className="custom-entry-form__actions">
+        <button type="button" className="btn btn--text" onClick={cancelForm}>
+          Cancel
+        </button>
+        <button type="submit" className="btn btn--primary">
+          {editingId ? 'Save Changes' : 'Add Entry'}
+        </button>
+      </div>
+    </form>
+    )
+  }
 
   return (
     <section className="custom-tab">
@@ -126,39 +160,7 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
         </button>
       </div>
 
-      {showForm && (
-        <form className="custom-entry-form panel" onSubmit={submitForm}>
-          <div className="field">
-            <label htmlFor="custom-entry-title">Title</label>
-            <input
-              id="custom-entry-title"
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Entry title"
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="custom-entry-notes">Notes</label>
-            <textarea
-              id="custom-entry-notes"
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder="Write your notes here..."
-            />
-          </div>
-          {formError && <p className="empty-state empty-state--error">{formError}</p>}
-          <div className="custom-entry-form__actions">
-            <button type="button" className="btn btn--text" onClick={cancelForm}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn--primary">
-              {editingId ? 'Save Changes' : 'Add Entry'}
-            </button>
-          </div>
-        </form>
-      )}
+      {isAdding && renderEntryForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -169,28 +171,34 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
 
       {!loading && !error && entries.length > 0 && (
         <div className="custom-entry-list">
-          {entries.map((entry) => (
-            <article className="custom-entry-card panel" key={entry.id}>
-              <h3 className="custom-entry-card__title">{entry.title}</h3>
-              {entry.notes && <p className="custom-entry-card__notes">{entry.notes}</p>}
-              <div className="custom-entry-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(entry)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => removeEntry(entry.id)}
-                >
-                  Delete
-                </button>
+          {entries.map((entry) =>
+            editingId === entry.id ? (
+              <div className="custom-entry-list__edit-slot" key={entry.id}>
+                {renderEntryForm(false)}
               </div>
-            </article>
-          ))}
+            ) : (
+              <article className="custom-entry-card panel" key={entry.id}>
+                <h3 className="custom-entry-card__title">{entry.title}</h3>
+                {entry.notes && <p className="custom-entry-card__notes">{entry.notes}</p>}
+                <div className="custom-entry-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(entry)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeEntry(entry.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ),
+          )}
         </div>
       )}
     </section>

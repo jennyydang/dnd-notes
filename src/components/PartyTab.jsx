@@ -247,24 +247,11 @@ function PartyTab({ campaignId, playerId }) {
     }
   }
 
-  const showForm = isAdding || editingId !== null
   const myClaimedMemberId = party.find((m) => m.claimedBy === playerId)?.id
 
-  return (
-    <section className="party-tab">
-      <PartyGoals campaignId={campaignId} />
-
-      <h3 className="party-tab__section-title">Party Members</h3>
-      <div className="party-tab__toolbar">
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add Party Member
-        </button>
-      </div>
-
-      {claimError && <p className="empty-state empty-state--error">{claimError}</p>}
-
-      {showForm && (
-        <form className="party-form panel" onSubmit={submitForm}>
+  function renderPartyForm(standalone) {
+    return (
+    <form className={`party-form panel${standalone ? ' party-form--standalone' : ''}`} onSubmit={submitForm}>
           <div className="party-form__layout">
             <div className="party-form__photo">
               <button
@@ -384,7 +371,23 @@ function PartyTab({ campaignId, playerId }) {
             </button>
           </div>
         </form>
-      )}
+    )
+  }
+
+  return (
+    <section className="party-tab">
+      <PartyGoals campaignId={campaignId} />
+
+      <h3 className="party-tab__section-title">Party Members</h3>
+      <div className="party-tab__toolbar">
+        <button type="button" className="btn btn--primary" onClick={startAdding}>
+          + Add Party Member
+        </button>
+      </div>
+
+      {claimError && <p className="empty-state empty-state--error">{claimError}</p>}
+
+      {isAdding && renderPartyForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -398,7 +401,12 @@ function PartyTab({ campaignId, playerId }) {
 
       {!loading && !error && party.length > 0 && (
         <div className="party-list">
-          {party.map((member) => (
+          {party.map((member) =>
+            editingId === member.id ? (
+              <div className="party-list__edit-slot" key={member.id}>
+                {renderPartyForm(false)}
+              </div>
+            ) : (
             <article className="party-card panel" key={member.id}>
               <div className="party-card__main">
                 <div className="party-card__identity">
@@ -521,7 +529,8 @@ function PartyTab({ campaignId, playerId }) {
                 </button>
               </div>
             </article>
-          ))}
+            ),
+          )}
         </div>
       )}
     </section>

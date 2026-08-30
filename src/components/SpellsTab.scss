@@ -10,10 +10,17 @@
 
 .spell-form {
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+
+  // Only the "add" form sits above the sections as its own block; an
+  // edit form renders inside its level's grid itself (see
+  // .spell-list__edit-slot), where the grid's own gap already spaces it
+  // from its neighbors.
+  &--standalone {
+    margin-bottom: 1.5rem;
+  }
 
   &__grid {
     display: grid;
@@ -65,6 +72,12 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.25rem;
+
+  // An edit form replacing a card needs the full row's width to lay out
+  // its fields, not just one grid cell's worth.
+  &__edit-slot {
+    grid-column: 1 / -1;
+  }
 }
 
 .spell-card {

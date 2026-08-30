@@ -75,18 +75,9 @@ function LoreTab({ campaignId }) {
     if (editingId === id) cancelForm()
   }
 
-  const showForm = isAdding || editingId !== null
-
-  return (
-    <section className="lore-tab">
-      <div className="lore-tab__toolbar">
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add Lore
-        </button>
-      </div>
-
-      {showForm && (
-        <form className="lore-form panel" onSubmit={submitForm}>
+  function renderLoreForm(standalone) {
+    return (
+    <form className={`lore-form panel${standalone ? ' lore-form--standalone' : ''}`} onSubmit={submitForm}>
           <div className="lore-form__grid">
             <div className="field">
               <label htmlFor="lore-title">Title</label>
@@ -129,7 +120,18 @@ function LoreTab({ campaignId }) {
             </button>
           </div>
         </form>
-      )}
+    )
+  }
+
+  return (
+    <section className="lore-tab">
+      <div className="lore-tab__toolbar">
+        <button type="button" className="btn btn--primary" onClick={startAdding}>
+          + Add Lore
+        </button>
+      </div>
+
+      {isAdding && renderLoreForm(true)}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -143,33 +145,39 @@ function LoreTab({ campaignId }) {
 
       {!loading && !error && entries.length > 0 && (
         <div className="lore-list">
-          {entries.map((entry) => (
-            <article className="lore-card panel" key={entry.id}>
-              <div className="lore-card__main">
-                <h3 className="lore-card__title">{entry.title}</h3>
-                {entry.category && (
-                  <span className="lore-card__category">{entry.category}</span>
-                )}
+          {entries.map((entry) =>
+            editingId === entry.id ? (
+              <div className="lore-list__edit-slot" key={entry.id}>
+                {renderLoreForm(false)}
               </div>
-              {entry.notes && <p className="lore-card__notes">{entry.notes}</p>}
-              <div className="lore-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(entry)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => removeEntry(entry.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
+            ) : (
+              <article className="lore-card panel" key={entry.id}>
+                <div className="lore-card__main">
+                  <h3 className="lore-card__title">{entry.title}</h3>
+                  {entry.category && (
+                    <span className="lore-card__category">{entry.category}</span>
+                  )}
+                </div>
+                {entry.notes && <p className="lore-card__notes">{entry.notes}</p>}
+                <div className="lore-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(entry)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeEntry(entry.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ),
+          )}
         </div>
       )}
     </section>

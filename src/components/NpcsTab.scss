@@ -10,7 +10,13 @@
 
 .npc-form {
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
+
+  // Only the "add" form sits above the grid as its own block; an edit
+  // form renders inside the grid itself (see .npc-list__edit-slot),
+  // where the grid's own gap already spaces it from its neighbors.
+  &--standalone {
+    margin-bottom: 1.5rem;
+  }
 
   &__layout {
     display: flex;
@@ -74,6 +80,12 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.25rem;
+
+  // An edit form replacing a card needs the full row's width to lay out
+  // its fields, not just one grid cell's worth.
+  &__edit-slot {
+    grid-column: 1 / -1;
+  }
 }
 
 .npc-card {

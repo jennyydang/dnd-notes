@@ -149,6 +149,71 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
     await refetch()
   }
 
+  function renderCampaignForm() {
+    return (
+      <form className="campaign-form panel" onSubmit={submitEdit}>
+        <div className="campaign-form__layout">
+          <div className="campaign-form__photo">
+            <button
+              type="button"
+              className="campaign-form__photo-btn"
+              onClick={() => photoInputRef.current?.click()}
+              aria-label="Choose a cover photo"
+            >
+              {form.photoPreview ? (
+                <img src={form.photoPreview} alt="Campaign cover" />
+              ) : (
+                <span className="campaign-form__photo-placeholder">+ Cover</span>
+              )}
+            </button>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handlePhotoSelected}
+            />
+            {form.photoPreview && (
+              <button type="button" className="btn btn--text" onClick={removePhoto}>
+                Remove cover
+              </button>
+            )}
+          </div>
+
+          <div className="campaign-form__fields">
+            <div className="field">
+              <label htmlFor="campaign-name">Name</label>
+              <input
+                id="campaign-name"
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="campaign-description">Description</label>
+              <textarea
+                id="campaign-description"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+        {formError && <p className="empty-state empty-state--error">{formError}</p>}
+        <div className="campaign-form__actions">
+          <button type="button" className="btn btn--text" onClick={cancelEditing}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn--primary">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    )
+  }
+
   const visibleCampaigns = campaigns.filter((c) => (showArchived ? c.archived : !c.archived))
   const archivedCount = campaigns.filter((c) => c.archived).length
   const managingMembersCampaign = campaigns.find((c) => c.id === managingMembersId)
@@ -183,69 +248,6 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
         />
       )}
 
-      {editingId && (
-        <form className="campaign-form panel" onSubmit={submitEdit}>
-          <div className="campaign-form__layout">
-            <div className="campaign-form__photo">
-              <button
-                type="button"
-                className="campaign-form__photo-btn"
-                onClick={() => photoInputRef.current?.click()}
-                aria-label="Choose a cover photo"
-              >
-                {form.photoPreview ? (
-                  <img src={form.photoPreview} alt="Campaign cover" />
-                ) : (
-                  <span className="campaign-form__photo-placeholder">+ Cover</span>
-                )}
-              </button>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handlePhotoSelected}
-              />
-              {form.photoPreview && (
-                <button type="button" className="btn btn--text" onClick={removePhoto}>
-                  Remove cover
-                </button>
-              )}
-            </div>
-
-            <div className="campaign-form__fields">
-              <div className="field">
-                <label htmlFor="campaign-name">Name</label>
-                <input
-                  id="campaign-name"
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="campaign-description">Description</label>
-                <textarea
-                  id="campaign-description"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-          {formError && <p className="empty-state empty-state--error">{formError}</p>}
-          <div className="campaign-form__actions">
-            <button type="button" className="btn btn--text" onClick={cancelEditing}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn--primary">
-              Save Changes
-            </button>
-          </div>
-        </form>
-      )}
-
       {managingMembersCampaign && (
         <ManageMembers
           campaignId={managingMembersCampaign.id}
@@ -268,66 +270,72 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
 
       {!loading && !error && visibleCampaigns.length > 0 && (
         <div className="campaign-list">
-          {visibleCampaigns.map((campaign) => (
-            <article className="campaign-card panel" key={campaign.id}>
-              <button
-                type="button"
-                className="campaign-card__open"
-                onClick={() => onOpenCampaign(campaign)}
-              >
-                <div className="campaign-card__cover">
-                  {campaign.cover ? (
-                    <img src={campaign.cover} alt={campaign.name} />
-                  ) : (
-                    <span>{campaign.name.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <div className="campaign-card__text">
-                  <h3 className="campaign-card__name">
-                    {campaign.name}
-                    {campaign.joinCode && (
-                      <span className="campaign-card__join-code">{campaign.joinCode}</span>
+          {visibleCampaigns.map((campaign) =>
+            editingId === campaign.id ? (
+              <div className="campaign-list__edit-slot" key={campaign.id}>
+                {renderCampaignForm()}
+              </div>
+            ) : (
+              <article className="campaign-card panel" key={campaign.id}>
+                <button
+                  type="button"
+                  className="campaign-card__open"
+                  onClick={() => onOpenCampaign(campaign)}
+                >
+                  <div className="campaign-card__cover">
+                    {campaign.cover ? (
+                      <img src={campaign.cover} alt={campaign.name} />
+                    ) : (
+                      <span>{campaign.name.charAt(0).toUpperCase()}</span>
                     )}
-                  </h3>
-                  {campaign.description && (
-                    <p className="campaign-card__description">{campaign.description}</p>
-                  )}
-                </div>
-              </button>
-              {(campaign.role === 'creator' || campaign.role === 'dm') && (
-                <div className="campaign-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(campaign)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => setManagingMembersId(campaign.id)}
-                  >
-                    Members
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => toggleArchived(campaign)}
-                  >
-                    {campaign.archived ? 'Unarchive' : 'Archive'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => deleteCampaign(campaign)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-            </article>
-          ))}
+                  </div>
+                  <div className="campaign-card__text">
+                    <h3 className="campaign-card__name">
+                      {campaign.name}
+                      {campaign.joinCode && (
+                        <span className="campaign-card__join-code">{campaign.joinCode}</span>
+                      )}
+                    </h3>
+                    {campaign.description && (
+                      <p className="campaign-card__description">{campaign.description}</p>
+                    )}
+                  </div>
+                </button>
+                {(campaign.role === 'creator' || campaign.role === 'dm') && (
+                  <div className="campaign-card__actions">
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => startEditing(campaign)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => setManagingMembersId(campaign.id)}
+                    >
+                      Members
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => toggleArchived(campaign)}
+                    >
+                      {campaign.archived ? 'Unarchive' : 'Archive'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--danger"
+                      onClick={() => deleteCampaign(campaign)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </article>
+            ),
+          )}
         </div>
       )}
     </section>
