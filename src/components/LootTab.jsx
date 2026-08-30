@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import TabNav from './TabNav.jsx'
 import './LootTab.scss'
 
 const ALL_HOLDERS = 'all'
 const UNCLAIMED = '__unclaimed__'
+
+const SORT_MODES = [
+  { id: 'recent', label: 'Last Added' },
+  { id: 'alpha', label: 'A → Z' },
+]
 
 const emptyForm = { item: '', foundAt: '', holder: '', notes: '' }
 
@@ -14,6 +19,7 @@ const fromRow = (r) => ({
   foundAt: r.found_at,
   holder: r.holder,
   notes: r.notes,
+  createdAt: r.created_at,
 })
 
 const partyFromRow = (r) => ({ id: r.id, name: r.name })
@@ -32,6 +38,21 @@ function LootTab({ campaignId }) {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
   const [holderView, setHolderView] = useState(ALL_HOLDERS)
+  const [sortMode, setSortMode] = useState('recent')
+
+  // Sorted client-side rather than via the hook's server-side orderBy so
+  // the toggle can flip instantly without a refetch. "Last Added" reads
+  // newest-first off created_at; useSupabaseTable's default fetch order
+  // doesn't matter here since both branches re-sort the full list anyway.
+  const sortedLoot = useMemo(() => {
+    const list = [...loot]
+    if (sortMode === 'alpha') {
+      list.sort((a, b) => a.item.trim().localeCompare(b.item.trim()))
+    } else {
+      list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    }
+    return list
+  }, [loot, sortMode])
 
   const holders = [...new Set([
     ...loot.map((entry) => entry.holder.trim()),
@@ -54,7 +75,7 @@ function LootTab({ campaignId }) {
     ? holderView
     : ALL_HOLDERS
 
-  const visibleLoot = loot.filter((entry) => {
+  const visibleLoot = sortedLoot.filter((entry) => {
     if (effectiveHolderView === ALL_HOLDERS) return true
     if (effectiveHolderView === UNCLAIMED) return !entry.holder.trim()
     return entry.holder.trim() === effectiveHolderView
@@ -178,6 +199,16 @@ function LootTab({ campaignId }) {
             </button>
           </div>
         </form>
+      )}
+
+      {!loading && !error && loot.length > 1 && (
+        <TabNav
+          tabs={SORT_MODES}
+          activeTab={sortMode}
+          onSelect={setSortMode}
+          className="tab-nav--pill"
+          label="Sort loot"
+        />
       )}
 
       {!loading && !error && holderTabs.length > 1 && (
