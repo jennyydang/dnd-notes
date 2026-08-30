@@ -16,18 +16,27 @@ const fromRow = (r) => ({
   notes: r.notes,
 })
 
+const partyFromRow = (r) => ({ id: r.id, name: r.name })
+
 function LootTab({ campaignId }) {
   const { items: loot, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('loot', { fromRow, filters: { campaign_id: campaignId } })
+  // Pulled in just so a party member shows up as a holder tab the moment
+  // they join, rather than only after loot gets logged under their name.
+  const { items: party } = useSupabaseTable('party_members', {
+    fromRow: partyFromRow,
+    filters: { campaign_id: campaignId },
+  })
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
   const [holderView, setHolderView] = useState(ALL_HOLDERS)
 
-  const holders = [...new Set(loot.map((entry) => entry.holder.trim()).filter(Boolean))].sort(
-    (a, b) => a.localeCompare(b),
-  )
+  const holders = [...new Set([
+    ...loot.map((entry) => entry.holder.trim()),
+    ...party.map((member) => member.name.trim()),
+  ].filter(Boolean))].sort((a, b) => a.localeCompare(b))
   const hasUnclaimed = loot.some((entry) => !entry.holder.trim())
 
   const holderTabs = [
