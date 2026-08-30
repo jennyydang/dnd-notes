@@ -199,6 +199,7 @@ create table if not exists party_members (
 
 alter table party_members add column if not exists claimed_by uuid references players(id) on delete set null;
 alter table party_members add column if not exists level integer not null default 1;
+alter table party_members add column if not exists animal_companion text not null default '';
 
 alter table party_members drop constraint if exists party_members_level_check;
 alter table party_members add constraint party_members_level_check check (level between 1 and 20);

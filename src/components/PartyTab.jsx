@@ -20,6 +20,7 @@ const emptyForm = {
   playerName: '',
   raceClass: '',
   level: 1,
+  animalCompanion: '',
   notes: '',
   photoFile: null,
   photoPreview: '',
@@ -33,6 +34,7 @@ const fromRow = (r) => ({
   playerName: r.player_name,
   raceClass: r.race_class,
   level: r.level,
+  animalCompanion: r.animal_companion,
   notes: r.notes,
   photo: getPublicUrl(BUCKET, r.photo_path),
   claimedBy: r.claimed_by,
@@ -114,6 +116,7 @@ function PartyTab({ campaignId, playerId }) {
       playerName: member.playerName,
       raceClass: member.raceClass,
       level: member.level,
+      animalCompanion: member.animalCompanion,
       notes: member.notes,
       photoFile: null,
       photoPreview: member.photo || '',
@@ -163,6 +166,7 @@ function PartyTab({ campaignId, playerId }) {
       player_name: form.memberType === 'Player' ? form.playerName : '',
       race_class: form.raceClass,
       level: Math.min(20, Math.max(1, Math.floor(Number(form.level)) || 1)),
+      animal_companion: form.animalCompanion,
       notes: form.notes,
     }
 
@@ -349,6 +353,16 @@ function PartyTab({ campaignId, playerId }) {
                   onChange={(e) => setForm({ ...form, level: e.target.value })}
                 />
               </div>
+              <div className="field">
+                <label htmlFor="party-animal-companion">Animal Companion</label>
+                <input
+                  id="party-animal-companion"
+                  type="text"
+                  value={form.animalCompanion}
+                  onChange={(e) => setForm({ ...form, animalCompanion: e.target.value })}
+                  placeholder="Fang, a dire wolf"
+                />
+              </div>
             </div>
           </div>
           <div className="field">
@@ -412,6 +426,12 @@ function PartyTab({ campaignId, playerId }) {
                   <dt>Level</dt>
                   <dd>{member.level}</dd>
                 </div>
+                {member.animalCompanion && (
+                  <div>
+                    <dt>Animal Companion</dt>
+                    <dd>{member.animalCompanion}</dd>
+                  </div>
+                )}
                 {member.memberType === 'Player' && (
                   <div>
                     <dt>Played by</dt>
