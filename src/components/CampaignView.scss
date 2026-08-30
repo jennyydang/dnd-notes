@@ -31,6 +31,11 @@
     position: relative;
     flex: 1;
     max-width: 24rem;
+    // Grows to its cap and then no further — this margin absorbs whatever
+    // free space is left over past that, pushing the search box (and the
+    // avatar right after it) flush to the top bar's right edge instead of
+    // leaving them stranded next to the hamburger with dead space after.
+    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -210,6 +215,7 @@
       order: 1;
       max-width: none;
       flex-basis: 100%;
+      margin-left: 0;
     }
 
     &__body {
