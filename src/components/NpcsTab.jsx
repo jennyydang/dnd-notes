@@ -34,6 +34,7 @@ function NpcsTab({ campaignId }) {
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const photoInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 
@@ -81,6 +82,7 @@ function NpcsTab({ campaignId }) {
     setEditingId(null)
     setForm(emptyForm)
     setFormError(null)
+    setSubmitting(false)
   }
 
   function handlePhotoSelected(event) {
@@ -116,6 +118,7 @@ function NpcsTab({ campaignId }) {
       description: form.description,
     }
 
+    setSubmitting(true)
     try {
       if (form.photoFile) {
         payload.photo_path = await uploadImage(BUCKET, form.photoFile)
@@ -131,6 +134,7 @@ function NpcsTab({ campaignId }) {
       cancelForm()
     } catch (err) {
       setFormError(err.message)
+      setSubmitting(false)
     }
   }
 
@@ -229,11 +233,11 @@ function NpcsTab({ campaignId }) {
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="npc-form__actions">
-            <button type="button" className="btn btn--text" onClick={cancelForm}>
+            <button type="button" className="btn btn--text" onClick={cancelForm} disabled={submitting}>
               Cancel
             </button>
-            <button type="submit" className="btn btn--primary">
-              {editingId ? 'Save Changes' : 'Add NPC'}
+            <button type="submit" className="btn btn--primary" disabled={submitting}>
+              {submitting ? 'Saving…' : editingId ? 'Save Changes' : 'Add NPC'}
             </button>
           </div>
         </form>
