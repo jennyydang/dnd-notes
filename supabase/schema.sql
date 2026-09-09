@@ -350,6 +350,19 @@ create table if not exists custom_tabs (
   created_at timestamptz not null default now()
 );
 
+-- A private tab is visible only to the player who made it — same trust
+-- model as session_notes/party_notes: RLS below stays anon-full-access
+-- (everyone can technically read every row through the anon key), and
+-- privacy is enforced by the app only ever rendering a private tab to
+-- created_by = the logged-in player (or to the admin, who has no player
+-- account and sees every tab regardless). created_by is nullable and ON
+-- DELETE SET NULL rather than CASCADE: a tab predating this feature, or
+-- one made by the admin, has no owner to match against, so it just stays
+-- hidden from every player instead of vanishing outright if its creator's
+-- account is later deleted.
+alter table custom_tabs add column if not exists created_by uuid references players(id) on delete set null;
+alter table custom_tabs add column if not exists is_private boolean not null default false;
+
 create table if not exists custom_tab_entries (
   id uuid primary key default gen_random_uuid(),
   custom_tab_id uuid not null references custom_tabs(id) on delete cascade,

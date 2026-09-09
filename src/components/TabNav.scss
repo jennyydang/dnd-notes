@@ -38,7 +38,7 @@
     gap: 0.4rem;
     margin-left: 0.25rem;
 
-    input {
+    input[type='text'] {
       background: $bg-deep;
       border: 1px solid $ink-soft;
       border-radius: $radius;
@@ -49,6 +49,19 @@
       &:focus {
         border-color: $gold;
       }
+    }
+  }
+
+  &__add-private {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: $text-muted;
+    font-size: 0.8rem;
+    white-space: nowrap;
+
+    input {
+      margin: 0;
     }
   }
 

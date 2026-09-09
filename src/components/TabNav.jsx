@@ -4,18 +4,21 @@ import './TabNav.scss'
 function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = false, label = 'Campaign sections' }) {
   const [isAdding, setIsAdding] = useState(false)
   const [name, setName] = useState('')
+  const [isPrivate, setIsPrivate] = useState(false)
 
   function startAdding() {
     setName('')
+    setIsPrivate(false)
     setIsAdding(true)
   }
 
   function submitAdd(event) {
     event.preventDefault()
     if (!name.trim()) return
-    onAddTab(name)
+    onAddTab(name, isPrivate)
     setIsAdding(false)
     setName('')
+    setIsPrivate(false)
   }
 
   return (
@@ -56,6 +59,14 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
               aria-label="New tab name"
               autoFocus
             />
+            <label className="tab-nav__add-private">
+              <input
+                type="checkbox"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+              />
+              Private
+            </label>
             <button type="submit" className="btn btn--primary">
               Add
             </button>

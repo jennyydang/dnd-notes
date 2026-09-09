@@ -27,7 +27,12 @@ const BUILT_IN_TABS = [
 
 const customTabPrefix = 'custom:'
 
-const fromCustomTabRow = (r) => ({ id: r.id, name: r.name })
+const fromCustomTabRow = (r) => ({
+  id: r.id,
+  name: r.name,
+  isPrivate: r.is_private,
+  createdBy: r.created_by,
+})
 
 function CampaignView({ campaignId, campaignName, playerId, username, onBack, onLogOut }) {
   const [activeTab, setActiveTab] = useState('sessions')
@@ -47,9 +52,21 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     filters: { campaign_id: campaignId },
   })
 
+  // A private tab is visible only to whoever made it — everyone else's
+  // client just never renders a tab for it. The admin has no playerId, so
+  // (like every other "private to a player" feature in this app) it falls
+  // back to seeing everything rather than being scoped to nobody.
+  const visibleCustomTabs = customTabs.filter(
+    (tab) => !tab.isPrivate || !playerId || tab.createdBy === playerId,
+  )
+
   const tabs = [
     ...BUILT_IN_TABS,
-    ...customTabs.map((tab) => ({ id: `${customTabPrefix}${tab.id}`, label: tab.name, icon: '📄' })),
+    ...visibleCustomTabs.map((tab) => ({
+      id: `${customTabPrefix}${tab.id}`,
+      label: tab.name,
+      icon: tab.isPrivate ? '🔒' : '📄',
+    })),
   ]
 
   const searchResults =
@@ -93,8 +110,12 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     if (searchResults.length > 0) goToTab(searchResults[0].id)
   }
 
-  async function handleAddTab(name) {
-    const created = await addCustomTab({ name })
+  async function handleAddTab(name, isPrivate) {
+    const created = await addCustomTab({
+      name,
+      is_private: isPrivate,
+      created_by: playerId || null,
+    })
     setActiveTab(`${customTabPrefix}${created.id}`)
   }
 
@@ -110,7 +131,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   const activeCustomTabId = activeTab.startsWith(customTabPrefix)
     ? activeTab.slice(customTabPrefix.length)
     : null
-  const activeCustomTab = customTabs.find((tab) => tab.id === activeCustomTabId)
+  const activeCustomTab = visibleCustomTabs.find((tab) => tab.id === activeCustomTabId)
 
   return (
     <div className="campaign-view">
