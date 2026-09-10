@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
+import Modal from './Modal.jsx'
 import './NpcsTab.scss'
 
 const BUCKET = 'npc-portraits'
@@ -254,6 +255,12 @@ function NpcsTab({ campaignId }) {
 
       {isAdding && renderNpcForm(true)}
 
+      {editingId && (
+        <Modal onClose={cancelForm} label="Edit NPC">
+          {renderNpcForm(false)}
+        </Modal>
+      )}
+
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
@@ -265,60 +272,54 @@ function NpcsTab({ campaignId }) {
 
       {!loading && !error && npcs.length > 0 && (
         <div className="npc-list">
-          {npcs.map((npc) =>
-            editingId === npc.id ? (
-              <div className="npc-list__edit-slot" key={npc.id}>
-                {renderNpcForm(false)}
+          {npcs.map((npc) => (
+            <article className="npc-card panel" key={npc.id}>
+              <div className="npc-card__main">
+                <div className="npc-card__identity">
+                  <div className="npc-card__avatar">
+                    {npc.photo ? (
+                      <img src={npc.photo} alt={npc.name} />
+                    ) : (
+                      <span>{npc.name.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <h3 className="npc-card__name">{npc.name}</h3>
+                </div>
+                <span
+                  className={`status-badge status-badge--${npc.status.toLowerCase()}`}
+                >
+                  {npc.status}
+                </span>
               </div>
-            ) : (
-              <article className="npc-card panel" key={npc.id}>
-                <div className="npc-card__main">
-                  <div className="npc-card__identity">
-                    <div className="npc-card__avatar">
-                      {npc.photo ? (
-                        <img src={npc.photo} alt={npc.name} />
-                      ) : (
-                        <span>{npc.name.charAt(0).toUpperCase()}</span>
-                      )}
-                    </div>
-                    <h3 className="npc-card__name">{npc.name}</h3>
-                  </div>
-                  <span
-                    className={`status-badge status-badge--${npc.status.toLowerCase()}`}
-                  >
-                    {npc.status}
-                  </span>
+              <dl className="npc-card__details">
+                <div>
+                  <dt>Race</dt>
+                  <dd>{npc.race || '—'}</dd>
                 </div>
-                <dl className="npc-card__details">
-                  <div>
-                    <dt>Race</dt>
-                    <dd>{npc.race || '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Where we met them</dt>
-                    <dd>{npc.metAt || '—'}</dd>
-                  </div>
-                </dl>
-                {npc.description && <p className="npc-card__description">{npc.description}</p>}
-                <div className="npc-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(npc)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeNpc(npc.id)}
-                  >
-                    Delete
-                  </button>
+                <div>
+                  <dt>Where we met them</dt>
+                  <dd>{npc.metAt || '—'}</dd>
                 </div>
-              </article>
-            ),
-          )}
+              </dl>
+              {npc.description && <p className="npc-card__description">{npc.description}</p>}
+              <div className="npc-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => startEditing(npc)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--danger"
+                  onClick={() => removeNpc(npc.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>

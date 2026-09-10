@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import { listCampaignMembers } from '../lib/campaigns.js'
 import PartyGoals from './PartyGoals.jsx'
+import Modal from './Modal.jsx'
 import './PartyTab.scss'
 
 const BUCKET = 'party-portraits'
@@ -389,6 +390,12 @@ function PartyTab({ campaignId, playerId }) {
 
       {isAdding && renderPartyForm(true)}
 
+      {editingId && (
+        <Modal onClose={cancelForm} label="Edit Party Member">
+          {renderPartyForm(false)}
+        </Modal>
+      )}
+
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
@@ -401,12 +408,7 @@ function PartyTab({ campaignId, playerId }) {
 
       {!loading && !error && party.length > 0 && (
         <div className="party-list">
-          {party.map((member) =>
-            editingId === member.id ? (
-              <div className="party-list__edit-slot" key={member.id}>
-                {renderPartyForm(false)}
-              </div>
-            ) : (
+          {party.map((member) => (
             <article className="party-card panel" key={member.id}>
               <div className="party-card__main">
                 <div className="party-card__identity">
@@ -529,8 +531,7 @@ function PartyTab({ campaignId, playerId }) {
                 </button>
               </div>
             </article>
-            ),
-          )}
+          ))}
         </div>
       )}
     </section>

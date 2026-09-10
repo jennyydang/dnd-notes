@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import Modal from './Modal.jsx'
 import './PartyGoals.scss'
 
 const GOAL_STATUSES = ['Active', 'Completed']
@@ -132,6 +133,12 @@ function PartyGoals({ campaignId }) {
 
       {isAdding && renderGoalForm(true)}
 
+      {editingId && (
+        <Modal onClose={cancelForm} label="Edit Party Goal">
+          {renderGoalForm(false)}
+        </Modal>
+      )}
+
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
@@ -144,39 +151,33 @@ function PartyGoals({ campaignId }) {
 
       {!loading && !error && goals.length > 0 && (
         <div className="goal-list">
-          {goals.map((goal) =>
-            editingId === goal.id ? (
-              <div className="goal-list__edit-slot" key={goal.id}>
-                {renderGoalForm(false)}
+          {goals.map((goal) => (
+            <article className="goal-card panel" key={goal.id}>
+              <div className="goal-card__main">
+                <h4 className="goal-card__title">{goal.title}</h4>
+                <span className={`status-badge status-badge--${goal.status.toLowerCase()}`}>
+                  {goal.status}
+                </span>
               </div>
-            ) : (
-              <article className="goal-card panel" key={goal.id}>
-                <div className="goal-card__main">
-                  <h4 className="goal-card__title">{goal.title}</h4>
-                  <span className={`status-badge status-badge--${goal.status.toLowerCase()}`}>
-                    {goal.status}
-                  </span>
-                </div>
-                {goal.notes && <p className="goal-card__notes">{goal.notes}</p>}
-                <div className="goal-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(goal)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeGoal(goal.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ),
-          )}
+              {goal.notes && <p className="goal-card__notes">{goal.notes}</p>}
+              <div className="goal-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => startEditing(goal)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--danger"
+                  onClick={() => removeGoal(goal.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>

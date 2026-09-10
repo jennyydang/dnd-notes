@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import TabNav from './TabNav.jsx'
+import Modal from './Modal.jsx'
 import './LootTab.scss'
 
 const ALL_HOLDERS = 'all'
@@ -76,10 +77,6 @@ function LootTab({ campaignId }) {
     : ALL_HOLDERS
 
   const visibleLoot = sortedLoot.filter((entry) => {
-    // Never let the holder filter hide the card someone's actively
-    // editing out from under them — only relevant if they switch tabs
-    // mid-edit, but otherwise the open form would just vanish.
-    if (entry.id === editingId) return true
     if (effectiveHolderView === ALL_HOLDERS) return true
     if (effectiveHolderView === UNCLAIMED) return !entry.holder.trim()
     return entry.holder.trim() === effectiveHolderView
@@ -207,6 +204,12 @@ function LootTab({ campaignId }) {
 
       {isAdding && renderLootForm(true)}
 
+      {editingId && (
+        <Modal onClose={cancelForm} label="Edit Loot">
+          {renderLootForm(false)}
+        </Modal>
+      )}
+
       {!loading && !error && loot.length > 1 && (
         <TabNav
           tabs={SORT_MODES}
@@ -242,44 +245,38 @@ function LootTab({ campaignId }) {
 
       {!loading && !error && visibleLoot.length > 0 && (
         <div className="loot-list">
-          {visibleLoot.map((entry) =>
-            editingId === entry.id ? (
-              <div className="loot-list__edit-slot" key={entry.id}>
-                {renderLootForm(false)}
-              </div>
-            ) : (
-              <article className="loot-card panel" key={entry.id}>
-                <div className="loot-card__main">
-                  <h3 className="loot-card__item">{entry.item}</h3>
-                  {entry.foundAt && (
-                    <span className="loot-card__found-at">{entry.foundAt}</span>
-                  )}
-                </div>
-                {entry.holder && (
-                  <p className="loot-card__holder">
-                    <span>Held by</span> {entry.holder}
-                  </p>
+          {visibleLoot.map((entry) => (
+            <article className="loot-card panel" key={entry.id}>
+              <div className="loot-card__main">
+                <h3 className="loot-card__item">{entry.item}</h3>
+                {entry.foundAt && (
+                  <span className="loot-card__found-at">{entry.foundAt}</span>
                 )}
-                {entry.notes && <p className="loot-card__notes">{entry.notes}</p>}
-                <div className="loot-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(entry)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeLoot(entry.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ),
-          )}
+              </div>
+              {entry.holder && (
+                <p className="loot-card__holder">
+                  <span>Held by</span> {entry.holder}
+                </p>
+              )}
+              {entry.notes && <p className="loot-card__notes">{entry.notes}</p>}
+              <div className="loot-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => startEditing(entry)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--danger"
+                  onClick={() => removeLoot(entry.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>

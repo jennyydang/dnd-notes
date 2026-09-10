@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import Modal from './Modal.jsx'
 import './CustomTab.scss'
 
 const emptyForm = { title: '', notes: '' }
@@ -125,7 +126,21 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
   return (
     <section className="custom-tab">
       <div className="custom-tab__toolbar">
-        {isRenaming ? (
+        <div className="custom-tab__tab-actions">
+          <button type="button" className="btn btn--text" onClick={startRenaming}>
+            Rename Tab
+          </button>
+          <button type="button" className="btn btn--danger" onClick={confirmDeleteTab}>
+            Delete Tab
+          </button>
+        </div>
+        <button type="button" className="btn btn--primary" onClick={startAdding}>
+          + Add Entry
+        </button>
+      </div>
+
+      {isRenaming && (
+        <Modal onClose={() => setIsRenaming(false)} label="Rename Tab">
           <form className="custom-tab__rename" onSubmit={submitRename}>
             <input
               type="text"
@@ -145,22 +160,16 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
               Cancel
             </button>
           </form>
-        ) : (
-          <div className="custom-tab__tab-actions">
-            <button type="button" className="btn btn--text" onClick={startRenaming}>
-              Rename Tab
-            </button>
-            <button type="button" className="btn btn--danger" onClick={confirmDeleteTab}>
-              Delete Tab
-            </button>
-          </div>
-        )}
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add Entry
-        </button>
-      </div>
+        </Modal>
+      )}
 
       {isAdding && renderEntryForm(true)}
+
+      {editingId && (
+        <Modal onClose={cancelForm} label="Edit Entry">
+          {renderEntryForm(false)}
+        </Modal>
+      )}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -171,34 +180,28 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
 
       {!loading && !error && entries.length > 0 && (
         <div className="custom-entry-list">
-          {entries.map((entry) =>
-            editingId === entry.id ? (
-              <div className="custom-entry-list__edit-slot" key={entry.id}>
-                {renderEntryForm(false)}
+          {entries.map((entry) => (
+            <article className="custom-entry-card panel" key={entry.id}>
+              <h3 className="custom-entry-card__title">{entry.title}</h3>
+              {entry.notes && <p className="custom-entry-card__notes">{entry.notes}</p>}
+              <div className="custom-entry-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => startEditing(entry)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--danger"
+                  onClick={() => removeEntry(entry.id)}
+                >
+                  Delete
+                </button>
               </div>
-            ) : (
-              <article className="custom-entry-card panel" key={entry.id}>
-                <h3 className="custom-entry-card__title">{entry.title}</h3>
-                {entry.notes && <p className="custom-entry-card__notes">{entry.notes}</p>}
-                <div className="custom-entry-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(entry)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeEntry(entry.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ),
-          )}
+            </article>
+          ))}
         </div>
       )}
     </section>

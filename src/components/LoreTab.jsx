@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import Modal from './Modal.jsx'
 import './LoreTab.scss'
 
 const emptyForm = { title: '', category: '', notes: '' }
@@ -133,6 +134,12 @@ function LoreTab({ campaignId }) {
 
       {isAdding && renderLoreForm(true)}
 
+      {editingId && (
+        <Modal onClose={cancelForm} label="Edit Lore">
+          {renderLoreForm(false)}
+        </Modal>
+      )}
+
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
@@ -145,39 +152,33 @@ function LoreTab({ campaignId }) {
 
       {!loading && !error && entries.length > 0 && (
         <div className="lore-list">
-          {entries.map((entry) =>
-            editingId === entry.id ? (
-              <div className="lore-list__edit-slot" key={entry.id}>
-                {renderLoreForm(false)}
+          {entries.map((entry) => (
+            <article className="lore-card panel" key={entry.id}>
+              <div className="lore-card__main">
+                <h3 className="lore-card__title">{entry.title}</h3>
+                {entry.category && (
+                  <span className="lore-card__category">{entry.category}</span>
+                )}
               </div>
-            ) : (
-              <article className="lore-card panel" key={entry.id}>
-                <div className="lore-card__main">
-                  <h3 className="lore-card__title">{entry.title}</h3>
-                  {entry.category && (
-                    <span className="lore-card__category">{entry.category}</span>
-                  )}
-                </div>
-                {entry.notes && <p className="lore-card__notes">{entry.notes}</p>}
-                <div className="lore-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(entry)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeEntry(entry.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ),
-          )}
+              {entry.notes && <p className="lore-card__notes">{entry.notes}</p>}
+              <div className="lore-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => startEditing(entry)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--danger"
+                  onClick={() => removeEntry(entry.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>

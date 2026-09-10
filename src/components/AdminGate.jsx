@@ -12,6 +12,7 @@ import {
 } from '../lib/auth.js'
 import { addPlayerToCampaign, listAllMemberships, setMembershipRole } from '../lib/campaigns.js'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import Modal from './Modal.jsx'
 import './AdminGate.scss'
 
 function AdminGate({ onOpenCampaign }) {
@@ -260,56 +261,25 @@ function ManagePlayers({ adminPassword }) {
             const playerCampaigns = membershipsByPlayer[player.id] || []
             return (
               <li key={player.id} className="manage-players__player">
-                {editingId === player.id ? (
-                  <form
-                    className="manage-players__edit-form"
-                    onSubmit={(e) => submitEdit(e, player.id)}
-                  >
-                    <input
-                      type="text"
-                      value={editUsername}
-                      onChange={(e) => setEditUsername(e.target.value)}
-                      aria-label="Username"
-                      required
-                    />
-                    <input
-                      type="password"
-                      value={editPassword}
-                      onChange={(e) => setEditPassword(e.target.value)}
-                      placeholder="New password (optional)"
-                      aria-label="New password"
-                    />
-                    <button type="submit" className="btn btn--primary">
-                      Save
+                <div className="manage-players__row">
+                  <span className="manage-players__username">{player.username}</span>
+                  <div className="manage-players__row-actions">
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => startEditing(player)}
+                    >
+                      Edit
                     </button>
-                    <button type="button" className="btn btn--text" onClick={cancelEditing}>
-                      Cancel
+                    <button
+                      type="button"
+                      className="btn btn--danger"
+                      onClick={() => removePlayer(player)}
+                    >
+                      Delete
                     </button>
-                    {editError && (
-                      <p className="empty-state empty-state--error">{editError}</p>
-                    )}
-                  </form>
-                ) : (
-                  <div className="manage-players__row">
-                    <span className="manage-players__username">{player.username}</span>
-                    <div className="manage-players__row-actions">
-                      <button
-                        type="button"
-                        className="btn btn--text"
-                        onClick={() => startEditing(player)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn--danger"
-                        onClick={() => removePlayer(player)}
-                      >
-                        Delete
-                      </button>
-                    </div>
                   </div>
-                )}
+                </div>
 
                 <div className="manage-players__campaigns">
                   {playerCampaigns.length === 0 ? (
@@ -339,6 +309,37 @@ function ManagePlayers({ adminPassword }) {
             )
           })}
         </ul>
+      )}
+
+      {editingId && (
+        <Modal onClose={cancelEditing} label="Edit Player">
+          <form
+            className="manage-players__edit-form"
+            onSubmit={(e) => submitEdit(e, editingId)}
+          >
+            <input
+              type="text"
+              value={editUsername}
+              onChange={(e) => setEditUsername(e.target.value)}
+              aria-label="Username"
+              required
+            />
+            <input
+              type="password"
+              value={editPassword}
+              onChange={(e) => setEditPassword(e.target.value)}
+              placeholder="New password (optional)"
+              aria-label="New password"
+            />
+            <button type="submit" className="btn btn--primary">
+              Save
+            </button>
+            <button type="button" className="btn btn--text" onClick={cancelEditing}>
+              Cancel
+            </button>
+            {editError && <p className="empty-state empty-state--error">{editError}</p>}
+          </form>
+        </Modal>
       )}
     </section>
   )

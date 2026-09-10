@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient.js'
 import NewOrJoinCampaign from './NewOrJoinCampaign.jsx'
 import ManageMembers from './ManageMembers.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
+import Modal from './Modal.jsx'
 import './Dashboard.scss'
 
 const BUCKET = 'campaign-covers'
@@ -255,6 +256,12 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
 
       {showFeedback && <FeedbackForm onDone={() => setShowFeedback(false)} />}
 
+      {editingId && (
+        <Modal onClose={cancelEditing} label="Edit Campaign">
+          {renderCampaignForm()}
+        </Modal>
+      )}
+
       {managingMembersCampaign && (
         <ManageMembers
           campaignId={managingMembersCampaign.id}
@@ -277,72 +284,66 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
 
       {!loading && !error && visibleCampaigns.length > 0 && (
         <div className="campaign-list">
-          {visibleCampaigns.map((campaign) =>
-            editingId === campaign.id ? (
-              <div className="campaign-list__edit-slot" key={campaign.id}>
-                {renderCampaignForm()}
-              </div>
-            ) : (
-              <article className="campaign-card panel" key={campaign.id}>
-                <button
-                  type="button"
-                  className="campaign-card__open"
-                  onClick={() => onOpenCampaign(campaign)}
-                >
-                  <div className="campaign-card__cover">
-                    {campaign.cover ? (
-                      <img src={campaign.cover} alt={campaign.name} />
-                    ) : (
-                      <span>{campaign.name.charAt(0).toUpperCase()}</span>
+          {visibleCampaigns.map((campaign) => (
+            <article className="campaign-card panel" key={campaign.id}>
+              <button
+                type="button"
+                className="campaign-card__open"
+                onClick={() => onOpenCampaign(campaign)}
+              >
+                <div className="campaign-card__cover">
+                  {campaign.cover ? (
+                    <img src={campaign.cover} alt={campaign.name} />
+                  ) : (
+                    <span>{campaign.name.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <div className="campaign-card__text">
+                  <h3 className="campaign-card__name">
+                    {campaign.name}
+                    {campaign.joinCode && (
+                      <span className="campaign-card__join-code">{campaign.joinCode}</span>
                     )}
-                  </div>
-                  <div className="campaign-card__text">
-                    <h3 className="campaign-card__name">
-                      {campaign.name}
-                      {campaign.joinCode && (
-                        <span className="campaign-card__join-code">{campaign.joinCode}</span>
-                      )}
-                    </h3>
-                    {campaign.description && (
-                      <p className="campaign-card__description">{campaign.description}</p>
-                    )}
-                  </div>
-                </button>
-                {(campaign.role === 'creator' || campaign.role === 'dm') && (
-                  <div className="campaign-card__actions">
-                    <button
-                      type="button"
-                      className="btn btn--text"
-                      onClick={() => startEditing(campaign)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--text"
-                      onClick={() => setManagingMembersId(campaign.id)}
-                    >
-                      Members
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--text"
-                      onClick={() => toggleArchived(campaign)}
-                    >
-                      {campaign.archived ? 'Unarchive' : 'Archive'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--danger"
-                      onClick={() => deleteCampaign(campaign)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </article>
-            ),
-          )}
+                  </h3>
+                  {campaign.description && (
+                    <p className="campaign-card__description">{campaign.description}</p>
+                  )}
+                </div>
+              </button>
+              {(campaign.role === 'creator' || campaign.role === 'dm') && (
+                <div className="campaign-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(campaign)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => setManagingMembersId(campaign.id)}
+                  >
+                    Members
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => toggleArchived(campaign)}
+                  >
+                    {campaign.archived ? 'Unarchive' : 'Archive'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => deleteCampaign(campaign)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </article>
+          ))}
         </div>
       )}
     </section>

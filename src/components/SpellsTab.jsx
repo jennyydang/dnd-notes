@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import TabNav from './TabNav.jsx'
+import Modal from './Modal.jsx'
 import './SpellsTab.scss'
 
 const SPELL_VIEWS = [
@@ -246,13 +247,6 @@ function SpellsTab({ campaignId, playerId }) {
     const spellsAtLevel = spells.filter((s) => s.level === level)
     if (spellsAtLevel.length > 0) sections.push({ level, spells: spellsAtLevel })
   }
-  // Keep an in-progress edit visible even if the Cantrips/Spells toggle
-  // flips away from the spell's own level mid-edit, rather than yanking
-  // the open form out from under whoever's using it.
-  const editingSpell = spells.find((s) => s.id === editingId)
-  if (editingSpell && !levelsInView.includes(editingSpell.level)) {
-    sections.unshift({ level: editingSpell.level, spells: [editingSpell] })
-  }
 
   return (
     <section className="spells-tab">
@@ -278,6 +272,12 @@ function SpellsTab({ campaignId, playerId }) {
       )}
 
       {isAdding && renderSpellForm(true)}
+
+      {editingId && (
+        <Modal onClose={cancelForm} label="Edit Spell">
+          {renderSpellForm(false)}
+        </Modal>
+      )}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -313,14 +313,6 @@ function SpellsTab({ campaignId, playerId }) {
                     spell.components && `Components: ${spell.components}`,
                     spell.duration && `Duration: ${spell.duration}`,
                   ].filter(Boolean)
-
-                  if (editingId === spell.id) {
-                    return (
-                      <div className="spell-list__edit-slot" key={spell.id}>
-                        {renderSpellForm(false)}
-                      </div>
-                    )
-                  }
 
                   return (
                     <article
