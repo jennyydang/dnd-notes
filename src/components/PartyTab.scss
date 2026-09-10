@@ -157,18 +157,6 @@
     }
   }
 
-  // Capped and independently scrollable so a long note can't blow out the
-  // whole card's height — every card in that grid row would otherwise
-  // stretch to match it.
-  &__notes {
-    margin: 0;
-    color: $text-light;
-    white-space: pre-wrap;
-    line-height: 1.5;
-    max-height: 8rem;
-    overflow-y: auto;
-  }
-
   &__claim {
     display: flex;
     align-items: center;
@@ -185,36 +173,6 @@
     }
   }
 
-  &__private-notes {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  &__private-notes-editor {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-
-    textarea {
-      background: $bg-deep;
-      border: 1px solid $ink-soft;
-      border-radius: $radius;
-      color: $text-light;
-      padding: 0.55rem 0.7rem;
-      resize: vertical;
-      min-height: 4rem;
-
-      &:focus {
-        border-color: $gold;
-      }
-    }
-
-    .btn {
-      align-self: flex-end;
-    }
-  }
-
   &__actions {
     display: flex;
     justify-content: flex-end;
@@ -223,16 +181,71 @@
     border-top: 1px solid rgba($gold-dim, 0.3);
   }
 
-  // Wraps the private-note toggle and the Edit/Delete actions so they sit
+  // Wraps "View Member Card" and the Edit/Delete actions so they sit
   // together at the bottom of the card as one group — margin-top: auto
-  // lives here rather than on __actions alone, so the private note isn't
-  // left stranded up near the details/claim section with a gap opening
-  // up beneath it before the actions row.
+  // lives here rather than on __actions alone, so this row isn't left
+  // stranded up near the details/claim section with a gap opening up
+  // beneath it before the actions row.
   &__footer {
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
     margin-top: auto;
+  }
+}
+
+// The "View Member Card" popup: reuses .party-card__main/__identity/
+// __avatar/__name/__details verbatim (same info, just in a modal instead
+// of on the compact card), plus its own Notes/Private Note sections
+// below.
+.party-card-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    h4 {
+      color: $gold-light;
+      font-size: 0.9rem;
+    }
+  }
+
+  &__notes {
+    margin: 0;
+    color: $text-light;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  &__hint {
+    color: $text-muted;
+    font-size: 0.78rem;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  &__section textarea {
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    color: $text-light;
+    padding: 0.55rem 0.7rem;
+    resize: vertical;
+    min-height: 4rem;
+
+    &:focus {
+      border-color: $gold;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
   }
 }
 

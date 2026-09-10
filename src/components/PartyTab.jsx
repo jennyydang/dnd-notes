@@ -64,9 +64,9 @@ function PartyTab({ campaignId, playerId }) {
   const [formError, setFormError] = useState(null)
   const [claimError, setClaimError] = useState(null)
   const [usernames, setUsernames] = useState({})
-  const [expandedNoteIds, setExpandedNoteIds] = useState(() => new Set())
-  const [noteDrafts, setNoteDrafts] = useState({})
-  const [noteErrors, setNoteErrors] = useState({})
+  const [viewingId, setViewingId] = useState(null)
+  const [noteDraft, setNoteDraft] = useState('')
+  const [noteError, setNoteError] = useState(null)
   const photoInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 
@@ -192,6 +192,7 @@ function PartyTab({ campaignId, playerId }) {
   async function removeMember(id) {
     await removeItem(id)
     if (editingId === id) cancelForm()
+    if (viewingId === id) closeViewing()
   }
 
   async function claimMember(memberId) {
@@ -212,39 +213,32 @@ function PartyTab({ campaignId, playerId }) {
     }
   }
 
-  function toggleNoteExpanded(memberId) {
-    setExpandedNoteIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(memberId)) {
-        next.delete(memberId)
-      } else {
-        next.add(memberId)
-        const existing = privateNotes.find((note) => note.partyMemberId === memberId)
-        setNoteDrafts((drafts) => ({ ...drafts, [memberId]: existing?.notes || '' }))
-      }
-      return next
-    })
+  function startViewing(member) {
+    const existing = privateNotes.find((note) => note.partyMemberId === member.id)
+    setNoteDraft(existing?.notes || '')
+    setNoteError(null)
+    setViewingId(member.id)
+  }
+
+  function closeViewing() {
+    setViewingId(null)
+    setNoteDraft('')
+    setNoteError(null)
   }
 
   async function savePrivateNote(memberId) {
-    const text = noteDrafts[memberId] ?? ''
     const existing = privateNotes.find((note) => note.partyMemberId === memberId)
     try {
       if (existing) {
-        await updatePrivateNote(existing.id, { notes: text })
+        await updatePrivateNote(existing.id, { notes: noteDraft })
       } else {
-        await addPrivateNote({ party_member_id: memberId, notes: text })
+        await addPrivateNote({ party_member_id: memberId, notes: noteDraft })
       }
-      setNoteErrors((prev) => ({ ...prev, [memberId]: null }))
-      // Collapsing the editor is the visible "it worked" signal — with no
+      // Closing the modal is the visible "it worked" signal — with no
       // error, there's otherwise no feedback that anything happened at all.
-      setExpandedNoteIds((prev) => {
-        const next = new Set(prev)
-        next.delete(memberId)
-        return next
-      })
+      closeViewing()
     } catch (err) {
-      setNoteErrors((prev) => ({ ...prev, [memberId]: err.message }))
+      setNoteError(err.message)
     }
   }
 
@@ -375,6 +369,87 @@ function PartyTab({ campaignId, playerId }) {
     )
   }
 
+  // A player can only write a private note about a Player-type character
+  // that isn't the one they've claimed as their own — same eligibility
+  // the old inline toggle used.
+  function canWritePrivateNote(member) {
+    return member.memberType === 'Player' && playerId && member.claimedBy !== playerId
+  }
+
+  function renderMemberCardModal(member) {
+    return (
+      <div className="party-card-modal">
+        <div className="party-card__main">
+          <div className="party-card__identity">
+            <div className="party-card__avatar">
+              {member.photo ? (
+                <img src={member.photo} alt={member.name} />
+              ) : (
+                <span>{member.name.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            <h3 className="party-card__name">{member.name}</h3>
+          </div>
+          <span className={`status-badge status-badge--${member.memberType.toLowerCase()}`}>
+            {member.memberType}
+          </span>
+        </div>
+        <dl className="party-card__details">
+          <div>
+            <dt>Race / Class</dt>
+            <dd>{member.raceClass || '—'}</dd>
+          </div>
+          <div>
+            <dt>Level</dt>
+            <dd>{member.level}</dd>
+          </div>
+          {member.animalCompanion && (
+            <div>
+              <dt>Animal Companion</dt>
+              <dd>{member.animalCompanion}</dd>
+            </div>
+          )}
+          {member.memberType === 'Player' && (
+            <div>
+              <dt>Played by</dt>
+              <dd>{member.playerName || '—'}</dd>
+            </div>
+          )}
+        </dl>
+
+        <div className="party-card-modal__section">
+          <h4>Notes</h4>
+          <p className="party-card-modal__notes">{member.notes || 'No notes yet.'}</p>
+        </div>
+
+        {canWritePrivateNote(member) && (
+          <div className="party-card-modal__section">
+            <h4>
+              Private Note <span className="party-card-modal__hint">(only you can see this)</span>
+            </h4>
+            <textarea
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              placeholder="Only you can see this note..."
+            />
+            {noteError && <p className="empty-state empty-state--error">{noteError}</p>}
+            <div className="party-card-modal__actions">
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => savePrivateNote(member.id)}
+              >
+                Save Note
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const viewingMember = party.find((m) => m.id === viewingId)
+
   return (
     <section className="party-tab">
       <PartyGoals campaignId={campaignId} />
@@ -393,6 +468,12 @@ function PartyTab({ campaignId, playerId }) {
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Party Member">
           {renderPartyForm(false)}
+        </Modal>
+      )}
+
+      {viewingMember && (
+        <Modal onClose={closeViewing} label={`${viewingMember.name} — Party Member`}>
+          {renderMemberCardModal(viewingMember)}
         </Modal>
       )}
 
@@ -449,7 +530,6 @@ function PartyTab({ campaignId, playerId }) {
                   </div>
                 )}
               </dl>
-              {member.notes && <p className="party-card__notes">{member.notes}</p>}
               {member.memberType === 'Player' && playerId && (
                 <div className="party-card__claim">
                   {member.claimedBy === playerId ? (
@@ -483,38 +563,13 @@ function PartyTab({ campaignId, playerId }) {
                 </div>
               )}
               <div className="party-card__footer">
-                {member.memberType === 'Player' && playerId && member.claimedBy !== playerId && (
-                  <div className="party-card__private-notes">
-                    <button
-                      type="button"
-                      className="btn btn--text"
-                      onClick={() => toggleNoteExpanded(member.id)}
-                    >
-                      {expandedNoteIds.has(member.id) ? 'Hide private note' : 'Private note'}
-                    </button>
-                    {expandedNoteIds.has(member.id) && (
-                      <div className="party-card__private-notes-editor">
-                        <textarea
-                          value={noteDrafts[member.id] ?? ''}
-                          onChange={(e) =>
-                            setNoteDrafts((drafts) => ({ ...drafts, [member.id]: e.target.value }))
-                          }
-                          placeholder="Only you can see this note..."
-                        />
-                        {noteErrors[member.id] && (
-                          <p className="empty-state empty-state--error">{noteErrors[member.id]}</p>
-                        )}
-                        <button
-                          type="button"
-                          className="btn btn--primary"
-                          onClick={() => savePrivateNote(member.id)}
-                        >
-                          Save
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => startViewing(member)}
+                >
+                  View Member Card
+                </button>
                 <div className="party-card__actions">
                   <button
                     type="button"
