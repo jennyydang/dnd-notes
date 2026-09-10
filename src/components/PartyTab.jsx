@@ -59,12 +59,12 @@ function PartyTab({ campaignId, playerId }) {
     filters: { author_player_id: playerId || ZERO_UUID },
   })
   const [isAdding, setIsAdding] = useState(false)
-  const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
   const [claimError, setClaimError] = useState(null)
   const [usernames, setUsernames] = useState({})
   const [viewingId, setViewingId] = useState(null)
+  const [isEditingDetails, setIsEditingDetails] = useState(false)
   const [noteDraft, setNoteDraft] = useState('')
   const [noteError, setNoteError] = useState(null)
   const photoInputRef = useRef(null)
@@ -101,18 +101,8 @@ function PartyTab({ campaignId, playerId }) {
     }
   }
 
-  function startAdding() {
-    revokeTrackedObjectUrl()
-    setForm(emptyForm)
-    setEditingId(null)
-    setFormError(null)
-    setIsAdding(true)
-  }
-
-  function startEditing(member) {
-    revokeTrackedObjectUrl()
-    closeViewing()
-    setForm({
+  function formFromMember(member) {
+    return {
       name: member.name,
       memberType: member.memberType,
       playerName: member.playerName,
@@ -123,18 +113,42 @@ function PartyTab({ campaignId, playerId }) {
       photoFile: null,
       photoPreview: member.photo || '',
       photoRemoved: false,
-    })
-    setIsAdding(false)
+    }
+  }
+
+  function startAdding() {
+    closeViewing()
+    revokeTrackedObjectUrl()
+    setForm(emptyForm)
     setFormError(null)
-    setEditingId(member.id)
+    setIsAdding(true)
   }
 
   function cancelForm() {
     revokeTrackedObjectUrl()
     setIsAdding(false)
-    setEditingId(null)
     setForm(emptyForm)
     setFormError(null)
+  }
+
+  // Flips the already-open View Member Details popup into an editable
+  // form — the fields are already populated from startViewing, so there's
+  // nothing to reset here.
+  function startEditingDetails() {
+    setFormError(null)
+    setIsEditingDetails(true)
+  }
+
+  // Discards any unsaved edits by re-populating the form from the
+  // member's actual (still-unsaved-to-DB) data, then drops back to the
+  // read-only view — the popup itself stays open.
+  function cancelEditingDetails() {
+    if (viewingMember) {
+      revokeTrackedObjectUrl()
+      setForm(formFromMember(viewingMember))
+    }
+    setFormError(null)
+    setIsEditingDetails(false)
   }
 
   function handlePhotoSelected(event) {
@@ -179,12 +193,17 @@ function PartyTab({ campaignId, playerId }) {
         payload.photo_path = null
       }
 
-      if (editingId) {
-        await updateItem(editingId, payload)
+      if (isEditingDetails && viewingId) {
+        await updateItem(viewingId, payload)
+        // Drop back to the read-only view rather than closing the whole
+        // popup — the freshly saved values are already what's sitting in
+        // form, so the view immediately reflects them.
+        setFormError(null)
+        setIsEditingDetails(false)
       } else {
         await addItem(payload)
+        cancelForm()
       }
-      cancelForm()
     } catch (err) {
       setFormError(err.message)
     }
@@ -192,7 +211,6 @@ function PartyTab({ campaignId, playerId }) {
 
   async function removeMember(id) {
     await removeItem(id)
-    if (editingId === id) cancelForm()
     if (viewingId === id) closeViewing()
   }
 
@@ -215,6 +233,10 @@ function PartyTab({ campaignId, playerId }) {
   }
 
   function startViewing(member) {
+    revokeTrackedObjectUrl()
+    setForm(formFromMember(member))
+    setFormError(null)
+    setIsEditingDetails(false)
     const existing = privateNotes.find((note) => note.partyMemberId === member.id)
     setNoteDraft(existing?.notes || '')
     setNoteError(null)
@@ -222,7 +244,11 @@ function PartyTab({ campaignId, playerId }) {
   }
 
   function closeViewing() {
+    revokeTrackedObjectUrl()
     setViewingId(null)
+    setIsEditingDetails(false)
+    setForm(emptyForm)
+    setFormError(null)
     setNoteDraft('')
     setNoteError(null)
   }
@@ -245,9 +271,16 @@ function PartyTab({ campaignId, playerId }) {
 
   const myClaimedMemberId = party.find((m) => m.claimedBy === playerId)?.id
 
-  function renderPartyForm(standalone) {
+  // mode: 'add' (blank, standalone above the list) | 'view' (read-only,
+  // inside the popup) | 'edit' (same popup, fields now editable). view
+  // and edit share every field's markup — only `disabled` toggles between
+  // them — so the popup looks identical whether or not Edit has been
+  // clicked, per the ask to make it "look exactly like when the user
+  // clicks edit."
+  function renderPartyForm(mode, member) {
+    const readOnly = mode === 'view'
     return (
-    <form className={`party-form panel${standalone ? ' party-form--standalone' : ''}`} onSubmit={submitForm}>
+    <form className={`party-form panel${mode === 'add' ? ' party-form--standalone' : ''}`} onSubmit={submitForm}>
           <div className="party-form__layout">
             <div className="party-form__photo">
               <button
@@ -255,6 +288,7 @@ function PartyTab({ campaignId, playerId }) {
                 className="party-form__photo-btn"
                 onClick={() => photoInputRef.current?.click()}
                 aria-label="Choose a portrait photo"
+                disabled={readOnly}
               >
                 {form.photoPreview ? (
                   <img src={form.photoPreview} alt="Party member portrait" />
@@ -269,7 +303,7 @@ function PartyTab({ campaignId, playerId }) {
                 hidden
                 onChange={handlePhotoSelected}
               />
-              {form.photoPreview && (
+              {!readOnly && form.photoPreview && (
                 <button type="button" className="btn btn--text" onClick={removePhoto}>
                   Remove photo
                 </button>
@@ -286,6 +320,7 @@ function PartyTab({ campaignId, playerId }) {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Kaelen Ashwood"
                   required
+                  disabled={readOnly}
                 />
               </div>
               <div className="field">
@@ -294,6 +329,7 @@ function PartyTab({ campaignId, playerId }) {
                   id="party-type"
                   value={form.memberType}
                   onChange={(e) => setForm({ ...form, memberType: e.target.value })}
+                  disabled={readOnly}
                 >
                   {MEMBER_TYPES.map((type) => (
                     <option key={type} value={type}>
@@ -311,6 +347,7 @@ function PartyTab({ campaignId, playerId }) {
                     value={form.playerName}
                     onChange={(e) => setForm({ ...form, playerName: e.target.value })}
                     placeholder="Jenny"
+                    disabled={readOnly}
                   />
                 </div>
               )}
@@ -322,6 +359,7 @@ function PartyTab({ campaignId, playerId }) {
                   value={form.raceClass}
                   onChange={(e) => setForm({ ...form, raceClass: e.target.value })}
                   placeholder="Half-elf Ranger"
+                  disabled={readOnly}
                 />
               </div>
               <div className="field">
@@ -334,6 +372,7 @@ function PartyTab({ campaignId, playerId }) {
                   step="1"
                   value={form.level}
                   onChange={(e) => setForm({ ...form, level: e.target.value })}
+                  disabled={readOnly}
                 />
               </div>
               <div className="field">
@@ -344,6 +383,7 @@ function PartyTab({ campaignId, playerId }) {
                   value={form.animalCompanion}
                   onChange={(e) => setForm({ ...form, animalCompanion: e.target.value })}
                   placeholder="Fang, a dire wolf"
+                  disabled={readOnly}
                 />
               </div>
             </div>
@@ -355,16 +395,40 @@ function PartyTab({ campaignId, playerId }) {
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               placeholder="Joined the party after the battle at Redstone Bridge..."
+              disabled={readOnly}
             />
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="party-form__actions">
-            <button type="button" className="btn btn--text" onClick={cancelForm}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn--primary">
-              {editingId ? 'Save Changes' : 'Add Party Member'}
-            </button>
+            {mode === 'view' ? (
+              canManageMember(member) && (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeMember(member.id)}
+                  >
+                    Delete
+                  </button>
+                  <button type="button" className="btn btn--primary" onClick={startEditingDetails}>
+                    Edit
+                  </button>
+                </>
+              )
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={mode === 'edit' ? cancelEditingDetails : cancelForm}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn--primary">
+                  {mode === 'edit' ? 'Save Changes' : 'Add Party Member'}
+                </button>
+              </>
+            )}
           </div>
         </form>
     )
@@ -387,89 +451,33 @@ function PartyTab({ campaignId, playerId }) {
     return !member.claimedBy || member.claimedBy === playerId || !playerId
   }
 
-  function renderMemberCardModal(member) {
+  // Sits alongside the reused party-form (below it, in the popup) — a
+  // player's private note about a character is a separate party_notes
+  // record, unrelated to whether the character's own fields are
+  // currently being edited, so it stays interactive in both view and
+  // edit mode rather than following the readOnly toggle.
+  function renderPrivateNoteSection(member) {
+    if (!canWritePrivateNote(member)) return null
     return (
-      <div className="party-card-modal">
-        <div className="party-card__main">
-          <div className="party-card__identity">
-            <div className="party-card__avatar">
-              {member.photo ? (
-                <img src={member.photo} alt={member.name} />
-              ) : (
-                <span>{member.name.charAt(0).toUpperCase()}</span>
-              )}
-            </div>
-            <h3 className="party-card__name">{member.name}</h3>
-          </div>
-          <span className={`status-badge status-badge--${member.memberType.toLowerCase()}`}>
-            {member.memberType}
-          </span>
+      <div className="party-card-modal__section">
+        <h4>
+          Private Note <span className="party-card-modal__hint">(only you can see this)</span>
+        </h4>
+        <textarea
+          value={noteDraft}
+          onChange={(e) => setNoteDraft(e.target.value)}
+          placeholder="Only you can see this note..."
+        />
+        {noteError && <p className="empty-state empty-state--error">{noteError}</p>}
+        <div className="party-card-modal__actions">
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => savePrivateNote(member.id)}
+          >
+            Save Note
+          </button>
         </div>
-        <dl className="party-card__details">
-          <div>
-            <dt>Race / Class</dt>
-            <dd>{member.raceClass || '—'}</dd>
-          </div>
-          <div>
-            <dt>Level</dt>
-            <dd>{member.level}</dd>
-          </div>
-          {member.animalCompanion && (
-            <div>
-              <dt>Animal Companion</dt>
-              <dd>{member.animalCompanion}</dd>
-            </div>
-          )}
-          {member.memberType === 'Player' && (
-            <div>
-              <dt>Played by</dt>
-              <dd>{member.playerName || '—'}</dd>
-            </div>
-          )}
-        </dl>
-
-        <div className="party-card-modal__section">
-          <h4>Notes</h4>
-          <p className="party-card-modal__notes">{member.notes || 'No notes yet.'}</p>
-        </div>
-
-        {canWritePrivateNote(member) && (
-          <div className="party-card-modal__section">
-            <h4>
-              Private Note <span className="party-card-modal__hint">(only you can see this)</span>
-            </h4>
-            <textarea
-              value={noteDraft}
-              onChange={(e) => setNoteDraft(e.target.value)}
-              placeholder="Only you can see this note..."
-            />
-            {noteError && <p className="empty-state empty-state--error">{noteError}</p>}
-            <div className="party-card-modal__actions">
-              <button
-                type="button"
-                className="btn btn--primary"
-                onClick={() => savePrivateNote(member.id)}
-              >
-                Save Note
-              </button>
-            </div>
-          </div>
-        )}
-
-        {canManageMember(member) && (
-          <div className="party-card__actions">
-            <button type="button" className="btn btn--text" onClick={() => startEditing(member)}>
-              Edit
-            </button>
-            <button
-              type="button"
-              className="btn btn--danger"
-              onClick={() => removeMember(member.id)}
-            >
-              Delete
-            </button>
-          </div>
-        )}
       </div>
     )
   }
@@ -489,17 +497,14 @@ function PartyTab({ campaignId, playerId }) {
 
       {claimError && <p className="empty-state empty-state--error">{claimError}</p>}
 
-      {isAdding && renderPartyForm(true)}
-
-      {editingId && (
-        <Modal onClose={cancelForm} label="Edit Party Member">
-          {renderPartyForm(false)}
-        </Modal>
-      )}
+      {isAdding && renderPartyForm('add')}
 
       {viewingMember && (
         <Modal onClose={closeViewing} label={`${viewingMember.name} — Party Member`}>
-          {renderMemberCardModal(viewingMember)}
+          <div className="party-card-modal">
+            {renderPartyForm(isEditingDetails ? 'edit' : 'view', viewingMember)}
+            {renderPrivateNoteSection(viewingMember)}
+          </div>
         </Modal>
       )}
 

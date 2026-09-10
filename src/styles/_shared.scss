@@ -112,6 +112,14 @@
     &:focus {
       border-color: $gold;
     }
+
+    // Read-only display mode (e.g. viewing a party member's card before
+    // hitting Edit) — dims the field and drops the focus affordance
+    // rather than leaving it looking identical to an editable one.
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
   }
 
   textarea {

@@ -64,6 +64,15 @@
     &:hover {
       border-color: $gold;
     }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+
+      &:hover {
+        border-color: rgba($gold-dim, 0.6);
+      }
+    }
   }
 
   &__photo-placeholder {
@@ -173,14 +182,6 @@
     }
   }
 
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
-  }
-
   // Pinned to the card's bottom regardless of how much (or little)
   // content is above it, so every card in a grid row lines up the same.
   &__footer {
@@ -190,10 +191,10 @@
   }
 }
 
-// The "View Member Details" popup: reuses .party-card__main/__identity/
-// __avatar/__name/__details/__actions verbatim (same info and the same
-// Edit/Delete buttons, just in a modal instead of on the compact card),
-// plus its own Notes/Private Note sections below.
+// The "View Member Details" popup: renders the same .party-form used for
+// Add/Edit (view mode just disables every field — see renderPartyForm's
+// `readOnly` handling), so it looks identical whether or not Edit has
+// been clicked, plus its own Private Note section below when applicable.
 .party-card-modal {
   display: flex;
   flex-direction: column;
@@ -208,13 +209,6 @@
       color: $gold-light;
       font-size: 0.9rem;
     }
-  }
-
-  &__notes {
-    margin: 0;
-    color: $text-light;
-    white-space: pre-wrap;
-    line-height: 1.5;
   }
 
   &__hint {
