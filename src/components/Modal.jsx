@@ -14,6 +14,17 @@ function Modal({ onClose, label, children }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
+  // Lock the page underneath from scrolling while the modal is open —
+  // restore whatever overflow value was already there (rather than
+  // assuming it was blank) so this can't clobber a style set elsewhere.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [])
+
   return (
     <div
       className="modal__backdrop"
