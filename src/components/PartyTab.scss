@@ -181,43 +181,19 @@
     border-top: 1px solid rgba($gold-dim, 0.3);
   }
 
+  // Pinned to the card's bottom regardless of how much (or little)
+  // content is above it, so every card in a grid row lines up the same.
   &__footer {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    justify-content: flex-end;
     margin-top: auto;
-  }
-
-  // Icon-only, so the accessible name comes entirely from aria-label —
-  // matches the circular icon-button pattern already used for the spell
-  // flavor-text popup trigger. align-self right-aligns it flush with the
-  // actions row's own right edge below — directly above Delete, the
-  // rightmost button in that row — while leaving __actions itself
-  // stretched full-width so its divider line still spans the card.
-  &__view-btn {
-    flex-shrink: 0;
-    align-self: flex-end;
-    width: 1.9rem;
-    height: 1.9rem;
-    border-radius: 50%;
-    background: $bg-deep;
-    border: 1px solid rgba($gold-dim, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    line-height: 1;
-
-    &:hover {
-      border-color: $gold;
-    }
   }
 }
 
-// The "View Member Card" popup: reuses .party-card__main/__identity/
-// __avatar/__name/__details verbatim (same info, just in a modal instead
-// of on the compact card), plus its own Notes/Private Note sections
-// below.
+// The "View Member Details" popup: reuses .party-card__main/__identity/
+// __avatar/__name/__details/__actions verbatim (same info and the same
+// Edit/Delete buttons, just in a modal instead of on the compact card),
+// plus its own Notes/Private Note sections below.
 .party-card-modal {
   display: flex;
   flex-direction: column;

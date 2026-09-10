@@ -111,6 +111,7 @@ function PartyTab({ campaignId, playerId }) {
 
   function startEditing(member) {
     revokeTrackedObjectUrl()
+    closeViewing()
     setForm({
       name: member.name,
       memberType: member.memberType,
@@ -454,6 +455,21 @@ function PartyTab({ campaignId, playerId }) {
             </div>
           </div>
         )}
+
+        {canManageMember(member) && (
+          <div className="party-card__actions">
+            <button type="button" className="btn btn--text" onClick={() => startEditing(member)}>
+              Edit
+            </button>
+            <button
+              type="button"
+              className="btn btn--danger"
+              onClick={() => removeMember(member.id)}
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </div>
     )
   }
@@ -575,31 +591,11 @@ function PartyTab({ campaignId, playerId }) {
               <div className="party-card__footer">
                 <button
                   type="button"
-                  className="party-card__view-btn"
+                  className="btn btn--primary"
                   onClick={() => startViewing(member)}
-                  aria-label={`View ${member.name}'s member card`}
-                  title="View Member Card"
                 >
-                  🪪
+                  View Member Details
                 </button>
-                {canManageMember(member) && (
-                  <div className="party-card__actions">
-                    <button
-                      type="button"
-                      className="btn btn--text"
-                      onClick={() => startEditing(member)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--danger"
-                      onClick={() => removeMember(member.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
               </div>
             </article>
           ))}
