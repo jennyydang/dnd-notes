@@ -4,6 +4,7 @@ import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import { supabase } from '../lib/supabaseClient.js'
 import NewOrJoinCampaign from './NewOrJoinCampaign.jsx'
 import ManageMembers from './ManageMembers.jsx'
+import FeedbackForm from './FeedbackForm.jsx'
 import './Dashboard.scss'
 
 const BUCKET = 'campaign-covers'
@@ -37,6 +38,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
     filters: { player_id: playerId },
   })
   const [showChooser, setShowChooser] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
@@ -234,6 +236,9 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
           <button type="button" className="btn btn--primary" onClick={() => setShowChooser(true)}>
             + Campaign
           </button>
+          <button type="button" className="btn btn--text" onClick={() => setShowFeedback(true)}>
+            Send Feedback
+          </button>
           <button type="button" className="btn btn--text" onClick={onLogOut}>
             Log out
           </button>
@@ -247,6 +252,8 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
           onCancel={() => setShowChooser(false)}
         />
       )}
+
+      {showFeedback && <FeedbackForm onDone={() => setShowFeedback(false)} />}
 
       {managingMembersCampaign && (
         <ManageMembers

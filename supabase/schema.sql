@@ -371,6 +371,18 @@ create table if not exists custom_tab_entries (
   created_at timestamptz not null default now()
 );
 
+-- Bug/suggestion box for players and DMs to send straight to the admin.
+-- Genuinely anonymous, not just "app-enforced" privacy like session_notes/
+-- party_notes/private custom tabs: there is NO player_id, campaign_id, or
+-- any other identifying column here at all, so there's nothing for the
+-- admin to trace a submission back to even if they wanted to.
+create table if not exists feedback (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null default 'issue' check (kind in ('issue','suggestion')),
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
 -- ── Migration: backfill campaign_id onto tables that already existed ──
 -- No-ops on a fresh database (the columns above already exist and are
 -- already NOT NULL). On a database created before campaigns existed,
@@ -430,6 +442,7 @@ alter table lore_entries        enable row level security;
 alter table custom_tabs         enable row level security;
 alter table custom_tab_entries  enable row level security;
 alter table campaign_members    enable row level security;
+alter table feedback            enable row level security;
 
 -- players: RLS enabled, but INTENTIONALLY no policy of any kind — this is
 -- what blocks the anon role from reading password_hash. All access goes
@@ -452,6 +465,7 @@ drop policy if exists "anon full access lore_entries"       on lore_entries;
 drop policy if exists "anon full access custom_tabs"        on custom_tabs;
 drop policy if exists "anon full access custom_tab_entries" on custom_tab_entries;
 drop policy if exists "anon full access campaign_members"    on campaign_members;
+drop policy if exists "anon full access feedback"            on feedback;
 
 create policy "anon full access campaigns"          on campaigns          for all to anon using (true) with check (true);
 create policy "anon full access maps"               on maps               for all to anon using (true) with check (true);
@@ -469,6 +483,7 @@ create policy "anon full access lore_entries"       on lore_entries       for al
 create policy "anon full access custom_tabs"        on custom_tabs        for all to anon using (true) with check (true);
 create policy "anon full access custom_tab_entries" on custom_tab_entries for all to anon using (true) with check (true);
 create policy "anon full access campaign_members"   on campaign_members   for all to anon using (true) with check (true);
+create policy "anon full access feedback"           on feedback           for all to anon using (true) with check (true);
 
 -- ── Storage buckets ───────────────────────────────────────────────────
 

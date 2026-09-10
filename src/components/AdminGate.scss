@@ -156,3 +156,78 @@
     color: $text-muted;
   }
 }
+
+.feedback-inbox {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  h3 {
+    color: $parchment;
+    font-size: 1.1rem;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__item {
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    padding: 0.75rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    border: 1px solid rgba($gold-dim, 0.5);
+    color: $text-light;
+
+    &--issue {
+      border-color: rgba($maroon-light, 0.6);
+      color: $maroon-text;
+    }
+
+    &--suggestion {
+      border-color: rgba($green, 0.5);
+      color: $green-text;
+    }
+  }
+
+  &__date {
+    font-size: 0.78rem;
+    color: $text-muted;
+  }
+
+  &__message {
+    color: $text-light;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

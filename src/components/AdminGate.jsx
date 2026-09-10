@@ -74,6 +74,7 @@ function AdminGate({ onOpenCampaign }) {
         </button>
       </div>
       <ManagePlayers adminPassword={adminPassword} />
+      <FeedbackInbox />
       <h2 className="admin-gate__section-title">All Campaigns</h2>
       <Dashboard onOpenCampaign={onOpenCampaign} />
     </div>
@@ -337,6 +338,72 @@ function ManagePlayers({ adminPassword }) {
               </li>
             )
           })}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+const feedbackFromRow = (r) => ({ id: r.id, kind: r.kind, message: r.message, createdAt: r.created_at })
+
+function formatFeedbackDate(value) {
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+// Genuinely anonymous — the feedback table has no player_id/campaign_id
+// column at all, so there's nothing here to attribute a submission to
+// even if the admin wanted to. Dismissing a submission just deletes it;
+// there's no separate "reviewed" state to track.
+function FeedbackInbox() {
+  const {
+    items: submissions,
+    loading,
+    error,
+    removeItem,
+  } = useSupabaseTable('feedback', {
+    fromRow: feedbackFromRow,
+    orderBy: 'created_at',
+    ascending: false,
+  })
+
+  return (
+    <section className="feedback-inbox panel">
+      <h3>Player Submissions</h3>
+
+      {loading && <p className="empty-state">Loading…</p>}
+      {error && <p className="empty-state empty-state--error">{error}</p>}
+
+      {!loading && !error && submissions.length === 0 && (
+        <p className="empty-state">No submissions yet.</p>
+      )}
+
+      {!loading && !error && submissions.length > 0 && (
+        <ul className="feedback-inbox__list">
+          {submissions.map((item) => (
+            <li key={item.id} className="feedback-inbox__item">
+              <div className="feedback-inbox__meta">
+                <span
+                  className={`feedback-inbox__badge feedback-inbox__badge--${item.kind}`}
+                >
+                  {item.kind === 'issue' ? 'Issue' : 'Suggestion'}
+                </span>
+                <span className="feedback-inbox__date">{formatFeedbackDate(item.createdAt)}</span>
+              </div>
+              <p className="feedback-inbox__message">{item.message}</p>
+              <div className="feedback-inbox__actions">
+                <button type="button" className="btn btn--text" onClick={() => removeItem(item.id)}>
+                  Dismiss
+                </button>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
     </section>
