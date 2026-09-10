@@ -219,9 +219,20 @@
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
-    margin-top: auto;
     padding-top: 0.5rem;
     border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+
+  // Wraps the private-note toggle and the Edit/Delete actions so they sit
+  // together at the bottom of the card as one group — margin-top: auto
+  // lives here rather than on __actions alone, so the private note isn't
+  // left stranded up near the details/claim section with a gap opening
+  // up beneath it before the actions row.
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-top: auto;
   }
 }
 

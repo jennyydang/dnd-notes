@@ -482,53 +482,55 @@ function PartyTab({ campaignId, playerId }) {
                   )}
                 </div>
               )}
-              {member.memberType === 'Player' && playerId && member.claimedBy !== playerId && (
-                <div className="party-card__private-notes">
+              <div className="party-card__footer">
+                {member.memberType === 'Player' && playerId && member.claimedBy !== playerId && (
+                  <div className="party-card__private-notes">
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => toggleNoteExpanded(member.id)}
+                    >
+                      {expandedNoteIds.has(member.id) ? 'Hide private note' : 'Private note'}
+                    </button>
+                    {expandedNoteIds.has(member.id) && (
+                      <div className="party-card__private-notes-editor">
+                        <textarea
+                          value={noteDrafts[member.id] ?? ''}
+                          onChange={(e) =>
+                            setNoteDrafts((drafts) => ({ ...drafts, [member.id]: e.target.value }))
+                          }
+                          placeholder="Only you can see this note..."
+                        />
+                        {noteErrors[member.id] && (
+                          <p className="empty-state empty-state--error">{noteErrors[member.id]}</p>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn--primary"
+                          onClick={() => savePrivateNote(member.id)}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="party-card__actions">
                   <button
                     type="button"
                     className="btn btn--text"
-                    onClick={() => toggleNoteExpanded(member.id)}
+                    onClick={() => startEditing(member)}
                   >
-                    {expandedNoteIds.has(member.id) ? 'Hide private note' : 'Private note'}
+                    Edit
                   </button>
-                  {expandedNoteIds.has(member.id) && (
-                    <div className="party-card__private-notes-editor">
-                      <textarea
-                        value={noteDrafts[member.id] ?? ''}
-                        onChange={(e) =>
-                          setNoteDrafts((drafts) => ({ ...drafts, [member.id]: e.target.value }))
-                        }
-                        placeholder="Only you can see this note..."
-                      />
-                      {noteErrors[member.id] && (
-                        <p className="empty-state empty-state--error">{noteErrors[member.id]}</p>
-                      )}
-                      <button
-                        type="button"
-                        className="btn btn--primary"
-                        onClick={() => savePrivateNote(member.id)}
-                      >
-                        Save
-                      </button>
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeMember(member.id)}
+                  >
+                    Delete
+                  </button>
                 </div>
-              )}
-              <div className="party-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(member)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => removeMember(member.id)}
-                >
-                  Delete
-                </button>
               </div>
             </article>
           ))}
