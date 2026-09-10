@@ -376,6 +376,16 @@ function PartyTab({ campaignId, playerId }) {
     return member.memberType === 'Player' && playerId && member.claimedBy !== playerId
   }
 
+  // An unclaimed character (including every NPC, which can never be
+  // claimed) stays editable/deletable by anybody, same as before. Once a
+  // player claims a character, only that player can edit or delete it.
+  // The admin has no playerId at all, so — same fallback used everywhere
+  // else in this app for "private to a player" features — it keeps full
+  // access rather than being locked out of managing the roster.
+  function canManageMember(member) {
+    return !member.claimedBy || member.claimedBy === playerId || !playerId
+  }
+
   function renderMemberCardModal(member) {
     return (
       <div className="party-card-modal">
@@ -572,22 +582,24 @@ function PartyTab({ campaignId, playerId }) {
                 >
                   🪪
                 </button>
-                <div className="party-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(member)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeMember(member.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
+                {canManageMember(member) && (
+                  <div className="party-card__actions">
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => startEditing(member)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--danger"
+                      onClick={() => removeMember(member.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             </article>
           ))}
