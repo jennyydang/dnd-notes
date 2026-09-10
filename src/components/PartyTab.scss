@@ -181,11 +181,27 @@
     border-top: 1px solid rgba($gold-dim, 0.3);
   }
 
+  // Holds __claim (left, when rendered) and __footer (right) together on
+  // one row pinned to the card's bottom — margin-top: auto lives here now
+  // instead of on __footer alone, so "Claimed by"/"Claim this character"
+  // sits level with the icon/actions instead of floating up near details.
+  &__bottom-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin-top: auto;
+  }
+
   &__footer {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin-top: auto;
+    // Pushes __footer to the row's right edge whether or not __claim is
+    // present (an NPC card, or the admin/no-playerId view, never renders
+    // __claim at all) — more reliable than justify-content: space-between
+    // on __bottom-row, which would misplace a *lone* footer at the left
+    // (space-between treats a single flex child as flex-start).
+    margin-left: auto;
   }
 
   // Icon-only, so the accessible name comes entirely from aria-label —

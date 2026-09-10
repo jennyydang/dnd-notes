@@ -530,63 +530,65 @@ function PartyTab({ campaignId, playerId }) {
                   </div>
                 )}
               </dl>
-              {member.memberType === 'Player' && playerId && (
-                <div className="party-card__claim">
-                  {member.claimedBy === playerId ? (
-                    <>
-                      <span className="party-card__claim-badge party-card__claim-badge--you">
-                        Claimed by you
+              <div className="party-card__bottom-row">
+                {member.memberType === 'Player' && playerId && (
+                  <div className="party-card__claim">
+                    {member.claimedBy === playerId ? (
+                      <>
+                        <span className="party-card__claim-badge party-card__claim-badge--you">
+                          Claimed by you
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn--text"
+                          onClick={() => unclaimMember(member.id)}
+                        >
+                          Unclaim
+                        </button>
+                      </>
+                    ) : member.claimedBy ? (
+                      <span className="party-card__claim-badge">
+                        Claimed by {usernames[member.claimedBy] || 'another player'}
                       </span>
-                      <button
-                        type="button"
-                        className="btn btn--text"
-                        onClick={() => unclaimMember(member.id)}
-                      >
-                        Unclaim
-                      </button>
-                    </>
-                  ) : member.claimedBy ? (
-                    <span className="party-card__claim-badge">
-                      Claimed by {usernames[member.claimedBy] || 'another player'}
-                    </span>
-                  ) : (
-                    !myClaimedMemberId && (
-                      <button
-                        type="button"
-                        className="btn btn--text"
-                        onClick={() => claimMember(member.id)}
-                      >
-                        Claim this character
-                      </button>
-                    )
-                  )}
-                </div>
-              )}
-              <div className="party-card__footer">
-                <button
-                  type="button"
-                  className="party-card__view-btn"
-                  onClick={() => startViewing(member)}
-                  aria-label={`View ${member.name}'s member card`}
-                  title="View Member Card"
-                >
-                  🪪
-                </button>
-                <div className="party-card__actions">
+                    ) : (
+                      !myClaimedMemberId && (
+                        <button
+                          type="button"
+                          className="btn btn--text"
+                          onClick={() => claimMember(member.id)}
+                        >
+                          Claim this character
+                        </button>
+                      )
+                    )}
+                  </div>
+                )}
+                <div className="party-card__footer">
                   <button
                     type="button"
-                    className="btn btn--text"
-                    onClick={() => startEditing(member)}
+                    className="party-card__view-btn"
+                    onClick={() => startViewing(member)}
+                    aria-label={`View ${member.name}'s member card`}
+                    title="View Member Card"
                   >
-                    Edit
+                    🪪
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeMember(member.id)}
-                  >
-                    Delete
-                  </button>
+                  <div className="party-card__actions">
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => startEditing(member)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--danger"
+                      onClick={() => removeMember(member.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             </article>
