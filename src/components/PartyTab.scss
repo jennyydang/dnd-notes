@@ -112,34 +112,6 @@
     min-width: 0;
   }
 
-  &__main-right {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  // Icon-only, so the accessible name comes entirely from aria-label —
-  // matches the circular icon-button pattern already used for the spell
-  // flavor-text popup trigger.
-  &__view-btn {
-    flex-shrink: 0;
-    width: 1.9rem;
-    height: 1.9rem;
-    border-radius: 50%;
-    background: $bg-deep;
-    border: 1px solid rgba($gold-dim, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    line-height: 1;
-
-    &:hover {
-      border-color: $gold;
-    }
-  }
-
   &__avatar {
     flex-shrink: 0;
     width: 44px;
@@ -205,9 +177,40 @@
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
-    margin-top: auto;
     padding-top: 0.5rem;
     border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: auto;
+  }
+
+  // Icon-only, so the accessible name comes entirely from aria-label —
+  // matches the circular icon-button pattern already used for the spell
+  // flavor-text popup trigger. align-self right-aligns it flush with the
+  // actions row's own right edge below — directly above Delete, the
+  // rightmost button in that row — while leaving __actions itself
+  // stretched full-width so its divider line still spans the card.
+  &__view-btn {
+    flex-shrink: 0;
+    align-self: flex-end;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 50%;
+    background: $bg-deep;
+    border: 1px solid rgba($gold-dim, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    line-height: 1;
+
+    &:hover {
+      border-color: $gold;
+    }
   }
 }
 

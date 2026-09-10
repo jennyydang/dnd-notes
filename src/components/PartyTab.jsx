@@ -502,22 +502,11 @@ function PartyTab({ campaignId, playerId }) {
                   </div>
                   <h3 className="party-card__name">{member.name}</h3>
                 </div>
-                <div className="party-card__main-right">
-                  <span
-                    className={`status-badge status-badge--${member.memberType.toLowerCase()}`}
-                  >
-                    {member.memberType}
-                  </span>
-                  <button
-                    type="button"
-                    className="party-card__view-btn"
-                    onClick={() => startViewing(member)}
-                    aria-label={`View ${member.name}'s member card`}
-                    title="View Member Card"
-                  >
-                    🪪
-                  </button>
-                </div>
+                <span
+                  className={`status-badge status-badge--${member.memberType.toLowerCase()}`}
+                >
+                  {member.memberType}
+                </span>
               </div>
               <dl className="party-card__details">
                 <div>
@@ -573,21 +562,32 @@ function PartyTab({ campaignId, playerId }) {
                   )}
                 </div>
               )}
-              <div className="party-card__actions">
+              <div className="party-card__footer">
                 <button
                   type="button"
-                  className="btn btn--text"
-                  onClick={() => startEditing(member)}
+                  className="party-card__view-btn"
+                  onClick={() => startViewing(member)}
+                  aria-label={`View ${member.name}'s member card`}
+                  title="View Member Card"
                 >
-                  Edit
+                  🪪
                 </button>
-                <button
-                  type="button"
-                  className="btn btn--danger"
-                  onClick={() => removeMember(member.id)}
-                >
-                  Delete
-                </button>
+                <div className="party-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(member)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeMember(member.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </article>
           ))}
