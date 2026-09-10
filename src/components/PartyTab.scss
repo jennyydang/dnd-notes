@@ -157,11 +157,16 @@
     }
   }
 
+  // Capped and independently scrollable so a long note can't blow out the
+  // whole card's height — every card in that grid row would otherwise
+  // stretch to match it.
   &__notes {
     margin: 0;
     color: $text-light;
     white-space: pre-wrap;
     line-height: 1.5;
+    max-height: 8rem;
+    overflow-y: auto;
   }
 
   &__claim {
