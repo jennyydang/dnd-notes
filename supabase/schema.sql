@@ -507,11 +507,16 @@ insert into storage.buckets (id, name, public)
 values ('map-marker-photos', 'map-marker-photos', true)
 on conflict (id) do nothing;
 
+insert into storage.buckets (id, name, public)
+values ('player-backgrounds', 'player-backgrounds', true)
+on conflict (id) do nothing;
+
 drop policy if exists "anon full access maps bucket" on storage.objects;
 drop policy if exists "anon full access npc-portraits bucket" on storage.objects;
 drop policy if exists "anon full access party-portraits bucket" on storage.objects;
 drop policy if exists "anon full access campaign-covers bucket" on storage.objects;
 drop policy if exists "anon full access map-marker-photos bucket" on storage.objects;
+drop policy if exists "anon full access player-backgrounds bucket" on storage.objects;
 
 create policy "anon full access maps bucket"
   on storage.objects for all to anon
@@ -532,6 +537,10 @@ create policy "anon full access campaign-covers bucket"
 create policy "anon full access map-marker-photos bucket"
   on storage.objects for all to anon
   using (bucket_id = 'map-marker-photos') with check (bucket_id = 'map-marker-photos');
+
+create policy "anon full access player-backgrounds bucket"
+  on storage.objects for all to anon
+  using (bucket_id = 'player-backgrounds') with check (bucket_id = 'player-backgrounds');
 
 -- ── Functions: player accounts, admin gate, and campaign joining ──────
 -- All SECURITY DEFINER (run with the function owner's privileges, which

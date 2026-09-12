@@ -3,12 +3,18 @@
 // home for it. Applied as data-* attributes on <html> so plain CSS
 // attribute selectors (see src/styles/_base.scss) can override the
 // compile-time defaults at runtime, no component prop-drilling needed.
+import { getPublicUrl } from './storage.js'
+
 const STORAGE_KEY = 'dnd-notes:settings'
+const CUSTOM_BG_BUCKET = 'player-backgrounds'
 
 const DEFAULTS = {
   bg: 'vista',
   font: 'classic',
   fontSize: 'medium',
+  // Storage object key for a player-uploaded background (bucket:
+  // player-backgrounds), only meaningful when bg === 'custom'.
+  customBgPath: null,
 }
 
 export function getSettings() {
@@ -50,8 +56,22 @@ export function applySettings(settings) {
   const root = document.documentElement
   const applied = { ...DEFAULTS, ...settings }
 
-  if (applied.bg !== DEFAULTS.bg) root.setAttribute('data-bg', applied.bg)
+  // 'custom' with nothing uploaded (e.g. the upload was since removed) is
+  // not a real state — fall back to the default rather than flip on a
+  // data-bg="custom" rule with no --custom-bg-image to show.
+  const effectiveBg = applied.bg === 'custom' && !applied.customBgPath ? DEFAULTS.bg : applied.bg
+
+  if (effectiveBg !== DEFAULTS.bg) root.setAttribute('data-bg', effectiveBg)
   else root.removeAttribute('data-bg')
+
+  if (effectiveBg === 'custom') {
+    root.style.setProperty(
+      '--custom-bg-image',
+      `url("${getPublicUrl(CUSTOM_BG_BUCKET, applied.customBgPath)}")`,
+    )
+  } else {
+    root.style.removeProperty('--custom-bg-image')
+  }
 
   if (applied.font !== DEFAULTS.font) root.setAttribute('data-font', applied.font)
   else root.removeAttribute('data-font')

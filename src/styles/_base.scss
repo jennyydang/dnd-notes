@@ -96,6 +96,18 @@ html[data-bg='plain'] body {
     linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72));
 }
 
+// --custom-bg-image is set inline on <html> by applySettings() (see
+// src/lib/settings.js) once a player has uploaded their own background —
+// same 3-layer shape as the default rule above, so it inherits the same
+// scrim (and the AAA text-contrast that scrim guarantees) plus the
+// existing background-size/position/repeat/attachment on body.
+html[data-bg='custom'] body {
+  background-image:
+    radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
+    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72)),
+    var(--custom-bg-image);
+}
+
 html[data-font='modern'] {
   body {
     font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
