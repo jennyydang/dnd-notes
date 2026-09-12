@@ -16,13 +16,6 @@
   flex-direction: column;
   gap: 1rem;
 
-  // Only the "add" form sits above the list as its own block; an edit
-  // form renders in the list itself, where the list's own gap already
-  // spaces it from its neighbors.
-  &--standalone {
-    margin-bottom: 1.5rem;
-  }
-
   &__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

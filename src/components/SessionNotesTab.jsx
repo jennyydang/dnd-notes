@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl } from '../lib/storage.js'
+import Modal from './Modal.jsx'
 import './SessionNotesTab.scss'
 
 const PARTY_BUCKET = 'party-portraits'
@@ -159,9 +160,9 @@ function SessionNotesTab({ campaignId, playerId }) {
     if (viewingId === id) setViewingId(null)
   }
 
-  function renderSessionForm(standalone) {
+  function renderSessionForm() {
     return (
-    <form className={`session-form panel${standalone ? ' session-form--standalone' : ''}`} onSubmit={submitForm}>
+    <form className="session-form panel" onSubmit={submitForm}>
       <div className="session-form__grid">
         <div className="field">
           <label htmlFor="session-title">Title</label>
@@ -223,7 +224,17 @@ function SessionNotesTab({ campaignId, playerId }) {
         </button>
       </div>
 
-      {isAdding && renderSessionForm(true)}
+      {isAdding && (
+        <Modal onClose={cancelForm} label="Add Session Notes">
+          {renderSessionForm()}
+        </Modal>
+      )}
+
+      {editingId && (
+        <Modal onClose={cancelForm} label="Edit Session Notes">
+          {renderSessionForm()}
+        </Modal>
+      )}
 
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
@@ -235,7 +246,7 @@ function SessionNotesTab({ campaignId, playerId }) {
         </p>
       )}
 
-      {!loading && !error && viewingSession && editingId !== viewingSession.id && (
+      {!loading && !error && viewingSession && (
         <div className="session-detail">
           <article className="session-detail__card panel">
             <div className="session-detail__header">
@@ -275,48 +286,44 @@ function SessionNotesTab({ campaignId, playerId }) {
 
       {!loading && !error && !viewingSession && sortedSessions.length > 0 && (
         <div className="session-list">
-          {sortedSessions.map((session) =>
-            editingId === session.id ? (
-              <div key={session.id}>{renderSessionForm(false)}</div>
-            ) : (
-              <article className="session-card panel" key={session.id}>
-                <span className="session-card__badge" aria-hidden="true">
-                  📜
-                </span>
-                <div className="session-card__body">
-                  <div className="session-card__main">
-                    <button
-                      type="button"
-                      className="session-card__title"
-                      onClick={() => setViewingId(session.id)}
-                    >
-                      {session.title || 'Untitled Session'}
-                    </button>
-                    {session.sessionDate && (
-                      <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
-                    )}
-                  </div>
-                  <p className="session-card__notes">{session.notes}</p>
-                  <div className="session-card__actions">
-                    <button
-                      type="button"
-                      className="btn btn--text"
-                      onClick={() => startEditing(session)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--danger"
-                      onClick={() => removeSession(session.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
+          {sortedSessions.map((session) => (
+            <article className="session-card panel" key={session.id}>
+              <span className="session-card__badge" aria-hidden="true">
+                📜
+              </span>
+              <div className="session-card__body">
+                <div className="session-card__main">
+                  <button
+                    type="button"
+                    className="session-card__title"
+                    onClick={() => setViewingId(session.id)}
+                  >
+                    {session.title || 'Untitled Session'}
+                  </button>
+                  {session.sessionDate && (
+                    <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
+                  )}
                 </div>
-              </article>
-            ),
-          )}
+                <p className="session-card__notes">{session.notes}</p>
+                <div className="session-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => startEditing(session)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => removeSession(session.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>
