@@ -13,6 +13,7 @@ import CustomTab from './CustomTab.jsx'
 import AccountMenu from './AccountMenu.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
+import QuickView from './QuickView.jsx'
 import Modal from './Modal.jsx'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './CampaignView.scss'
@@ -230,6 +231,8 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           )}
         </div>
       </div>
+
+      {playerId && <QuickView campaignId={campaignId} playerId={playerId} />}
     </div>
   )
 }

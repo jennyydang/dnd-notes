@@ -1,0 +1,116 @@
+@use '../styles/variables' as *;
+
+.quick-view {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 0;
+  // Above ordinary content and the tab-search results dropdown
+  // (z-index: 10 in CampaignView.scss), below Modal's backdrop
+  // (z-index: 100) so Settings/Feedback/etc. still cover it.
+  z-index: 50;
+}
+
+// The "browser tab" look: rounded top corners only, sitting flush
+// against the bottom edge like it's poking up out of the viewport.
+.quick-view__tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: $bg-panel-raised;
+  border: $border-gold;
+  border-bottom: none;
+  border-radius: $radius-lg $radius-lg 0 0;
+  color: $gold-light;
+  font-family: $font-display;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  padding: 0.6rem 1.1rem;
+  box-shadow: $shadow-panel;
+
+  &:hover {
+    color: $parchment;
+  }
+}
+
+.quick-view__panel {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  width: 18rem;
+  max-width: calc(100vw - 2rem);
+  max-height: min(28rem, calc(100vh - 8rem));
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  // "Slides up" into place rather than just appearing.
+  animation: quick-view-slide-up 0.18s ease-out;
+
+  form {
+    margin: 0;
+  }
+}
+
+@keyframes quick-view-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.quick-view__panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h4 {
+    color: $gold-light;
+    font-size: 0.95rem;
+  }
+}
+
+.quick-view__option {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid rgba($gold-dim, 0.4);
+  border-radius: $radius;
+  color: $text-light;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background: rgba($gold, 0.12);
+    color: $gold-light;
+    border-color: $gold;
+  }
+}
+
+// The compact editor's textarea doesn't need the full tab's 20rem min
+// height — this panel is meant to stay small. An id selector (like
+// SessionNotesTab.scss's #session-notes) outranks the shared
+// `.field textarea` rule regardless of stylesheet import order.
+#quick-session-notes {
+  width: 100%;
+  max-width: none;
+  min-height: 8rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .quick-view {
+    right: 0.75rem;
+  }
+
+  .quick-view__panel {
+    width: calc(100vw - 1.5rem);
+  }
+}

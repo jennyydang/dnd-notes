@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl } from '../lib/storage.js'
+import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
 import Modal from './Modal.jsx'
+import SessionNoteForm from './SessionNoteForm.jsx'
 import './SessionNotesTab.scss'
 
 const PARTY_BUCKET = 'party-portraits'
@@ -20,30 +22,6 @@ const partyFromRow = (r) => ({
   name: r.name,
   photo: getPublicUrl(PARTY_BUCKET, r.photo_path),
 })
-
-// Dates are stored as ISO strings (YYYY-MM-DD) from the native date picker
-// below. Older rows may still hold free-text dates from before this field
-// was a date picker — fall back to the raw value for those rather than
-// showing "Invalid Date".
-function formatSessionDate(value) {
-  if (!value) return ''
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
-  const parsed = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-}
-
-// The DB orders session_date as plain text, which only sorts correctly
-// when every row is the same ISO YYYY-MM-DD format. Rows predating the
-// date picker can still hold free-text dates (e.g. "May 24, 2026"), and
-// those sort before any ISO string in text order regardless of the actual
-// date — so re-sort client-side using real parsed timestamps instead.
-function sessionDateTimestamp(value) {
-  if (!value) return -Infinity
-  const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value
-  const parsed = new Date(isoValue)
-  return Number.isNaN(parsed.getTime()) ? -Infinity : parsed.getTime()
-}
 
 // The party roster isn't tracked per-session (there's no "who attended"
 // data), so this just shows the campaign's current party as a handy
@@ -93,12 +71,7 @@ function SessionNotesTab({ campaignId, playerId }) {
       ascending: false,
       filters,
     })
-  const sortedSessions = useMemo(
-    () => [...sessions].sort(
-      (a, b) => sessionDateTimestamp(b.sessionDate) - sessionDateTimestamp(a.sessionDate),
-    ),
-    [sessions],
-  )
+  const sortedSessions = useMemo(() => sortSessionsByDate(sessions), [sessions])
 
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -162,48 +135,15 @@ function SessionNotesTab({ campaignId, playerId }) {
 
   function renderSessionForm() {
     return (
-    <form className="session-form panel" onSubmit={submitForm}>
-      <div className="session-form__grid">
-        <div className="field">
-          <label htmlFor="session-title">Title</label>
-          <input
-            id="session-title"
-            type="text"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="Session 12: The Siege of Waterdeep"
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="session-date">Date</label>
-          <input
-            id="session-date"
-            type="date"
-            value={form.sessionDate}
-            onChange={(e) => setForm({ ...form, sessionDate: e.target.value })}
-          />
-        </div>
-      </div>
-      <div className="field">
-        <label htmlFor="session-notes">Recap</label>
-        <textarea
-          id="session-notes"
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          placeholder="The party arrived at the gates of Waterdeep and..."
-          required
-        />
-      </div>
-      {formError && <p className="empty-state empty-state--error">{formError}</p>}
-      <div className="session-form__actions">
-        <button type="button" className="btn btn--text" onClick={cancelForm}>
-          Cancel
-        </button>
-        <button type="submit" className="btn btn--primary">
-          {editingId ? 'Save Changes' : 'Add Session Notes'}
-        </button>
-      </div>
-    </form>
+      <SessionNoteForm
+        idPrefix="session"
+        form={form}
+        setForm={setForm}
+        onSubmit={submitForm}
+        formError={formError}
+        onCancel={cancelForm}
+        submitLabel={editingId ? 'Save Changes' : 'Add Session Notes'}
+      />
     )
   }
 
