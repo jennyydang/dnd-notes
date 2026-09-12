@@ -10,6 +10,10 @@ import SessionNotesTab from './SessionNotesTab.jsx'
 import SpellsTab from './SpellsTab.jsx'
 import ToolsTab from './ToolsTab.jsx'
 import CustomTab from './CustomTab.jsx'
+import AccountMenu from './AccountMenu.jsx'
+import FeedbackForm from './FeedbackForm.jsx'
+import SettingsPanel from './SettingsPanel.jsx'
+import Modal from './Modal.jsx'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import './CampaignView.scss'
 
@@ -38,9 +42,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   const [activeTab, setActiveTab] = useState('sessions')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const searchInputRef = useRef(null)
-  const accountMenuRef = useRef(null)
 
   const {
     items: customTabs,
@@ -86,18 +90,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
-
-  // Closes the account menu on any click outside it, the standard
-  // dropdown-dismissal pattern — there's no other dropdown in this app to
-  // share the behavior with.
-  useEffect(() => {
-    if (!accountMenuOpen) return
-    function onDocClick(e) {
-      if (!accountMenuRef.current?.contains(e.target)) setAccountMenuOpen(false)
-    }
-    document.addEventListener('pointerdown', onDocClick)
-    return () => document.removeEventListener('pointerdown', onDocClick)
-  }, [accountMenuOpen])
 
   function goToTab(tabId) {
     setActiveTab(tabId)
@@ -172,34 +164,25 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           )}
         </form>
 
-        <div className="campaign-view__account" ref={accountMenuRef}>
-          <button
-            type="button"
-            className="campaign-view__avatar"
-            onClick={() => setAccountMenuOpen((v) => !v)}
-            aria-haspopup="true"
-            aria-expanded={accountMenuOpen}
-            aria-label="Account menu"
-          >
-            {username?.[0]?.toUpperCase() || '?'}
-          </button>
-          {accountMenuOpen && (
-            <div className="campaign-view__account-menu panel">
-              {username && <div className="campaign-view__account-name">{username}</div>}
-              <button
-                type="button"
-                className="btn btn--text"
-                onClick={() => {
-                  setAccountMenuOpen(false)
-                  onLogOut?.()
-                }}
-              >
-                Log Out
-              </button>
-            </div>
-          )}
-        </div>
+        <AccountMenu
+          username={username}
+          onOpenSettings={() => setShowSettings(true)}
+          onSendFeedback={() => setShowFeedback(true)}
+          onLogOut={onLogOut}
+        />
       </div>
+
+      {showFeedback && (
+        <Modal onClose={() => setShowFeedback(false)} label="Send Feedback">
+          <FeedbackForm onDone={() => setShowFeedback(false)} />
+        </Modal>
+      )}
+
+      {showSettings && (
+        <Modal onClose={() => setShowSettings(false)} label="Settings">
+          <SettingsPanel onDone={() => setShowSettings(false)} />
+        </Modal>
+      )}
 
       <div className={`campaign-view__body${sidebarOpen ? '' : ' campaign-view__body--sidebar-collapsed'}`}>
         {sidebarOpen && (

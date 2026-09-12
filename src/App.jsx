@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import AdminGate from './components/AdminGate.jsx'
 import PlayerLogin from './components/PlayerLogin.jsx'
 import PlayerDashboard from './components/PlayerDashboard.jsx'
 import CampaignView from './components/CampaignView.jsx'
 import { clearPlayerSession, getPlayerSession } from './lib/auth.js'
 import { isSupabaseConfigured } from './lib/supabaseClient.js'
+import { applySettings, getSettings } from './lib/settings.js'
 import './App.scss'
 
 const isAdminPath = typeof window !== 'undefined' && window.location.pathname === '/admin'
@@ -12,6 +13,13 @@ const isAdminPath = typeof window !== 'undefined' && window.location.pathname ==
 function App() {
   const [selectedCampaign, setSelectedCampaign] = useState(null)
   const [playerSession, setPlayerSession] = useState(() => getPlayerSession())
+
+  // Apply a returning visitor's saved background/font/text-size preset
+  // once on startup — no prop drilling needed since it's just data-*
+  // attributes on <html> (see src/styles/_base.scss).
+  useEffect(() => {
+    applySettings(getSettings())
+  }, [])
 
   function logOut() {
     clearPlayerSession()

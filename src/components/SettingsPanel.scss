@@ -1,0 +1,64 @@
+@use 'sass:color';
+@use '../styles/variables' as *;
+
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  h3 {
+    color: $gold-light;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    h4 {
+      color: $gold-light;
+      font-size: 0.9rem;
+    }
+  }
+
+  &__pills {
+    display: inline-flex;
+    width: fit-content;
+    flex-wrap: wrap;
+    background: $bg-deep;
+    border: 1px solid rgba($gold-dim, 0.5);
+    border-radius: 999px;
+    padding: 0.3rem;
+    gap: 0.25rem;
+  }
+
+  &__pill {
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    padding: 0.45rem 1.1rem;
+    font-size: 0.85rem;
+    color: $text-muted;
+
+    &:hover {
+      color: $gold-light;
+    }
+
+    &--active {
+      color: $ink;
+      background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
+
+      &:hover {
+        color: $ink;
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+}

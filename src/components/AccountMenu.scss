@@ -1,0 +1,41 @@
+@use 'sass:color';
+@use '../styles/variables' as *;
+
+.account-menu {
+  position: relative;
+  flex-shrink: 0;
+
+  &__avatar {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    background: linear-gradient(180deg, $gold-dim, color.adjust($gold-dim, $lightness: -8%));
+    border: $border-gold;
+    color: $ink;
+    font-family: $font-display;
+    font-size: 1.05rem;
+
+    &:hover {
+      background: linear-gradient(180deg, $gold, color.adjust($gold-dim, $lightness: -4%));
+    }
+  }
+
+  &__dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 10rem;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+
+  &__name {
+    color: $gold-light;
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba($gold-dim, 0.4);
+  }
+}

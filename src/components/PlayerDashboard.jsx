@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabaseClient.js'
 import NewOrJoinCampaign from './NewOrJoinCampaign.jsx'
 import ManageMembers from './ManageMembers.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
+import SettingsPanel from './SettingsPanel.jsx'
+import AccountMenu from './AccountMenu.jsx'
 import Modal from './Modal.jsx'
 import './Dashboard.scss'
 
@@ -40,6 +42,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
   })
   const [showChooser, setShowChooser] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
@@ -225,7 +228,6 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
     <section className="dashboard">
       <h2>Your Campaigns</h2>
       <div className="dashboard__toolbar">
-        <span className="dashboard__welcome">Signed in as {username}</span>
         <div className="dashboard__toolbar-actions">
           <button
             type="button"
@@ -237,13 +239,13 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
           <button type="button" className="btn btn--primary" onClick={() => setShowChooser(true)}>
             + Campaign
           </button>
-          <button type="button" className="btn btn--text" onClick={() => setShowFeedback(true)}>
-            Send Feedback
-          </button>
-          <button type="button" className="btn btn--text" onClick={onLogOut}>
-            Log out
-          </button>
         </div>
+        <AccountMenu
+          username={username}
+          onOpenSettings={() => setShowSettings(true)}
+          onSendFeedback={() => setShowFeedback(true)}
+          onLogOut={onLogOut}
+        />
       </div>
 
       {showChooser && (
@@ -254,7 +256,17 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
         />
       )}
 
-      {showFeedback && <FeedbackForm onDone={() => setShowFeedback(false)} />}
+      {showFeedback && (
+        <Modal onClose={() => setShowFeedback(false)} label="Send Feedback">
+          <FeedbackForm onDone={() => setShowFeedback(false)} />
+        </Modal>
+      )}
+
+      {showSettings && (
+        <Modal onClose={() => setShowSettings(false)} label="Settings">
+          <SettingsPanel onDone={() => setShowSettings(false)} />
+        </Modal>
+      )}
 
       {editingId && (
         <Modal onClose={cancelEditing} label="Edit Campaign">

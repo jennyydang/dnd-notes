@@ -84,3 +84,34 @@ textarea:focus-visible,
   background: $gold-dim;
   border-radius: $radius;
 }
+
+// Runtime-switchable display presets (src/lib/settings.js sets these as
+// data-* attributes on <html>) — each one only overrides what it needs to
+// change, so the default (no attribute present) stays exactly today's
+// look, and no new colors are introduced that would need their own AAA
+// contrast audit.
+html[data-bg='plain'] body {
+  background-image:
+    radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
+    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72));
+}
+
+html[data-font='modern'] {
+  body {
+    font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+}
+
+html[data-font-size='small'] body {
+  font-size: 15px;
+}
+
+html[data-font-size='large'] body {
+  font-size: 19px;
+}
