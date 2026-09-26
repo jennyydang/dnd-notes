@@ -171,6 +171,11 @@ create table if not exists loot (
   created_at timestamptz not null default now()
 );
 
+-- "usable" marks consumables (potions, scrolls, charges) that get a Use
+-- button on their card; "used" flips once a player confirms using it.
+alter table loot add column if not exists usable boolean not null default false;
+alter table loot add column if not exists used boolean not null default false;
+
 create table if not exists quests (
   id uuid primary key default gen_random_uuid(),
   campaign_id uuid not null references campaigns(id) on delete cascade,

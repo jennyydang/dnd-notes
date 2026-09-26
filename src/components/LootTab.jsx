@@ -12,7 +12,7 @@ const SORT_MODES = [
   { id: 'alpha', label: 'A → Z' },
 ]
 
-const emptyForm = { item: '', foundAt: '', holder: '', notes: '' }
+const emptyForm = { item: '', foundAt: '', holder: '', notes: '', usable: false, used: false }
 
 const fromRow = (r) => ({
   id: r.id,
@@ -20,6 +20,8 @@ const fromRow = (r) => ({
   foundAt: r.found_at,
   holder: r.holder,
   notes: r.notes,
+  usable: r.usable,
+  used: r.used,
   createdAt: r.created_at,
 })
 
@@ -40,6 +42,8 @@ function LootTab({ campaignId }) {
   const [formError, setFormError] = useState(null)
   const [holderView, setHolderView] = useState(ALL_HOLDERS)
   const [sortMode, setSortMode] = useState('recent')
+  const [usingEntry, setUsingEntry] = useState(null)
+  const [useError, setUseError] = useState(null)
 
   // Sorted client-side rather than via the hook's server-side orderBy so
   // the toggle can flip instantly without a refetch. "Last Added" reads
@@ -95,6 +99,8 @@ function LootTab({ campaignId }) {
       foundAt: entry.foundAt,
       holder: entry.holder,
       notes: entry.notes,
+      usable: entry.usable,
+      used: entry.used,
     })
     setIsAdding(false)
     setFormError(null)
@@ -117,6 +123,10 @@ function LootTab({ campaignId }) {
       found_at: form.foundAt,
       holder: form.holder,
       notes: form.notes,
+      usable: form.usable,
+      // An item that's no longer usable can't stay "used" — otherwise it
+      // would sit dimmed with no Use button to explain why.
+      used: form.usable && form.used,
     }
 
     try {
@@ -128,6 +138,20 @@ function LootTab({ campaignId }) {
       cancelForm()
     } catch (err) {
       setFormError(err.message)
+    }
+  }
+
+  function cancelUse() {
+    setUsingEntry(null)
+    setUseError(null)
+  }
+
+  async function confirmUse() {
+    try {
+      await updateItem(usingEntry.id, { used: true })
+      cancelUse()
+    } catch (err) {
+      setUseError(err.message)
     }
   }
 
@@ -181,6 +205,26 @@ function LootTab({ campaignId }) {
               placeholder="Unidentified, seems to hum faintly near water..."
             />
           </div>
+          <div className="loot-form__checks">
+            <label className="loot-form__check">
+              <input
+                type="checkbox"
+                checked={form.usable}
+                onChange={(e) => setForm({ ...form, usable: e.target.checked })}
+              />
+              Can be used
+            </label>
+            {form.usable && (
+              <label className="loot-form__check">
+                <input
+                  type="checkbox"
+                  checked={form.used}
+                  onChange={(e) => setForm({ ...form, used: e.target.checked })}
+                />
+                Already used
+              </label>
+            )}
+          </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="loot-form__actions">
             <button type="button" className="btn btn--text" onClick={cancelForm}>
@@ -207,6 +251,25 @@ function LootTab({ campaignId }) {
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Loot">
           {renderLootForm(false)}
+        </Modal>
+      )}
+
+      {usingEntry && (
+        <Modal onClose={cancelUse} label="Use Loot">
+          <div className="loot-use-confirm">
+            <p>
+              Are you sure you want to use <strong>{usingEntry.item}</strong>?
+            </p>
+            {useError && <p className="empty-state empty-state--error">{useError}</p>}
+            <div className="loot-form__actions">
+              <button type="button" className="btn btn--text" onClick={cancelUse}>
+                No
+              </button>
+              <button type="button" className="btn btn--primary" onClick={confirmUse} autoFocus>
+                Yes
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
 
@@ -246,7 +309,22 @@ function LootTab({ campaignId }) {
       {!loading && !error && visibleLoot.length > 0 && (
         <div className="loot-list">
           {visibleLoot.map((entry) => (
-            <article className="loot-card panel" key={entry.id}>
+            <article
+              className={`loot-card panel${entry.usable ? ' loot-card--usable' : ''}${entry.usable && entry.used ? ' loot-card--used' : ''}`}
+              key={entry.id}
+            >
+              {entry.usable && !entry.used && (
+                <button
+                  type="button"
+                  className="btn btn--primary loot-card__use"
+                  onClick={() => setUsingEntry(entry)}
+                >
+                  Use
+                </button>
+              )}
+              {entry.usable && entry.used && (
+                <span className="loot-card__used-tag">Used</span>
+              )}
               <div className="loot-card__main">
                 <h3 className="loot-card__item">{entry.item}</h3>
                 {entry.foundAt && (
