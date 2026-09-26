@@ -134,8 +134,12 @@ function PartyTab({ campaignId, playerId }) {
 
   // Flips the already-open View Member Details popup into an editable
   // form — the fields are already populated from startViewing, so there's
-  // nothing to reset here.
-  function startEditingDetails() {
+  // nothing to reset here. preventDefault matters: this button sits where
+  // "Save Changes" (a submit button) renders once editing starts, and
+  // without it the same click would go on to submit the form, saving
+  // unchanged data and dropping straight back to view mode.
+  function startEditingDetails(event) {
+    event?.preventDefault()
     setFormError(null)
     setIsEditingDetails(true)
   }
@@ -407,27 +411,31 @@ function PartyTab({ campaignId, playerId }) {
               canManageMember(member) && (
                 <>
                   <button
+                    key="delete"
                     type="button"
                     className="btn btn--danger"
                     onClick={() => removeMember(member.id)}
                   >
                     Delete
                   </button>
-                  <button type="button" className="btn btn--primary" onClick={startEditingDetails}>
+                  <button key="edit" type="button" className="btn btn--primary" onClick={startEditingDetails}>
                     Edit
                   </button>
                 </>
               )
             ) : (
               <>
+                {/* Distinct keys so React never reuses the view-mode Edit
+                    button as this submit button mid-click. */}
                 <button
+                  key="cancel"
                   type="button"
                   className="btn btn--text"
                   onClick={mode === 'edit' ? cancelEditingDetails : cancelForm}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn--primary">
+                <button key="save" type="submit" className="btn btn--primary">
                   {mode === 'edit' ? 'Save Changes' : 'Add Party Member'}
                 </button>
               </>
