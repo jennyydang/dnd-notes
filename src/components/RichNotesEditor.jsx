@@ -11,13 +11,15 @@ import { toEditorContent } from '../lib/richNotes.js'
 import { TAG_GROUPS, groupForChar, matchKind, tagSlug, tagText } from '../lib/tags.js'
 import './RichNotesEditor.scss'
 
-const GROUP_ORDER = ['person', 'place', 'lore', 'loot']
+const GROUP_ORDER = ['person', 'place', 'lore', 'loot', 'event']
 
 const MAX_SUGGESTIONS = 6
 // Names can have spaces ("Elandra Voss"), so the suggestion stays open
 // across spaces — but past a few words the player is clearly just
 // writing a sentence, so stop offering to turn it into a name.
 const MAX_NAME_WORDS = 4
+// Events are short sentences rather than names, so they get more room.
+const MAX_EVENT_WORDS = 25
 
 const npcFromRow = (r) => ({ id: r.id, label: r.name, kind: null })
 const placeFromRow = (r) => ({ id: r.id, label: r.name, kind: matchKind('place', r.kind) })
@@ -85,7 +87,17 @@ function parseQuery(group, query) {
   return { kind: null, name: text.trim() }
 }
 
+// "!event The dragon attacks" → a single "add to timeline" row. Requires
+// the "event" keyword so a stray "!" in normal writing never offers it.
+function eventItems(query) {
+  const match = /^event\s+(.+)$/i.exec(query.trimStart())
+  const text = match?.[1].trim()
+  if (!text || text.split(/\s+/).length > MAX_EVENT_WORDS) return []
+  return [{ create: true, kind: null, label: text }]
+}
+
 function filterItems(group, list, query) {
+  if (group === 'event') return eventItems(query)
   const { kind, name } = parseQuery(group, query)
   if (name.split(/\s+/).length > MAX_NAME_WORDS) return []
   const needle = name.toLowerCase()
@@ -129,7 +141,7 @@ export function RichNotesEditor({
   // The editor and its suggestion plugins are built once, so everything
   // they read at call time goes through refs to always see current data.
   const listsRef = useRef(null)
-  listsRef.current = Object.fromEntries(GROUP_ORDER.map((g) => [g, tables[g].items]))
+  listsRef.current = Object.fromEntries(Object.entries(tables).map(([g, t]) => [g, t.items]))
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
   const metAtRef = useRef(metAt)
@@ -160,6 +172,11 @@ export function RichNotesEditor({
     if (!item || creatingRef.current) return
     if (!item.create) {
       current.command({ id: item.id, label: item.label, kind: item.kind })
+      return
+    }
+    // Events have no row of their own — the chip in the recap is the event.
+    if (current.group === 'event') {
+      current.command({ id: crypto.randomUUID(), label: item.label, kind: null })
       return
     }
     creatingRef.current = true
@@ -274,7 +291,12 @@ export function RichNotesEditor({
     const { $from } = editor.state.selection
     const before = $from.parent.textBetween(Math.max(0, $from.parentOffset - 1), $from.parentOffset)
     const prefix = before && !/\s/.test(before) ? ' ' : ''
-    editor.chain().focus().insertContent(`${prefix}${TAG_GROUPS[group].char}`).run()
+    const { char, keyword } = TAG_GROUPS[group]
+    editor
+      .chain()
+      .focus()
+      .insertContent(`${prefix}${char}${keyword ? `${keyword} ` : ''}`)
+      .run()
   }
 
   // Toolbar buttons act on mousedown-prevented clicks so the editor keeps
@@ -312,11 +334,12 @@ export function RichNotesEditor({
         )}
         <span className="rich-notes__toolbar-divider" aria-hidden="true" />
         {GROUP_ORDER.map((group) => {
-          const { icon, noun, char } = TAG_GROUPS[group]
+          const { icon, noun, char, keyword } = TAG_GROUPS[group]
+          const article = { person: 'a ', place: 'a ', event: 'an ' }[noun] ?? ''
           return toolbarButton(
             group,
             `${icon} ${capitalize(noun)}`,
-            `Tag ${noun === 'person' ? 'a person' : noun === 'place' ? 'a place' : noun} (or type ${char})`,
+            `Tag ${article}${noun} (or type ${char}${keyword ?? ''})`,
             false,
             () => insertTrigger(group),
           )
@@ -327,7 +350,8 @@ export function RichNotesEditor({
 
       <p className="rich-notes__hint">
         Tag with <kbd>@</kbd> person, <kbd>#</kbd> place, <kbd>~</kbd> lore, <kbd>$</kbd> loot —
-        e.g. <kbd>#city Waterdeep</kbd>. New ones are added to their tab automatically.
+        e.g. <kbd>#city Waterdeep</kbd>. New ones are added to their tab automatically.{' '}
+        <kbd>!event</kbd> adds a moment to the Timeline.
       </p>
       {createError && <p className="empty-state empty-state--error">{createError}</p>}
 
@@ -354,7 +378,9 @@ export function RichNotesEditor({
                     <>
                       {creating
                         ? 'Adding…'
-                        : `+ New ${item.kind ? tagText(menu.group, item.kind) : TAG_GROUPS[menu.group].noun}:`}{' '}
+                        : menu.group === 'event'
+                          ? '⭐ Add to timeline:'
+                          : `+ New ${item.kind ? tagText(menu.group, item.kind) : TAG_GROUPS[menu.group].noun}:`}{' '}
                       <strong>{item.label}</strong>
                     </>
                   ) : (

@@ -1,0 +1,125 @@
+@use '../styles/variables' as *;
+
+.timeline-tab {
+  .empty-state {
+    margin-bottom: 1.25rem;
+  }
+}
+
+// Scrolls sideways once there are more sessions than fit.
+.timeline {
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.timeline__track {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+}
+
+.timeline__session {
+  position: relative;
+  flex: 0 0 16rem;
+  padding: 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  // The line joining each session's marker to the next. Drawn per
+  // session (rather than once across the track) so it starts at the
+  // first marker and stops at the last one.
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0.55rem;
+    left: 0;
+    right: 0;
+    border-top: 2px solid rgba($gold-dim, 0.7);
+  }
+
+  &:first-child::before {
+    left: 50%;
+  }
+
+  &:last-child::before {
+    right: 50%;
+  }
+
+  &:only-child::before {
+    display: none;
+  }
+
+  &--empty .timeline__header {
+    opacity: 0.65;
+  }
+}
+
+.timeline__marker {
+  position: relative;
+  align-self: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: $gold;
+  border: 3px solid $bg-deep;
+  box-shadow: 0 0 0 1px $gold-dim;
+}
+
+.timeline__header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.timeline__number {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $gold-light;
+}
+
+.timeline__title {
+  font-size: 1rem;
+  color: $parchment;
+  overflow-wrap: anywhere;
+}
+
+.timeline__date {
+  font-size: 0.8rem;
+  color: $text-muted;
+  font-style: italic;
+}
+
+.timeline__events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.timeline__event {
+  padding: 0.65rem 0.8rem;
+  color: $text-light;
+  line-height: 1.45;
+  border-left: 3px solid $gold;
+  overflow-wrap: anywhere;
+
+  &::before {
+    content: '⭐ ';
+  }
+}
+
+.timeline__none {
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: $text-muted;
+  font-style: italic;
+}

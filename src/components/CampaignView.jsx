@@ -7,6 +7,7 @@ import NpcsTab from './NpcsTab.jsx'
 import LootTab from './LootTab.jsx'
 import QuestsTab from './QuestsTab.jsx'
 import SessionNotesTab from './SessionNotesTab.jsx'
+import TimelineTab from './TimelineTab.jsx'
 import SpellsTab from './SpellsTab.jsx'
 import ToolsTab from './ToolsTab.jsx'
 import CustomTab from './CustomTab.jsx'
@@ -20,6 +21,7 @@ import './CampaignView.scss'
 
 const BUILT_IN_TABS = [
   { id: 'sessions', label: 'Session Notes', icon: '📖' },
+  { id: 'timeline', label: 'Timeline', icon: '⏳' },
   { id: 'spells', label: 'Spells', icon: '✨' },
   { id: 'party', label: 'Party', icon: '🎭' },
   { id: 'maps', label: 'Maps', icon: '🗺️' },
@@ -211,6 +213,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
         <div className="campaign-view__content">
           {activeTab === 'sessions' && (
             <SessionNotesTab campaignId={campaignId} playerId={playerId} onOpenTab={setActiveTab} />
+          )}
+          {activeTab === 'timeline' && (
+            <TimelineTab campaignId={campaignId} playerId={playerId} />
           )}
           {activeTab === 'spells' && <SpellsTab campaignId={campaignId} playerId={playerId} />}
           {activeTab === 'party' && <PartyTab campaignId={campaignId} playerId={playerId} />}

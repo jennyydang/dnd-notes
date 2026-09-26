@@ -25,6 +25,10 @@ export const TAG_GROUPS = {
     icon: '💰',
     kinds: ['Item', 'Artifact', 'Magic Item'],
   },
+  // "!event The dragon attacks" — not backed by a table: an event lives
+  // only as a chip in its session's recap, and the Timeline tab reads
+  // them back out of the notes (so editing the recap edits the timeline).
+  event: { char: '!', tab: 'timeline', noun: 'event', icon: '⭐', kinds: [], keyword: 'event' },
 }
 
 export function groupForChar(char) {

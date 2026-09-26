@@ -63,6 +63,7 @@ const MENTION_SECTIONS = [
   { group: 'place', title: 'Places Visited', tabLabel: 'Maps' },
   { group: 'lore', title: 'Lore', tabLabel: 'Lore' },
   { group: 'loot', title: 'Loot Found', tabLabel: 'Loot' },
+  { group: 'event', title: 'Events', tabLabel: 'Timeline' },
 ]
 
 // Everything tagged in this recap (@ / # / ~ / $), as links over to the
