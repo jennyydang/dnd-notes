@@ -321,6 +321,17 @@ alter table player_wallets add column if not exists shilling integer not null de
 alter table player_wallets add column if not exists copper integer not null default 0;
 alter table player_wallets drop column if exists total_copper;
 
+-- Shards the DM has handed each player, tracked from the Tools tab.
+-- One row per player per campaign, same scoping as player_wallets.
+create table if not exists player_shards (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  shards integer not null default 0 check (shards >= 0),
+  created_at timestamptz not null default now(),
+  unique (campaign_id, player_id)
+);
+
 -- Unlike every other tab, session notes are personal to each player —
 -- everyone in a campaign shares the same maps/npcs/loot/etc., but each
 -- player keeps their own private recap. player_id is nullable rather
@@ -457,6 +468,7 @@ alter table party_goals         enable row level security;
 alter table party_notes         enable row level security;
 alter table spells              enable row level security;
 alter table player_wallets      enable row level security;
+alter table player_shards       enable row level security;
 alter table session_notes       enable row level security;
 alter table lore_entries        enable row level security;
 alter table custom_tabs         enable row level security;
@@ -481,6 +493,7 @@ drop policy if exists "anon full access party_goals"        on party_goals;
 drop policy if exists "anon full access party_notes"        on party_notes;
 drop policy if exists "anon full access spells"             on spells;
 drop policy if exists "anon full access player_wallets"     on player_wallets;
+drop policy if exists "anon full access player_shards"      on player_shards;
 drop policy if exists "anon full access session_notes"      on session_notes;
 drop policy if exists "anon full access lore_entries"       on lore_entries;
 drop policy if exists "anon full access custom_tabs"        on custom_tabs;
@@ -500,6 +513,7 @@ create policy "anon full access party_goals"        on party_goals        for al
 create policy "anon full access party_notes"        on party_notes        for all to anon using (true) with check (true);
 create policy "anon full access spells"              on spells             for all to anon using (true) with check (true);
 create policy "anon full access player_wallets"     on player_wallets     for all to anon using (true) with check (true);
+create policy "anon full access player_shards"      on player_shards      for all to anon using (true) with check (true);
 create policy "anon full access session_notes"      on session_notes      for all to anon using (true) with check (true);
 create policy "anon full access lore_entries"       on lore_entries       for all to anon using (true) with check (true);
 create policy "anon full access custom_tabs"        on custom_tabs        for all to anon using (true) with check (true);

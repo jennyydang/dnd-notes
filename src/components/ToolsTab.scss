@@ -169,3 +169,100 @@
     line-height: 1.5;
   }
 }
+
+.shard-tracker {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1 1 320px;
+  max-width: 480px;
+
+  &__title {
+    color: $gold-light;
+    font-size: 1.1rem;
+  }
+
+  &__note {
+    margin: 0;
+    color: $text-muted;
+    font-size: 0.85rem;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  &__counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+  }
+
+  &__step {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: $bg-deep;
+    border: 1px solid $gold-dim;
+    color: $gold-light;
+    font-size: 1.5rem;
+    line-height: 1;
+
+    &:hover:not(:disabled) {
+      border-color: $gold;
+      background: rgba($gold, 0.12);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+
+  &__count {
+    min-width: 6rem;
+    text-align: center;
+    font-family: $font-display;
+    font-size: 2.2rem;
+    color: $parchment;
+  }
+
+  &__amount {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+
+    .field {
+      flex: 1;
+      min-width: 100px;
+    }
+  }
+
+  &__admin-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  &__admin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    padding: 0.6rem 0.9rem;
+    color: $text-light;
+  }
+
+  &__admin-count {
+    color: $gold-light;
+  }
+}

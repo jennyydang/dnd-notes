@@ -1,5 +1,6 @@
 import CurrencyCalculator from './CurrencyCalculator.jsx'
 import WalletTracker from './WalletTracker.jsx'
+import ShardTracker from './ShardTracker.jsx'
 import './ToolsTab.scss'
 
 function ToolsTab({ campaignId, playerId }) {
@@ -7,6 +8,7 @@ function ToolsTab({ campaignId, playerId }) {
     <section className="tools-tab">
       <CurrencyCalculator />
       <WalletTracker campaignId={campaignId} playerId={playerId} />
+      <ShardTracker campaignId={campaignId} playerId={playerId} />
     </section>
   )
 }
