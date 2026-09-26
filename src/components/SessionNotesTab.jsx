@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
@@ -121,6 +121,12 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab }) {
   const [viewingId, setViewingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
+  // Saving waits on the insert plus a refetch, which can take a second or
+  // two — long enough to click Save (or hit Enter) again. The ref blocks a
+  // second submit immediately, before React has re-rendered the disabled
+  // button; without it each extra submit inserted a duplicate note.
+  const [submitting, setSubmitting] = useState(false)
+  const submittingRef = useRef(false)
 
   function startAdding() {
     setViewingId(null)
@@ -150,6 +156,7 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab }) {
 
   async function submitForm(event) {
     event.preventDefault()
+    if (submittingRef.current) return
     if (!form.notes.trim()) {
       setFormError('Write something in the recap first.')
       return
@@ -161,6 +168,8 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab }) {
       notes: form.notes,
     }
 
+    submittingRef.current = true
+    setSubmitting(true)
     try {
       if (editingId) {
         await updateItem(editingId, payload)
@@ -170,6 +179,9 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab }) {
       cancelForm()
     } catch (err) {
       setFormError(err.message)
+    } finally {
+      submittingRef.current = false
+      setSubmitting(false)
     }
   }
 
@@ -189,7 +201,8 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab }) {
         onSubmit={submitForm}
         formError={formError}
         onCancel={cancelForm}
-        submitLabel={editingId ? 'Save Changes' : 'Add Session Notes'}
+        submitting={submitting}
+        submitLabel={submitting ? 'Saving…' : editingId ? 'Save Changes' : 'Add Session Notes'}
       />
     )
   }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { sortSessionsByDate } from '../lib/sessionNotes.js'
 import SessionNoteForm from './SessionNoteForm.jsx'
@@ -33,6 +33,9 @@ function QuickView({ campaignId, playerId }) {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  // Blocks a second submit before the disabled button re-renders — with
+  // no current note yet, a double submit would insert two notes.
+  const submittingRef = useRef(false)
 
   const current = sortSessionsByDate(sessions)[0] ?? null
 
@@ -63,6 +66,7 @@ function QuickView({ campaignId, playerId }) {
 
   async function submit(event) {
     event.preventDefault()
+    if (submittingRef.current) return
     if (!form.notes.trim()) {
       setFormError('Write something in the recap first.')
       return
@@ -74,6 +78,7 @@ function QuickView({ campaignId, playerId }) {
       notes: form.notes,
     }
 
+    submittingRef.current = true
     setSubmitting(true)
     setFormError(null)
     try {
@@ -85,6 +90,7 @@ function QuickView({ campaignId, playerId }) {
     } catch (err) {
       setFormError(err.message)
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }
