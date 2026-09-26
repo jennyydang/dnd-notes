@@ -3,6 +3,8 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import Modal from './Modal.jsx'
 import './Dashboard.scss'
+import CampaignSearch from './CampaignSearch.jsx'
+import { matchesCampaign } from '../lib/search.js'
 
 const BUCKET = 'campaign-covers'
 
@@ -138,7 +140,10 @@ function Dashboard({ onOpenCampaign }) {
     if (editingId === campaign.id) cancelForm()
   }
 
-  const visibleCampaigns = campaigns.filter((c) => (showArchived ? c.archived : !c.archived))
+  const [campaignQuery, setCampaignQuery] = useState('')
+  const visibleCampaigns = campaigns
+    .filter((c) => (showArchived ? c.archived : !c.archived))
+    .filter((c) => matchesCampaign(c, campaignQuery))
   const archivedCount = campaigns.filter((c) => c.archived).length
 
   function renderCampaignForm(standalone) {
@@ -231,12 +236,16 @@ function Dashboard({ onOpenCampaign }) {
         </Modal>
       )}
 
+      {campaigns.length > 1 && <CampaignSearch value={campaignQuery} onChange={setCampaignQuery} />}
+
       {loading && <p className="empty-state">Loading…</p>}
       {error && <p className="empty-state empty-state--error">{error}</p>}
 
       {!loading && !error && visibleCampaigns.length === 0 && (
         <p className="empty-state">
-          {showArchived
+          {campaignQuery.trim()
+            ? `No campaigns match “${campaignQuery.trim()}”.`
+            : showArchived
             ? 'No archived campaigns.'
             : 'No campaigns yet. Create one to start your Adventurer’s Log.'}
         </p>

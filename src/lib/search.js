@@ -102,3 +102,11 @@ export function snippet(body, query, length = 120) {
   const piece = source.slice(start, start + length)
   return `${start > 0 ? '…' : ''}${piece}${start + length < source.length ? '…' : ''}`
 }
+
+// Campaign-list filter: every word must appear in the name or description.
+export function matchesCampaign(campaign, query) {
+  const words = tokenize(query)
+  if (!words.length) return true
+  const haystack = normalizeText(`${campaign.name || ''} ${campaign.description || ''}`)
+  return words.every((w) => haystack.includes(w))
+}

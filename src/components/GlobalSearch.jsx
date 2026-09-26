@@ -115,7 +115,7 @@ function GlobalSearch({ onClose }) {
               setQuery(e.target.value)
               setActive(0)
             }}
-            placeholder="Search everything in this campaign"
+            placeholder="Search this campaign"
             aria-label="Search"
             aria-controls="global-search-results"
             aria-activedescendant={items.length ? `global-search-item-${activeIndex}` : undefined}

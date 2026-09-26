@@ -142,6 +142,77 @@ export const ENTITY_TYPES = {
   },
 }
 
+// Searchable but not stored as linkable rows of their own kind: spells
+// (private per player), maps and their pins, custom-tab entries, and
+// timeline events (read out of session recaps — see CampaignDataProvider).
+Object.assign(ENTITY_TYPES, {
+  spell: {
+    table: 'spells',
+    label: 'Spell',
+    plural: 'Spells',
+    icon: '✨',
+    tab: 'spells',
+    scope: 'player',
+    normalize: (r) => ({
+      title: text(r.name),
+      subtitle: [r.level === 0 ? 'Cantrip' : `Level ${r.level}`, r.casting_time, r.range].filter(Boolean).join(' · '),
+      body: [r.effect, r.details, r.flavor].filter(Boolean).join('\n'),
+      tags: [r.level === 0 ? 'Cantrip' : `Level ${r.level}`],
+    }),
+  },
+  map: {
+    table: 'maps',
+    label: 'Map',
+    plural: 'Maps',
+    icon: '🗺️',
+    tab: 'maps',
+    normalize: (r) => ({
+      title: text(r.caption) || 'Untitled map',
+      subtitle: r.is_world_map ? 'World Map' : '',
+      body: '',
+      tags: r.is_world_map ? ['World Map'] : [],
+    }),
+  },
+  marker: {
+    table: 'map_markers',
+    label: 'Map pin',
+    plural: 'Map pins',
+    icon: '📌',
+    tab: 'maps',
+    normalize: (r) => ({
+      title: text(r.title) || 'Untitled pin',
+      subtitle: r.mapCaption ? `On ${r.mapCaption}` : '',
+      body: text(r.notes),
+      tags: [r.kind].filter(Boolean),
+    }),
+  },
+  entry: {
+    table: 'custom_tab_entries',
+    label: 'Note',
+    plural: 'Custom tabs',
+    icon: '📄',
+    normalize: (r) => ({
+      title: text(r.title),
+      subtitle: r.tabName ? `In ${r.tabName}` : '',
+      body: text(r.notes),
+      tags: [],
+      tab: `custom:${r.custom_tab_id}`,
+    }),
+  },
+  event: {
+    label: 'Event',
+    plural: 'Timeline events',
+    icon: '⭐',
+    tab: 'timeline',
+    normalize: (r) => ({
+      title: text(r.label),
+      subtitle: r.sessionTitle ? `During ${r.sessionTitle}` : '',
+      body: '',
+      tags: [],
+    }),
+  },
+})
+
 export const ENTITY_TYPE_ORDER = Object.keys(ENTITY_TYPES)
 
 function firstLine(value) {
@@ -158,6 +229,7 @@ export function normalizeEntity(type, row) {
     id: row.id,
     label: normalized.label || def.label,
     icon: def.icon,
+    tab: normalized.tab || def.tab,
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || row.created_at || null,
     raw: row,

@@ -41,9 +41,19 @@ export function useSupabaseTable(
     const requestId = ++requestIdRef.current
     if (!silent) setLoading(true)
     setError(null)
+    // An array filter means "column is one of these values"; an empty one
+    // matches nothing, so skip the round trip.
+    const entries = Object.entries(filtersRef.current)
+    if (entries.some(([, value]) => Array.isArray(value) && value.length === 0)) {
+      if (requestIdRef.current === requestId) {
+        setItems([])
+        setLoading(false)
+      }
+      return
+    }
     let query = supabase.from(table).select('*').order(orderBy, { ascending })
-    for (const [column, value] of Object.entries(filtersRef.current)) {
-      query = query.eq(column, value)
+    for (const [column, value] of entries) {
+      query = Array.isArray(value) ? query.in(column, value) : query.eq(column, value)
     }
     const { data, error: fetchError } = await query
 
@@ -74,7 +84,12 @@ export function useSupabaseTable(
 
   const addItem = useCallback(
     async (payload) => {
-      const row = { ...payload, ...filtersRef.current }
+      // Scalar filters are written onto new rows (e.g. campaign_id); list
+      // filters only narrow reads.
+      const scalarFilters = Object.fromEntries(
+        Object.entries(filtersRef.current).filter(([, value]) => !Array.isArray(value)),
+      )
+      const row = { ...payload, ...scalarFilters }
       const { data, error: insertError } = await supabase
         .from(table)
         .insert(row)

@@ -206,8 +206,8 @@ function EntityDetailModal({ type, id, canGoBack, onBack, onClose }) {
         </section>
 
         <div className="form-actions entity-detail__footer">
-          <button type="button" className="btn" onClick={() => nav.goTo(def.tab)}>
-            Open in {nav.tabs.find((t) => t.id === def.tab)?.label || 'its tab'} to edit
+          <button type="button" className="btn" onClick={() => nav.goTo(entity.tab)}>
+            Open in {nav.tabs.find((t) => t.id === entity.tab)?.label || 'its tab'} to edit
           </button>
         </div>
       </article>

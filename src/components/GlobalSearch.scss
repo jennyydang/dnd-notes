@@ -172,6 +172,18 @@
   @media (max-width: 720px) {
     padding: 0;
 
+    // One swipeable row of type filters instead of a wall of chips.
+    &__filters .chip-row {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      width: 100%;
+      scrollbar-width: none;
+
+      .chip {
+        flex-shrink: 0;
+      }
+    }
+
     &__panel {
       max-height: 100vh;
       height: 100%;

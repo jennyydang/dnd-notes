@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeText, searchEntities, snippet, withinOneEdit } from '../search.js'
+import { matchesCampaign, normalizeText, searchEntities, snippet, withinOneEdit } from '../search.js'
 
 const entries = [
   { type: 'npc', id: '1', title: 'Elandra Voss', subtitle: 'Half-elf', body: 'Runs the Rusty Tankard', tags: ['Alive'], createdAt: '2026-01-01' },
@@ -61,5 +61,15 @@ describe('snippet', () => {
     const s = snippet(body, 'dragon', 40)
     expect(s).toContain('dragon')
     expect(s.startsWith('…')).toBe(true)
+  })
+})
+
+describe('matchesCampaign', () => {
+  const c = { name: 'Curse of the Caravan', description: 'Hospice caravan on the road north' }
+  it('matches every word against name and description, ignoring case and accents', () => {
+    expect(matchesCampaign(c, 'caravan')).toBe(true)
+    expect(matchesCampaign(c, 'HOSPICE north')).toBe(true)
+    expect(matchesCampaign(c, 'caravan dragon')).toBe(false)
+    expect(matchesCampaign(c, '  ')).toBe(true)
   })
 })
