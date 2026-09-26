@@ -4,6 +4,8 @@ import Modal from './Modal.jsx'
 import TagBadge from './TagBadge.jsx'
 import { TAG_GROUPS, matchKind } from '../lib/tags.js'
 import './LoreTab.scss'
+import { confirmDelete } from '../lib/confirm.js'
+import { useCampaignNav } from '../hooks/useCampaignData.js'
 
 const emptyForm = { title: '', category: '', notes: '' }
 
@@ -15,6 +17,7 @@ const fromRow = (r) => ({
 })
 
 function LoreTab({ campaignId }) {
+  const { openEntity } = useCampaignNav()
   const { items: entries, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('lore_entries', {
       fromRow,
@@ -74,6 +77,8 @@ function LoreTab({ campaignId }) {
   }
 
   async function removeEntry(id) {
+    const target = entries.find((x) => x.id === id)
+    if (!confirmDelete(target?.title ? `“${target.title}”` : 'this lore entry')) return
     await removeItem(id)
     if (editingId === id) cancelForm()
   }
@@ -174,6 +179,14 @@ function LoreTab({ campaignId }) {
               </div>
               {entry.notes && <p className="lore-card__notes">{entry.notes}</p>}
               <div className="lore-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => openEntity('lore', entry.id)}
+                  aria-label={`Links and related entries for ${entry.title}`}
+                >
+                  Links
+                </button>
                 <button
                   type="button"
                   className="btn btn--text"

@@ -3,16 +3,29 @@ import AdminGate from './components/AdminGate.jsx'
 import PlayerLogin from './components/PlayerLogin.jsx'
 import PlayerDashboard from './components/PlayerDashboard.jsx'
 import CampaignView from './components/CampaignView.jsx'
-import { clearPlayerSession, getPlayerSession } from './lib/auth.js'
+import { clearPlayerSession, getAdminSession, getPlayerSession } from './lib/auth.js'
 import { isSupabaseConfigured } from './lib/supabaseClient.js'
 import { applySettings, getSettings } from './lib/settings.js'
+import { getStored, setStored } from './lib/sessionMode.js'
 import './App.scss'
 
 const isAdminPath = typeof window !== 'undefined' && window.location.pathname === '/admin'
 
+// Remembers which campaign is open (per browser) so a refresh mid-session
+// lands back in it instead of on the dashboard.
+const OPEN_CAMPAIGN_KEY = `dnd-notes-open-campaign${isAdminPath ? ':admin' : ''}`
+
 function App() {
-  const [selectedCampaign, setSelectedCampaign] = useState(null)
   const [playerSession, setPlayerSession] = useState(() => getPlayerSession())
+  const [selectedCampaign, setSelectedCampaignState] = useState(() =>
+    (isAdminPath ? getAdminSession() : getPlayerSession()) ? getStored(OPEN_CAMPAIGN_KEY, null) : null,
+  )
+
+  function setSelectedCampaign(campaign) {
+    const value = campaign ? { id: campaign.id, name: campaign.name } : null
+    setStored(OPEN_CAMPAIGN_KEY, value)
+    setSelectedCampaignState(value)
+  }
 
   // Apply a returning visitor's saved background/font/text-size preset
   // once on startup — no prop drilling needed since it's just data-*

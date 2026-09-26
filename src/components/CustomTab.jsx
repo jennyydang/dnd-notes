@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import './CustomTab.scss'
+import { confirmDelete } from '../lib/confirm.js'
 
 const emptyForm = { title: '', notes: '' }
 
@@ -64,6 +65,8 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
   }
 
   async function removeEntry(id) {
+    const target = entries.find((x) => x.id === id)
+    if (!confirmDelete(target?.title ? `“${target.title}”` : 'this entry')) return
     await removeItem(id)
     if (editingId === id) cancelForm()
   }

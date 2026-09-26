@@ -789,3 +789,80 @@ grant execute on function list_campaign_members(uuid) to anon;
 -- ever run — re-check the players table has no policies afterward):
 -- grant usage on schema public to anon, authenticated;
 -- grant all on all tables in schema public to anon, authenticated;
+
+-- ── Companion features (Session Mode, character sheets, links, prep) ──
+-- Self-contained block: creates its own tables, RLS and policies, so it
+-- can also be pasted on its own to upgrade an existing database.
+
+-- Mechanics + roleplay for one party member (normally the character a
+-- player has claimed). Kept as two JSON documents rather than dozens of
+-- columns: the sheet is always read and written whole by one client, and
+-- the shapes (see src/lib/character.js) evolve without migrations.
+create table if not exists character_sheets (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  party_member_id uuid not null references party_members(id) on delete cascade,
+  mechanics jsonb not null default '{}'::jsonb,
+  narrative jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  unique (party_member_id)
+);
+
+-- Timestamped notes jotted during a live session. Private per player,
+-- like session_notes. session_note_id is set once the note has been
+-- folded into a session recap; converted_to records "npcs:<id>" etc.
+-- when it was turned into a journal entry.
+create table if not exists quick_notes (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  content text not null,
+  session_note_id uuid references session_notes(id) on delete set null,
+  converted_to text not null default '',
+  created_at timestamptz not null default now()
+);
+
+-- Explicit relationships between any two campaign entries ("NPC
+-- encountered at location", "clue associated with quest"...). Entries are
+-- referenced by (table, id) so one table covers every pairing; a link to a
+-- since-deleted entry is shown as missing and can be removed in the UI.
+create table if not exists entity_links (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  source_type text not null,
+  source_id uuid not null,
+  target_type text not null,
+  target_id uuid not null,
+  relation text not null default '',
+  notes text not null default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists entity_links_source_idx on entity_links (campaign_id, source_id);
+create index if not exists entity_links_target_idx on entity_links (campaign_id, target_id);
+
+-- One prep sheet per player per campaign (objectives, questions for the
+-- DM, things to prepare, checklist, next session date) as JSON.
+create table if not exists session_prep (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  unique (campaign_id, player_id)
+);
+
+alter table character_sheets enable row level security;
+alter table quick_notes      enable row level security;
+alter table entity_links     enable row level security;
+alter table session_prep     enable row level security;
+
+drop policy if exists "anon full access character_sheets" on character_sheets;
+drop policy if exists "anon full access quick_notes"      on quick_notes;
+drop policy if exists "anon full access entity_links"     on entity_links;
+drop policy if exists "anon full access session_prep"     on session_prep;
+
+create policy "anon full access character_sheets" on character_sheets for all to anon using (true) with check (true);
+create policy "anon full access quick_notes"      on quick_notes      for all to anon using (true) with check (true);
+create policy "anon full access entity_links"     on entity_links     for all to anon using (true) with check (true);
+create policy "anon full access session_prep"     on session_prep     for all to anon using (true) with check (true);

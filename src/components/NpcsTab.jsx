@@ -3,6 +3,8 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import Modal from './Modal.jsx'
 import './NpcsTab.scss'
+import { confirmDelete } from '../lib/confirm.js'
+import { useCampaignNav } from '../hooks/useCampaignData.js'
 
 const BUCKET = 'npc-portraits'
 const LIFE_STATUSES = ['Alive', 'Deceased', 'Unknown', 'Missing']
@@ -29,6 +31,7 @@ const fromRow = (r) => ({
 })
 
 function NpcsTab({ campaignId }) {
+  const { openEntity } = useCampaignNav()
   const { items: npcs, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('npcs', { fromRow, orderBy: 'met_at', filters: { campaign_id: campaignId } })
   const [isAdding, setIsAdding] = useState(false)
@@ -140,6 +143,8 @@ function NpcsTab({ campaignId }) {
   }
 
   async function removeNpc(id) {
+    const target = npcs.find((x) => x.id === id)
+    if (!confirmDelete(target?.name ? `“${target.name}”` : 'this NPC')) return
     await removeItem(id)
     if (editingId === id) cancelForm()
   }
@@ -303,6 +308,14 @@ function NpcsTab({ campaignId }) {
               </dl>
               {npc.description && <p className="npc-card__description">{npc.description}</p>}
               <div className="npc-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => openEntity('npc', npc.id)}
+                  aria-label={`Links and related entries for ${npc.name}`}
+                >
+                  Links
+                </button>
                 <button
                   type="button"
                   className="btn btn--text"

@@ -1,0 +1,131 @@
+@use '../styles/variables' as *;
+
+.prep {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  &__date input {
+    min-height: 2.75rem;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+
+  &__recap {
+    grid-row: span 2;
+  }
+
+  &__recap-title {
+    margin: 0;
+    color: $parchment;
+  }
+
+  &__recap-body {
+    max-height: 22rem;
+    overflow-y: auto;
+  }
+
+  &__chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+}
+
+.prep-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.prep-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.35rem 0.25rem 0.35rem 0.5rem;
+  border: 1px solid $ink-soft;
+  border-radius: $radius;
+  background: $bg-deep;
+
+  &__check {
+    width: 1.35rem;
+    height: 1.35rem;
+    margin-top: 0.65rem;
+    flex-shrink: 0;
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    > input {
+      min-height: 2.5rem;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: $radius;
+      color: $text-light;
+      padding: 0.3rem 0.4rem;
+
+      &:focus {
+        border-color: $gold;
+        background: $bg-panel;
+      }
+    }
+  }
+
+  &--done &__main > input {
+    text-decoration: line-through;
+    color: $text-muted;
+  }
+
+  &__actions {
+    display: flex;
+    flex-shrink: 0;
+  }
+}
+
+.prep-add {
+  display: flex;
+  gap: 0.5rem;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.75rem;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    color: $text-light;
+    padding: 0.4rem 0.6rem;
+
+    &:focus {
+      border-color: $gold;
+    }
+  }
+
+  .btn {
+    min-height: 2.75rem;
+  }
+}

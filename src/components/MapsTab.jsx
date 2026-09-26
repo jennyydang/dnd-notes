@@ -4,6 +4,7 @@ import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import WorldMapViewer from './WorldMapViewer.jsx'
 import PlacesSection from './PlacesSection.jsx'
 import './MapsTab.scss'
+import { confirmDelete } from '../lib/confirm.js'
 
 const BUCKET = 'maps'
 
@@ -67,6 +68,7 @@ function MapsTab({ campaignId }) {
   }
 
   async function removeMap(map) {
+    if (!confirmDelete(`the map “${map.caption || 'Untitled'}”`)) return
     await removeItem(map.id)
     await removeImage(BUCKET, map.imagePath)
     setLightboxMap((current) => (current?.id === map.id ? null : current))

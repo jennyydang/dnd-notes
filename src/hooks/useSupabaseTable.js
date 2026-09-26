@@ -7,12 +7,13 @@ const noFilters = {}
 const CHANGE_EVENT = 'supabase-table-changed'
 
 // Each hook instance keeps its own copy of a table with no realtime
-// subscription, so a row created from somewhere else (e.g. an NPC tagged
-// from the session notes editor while the NPCs tab is open behind the
-// Quick View) wouldn't otherwise show up until a remount. Call this after
-// such a write so every mounted instance of that table refetches.
-export function notifyTableChanged(table) {
-  window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: table }))
+// subscription, so a row written by one view (e.g. an NPC created from
+// Session Mode while the Home hub is also showing NPCs) wouldn't otherwise
+// show up elsewhere until a remount. Every add/update/remove made through
+// this hook broadcasts the change, and every other mounted instance of
+// that table quietly refetches. `source` lets the writer skip itself.
+export function notifyTableChanged(table, source = null) {
+  window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: { table, source } }))
 }
 
 export function useSupabaseTable(
@@ -31,10 +32,14 @@ export function useSupabaseTable(
   const filterKey = JSON.stringify(filters)
 
   const requestIdRef = useRef(0)
+  const instanceRef = useRef(null)
+  if (!instanceRef.current) instanceRef.current = {}
 
-  const load = useCallback(async () => {
+  // `silent` refetches (after someone else's write) keep showing the
+  // current rows instead of flashing every list back to "Loading…".
+  const load = useCallback(async ({ silent = false } = {}) => {
     const requestId = ++requestIdRef.current
-    setLoading(true)
+    if (!silent) setLoading(true)
     setError(null)
     let query = supabase.from(table).select('*').order(orderBy, { ascending })
     for (const [column, value] of Object.entries(filtersRef.current)) {
@@ -60,7 +65,8 @@ export function useSupabaseTable(
 
   useEffect(() => {
     function onChange(event) {
-      if (event.detail === table) load()
+      const { table: changed, source } = event.detail || {}
+      if (changed === table && source !== instanceRef.current) load({ silent: true })
     }
     window.addEventListener(CHANGE_EVENT, onChange)
     return () => window.removeEventListener(CHANGE_EVENT, onChange)
@@ -82,7 +88,8 @@ export function useSupabaseTable(
       // anything other than "oldest first" (e.g. session notes ordered by
       // date, newest first) — refetching keeps local state in the same
       // order the server would return it in.
-      await load()
+      await load({ silent: true })
+      notifyTableChanged(table, instanceRef.current)
       return item
     },
     [table, load],
@@ -102,7 +109,8 @@ export function useSupabaseTable(
       // Same reasoning as addItem: an edit can change the very column
       // being ordered by (e.g. a session note's date), so refetch instead
       // of patching in place to keep the list correctly ordered.
-      await load()
+      await load({ silent: true })
+      notifyTableChanged(table, instanceRef.current)
       return item
     },
     [table, load],
@@ -113,6 +121,7 @@ export function useSupabaseTable(
       const { error: deleteError } = await supabase.from(table).delete().eq('id', id)
       if (deleteError) throw new Error(deleteError.message)
       setItems((prev) => prev.filter((item) => item.id !== id))
+      notifyTableChanged(table, instanceRef.current)
     },
     [table],
   )

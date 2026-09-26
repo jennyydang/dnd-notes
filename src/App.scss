@@ -52,3 +52,23 @@
     color: $gold-light;
   }
 }
+
+// Phones: reclaim vertical space for the content (the campaign view adds
+// its own bottom navigation bar).
+@media (max-width: 720px) {
+  .app {
+    padding: 1rem 0.85rem 2rem;
+
+    &__header {
+      margin-bottom: 1rem;
+    }
+
+    &__title {
+      font-size: 1.5rem;
+    }
+
+    &__subtitle {
+      display: none;
+    }
+  }
+}

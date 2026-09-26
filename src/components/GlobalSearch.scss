@@ -1,0 +1,185 @@
+@use '../styles/variables' as *;
+
+.global-search {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 4vh 1rem;
+
+  &__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  &__panel {
+    position: relative;
+    width: 100%;
+    max-width: 44rem;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: $bg-deep;
+    border: 1px solid $gold-dim;
+    border-radius: $radius;
+    padding: 0.25rem 0.25rem 0.25rem 0.75rem;
+
+    &:focus-within {
+      border-color: $gold;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      min-height: 2.75rem;
+      background: transparent;
+      border: none;
+      color: $text-light;
+      font-size: 1.05rem;
+
+      &:focus {
+        outline: none;
+      }
+    }
+  }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    .chip {
+      min-height: 2.25rem;
+      font-size: 0.82rem;
+      padding: 0.25rem 0.65rem;
+    }
+  }
+
+  &__count {
+    margin-left: 0.25rem;
+    font-size: 0.72rem;
+    color: $text-muted;
+  }
+
+  &__sort {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: $text-muted;
+
+    select {
+      background: $bg-deep;
+      border: 1px solid $ink-soft;
+      border-radius: $radius;
+      color: $text-light;
+      padding: 0.35rem 0.5rem;
+    }
+  }
+
+  &__results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__result {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: $radius;
+    border: 1px solid transparent;
+    cursor: pointer;
+
+    &--active {
+      background: rgba($gold, 0.12);
+      border-color: rgba($gold, 0.5);
+    }
+  }
+
+  &__icon {
+    font-size: 1.15rem;
+    line-height: 1.4;
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  &__title {
+    color: $parchment;
+    font-weight: 600;
+  }
+
+  &__subtitle {
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__excerpt {
+    font-size: 0.85rem;
+    color: $text-light;
+    opacity: 0.85;
+  }
+
+  &__type {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $text-muted;
+    padding-top: 0.2rem;
+  }
+
+  &__empty {
+    padding: 1rem;
+    text-align: center;
+    color: $text-muted;
+
+    p {
+      margin: 0 0 0.5rem;
+    }
+
+    .form-actions {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 720px) {
+    padding: 0;
+
+    &__panel {
+      max-height: 100vh;
+      height: 100%;
+      border-radius: 0;
+    }
+
+    &__hint {
+      display: none;
+    }
+  }
+}

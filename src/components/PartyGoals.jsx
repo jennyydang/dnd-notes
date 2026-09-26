@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import './PartyGoals.scss'
+import { confirmDelete } from '../lib/confirm.js'
 
 const GOAL_STATUSES = ['Active', 'Completed']
 
@@ -66,6 +67,8 @@ function PartyGoals({ campaignId }) {
   }
 
   async function removeGoal(id) {
+    const target = goals.find((x) => x.id === id)
+    if (!confirmDelete(target?.title ? `“${target.title}”` : 'this goal')) return
     await removeItem(id)
     if (editingId === id) cancelForm()
   }

@@ -29,6 +29,9 @@
   &__search {
     position: relative;
     flex: 1;
+    text-align: left;
+    cursor: pointer;
+    min-height: 2.75rem;
     max-width: 24rem;
     // Grows to its cap and then no further — this margin absorbs whatever
     // free space is left over past that, pushing the search box (and the
@@ -43,22 +46,20 @@
     border-radius: 999px;
     padding: 0.5rem 0.9rem;
 
-    &:focus-within {
+    &:hover,
+    &:focus-visible {
       border-color: $gold;
     }
+  }
 
-    input {
-      flex: 1;
-      min-width: 0;
-      background: transparent;
-      border: none;
-      color: $text-light;
-      font-size: 0.9rem;
-
-      &:focus {
-        outline: none;
-      }
-    }
+  &__search-placeholder {
+    flex: 1;
+    min-width: 0;
+    color: $text-muted;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__search-icon {
@@ -75,39 +76,6 @@
     border: 1px solid rgba($gold-dim, 0.4);
     border-radius: $radius;
     padding: 0.1rem 0.4rem;
-  }
-
-  &__search-results {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    left: 0;
-    right: 0;
-    background: $bg-panel;
-    border: $border-gold;
-    border-radius: $radius-lg;
-    box-shadow: $shadow-panel;
-    list-style: none;
-    margin: 0;
-    padding: 0.4rem;
-    z-index: 10;
-
-    button {
-      width: 100%;
-      text-align: left;
-      background: transparent;
-      border: none;
-      border-radius: $radius;
-      color: $text-light;
-      padding: 0.5rem 0.6rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      &:hover {
-        background: rgba($gold, 0.12);
-        color: $gold-light;
-      }
-    }
   }
 
   &__body {
@@ -154,11 +122,41 @@
     color: $gold-light;
   }
 
-  &__status {
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  &__group-label {
+    font-family: $font-body;
     font-size: 0.72rem;
-    color: $green-text;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
+    color: $text-muted;
+    margin: 0.25rem 0 0 0.25rem;
+  }
+
+  // Phone-only chrome (the sidebar carries these on wider screens).
+  &__mobile-back,
+  &__mobile-title {
+    display: none;
+  }
+
+  &__mobile-title {
+    font-size: 1.15rem;
+    color: $gold-light;
+    margin-bottom: 0.75rem;
+  }
+
+  &__subnav {
+    margin-bottom: 1.25rem;
+  }
+
+  // With the sidebar open on a wide screen it already lists every screen,
+  // so the area's pill row would just repeat it.
+  &__body:not(.campaign-view__body--sidebar-collapsed) &__subnav {
+    display: none;
   }
 
   &__content {
@@ -166,9 +164,33 @@
     min-width: 0;
   }
 
+  // Phones: the bottom bar replaces the sidebar, and each area's screens
+  // become a horizontally scrolling pill row at the top of the content.
   @media (max-width: 720px) {
+    // Leaves room for the fixed bottom bar (+ iOS home-indicator inset).
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+
     &__topbar {
       flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+    }
+
+    &__hamburger,
+    &__sidebar,
+    &__search-hint {
+      display: none;
+    }
+
+    &__mobile-back {
+      display: inline-flex;
+      padding-left: 0;
+      margin-right: auto;
+    }
+
+    &__mobile-title {
+      display: block;
     }
 
     &__search {
@@ -182,10 +204,68 @@
       flex-direction: column;
     }
 
-    &__sidebar {
-      flex: none;
-      width: 100%;
-      position: static;
+    &__body:not(.campaign-view__body--sidebar-collapsed) &__subnav {
+      display: flex;
     }
+
+    &__subnav {
+      max-width: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+
+      .tab-nav__list {
+        flex-wrap: nowrap;
+      }
+
+      .tab-nav__item {
+        white-space: nowrap;
+      }
+    }
+  }
+}
+
+// Primary navigation on phones: five areas within thumb reach.
+.bottom-nav {
+  display: none;
+
+  @media (max-width: 720px) {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    background: $bg-panel;
+    border-top: $border-gold;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.45);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  &__item {
+    flex: 1;
+    min-height: 3.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    background: transparent;
+    border: none;
+    border-top: 3px solid transparent;
+    color: $text-muted;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.2rem;
+
+    &--active {
+      color: $gold-light;
+      border-top-color: $gold;
+      background: rgba($gold, 0.08);
+    }
+  }
+
+  &__icon {
+    font-size: 1.25rem;
+    line-height: 1;
   }
 }

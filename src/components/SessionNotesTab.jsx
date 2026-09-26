@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
 import { extractMentions, notesToPlainText } from '../lib/richNotes.js'
 import { TAG_GROUPS } from '../lib/tags.js'
 import Modal from './Modal.jsx'
+import { confirmDelete } from '../lib/confirm.js'
 import SessionNoteForm from './SessionNoteForm.jsx'
 import { RichNotesView } from './RichNotesEditor.jsx'
 import './SessionNotesTab.scss'
@@ -98,7 +99,7 @@ function SessionMentionsPanel({ notes, onOpenTab }) {
   )
 }
 
-function SessionNotesTab({ campaignId, playerId, onOpenTab }) {
+function SessionNotesTab({ campaignId, playerId, onOpenTab, addRequest }) {
   // Session notes are personal — scoped to this player within the
   // campaign, not shared like every other tab. Admin has no playerId
   // (isn't a player account), so it falls back to seeing every note in
@@ -185,7 +186,15 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab }) {
     }
   }
 
+  // Home's "Session recap" quick action lands here with the Add form open.
+  useEffect(() => {
+    if (addRequest) startAdding()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addRequest])
+
   async function removeSession(id) {
+    const session = sessions.find((s) => s.id === id)
+    if (!confirmDelete(`the session “${session?.title || 'Untitled Session'}”`)) return
     await removeItem(id)
     if (editingId === id) cancelForm()
     if (viewingId === id) setViewingId(null)

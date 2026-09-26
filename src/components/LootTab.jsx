@@ -5,6 +5,8 @@ import Modal from './Modal.jsx'
 import TagBadge from './TagBadge.jsx'
 import { TAG_GROUPS, tagText } from '../lib/tags.js'
 import './LootTab.scss'
+import { confirmDelete } from '../lib/confirm.js'
+import { useCampaignNav } from '../hooks/useCampaignData.js'
 
 const ALL_HOLDERS = 'all'
 const UNCLAIMED = '__unclaimed__'
@@ -31,6 +33,7 @@ const fromRow = (r) => ({
 const partyFromRow = (r) => ({ id: r.id, name: r.name })
 
 function LootTab({ campaignId }) {
+  const { openEntity } = useCampaignNav()
   const { items: loot, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('loot', { fromRow, filters: { campaign_id: campaignId } })
   // Pulled in just so a party member shows up as a holder tab the moment
@@ -161,6 +164,8 @@ function LootTab({ campaignId }) {
   }
 
   async function removeLoot(id) {
+    const target = loot.find((x) => x.id === id)
+    if (!confirmDelete(target?.item ? `“${target.item}”` : 'this item')) return
     await removeItem(id)
     if (editingId === id) cancelForm()
   }
@@ -359,6 +364,14 @@ function LootTab({ campaignId }) {
               )}
               {entry.notes && <p className="loot-card__notes">{entry.notes}</p>}
               <div className="loot-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => openEntity('loot', entry.id)}
+                  aria-label={`Links and related entries for ${entry.item}`}
+                >
+                  Links
+                </button>
                 <button
                   type="button"
                   className="btn btn--text"

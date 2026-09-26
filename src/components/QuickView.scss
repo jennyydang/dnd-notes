@@ -100,6 +100,15 @@
   --rich-notes-min-height: 8rem;
 }
 
+// Phones: the floating tab would cover content above the bottom
+// navigation bar, and capture is already one tap away there (Home's quick
+// add and Session Mode's notes), so it's desktop/tablet only.
+@media (max-width: 720px) {
+  .quick-view {
+    display: none;
+  }
+}
+
 @media (max-width: 480px) {
   .quick-view {
     right: 0.75rem;

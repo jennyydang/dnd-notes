@@ -6,7 +6,7 @@ import { PluginKey } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import Mention from '@tiptap/extension-mention'
 import Placeholder from '@tiptap/extension-placeholder'
-import { notifyTableChanged, useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { toEditorContent } from '../lib/richNotes.js'
 import { TAG_GROUPS, groupForChar, matchKind, tagSlug, tagText } from '../lib/tags.js'
 import './RichNotesEditor.scss'
@@ -149,15 +149,14 @@ export function RichNotesEditor({
   const createRef = useRef(null)
   createRef.current = async (group, name, kind) => {
     const origin = metAtRef.current.trim()
-    const [table, payload] = {
-      person: ['npcs', { name, met_at: origin }],
-      place: ['places', { name, kind, notes: '' }],
-      lore: ['lore_entries', { title: name, category: kind, notes: '' }],
-      loot: ['loot', { item: name, kind, found_at: origin, holder: '', notes: '' }],
+    const payload = {
+      person: { name, met_at: origin },
+      place: { name, kind, notes: '' },
+      lore: { title: name, category: kind, notes: '' },
+      loot: { item: name, kind, found_at: origin, holder: '', notes: '' },
     }[group]
-    const created = await tables[group].addItem(payload)
-    notifyTableChanged(table)
-    return created
+    // addItem broadcasts the change, so the target tab updates too.
+    return tables[group].addItem(payload)
   }
 
   const [menu, setMenu] = useState(null)

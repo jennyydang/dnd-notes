@@ -1,5 +1,60 @@
 # Adventurer's Log
 
+A D&D campaign companion for playing at the table and planning between
+sessions, built with React and SCSS on Supabase.
+
+## Companion layout
+
+Inside a campaign, everything is grouped into five areas — a bottom bar on
+phones, a grouped sidebar on wider screens:
+
+- **Home** — Start/Resume Session, your character at a glance, next session
+  date, quick capture (note / NPC / location / quest / clue / recap), open
+  threads (active quests and party goals), recent sessions and entries, and
+  a JSON backup export.
+- **Session** — *Session Mode*: HP with damage/heal/undo and temp HP, AC,
+  initiative, speed, proficiency, passive Perception, conditions,
+  exhaustion, concentration, death saves, spell slots, limited-use
+  resources, short/long rests; timestamped quick notes that turn into NPC /
+  location / quest / clue / lore / loot entries without retyping; an
+  initiative tracker; a reference drawer (spells, inventory, skills,
+  roleplay notes); and End Session, which pre-fills a recap from the
+  session's quick notes. Plus the existing *Tools*.
+- **Journal** — Session Notes, Timeline, NPCs, Maps & Places, Quests, Loot,
+  Lore & Clues and custom tabs. Every NPC / quest / place / lore / loot card
+  has **Links**: a detail view of everything related (links you add, and
+  sessions whose recap tags it), where you can add or remove links.
+- **Character** — an autosaved character sheet with mechanics (ability
+  scores → modifiers, saves, skills with proficiency/expertise, spell DC and
+  attack, spell slots, resources, inventory) kept separate from roleplay
+  (public persona vs. private thoughts, voice lines, dialogue guidance,
+  personality, relationships, optional quirks, development log), a
+  quick-reference card and a roleplay assistant. Plus Spells and Party.
+- **Prep** — last session's recap, open threads, NPCs/places that came up
+  recently, next session date, and your own lists (objectives, questions for
+  the DM, things to prepare, checklist) — each item can link to an entry.
+
+**Search** (the bar at the top, or ⌘/Ctrl+K) covers NPCs, places, quests,
+lore & clues, loot, sessions, quick notes, party and goals, with type
+filters, sorting, typo-tolerant matching and keyboard navigation.
+
+Nothing is invented: stats you haven't entered show "—" with a pointer to
+the sheet. For a character named Seiya, the Roleplay page offers to fill
+empty fields from her character brief (see `src/lib/seiya.js`; no Seiya
+files were found in this repo, so relationships, ideals and bonds are left
+for the player).
+
+### Roleplay assistant
+
+The app has no AI model built in, and model keys must never ship in client
+code. Set `VITE_ROLEPLAY_ASSISTANT_URL` to a server endpoint (for example a
+Supabase Edge Function that holds the key) to enable suggestions — the
+request/response contract is documented in `src/lib/roleplayAssistant.js`.
+Without it the assistant says so plainly and offers **Copy prompt**, built
+only from the character's recorded notes, for use in any assistant.
+
+## Original features
+
 A D&D campaign notes app built with React and SCSS. Players log in and see
 a dashboard of just the campaigns they created or joined — create, edit,
 archive, or delete the ones you created — and open one to get its own
@@ -94,3 +149,17 @@ so your whole party can share one set of notes from any browser.
 - `npm run build` — build for production
 - `npm run preview` — preview the production build
 - `npm run lint` — run Oxlint
+- `npm test` — run the unit tests (Vitest) for search, character rules,
+  initiative, recap building and the roleplay helpers
+
+## Upgrading an existing database
+
+The companion features add four tables — `character_sheets`,
+`quick_notes`, `entity_links` and `session_prep` — at the end of
+`supabase/schema.sql` (self-contained, idempotent). Re-run the whole file,
+or just that last block. Until it's run, the rest of the app keeps working
+and those screens explain what's missing instead of failing.
+
+Per-device state that isn't campaign content — the open campaign and tab,
+whether a session is in progress, the current initiative order, unsent
+quick-note drafts — lives in `localStorage`.

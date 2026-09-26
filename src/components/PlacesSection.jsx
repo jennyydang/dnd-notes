@@ -4,6 +4,8 @@ import { TAG_GROUPS, tagText } from '../lib/tags.js'
 import Modal from './Modal.jsx'
 import TagBadge from './TagBadge.jsx'
 import './PlacesSection.scss'
+import { confirmDelete } from '../lib/confirm.js'
+import { useCampaignNav } from '../hooks/useCampaignData.js'
 
 const PLACE_KINDS = TAG_GROUPS.place.kinds
 
@@ -15,6 +17,7 @@ const fromRow = (r) => ({ id: r.id, name: r.name, kind: r.kind, notes: r.notes }
 // Mostly filled in from session notes, where tagging "#city Waterdeep"
 // creates the card here — this is where the player adds details later.
 function PlacesSection({ campaignId }) {
+  const { openEntity } = useCampaignNav()
   const { items: places, loading, error, addItem, updateItem, removeItem } = useSupabaseTable(
     'places',
     { fromRow, orderBy: 'name', filters: { campaign_id: campaignId } },
@@ -62,6 +65,8 @@ function PlacesSection({ campaignId }) {
   }
 
   async function removePlace(id) {
+    const target = places.find((x) => x.id === id)
+    if (!confirmDelete(target?.name ? `“${target.name}”` : 'this place')) return
     await removeItem(id)
     if (editingId === id) closeForm()
   }
@@ -148,6 +153,14 @@ function PlacesSection({ campaignId }) {
               </div>
               {place.notes && <p className="place-card__notes">{place.notes}</p>}
               <div className="place-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => openEntity('place', place.id)}
+                  aria-label={`Links and related entries for ${place.name}`}
+                >
+                  Links
+                </button>
                 <button type="button" className="btn btn--text" onClick={() => startEditing(place)}>
                   Edit
                 </button>

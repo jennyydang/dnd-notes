@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import TabNav from './TabNav.jsx'
 import Modal from './Modal.jsx'
 import './SpellsTab.scss'
+import { confirmDelete } from '../lib/confirm.js'
 
 const SPELL_VIEWS = [
   { id: 'cantrips', label: 'Cantrips' },
@@ -124,6 +125,8 @@ function SpellsTab({ campaignId, playerId }) {
   }
 
   async function removeSpell(id) {
+    const target = spells.find((x) => x.id === id)
+    if (!confirmDelete(target?.name ? `“${target.name}”` : 'this spell')) return
     await removeItem(id)
     if (editingId === id) cancelForm()
     if (flavorSpell?.id === id) setFlavorSpell(null)

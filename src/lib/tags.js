@@ -16,7 +16,7 @@ export const TAG_GROUPS = {
     tab: 'lore',
     noun: 'lore',
     icon: '📜',
-    kinds: ['Faction', 'Lore', 'Religion', 'History'],
+    kinds: ['Faction', 'Lore', 'Religion', 'History', 'Clue'],
   },
   loot: {
     char: '$',

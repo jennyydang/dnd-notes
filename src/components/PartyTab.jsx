@@ -5,6 +5,7 @@ import { listCampaignMembers } from '../lib/campaigns.js'
 import PartyGoals from './PartyGoals.jsx'
 import Modal from './Modal.jsx'
 import './PartyTab.scss'
+import { confirmDelete } from '../lib/confirm.js'
 
 const BUCKET = 'party-portraits'
 const MEMBER_TYPES = ['Player', 'NPC']
@@ -210,6 +211,8 @@ function PartyTab({ campaignId, playerId }) {
   }
 
   async function removeMember(id) {
+    const target = party.find((x) => x.id === id)
+    if (!confirmDelete(target?.name ? `“${target.name}”` : 'this party member')) return
     await removeItem(id)
     if (viewingId === id) closeViewing()
   }
