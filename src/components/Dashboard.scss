@@ -96,7 +96,8 @@
 
 .campaign-card {
   padding: 0;
-  overflow: hidden;
+  // overflow-y is left to the shared card rule (max height + scroll).
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 

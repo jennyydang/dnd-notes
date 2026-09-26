@@ -20,7 +20,8 @@
   background: $bg-panel;
   border: $border-gold;
   border-radius: $radius-lg;
-  overflow: hidden;
+  // overflow-y is left to the shared card rule (max height + scroll).
+  overflow-x: hidden;
   box-shadow: $shadow-panel;
 
   &__image-btn {

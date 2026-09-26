@@ -138,3 +138,37 @@
   border-radius: 999px;
   white-space: nowrap;
 }
+
+// Every list card caps out at the same height and scrolls past it, so one
+// long entry can't stretch its whole grid row. Spell cards keep their own
+// setup (SpellsTab.scss) — only their body scrolls, with the name and
+// actions pinned.
+.party-card,
+.loot-card,
+.npc-card,
+.custom-entry-card,
+.session-card,
+.lore-card,
+.map-card,
+.quest-card,
+.campaign-card,
+.goal-card {
+  max-height: $card-max-height;
+  overflow-y: auto;
+}
+
+// These cards are flex columns — without this, hitting the max height
+// would squash fixed-size children (portraits, cover images) instead of
+// letting the card scroll. Session cards are a row, so they're left out.
+.party-card,
+.loot-card,
+.npc-card,
+.custom-entry-card,
+.lore-card,
+.quest-card,
+.campaign-card,
+.goal-card {
+  > * {
+    flex-shrink: 0;
+  }
+}
