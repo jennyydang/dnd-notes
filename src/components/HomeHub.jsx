@@ -9,7 +9,8 @@ import { formatSessionDate, sessionDateTimestamp } from '../lib/sessionNotes.js'
 import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessionMode.js'
 import { exportCampaign } from '../lib/exportCampaign.js'
 import QuickNoteInput from './QuickNoteInput.jsx'
-import { EntityChip, SectionCard, StatusMessage } from './ui.jsx'
+import { SectionCard, StatusMessage } from './ui.jsx'
+import CardRail from './CardRail.jsx'
 import './HomeHub.scss'
 
 const QUICK_ACTIONS = [
@@ -19,7 +20,20 @@ const QUICK_ACTIONS = [
   { type: 'clue', label: 'Clue', icon: '🔎' },
 ]
 
-const RECENT_LIMIT = 5
+const RECENT_LIMIT = 8
+
+// One card in a Home rail.
+function MiniCard({ icon, type, title, meta, onClick }) {
+  return (
+    <button type="button" className="mini-card" onClick={onClick}>
+      <span className="mini-card__type">
+        <span aria-hidden="true">{icon}</span> {type}
+      </span>
+      <span className="mini-card__title">{title || 'Untitled'}</span>
+      {meta && <span className="mini-card__meta">{meta}</span>}
+    </button>
+  )
+}
 
 function CharacterSummary({ campaignId, character }) {
   const { sheet } = useCharacterSheet(campaignId, character.id)
@@ -214,13 +228,18 @@ function HomeHub({ campaignName }) {
             No active quests or party goals. Add one when the story hands you a hook.
           </StatusMessage>
           {openThreads.length > 0 && (
-            <ul className="home-hub__list">
+            <CardRail label="Open threads">
               {openThreads.map((e) => (
-                <li key={`${e.type}-${e.id}`}>
-                  <EntityChip entity={e} onOpen={open} />
-                </li>
+                <MiniCard
+                  key={`${e.type}-${e.id}`}
+                  icon={e.icon}
+                  type={e.label}
+                  title={e.title}
+                  meta={e.raw.given_by ? `From ${e.raw.given_by}` : e.body}
+                  onClick={() => open(e)}
+                />
               ))}
-            </ul>
+            </CardRail>
           )}
         </SectionCard>
 
@@ -237,16 +256,18 @@ function HomeHub({ campaignName }) {
             No session recaps yet. End a session to turn your quick notes into one.
           </StatusMessage>
           {sessions.length > 0 && (
-            <ul className="home-hub__list">
-              {sessions.slice(0, 3).map((s) => (
-                <li key={s.id}>
-                  <button type="button" className="home-hub__row" onClick={() => open(s)}>
-                    <span className="home-hub__row-title">{s.title}</span>
-                    <span className="home-hub__row-meta">{formatSessionDate(s.raw.session_date)}</span>
-                  </button>
-                </li>
+            <CardRail label="Recent sessions">
+              {sessions.slice(0, 6).map((s) => (
+                <MiniCard
+                  key={s.id}
+                  icon="📖"
+                  type={formatSessionDate(s.raw.session_date) || 'Session'}
+                  title={s.title}
+                  meta={s.body}
+                  onClick={() => open(s)}
+                />
               ))}
-            </ul>
+            </CardRail>
           )}
         </SectionCard>
 
@@ -255,21 +276,30 @@ function HomeHub({ campaignName }) {
             Nothing yet — NPCs, places and quests you add will show up here.
           </StatusMessage>
           {(recentEntries.length > 0 || quickNotes.notes.length > 0) && (
-            <ul className="home-hub__list">
-              {quickNotes.notes.slice(0, 2).map((n) => (
-                <li key={n.id}>
-                  <button type="button" className="home-hub__row" onClick={() => nav.openEntity('note', n.id)}>
-                    <span className="home-hub__row-title">✏️ {n.content}</span>
-                    <span className="home-hub__row-meta">{formatDateTime(n.createdAt)}</span>
-                  </button>
-                </li>
-              ))}
-              {recentEntries.map((e) => (
-                <li key={`${e.type}-${e.id}`}>
-                  <EntityChip entity={e} onOpen={open} />
-                </li>
-              ))}
-            </ul>
+            <CardRail label="Recently added">
+              {[
+                ...quickNotes.notes.slice(0, 2).map((n) => (
+                  <MiniCard
+                    key={`note-${n.id}`}
+                    icon="✏️"
+                    type="Quick note"
+                    title={n.content}
+                    meta={formatDateTime(n.createdAt)}
+                    onClick={() => nav.openEntity('note', n.id)}
+                  />
+                )),
+                ...recentEntries.map((e) => (
+                  <MiniCard
+                    key={`${e.type}-${e.id}`}
+                    icon={e.icon}
+                    type={e.label}
+                    title={e.title}
+                    meta={e.subtitle || e.body}
+                    onClick={() => open(e)}
+                  />
+                )),
+              ]}
+            </CardRail>
           )}
         </SectionCard>
       </div>

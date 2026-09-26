@@ -304,6 +304,8 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                 />
               )}
 
+              {/* Keyed per screen so each one fades in when you switch to it. */}
+              <div key={knownTab} className="campaign-view__screen">
               {knownTab === 'home' && <HomeHub campaignName={campaignName} />}
               {knownTab === 'session' && <SessionMode />}
               {knownTab === 'prep' && <PrepTab />}
@@ -334,6 +336,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                   onDelete={() => handleDeleteTab(activeCustomTab.id)}
                 />
               )}
+              </div>
             </div>
           </div>
 

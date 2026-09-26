@@ -54,6 +54,14 @@ function TimelineTab({ campaignId, playerId }) {
     if (scroller) scroller.scrollLeft = scroller.scrollWidth
   }, [columns.length])
 
+  function scrollColumns(direction) {
+    const scroller = scrollerRef.current
+    const column = scroller?.querySelector('.timeline__session')
+    if (!scroller || !column) return
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    scroller.scrollBy({ left: direction * column.getBoundingClientRect().width, behavior: reduce ? 'auto' : 'smooth' })
+  }
+
   return (
     <section className="timeline-tab">
       {loading && <p className="empty-state">Loading…</p>}
@@ -73,6 +81,16 @@ function TimelineTab({ campaignId, playerId }) {
               No events yet. In a session recap, type <strong>!event</strong> followed by what
               happened — e.g. <em>!event The dragon burns the mill</em>.
             </p>
+          )}
+          {columns.length > 1 && (
+            <div className="timeline__nav">
+              <button type="button" className="btn btn--text" onClick={() => scrollColumns(-1)} aria-label="Earlier sessions">
+                ‹ Earlier
+              </button>
+              <button type="button" className="btn btn--text" onClick={() => scrollColumns(1)} aria-label="Later sessions">
+                Later ›
+              </button>
+            </div>
           )}
           <div className="timeline" ref={scrollerRef}>
             <ol className="timeline__track">

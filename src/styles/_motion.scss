@@ -1,0 +1,207 @@
+@use 'variables' as *;
+
+// Motion for the whole app, kept in one place. Everything here is short
+// and purposeful: it shows where new things came from, confirms an action
+// took effect, or draws the eye to what changed. The global
+// prefers-reduced-motion rule in _shared.scss switches all of it off.
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes flash-damage {
+  0% {
+    background-color: rgba($maroon-light, 0.45);
+  }
+  100% {
+    background-color: $bg-deep;
+  }
+}
+
+@keyframes flash-heal {
+  0% {
+    background-color: rgba($green-light, 0.4);
+  }
+  100% {
+    background-color: $bg-deep;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+// ── Screens & dialogs ───────────────────────────────────────────────────
+
+// Each screen fades up when you switch to it (keyed per tab in CampaignView).
+.campaign-view__screen {
+  animation: rise-in 0.25s ease-out backwards;
+}
+
+.modal__backdrop {
+  animation: fade-in 0.18s ease-out both;
+}
+
+.modal__panel {
+  animation: scale-in 0.2s ease-out both;
+}
+
+.global-search__backdrop {
+  animation: fade-in 0.15s ease-out both;
+}
+
+.global-search__panel {
+  animation: rise-in 0.2s ease-out both;
+}
+
+// ── Card lists: cascade in, lift on hover ──────────────────────────────
+
+$card-lists: '.npc-list', '.loot-list', '.quest-list', '.lore-list', '.party-list', '.goal-list',
+  '.custom-entry-list', '.session-list', '.spell-list', '.campaign-list', '.places-section__grid',
+  '.home-hub__grid', '.prep__grid', '.maps-tab__grid';
+
+@each $list in $card-lists {
+  // `backwards`, not `both`: once finished, the animation lets go of
+  // `transform`, so the hover lift below still works.
+  #{$list} > * {
+    animation: rise-in 0.35s ease-out backwards;
+
+    @for $i from 2 through 10 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{($i - 1) * 40}ms;
+      }
+    }
+  }
+}
+
+$cards: '.npc-card', '.loot-card', '.quest-card', '.lore-card', '.party-card', '.place-card',
+  '.goal-card', '.custom-entry-card', '.campaign-card', '.session-card', '.spell-card', '.map-card';
+
+@each $card in $cards {
+  #{$card} {
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease,
+      opacity 0.4s ease;
+  }
+}
+
+// Lift only where there's a real hover (not on touch screens, where a
+// lifted card would stay stuck after a tap).
+@media (hover: hover) {
+  @each $card in $cards {
+    #{$card}:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+      border-color: $gold;
+    }
+  }
+}
+
+// ── Small confirmations ─────────────────────────────────────────────────
+
+.btn {
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+.chip {
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// Numbers that just changed (steppers, HP) give a small pop so the eye
+// catches them — the element is re-keyed on each new value.
+.stepper__value,
+.vitals__hp-value {
+  display: inline-block;
+  animation: pop 0.25s ease-out;
+}
+
+.bottom-nav__icon {
+  transition: transform 0.2s ease;
+}
+
+.bottom-nav__item--active .bottom-nav__icon {
+  transform: translateY(-2px) scale(1.1);
+}
+
+.quick-notes__item,
+.initiative__row,
+.prep-item,
+.list-editor__row,
+.entity-detail__group li {
+  animation: rise-in 0.25s ease-out backwards;
+}
+
+.save-status,
+.field-error,
+.inline-state--error {
+  animation: fade-in 0.2s ease-out both;
+}
+
+// Invalid input gives a brief shake so the error is noticed.
+[aria-invalid='true'] {
+  animation: shake 0.25s ease-in-out;
+}

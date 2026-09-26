@@ -65,7 +65,7 @@ export function Stepper({ label, value, onChange, min = 0, max = Infinity, step 
       >
         −
       </button>
-      <output className="stepper__value" aria-live="polite">
+      <output key={value ?? 'blank'} className="stepper__value" aria-live="polite">
         {value ?? '—'}
       </output>
       <button

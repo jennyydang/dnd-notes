@@ -529,6 +529,11 @@ function PartyTab({ campaignId, playerId }) {
         </p>
       )}
 
+      {!loading && !error && party.length > 1 && (
+        <p className="party-tab__swipe-hint" aria-hidden="true">
+          Swipe to see the whole party →
+        </p>
+      )}
       {!loading && !error && party.length > 0 && (
         <div className="party-list">
           {party.map((member) => (

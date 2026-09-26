@@ -172,6 +172,7 @@
 
 .vitals {
   &__hp {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -236,6 +237,23 @@
     color: $maroon-text;
   }
 
+  // Brief red/green wash over the HP box after damage or healing.
+  &__flash {
+    position: absolute;
+    inset: 0;
+    border-radius: $radius;
+    pointer-events: none;
+    animation: vitals-flash 0.6s ease-out forwards;
+
+    &--damage {
+      background: rgba($maroon-light, 0.45);
+    }
+
+    &--heal {
+      background: rgba($green-light, 0.35);
+    }
+  }
+
   &__hp-bar {
     height: 0.5rem;
     border-radius: 999px;
@@ -245,6 +263,9 @@
     span {
       display: block;
       height: 100%;
+      transition:
+        width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+        background 0.3s ease;
       background: linear-gradient(90deg, $green, $green-light);
     }
   }
@@ -383,6 +404,16 @@
   &__pip {
     width: 2.5rem;
     height: 2.5rem;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.1s ease;
+
+    &:active {
+      transform: scale(0.88);
+    }
+
     border-radius: $radius;
     border: 1px solid rgba($gold-dim, 0.6);
     background: $bg-deep;
@@ -556,6 +587,10 @@
   }
 
   &__row {
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
     display: flex;
     align-items: center;
     gap: 0.6rem;
@@ -572,6 +607,7 @@
     &--current {
       border-color: $gold;
       background: rgba($gold, 0.14);
+      box-shadow: 0 0 0 1px rgba($gold, 0.4);
     }
   }
 
@@ -771,5 +807,14 @@
   &__context {
     font-size: 0.82rem;
     color: $text-muted;
+  }
+}
+
+@keyframes vitals-flash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }

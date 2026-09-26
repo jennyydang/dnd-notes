@@ -29,6 +29,8 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
   const [amount, setAmount] = useState('')
   const [amountError, setAmountError] = useState(null)
   const [lastChange, setLastChange] = useState(null)
+  // Bumped on every damage/heal so the flash overlay re-mounts and replays.
+  const [flash, setFlash] = useState(null)
 
   if (loading) return <SectionCard title="Vitals" icon="❤️"><p className="inline-state">Loading sheet…</p></SectionCard>
   if (!sheet) {
@@ -63,6 +65,7 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
       deathSaves: after.current > 0 || before.current > 0 ? { success: 0, failure: 0 } : m.deathSaves,
     })
     setLastChange({ before: hp, label: `${sign < 0 ? 'Took' : 'Healed'} ${n}` })
+    setFlash((f) => ({ kind: sign < 0 ? 'damage' : 'heal', n: (f?.n || 0) + 1 }))
     setAmount('')
   }
 
@@ -129,10 +132,11 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
       action={<SaveStatus status={status} error={saveError} onRetry={retry} />}
     >
       <div className={`vitals__hp vitals__hp--${hpState || 'unknown'}`}>
+        {flash && <span key={flash.n} className={`vitals__flash vitals__flash--${flash.kind}`} aria-hidden="true" />}
         <div className="vitals__hp-numbers">
           <span className="vitals__hp-label">Hit points</span>
           {hpKnown ? (
-            <span className="vitals__hp-value" aria-live="polite">
+            <span key={current} className="vitals__hp-value" aria-live="polite">
               {current}
               <span className="vitals__hp-max"> / {hp.max}</span>
               {hp.temp > 0 && <span className="vitals__hp-temp"> +{hp.temp} temp</span>}

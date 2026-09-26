@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   addCombatant,
   emptyEncounter,
@@ -24,6 +24,16 @@ function InitiativeTracker({ campaignId, characterName, characterInitBonus }) {
   useEffect(() => {
     setEncounter(campaignId, state.combatants.length ? state : null)
   }, [campaignId, state])
+
+  // Keep whoever's turn it is in view as the order advances.
+  const listRef = useRef(null)
+  useEffect(() => {
+    if (!state.started) return
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    listRef.current
+      ?.querySelector('.initiative__row--current')
+      ?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' })
+  }, [state.turn, state.round, state.started])
 
   function add(event) {
     event.preventDefault()
@@ -114,7 +124,7 @@ function InitiativeTracker({ campaignId, characterName, characterInitBonus }) {
       {state.combatants.length === 0 ? (
         <p className="inline-state">No one in the fight yet. Add combatants with their initiative rolls.</p>
       ) : (
-        <ol className="initiative__list">
+        <ol className="initiative__list" ref={listRef}>
           {state.combatants.map((c, index) => {
             const isCurrent = state.started && index === state.turn
             return (

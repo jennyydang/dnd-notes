@@ -200,8 +200,12 @@
       margin-left: 0;
     }
 
+    // Stretch (not flex-start) so the content column is exactly the
+    // screen's width — otherwise wide content (a swipeable row, the
+    // timeline) widens the whole column instead of scrolling inside it.
     &__body {
       flex-direction: column;
+      align-items: stretch;
     }
 
     &__body:not(.campaign-view__body--sidebar-collapsed) &__subnav {
