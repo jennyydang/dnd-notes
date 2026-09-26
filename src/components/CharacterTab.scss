@@ -12,8 +12,23 @@
     gap: 1rem;
     padding: 1rem 1.25rem;
 
-    .save-status {
-      margin-left: auto;
+  }
+
+  &__header-actions {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+
+    .btn {
+      min-height: 2.75rem;
+    }
+
+    @media (max-width: 720px) {
+      margin-left: 0;
+      width: 100%;
+      align-items: stretch;
     }
   }
 
@@ -382,5 +397,111 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: $gold-light;
+  }
+}
+
+.ddb-import {
+  &__steps {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: $text-light;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  &__upload {
+    border-top: 1px solid rgba($gold-dim, 0.4);
+    padding-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    summary {
+      cursor: pointer;
+      color: $gold-light;
+      min-height: 2rem;
+    }
+
+    input[type='file'] {
+      color: $text-light;
+      margin: 0.5rem 0;
+    }
+
+    a {
+      color: $gold-light;
+    }
+  }
+
+  &__preview {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    padding: 0.75rem;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+
+    div {
+      display: grid;
+      grid-template-columns: minmax(5.5rem, 30%) 1fr;
+      gap: 0.5rem;
+    }
+
+    dt {
+      color: $text-muted;
+      font-size: 0.85rem;
+    }
+
+    dd {
+      margin: 0;
+      color: $text-light;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__warnings,
+  &__summary {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: $text-light;
+  }
+
+  &__warnings {
+    color: $gold-light;
+    list-style: none;
+    padding-left: 0;
+  }
+
+  &__choices {
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    padding: 0.6rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    legend {
+      padding: 0 0.3rem;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: $text-muted;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.25rem;
+      color: $text-light;
+    }
+
+    input {
+      width: 1.2rem;
+      height: 1.2rem;
+      flex-shrink: 0;
+    }
   }
 }

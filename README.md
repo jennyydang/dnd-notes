@@ -44,6 +44,24 @@ empty fields from her character brief (see `src/lib/seiya.js`; no Seiya
 files were found in this repo, so relationships, ideals and bonds are left
 for the player).
 
+### Import from D&D Beyond
+
+On the Character screen, **Import from D&D Beyond** fills the sheet from a
+D&D Beyond character. Players set the character's privacy to *Public*,
+paste its link, check a preview and choose which parts to import (ability
+scores/saves/skills, HP/AC/speed, spell slots, features, resources,
+inventory, roleplay text — which only fills empty fields — plus the Party
+roster's race/class/level and the Spells list).
+
+The link is fetched by `api/ddb-character.js`, a Vercel Function (D&D
+Beyond doesn't let browsers on other sites call it directly); `npm run dev`
+serves the same handler locally. It uses D&D Beyond's **unofficial**
+character service, which can change or block access at any time — if the
+link route stops working, the dialog's *Upload a file instead* option
+reads the same data from a saved file. Conversion lives in
+`src/lib/ddbImport.js`; derived values such as AC are calculated and
+flagged for the player to double-check.
+
 ### Roleplay assistant
 
 The app has no AI model built in, and model keys must never ship in client

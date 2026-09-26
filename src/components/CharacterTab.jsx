@@ -9,6 +9,7 @@ import MechanicsSheet from './character/MechanicsSheet.jsx'
 import RoleplayGuide from './character/RoleplayGuide.jsx'
 import RoleplayQuickRef from './character/RoleplayQuickRef.jsx'
 import RoleplayAssistant from './character/RoleplayAssistant.jsx'
+import DdbImportModal from './character/DdbImportModal.jsx'
 import { SaveStatus, SectionCard } from './ui.jsx'
 import './CharacterTab.scss'
 
@@ -23,6 +24,7 @@ function CharacterSheetView({ campaignId, character }) {
   const nav = useCampaignNav()
   const sheetApi = useCharacterSheet(campaignId, character.id)
   const [view, setView] = useState('mechanics')
+  const [importing, setImporting] = useState(false)
   const photo = getPublicUrl('party-portraits', character.photo_path)
 
   return (
@@ -45,8 +47,17 @@ function CharacterSheetView({ campaignId, character }) {
             Edit name, portrait, race/class & level on Party
           </button>
         </div>
-        <SaveStatus status={sheetApi.status} error={sheetApi.saveError} onRetry={sheetApi.retry} />
+        <div className="character-tab__header-actions">
+          <SaveStatus status={sheetApi.status} error={sheetApi.saveError} onRetry={sheetApi.retry} />
+          <button type="button" className="btn" onClick={() => setImporting(true)} disabled={!sheetApi.sheet}>
+            ⬇ Import from D&amp;D Beyond
+          </button>
+        </div>
       </header>
+
+      {importing && sheetApi.sheet && (
+        <DdbImportModal character={character} sheetApi={sheetApi} onClose={() => setImporting(false)} />
+      )}
 
       <TabNav tabs={VIEWS} activeTab={view} onSelect={setView} className="tab-nav--pill character-tab__views" label="Character sheet sections" />
 

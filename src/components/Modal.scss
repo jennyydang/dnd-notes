@@ -28,3 +28,15 @@
     }
   }
 }
+
+// Phones: use nearly the whole screen for the dialog.
+@media (max-width: 720px) {
+  .modal__backdrop {
+    padding: 0.75rem;
+  }
+
+  .modal__panel {
+    max-height: 92vh;
+    padding: 1.1rem;
+  }
+}
