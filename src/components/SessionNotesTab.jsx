@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
+import { extractMentions, notesToPlainText } from '../lib/richNotes.js'
 import Modal from './Modal.jsx'
 import SessionNoteForm from './SessionNoteForm.jsx'
+import { RichNotesView } from './RichNotesEditor.jsx'
 import './SessionNotesTab.scss'
 
 const PARTY_BUCKET = 'party-portraits'
@@ -55,7 +57,42 @@ function SessionPartyPanel({ campaignId }) {
   )
 }
 
-function SessionNotesTab({ campaignId, playerId }) {
+// Everyone tagged with @ / # in this recap, as links over to the tab
+// where their card lives.
+function SessionMentionsPanel({ notes, onOpenTab }) {
+  const { people, places } = useMemo(() => extractMentions(notes), [notes])
+  if (people.length === 0 && places.length === 0) return null
+
+  const section = (title, list, tab, kind) =>
+    list.length > 0 && (
+      <>
+        <h4>{title}</h4>
+        <ul className="session-detail__mention-list">
+          {list.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                className={`mention mention--${kind} session-detail__mention`}
+                onClick={() => onOpenTab?.(tab)}
+                title={`Open the ${tab === 'npcs' ? 'NPCs' : 'Lore'} tab`}
+              >
+                {item.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+
+  return (
+    <aside className="session-detail__mentions panel">
+      {section('People Met', people, 'npcs', 'person')}
+      {section('Places Visited', places, 'lore', 'place')}
+    </aside>
+  )
+}
+
+function SessionNotesTab({ campaignId, playerId, onOpenTab }) {
   // Session notes are personal — scoped to this player within the
   // campaign, not shared like every other tab. Admin has no playerId
   // (isn't a player account), so it falls back to seeing every note in
@@ -107,7 +144,10 @@ function SessionNotesTab({ campaignId, playerId }) {
 
   async function submitForm(event) {
     event.preventDefault()
-    if (!form.notes.trim()) return
+    if (!form.notes.trim()) {
+      setFormError('Write something in the recap first.')
+      return
+    }
 
     const payload = {
       title: form.title,
@@ -137,6 +177,7 @@ function SessionNotesTab({ campaignId, playerId }) {
     return (
       <SessionNoteForm
         idPrefix="session"
+        campaignId={campaignId}
         form={form}
         setForm={setForm}
         onSubmit={submitForm}
@@ -205,7 +246,7 @@ function SessionNotesTab({ campaignId, playerId }) {
             <div className="session-detail__divider" aria-hidden="true">
               ◆
             </div>
-            <p className="session-detail__notes">{viewingSession.notes}</p>
+            <RichNotesView value={viewingSession.notes} className="session-detail__notes" />
             <div className="session-detail__actions">
               <button type="button" className="btn btn--text" onClick={() => startEditing(viewingSession)}>
                 Edit
@@ -220,7 +261,10 @@ function SessionNotesTab({ campaignId, playerId }) {
             </div>
           </article>
 
-          <SessionPartyPanel campaignId={campaignId} />
+          <div className="session-detail__side">
+            <SessionMentionsPanel notes={viewingSession.notes} onOpenTab={onOpenTab} />
+            <SessionPartyPanel campaignId={campaignId} />
+          </div>
         </div>
       )}
 
@@ -244,7 +288,7 @@ function SessionNotesTab({ campaignId, playerId }) {
                     <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
                   )}
                 </div>
-                <p className="session-card__notes">{session.notes}</p>
+                <p className="session-card__notes">{notesToPlainText(session.notes)}</p>
                 <div className="session-card__actions">
                   <button
                     type="button"

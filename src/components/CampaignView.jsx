@@ -210,7 +210,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
         <div className="campaign-view__content">
           {activeTab === 'sessions' && (
-            <SessionNotesTab campaignId={campaignId} playerId={playerId} />
+            <SessionNotesTab campaignId={campaignId} playerId={playerId} onOpenTab={setActiveTab} />
           )}
           {activeTab === 'spells' && <SpellsTab campaignId={campaignId} playerId={playerId} />}
           {activeTab === 'party' && <PartyTab campaignId={campaignId} playerId={playerId} />}

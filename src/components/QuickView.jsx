@@ -63,7 +63,10 @@ function QuickView({ campaignId, playerId }) {
 
   async function submit(event) {
     event.preventDefault()
-    if (!form.notes.trim()) return
+    if (!form.notes.trim()) {
+      setFormError('Write something in the recap first.')
+      return
+    }
 
     const payload = {
       title: form.title,
@@ -112,6 +115,7 @@ function QuickView({ campaignId, playerId }) {
               </div>
               <SessionNoteForm
                 idPrefix="quick-session"
+                campaignId={campaignId}
                 form={form}
                 setForm={setForm}
                 onSubmit={submit}

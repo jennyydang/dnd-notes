@@ -94,15 +94,10 @@
   }
 }
 
-// The compact editor's textarea doesn't need the full tab's 20rem min
-// height — this panel is meant to stay small. An id selector (like
-// SessionNotesTab.scss's #session-notes) outranks the shared
-// `.field textarea` rule regardless of stylesheet import order.
-#quick-session-notes {
-  width: 100%;
-  max-width: none;
-  min-height: 8rem;
-  box-sizing: border-box;
+// The compact editor doesn't need the full tab's 20rem writing area —
+// this panel is meant to stay small.
+.quick-session-notes {
+  --rich-notes-min-height: 8rem;
 }
 
 @media (max-width: 480px) {

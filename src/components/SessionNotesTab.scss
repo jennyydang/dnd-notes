@@ -30,19 +30,10 @@
 
 }
 
-// The recap is the one long-form field on this form, so it should fill
-// the card's full width instead of the shared 65ch cap meant for shorter
-// fields, and needs more room than the default textarea height. Targeted
-// by id rather than a class: a class selector here ties in specificity
-// with the shared `.field textarea` rule, and whichever one happens to
-// come later in the compiled CSS wins — silently reverting these
-// overrides depending on unrelated import order. An id always outranks
-// a class, so this can't get clobbered the same way.
-#session-notes {
-  width: 100%;
-  max-width: none;
-  min-height: 20rem;
-  box-sizing: border-box;
+// The recap is the one long-form field on this form, so its editor gets
+// a much taller writing area than the compact Quick View one.
+.session-notes {
+  --rich-notes-min-height: 20rem;
 }
 
 // Session recaps are long-form prose, so entries stack full-width in a
@@ -192,10 +183,7 @@
   }
 
   &__notes {
-    margin: 0;
     color: $text-light;
-    white-space: pre-wrap;
-    line-height: 1.7;
   }
 
   &__actions {
@@ -207,8 +195,46 @@
     border-top: 1px solid rgba($gold-dim, 0.3);
   }
 
-  &__party {
+  &__side {
     flex: 0 0 14rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  &__mentions {
+    padding: 1.25rem;
+
+    h4 {
+      color: $gold-light;
+      font-size: 0.95rem;
+      margin-bottom: 0.6rem;
+    }
+
+    ul + h4 {
+      margin-top: 1rem;
+    }
+  }
+
+  &__mention-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  &__mention {
+    cursor: pointer;
+    font-family: inherit;
+
+    &:hover {
+      filter: brightness(1.2);
+    }
+  }
+
+  &__party {
     padding: 1.25rem;
 
     h4 {
@@ -260,7 +286,7 @@
   @media (max-width: 720px) {
     flex-direction: column;
 
-    &__party {
+    &__side {
       flex: none;
       width: 100%;
     }

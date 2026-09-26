@@ -1,9 +1,13 @@
+import { formatSessionDate } from '../lib/sessionNotes.js'
+import { RichNotesEditor } from './RichNotesEditor.jsx'
+
 // The title/date/notes fields shared by the full Session Notes tab
 // (SessionNotesTab.jsx, inside its Add/Edit modal) and the Quick View
 // widget's compact editor (QuickView.jsx). `idPrefix` keeps the two
 // instances' DOM ids apart in case both are ever mounted at once.
 function SessionNoteForm({
   idPrefix,
+  campaignId,
   form,
   setForm,
   onSubmit,
@@ -38,14 +42,18 @@ function SessionNoteForm({
         </div>
       </div>
       <div className="field">
-        <label htmlFor={`${idPrefix}-notes`}>Recap</label>
-        <textarea
-          id={`${idPrefix}-notes`}
+        <label id={`${idPrefix}-notes-label`}>Recap</label>
+        <RichNotesEditor
+          campaignId={campaignId}
+          labelId={`${idPrefix}-notes-label`}
+          className={`${idPrefix}-notes`}
           value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          onChange={(notes) => setForm((prev) => ({ ...prev, notes }))}
+          // Newly tagged NPCs get "where we met them" pre-filled with
+          // this session, so the player has a starting point later.
+          metAt={form.title || formatSessionDate(form.sessionDate)}
           placeholder="The party arrived at the gates of Waterdeep and..."
           disabled={submitting}
-          required
         />
       </div>
       {formError && <p className="empty-state empty-state--error">{formError}</p>}

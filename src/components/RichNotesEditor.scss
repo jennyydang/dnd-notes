@@ -1,0 +1,176 @@
+@use '../styles/variables' as *;
+
+.rich-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  &--disabled {
+    opacity: 0.7;
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  &__toolbar-divider {
+    width: 1px;
+    align-self: stretch;
+    margin: 0 0.2rem;
+    background: rgba($gold-dim, 0.5);
+  }
+
+  &__tool {
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    color: $text-light;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.55rem;
+    line-height: 1.3;
+
+    &:hover:not(:disabled) {
+      border-color: $gold;
+      color: $gold-light;
+    }
+
+    &--active {
+      border-color: $gold;
+      background: rgba($gold, 0.15);
+      color: $gold-light;
+    }
+  }
+
+  &__content {
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    color: $text-light;
+    padding: 0.55rem 0.7rem;
+    line-height: 1.6;
+    outline: none;
+    // Sized per-instance via --rich-notes-min-height (the full tab wants
+    // a big writing area, Quick View a compact one).
+    min-height: var(--rich-notes-min-height, 8rem);
+    overflow-wrap: anywhere;
+
+    &:focus {
+      border-color: $gold;
+    }
+
+    p {
+      margin: 0 0 0.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    ul,
+    ol {
+      margin: 0 0 0.5rem;
+      padding-left: 1.4rem;
+    }
+
+    p.is-editor-empty:first-child::before {
+      content: attr(data-placeholder);
+      color: $text-muted;
+      opacity: 0.7;
+      float: left;
+      height: 0;
+      pointer-events: none;
+    }
+
+    // Read-only recaps sit directly on the card, not in an input box.
+    &--readonly {
+      background: transparent;
+      border: none;
+      padding: 0;
+      min-height: 0;
+      line-height: 1.7;
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.78rem;
+    color: $text-muted;
+
+    kbd {
+      font-family: inherit;
+      border: 1px solid rgba($gold-dim, 0.6);
+      border-radius: 3px;
+      padding: 0 0.25rem;
+      color: $gold-light;
+    }
+  }
+
+  // Rendered into document.body (portal) so it isn't clipped by the
+  // modal / Quick View panel's scroll container. Above Modal (z 100).
+  &__menu {
+    position: fixed;
+    z-index: 300;
+    list-style: none;
+    margin: 0;
+    padding: 0.3rem;
+    min-width: 12rem;
+    max-width: min(20rem, calc(100vw - 2rem));
+    background: $bg-panel-raised;
+  }
+
+  &__option {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: $radius;
+    color: $text-light;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.9rem;
+
+    &--active {
+      background: rgba($gold, 0.15);
+      color: $gold-light;
+    }
+
+    &--create {
+      color: $text-muted;
+
+      strong {
+        color: $gold-light;
+      }
+    }
+  }
+}
+
+.mention {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 0.92em;
+  line-height: 1.45;
+  white-space: nowrap;
+
+  &--person {
+    background: rgba($maroon-light, 0.35);
+    border: 1px solid rgba($maroon-light, 0.8);
+    color: $maroon-text;
+
+    &::before {
+      content: '👤 ';
+    }
+  }
+
+  &--place {
+    background: rgba($green-light, 0.25);
+    border: 1px solid rgba($green-light, 0.8);
+    color: $green-text;
+
+    &::before {
+      content: '📍 ';
+    }
+  }
+}

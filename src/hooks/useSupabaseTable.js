@@ -4,6 +4,17 @@ import { supabase } from '../lib/supabaseClient.js'
 const identity = (row) => row
 const noFilters = {}
 
+const CHANGE_EVENT = 'supabase-table-changed'
+
+// Each hook instance keeps its own copy of a table with no realtime
+// subscription, so a row created from somewhere else (e.g. an NPC tagged
+// from the session notes editor while the NPCs tab is open behind the
+// Quick View) wouldn't otherwise show up until a remount. Call this after
+// such a write so every mounted instance of that table refetches.
+export function notifyTableChanged(table) {
+  window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: table }))
+}
+
 export function useSupabaseTable(
   table,
   { fromRow = identity, orderBy = 'created_at', ascending = true, filters = noFilters } = {},
@@ -46,6 +57,14 @@ export function useSupabaseTable(
     // filterKey deliberately triggers a refetch even though `load` itself
     // reads filters via a ref (so its own identity doesn't depend on them).
   }, [load, filterKey])
+
+  useEffect(() => {
+    function onChange(event) {
+      if (event.detail === table) load()
+    }
+    window.addEventListener(CHANGE_EVENT, onChange)
+    return () => window.removeEventListener(CHANGE_EVENT, onChange)
+  }, [table, load])
 
   const addItem = useCallback(
     async (payload) => {
