@@ -145,6 +145,7 @@
 // actions pinned.
 .party-card,
 .loot-card,
+.place-card,
 .npc-card,
 .custom-entry-card,
 .session-card,
@@ -162,6 +163,7 @@
 // letting the card scroll. Session cards are a row, so they're left out.
 .party-card,
 .loot-card,
+.place-card,
 .npc-card,
 .custom-entry-card,
 .lore-card,
@@ -170,5 +172,34 @@
 .goal-card {
   > * {
     flex-shrink: 0;
+  }
+}
+
+// "#city" / "~faction" / "$magic-item" pill on a card, colour-matched to
+// the session-notes tag chips for the same group (RichNotesEditor.scss).
+.tag-badge {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+
+  &--place {
+    background: rgba($green-light, 0.25);
+    border: 1px solid rgba($green-light, 0.8);
+    color: $green-text;
+  }
+
+  &--lore {
+    background: rgba($gray-light, 0.3);
+    border: 1px solid rgba($gray-light, 0.9);
+    color: $gray-text;
+  }
+
+  &--loot {
+    background: rgba($gold, 0.18);
+    border: 1px solid rgba($gold, 0.8);
+    color: $gold-light;
   }
 }

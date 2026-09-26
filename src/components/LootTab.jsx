@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import TabNav from './TabNav.jsx'
 import Modal from './Modal.jsx'
+import TagBadge from './TagBadge.jsx'
+import { TAG_GROUPS, tagText } from '../lib/tags.js'
 import './LootTab.scss'
 
 const ALL_HOLDERS = 'all'
@@ -12,11 +14,12 @@ const SORT_MODES = [
   { id: 'alpha', label: 'A → Z' },
 ]
 
-const emptyForm = { item: '', foundAt: '', holder: '', notes: '', usable: false, used: false }
+const emptyForm = { item: '', kind: '', foundAt: '', holder: '', notes: '', usable: false, used: false }
 
 const fromRow = (r) => ({
   id: r.id,
   item: r.item,
+  kind: r.kind,
   foundAt: r.found_at,
   holder: r.holder,
   notes: r.notes,
@@ -96,6 +99,7 @@ function LootTab({ campaignId }) {
   function startEditing(entry) {
     setForm({
       item: entry.item,
+      kind: entry.kind,
       foundAt: entry.foundAt,
       holder: entry.holder,
       notes: entry.notes,
@@ -120,6 +124,7 @@ function LootTab({ campaignId }) {
 
     const payload = {
       item: form.item,
+      kind: form.kind,
       found_at: form.foundAt,
       holder: form.holder,
       notes: form.notes,
@@ -174,6 +179,21 @@ function LootTab({ campaignId }) {
                 placeholder="Ring of Feather Falling"
                 required
               />
+            </div>
+            <div className="field">
+              <label htmlFor="loot-kind">Tag</label>
+              <select
+                id="loot-kind"
+                value={form.kind}
+                onChange={(e) => setForm({ ...form, kind: e.target.value })}
+              >
+                <option value="">None</option>
+                {TAG_GROUPS.loot.kinds.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {tagText('loot', kind)}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="loot-found">Where we got it</label>
@@ -327,6 +347,7 @@ function LootTab({ campaignId }) {
               )}
               <div className="loot-card__main">
                 <h3 className="loot-card__item">{entry.item}</h3>
+                <TagBadge group="loot" kind={entry.kind} />
                 {entry.foundAt && (
                   <span className="loot-card__found-at">{entry.foundAt}</span>
                 )}

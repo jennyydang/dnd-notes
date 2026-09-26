@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
+import TagBadge from './TagBadge.jsx'
+import { TAG_GROUPS, matchKind } from '../lib/tags.js'
 import './LoreTab.scss'
 
 const emptyForm = { title: '', category: '', notes: '' }
@@ -98,8 +100,14 @@ function LoreTab({ campaignId }) {
                 type="text"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                placeholder="History / Location / Deity / Organization"
+                placeholder="Faction / Lore / Religion / History"
+                list="lore-category-tags"
               />
+              <datalist id="lore-category-tags">
+                {TAG_GROUPS.lore.kinds.map((kind) => (
+                  <option key={kind} value={kind} />
+                ))}
+              </datalist>
             </div>
           </div>
           <div className="field">
@@ -156,8 +164,12 @@ function LoreTab({ campaignId }) {
             <article className="lore-card panel" key={entry.id}>
               <div className="lore-card__main">
                 <h3 className="lore-card__title">{entry.title}</h3>
-                {entry.category && (
-                  <span className="lore-card__category">{entry.category}</span>
+                {/* A category matching a ~tag shows as that tag's badge;
+                    any other free-text category keeps the plain label. */}
+                {matchKind('lore', entry.category) ? (
+                  <TagBadge group="lore" kind={entry.category} />
+                ) : (
+                  entry.category && <span className="lore-card__category">{entry.category}</span>
                 )}
               </div>
               {entry.notes && <p className="lore-card__notes">{entry.notes}</p>}

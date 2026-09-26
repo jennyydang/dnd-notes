@@ -1,3 +1,5 @@
+import { TAG_GROUPS, groupForChar } from './tags.js'
+
 // Session recaps are stored as HTML produced by the rich-text editor
 // (RichNotesEditor.jsx). Rows written before that editor existed hold
 // plain text instead — these helpers let both shapes be read the same way.
@@ -40,19 +42,20 @@ export function notesToPlainText(notes) {
     .trim()
 }
 
-// Every person (@) and place (#) tagged in a recap, de-duplicated by id,
-// in the order they first appear.
+// Everything tagged in a recap, grouped by tag type (person / place /
+// lore / loot — see lib/tags.js), de-duplicated by id, in the order each
+// first appears.
 export function extractMentions(notes) {
-  const people = new Map()
-  const places = new Map()
-  if (!notes || !isHtml(notes)) return { people: [], places: [] }
-
-  for (const el of parse(notes).querySelectorAll('span[data-type="mention"]')) {
-    const id = el.getAttribute('data-id')
-    const label = el.getAttribute('data-label') || el.textContent
-    if (!id) continue
-    const target = el.getAttribute('data-mention-suggestion-char') === '#' ? places : people
-    if (!target.has(id)) target.set(id, { id, label })
+  const groups = Object.fromEntries(Object.keys(TAG_GROUPS).map((group) => [group, new Map()]))
+  if (notes && isHtml(notes)) {
+    for (const el of parse(notes).querySelectorAll('span[data-type="mention"]')) {
+      const id = el.getAttribute('data-id')
+      if (!id) continue
+      const group = groupForChar(el.getAttribute('data-mention-suggestion-char'))
+      const label = el.getAttribute('data-label') || el.textContent
+      const kind = el.getAttribute('data-kind')
+      if (!groups[group].has(id)) groups[group].set(id, { id, label, kind })
+    }
   }
-  return { people: [...people.values()], places: [...places.values()] }
+  return Object.fromEntries(Object.entries(groups).map(([group, map]) => [group, [...map.values()]]))
 }

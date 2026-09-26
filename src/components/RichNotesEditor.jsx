@@ -8,17 +8,10 @@ import Mention from '@tiptap/extension-mention'
 import Placeholder from '@tiptap/extension-placeholder'
 import { notifyTableChanged, useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { toEditorContent } from '../lib/richNotes.js'
+import { TAG_GROUPS, groupForChar, matchKind, tagSlug, tagText } from '../lib/tags.js'
 import './RichNotesEditor.scss'
 
-// "@" tags a person (an NPC), "#" tags a place (a Lore entry categorised
-// as a location — there's no dedicated places table).
-const KINDS = {
-  person: { char: '@', table: 'npcs', noun: 'person' },
-  place: { char: '#', table: 'lore_entries', noun: 'place' },
-}
-
-const PLACE_CATEGORY = 'Location'
-const isPlaceCategory = (category) => /location|place/i.test(category || '')
+const GROUP_ORDER = ['person', 'place', 'lore', 'loot']
 
 const MAX_SUGGESTIONS = 6
 // Names can have spaces ("Elandra Voss"), so the suggestion stays open
@@ -26,8 +19,25 @@ const MAX_SUGGESTIONS = 6
 // writing a sentence, so stop offering to turn it into a name.
 const MAX_NAME_WORDS = 4
 
-const npcFromRow = (r) => ({ id: r.id, label: r.name })
-const loreFromRow = (r) => ({ id: r.id, label: r.title, category: r.category })
+const npcFromRow = (r) => ({ id: r.id, label: r.name, kind: null })
+const placeFromRow = (r) => ({ id: r.id, label: r.name, kind: matchKind('place', r.kind) })
+const loreFromRow = (r) => ({ id: r.id, label: r.title, kind: matchKind('lore', r.category) })
+const lootFromRow = (r) => ({ id: r.id, label: r.item, kind: matchKind('loot', r.kind) })
+
+// Mention plus a `kind` attribute, so a chip remembers which tag it was
+// made with (e.g. "#dungeon") rather than just which trigger character.
+const TaggedMention = Mention.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      kind: {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-kind'),
+        renderHTML: (attributes) => (attributes.kind ? { 'data-kind': attributes.kind } : {}),
+      },
+    }
+  },
+})
 
 // StarterKit minus the block types a session recap doesn't need —
 // headings in particular would fight with "#" as the place trigger.
@@ -41,13 +51,17 @@ function baseExtensions(mentionOptions = {}) {
       horizontalRule: false,
       link: false,
     }),
-    Mention.configure({
+    TaggedMention.configure({
       renderText: ({ node }) => node.attrs.label ?? '',
       renderHTML: ({ options, node }) => {
-        const kind = node.attrs.mentionSuggestionChar === KINDS.place.char ? 'place' : 'person'
+        const group = groupForChar(node.attrs.mentionSuggestionChar)
+        const kind = matchKind(group, node.attrs.kind)
         return [
           'span',
-          mergeAttributes(options.HTMLAttributes, { class: `mention mention--${kind}` }),
+          mergeAttributes(options.HTMLAttributes, {
+            class: `mention mention--${group}`,
+            title: kind ? tagText(group, kind) : TAG_GROUPS[group].noun,
+          }),
           node.attrs.label ?? '',
         ]
       },
@@ -56,20 +70,43 @@ function baseExtensions(mentionOptions = {}) {
   ]
 }
 
-function filterItems(list, query) {
-  const trimmed = query.trim()
-  if (trimmed.split(/\s+/).length > MAX_NAME_WORDS) return []
-  const needle = trimmed.toLowerCase()
-  const matches = list
-    .filter((item) => item.label.toLowerCase().includes(needle))
-    .slice(0, MAX_SUGGESTIONS)
-  const exact = list.some((item) => item.label.trim().toLowerCase() === needle)
-  return needle && !exact ? [...matches, { create: true, label: trimmed }] : matches
+// "city Waterdeep" → { kind: 'City', name: 'Waterdeep' }, so typing
+// "#city Waterdeep" picks the tag up front. Without a leading tag word
+// the whole query is the name.
+function parseQuery(group, query) {
+  const text = query.trimStart()
+  const lower = text.toLowerCase()
+  for (const kind of TAG_GROUPS[group].kinds) {
+    for (const word of new Set([tagSlug(kind), kind.toLowerCase()])) {
+      if (lower === word) return { kind, name: '' }
+      if (lower.startsWith(`${word} `)) return { kind, name: text.slice(word.length + 1).trim() }
+    }
+  }
+  return { kind: null, name: text.trim() }
 }
 
-// Rich-text recap editor with inline people/place tags. Tagging someone
-// who doesn't exist yet creates their NPC card (or Lore location) on the
-// spot, so the player can fill in the details later from that tab.
+function filterItems(group, list, query) {
+  const { kind, name } = parseQuery(group, query)
+  if (name.split(/\s+/).length > MAX_NAME_WORDS) return []
+  const needle = name.toLowerCase()
+  const pool = kind ? list.filter((item) => item.kind === kind) : list
+  const matches = pool
+    .filter((item) => item.label.toLowerCase().includes(needle))
+    .slice(0, MAX_SUGGESTIONS)
+  const exact = pool.some((item) => item.label.trim().toLowerCase() === needle)
+  if (!name || exact) return matches
+
+  // One "create" row per tag the new entry could get — or just the one
+  // already typed, e.g. "#city ..." only offers a new city.
+  const kinds = TAG_GROUPS[group].kinds
+  const createKinds = kind ? [kind] : kinds.length ? kinds : [null]
+  return [...matches, ...createKinds.map((k) => ({ create: true, kind: k, label: name }))]
+}
+
+// Rich-text recap editor with inline tags: @person, #place, ~lore and
+// $loot. Tagging something that doesn't exist yet creates it on the spot
+// (NPC card, Maps-tab place, Lore entry or Loot item) with the chosen tag,
+// so the player can fill in the details later from that tab.
 // `value` / `onChange` are HTML strings; an empty editor reports ''.
 export function RichNotesEditor({
   campaignId,
@@ -82,38 +119,33 @@ export function RichNotesEditor({
   className = '',
 }) {
   const filters = { campaign_id: campaignId }
-  const { items: people, addItem: addNpc } = useSupabaseTable('npcs', {
-    fromRow: npcFromRow,
-    orderBy: 'name',
-    filters,
-  })
-  const { items: lore, addItem: addLore } = useSupabaseTable('lore_entries', {
-    fromRow: loreFromRow,
-    orderBy: 'title',
-    filters,
-  })
-  const places = lore.filter((entry) => isPlaceCategory(entry.category))
+  const tables = {
+    person: useSupabaseTable('npcs', { fromRow: npcFromRow, orderBy: 'name', filters }),
+    place: useSupabaseTable('places', { fromRow: placeFromRow, orderBy: 'name', filters }),
+    lore: useSupabaseTable('lore_entries', { fromRow: loreFromRow, orderBy: 'title', filters }),
+    loot: useSupabaseTable('loot', { fromRow: lootFromRow, orderBy: 'item', filters }),
+  }
 
   // The editor and its suggestion plugins are built once, so everything
   // they read at call time goes through refs to always see current data.
-  const listsRef = useRef({ person: people, place: places })
-  listsRef.current = { person: people, place: places }
+  const listsRef = useRef(null)
+  listsRef.current = Object.fromEntries(GROUP_ORDER.map((g) => [g, tables[g].items]))
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
   const metAtRef = useRef(metAt)
   metAtRef.current = metAt
   const createRef = useRef(null)
-  createRef.current = {
-    person: async (name) => {
-      const npc = await addNpc({ name, met_at: metAtRef.current.trim() })
-      notifyTableChanged('npcs')
-      return npc
-    },
-    place: async (title) => {
-      const entry = await addLore({ title, category: PLACE_CATEGORY, notes: '' })
-      notifyTableChanged('lore_entries')
-      return entry
-    },
+  createRef.current = async (group, name, kind) => {
+    const origin = metAtRef.current.trim()
+    const [table, payload] = {
+      person: ['npcs', { name, met_at: origin }],
+      place: ['places', { name, kind, notes: '' }],
+      lore: ['lore_entries', { title: name, category: kind, notes: '' }],
+      loot: ['loot', { item: name, kind, found_at: origin, holder: '', notes: '' }],
+    }[group]
+    const created = await tables[group].addItem(payload)
+    notifyTableChanged(table)
+    return created
   }
 
   const [menu, setMenu] = useState(null)
@@ -127,15 +159,15 @@ export function RichNotesEditor({
     const item = current.items[index]
     if (!item || creatingRef.current) return
     if (!item.create) {
-      current.command({ id: item.id, label: item.label })
+      current.command({ id: item.id, label: item.label, kind: item.kind })
       return
     }
     creatingRef.current = true
     setCreating(true)
     setCreateError(null)
     try {
-      const created = await createRef.current[current.kind](item.label)
-      current.command({ id: created.id, label: item.label })
+      const created = await createRef.current(current.group, item.label, item.kind)
+      current.command({ id: created.id, label: item.label, kind: item.kind })
     } catch (err) {
       setCreateError(`Couldn't add ${item.label}: ${err.message}`)
     } finally {
@@ -146,16 +178,16 @@ export function RichNotesEditor({
   const chooseRef = useRef(choose)
   chooseRef.current = choose
 
-  function suggestionFor(kind) {
+  function suggestionFor(group) {
     return {
-      char: KINDS[kind].char,
-      pluginKey: new PluginKey(`mention-${kind}`),
+      char: TAG_GROUPS[group].char,
+      pluginKey: new PluginKey(`mention-${group}`),
       allowSpaces: true,
-      items: ({ query }) => filterItems(listsRef.current[kind], query),
+      items: ({ query }) => filterItems(group, listsRef.current[group], query),
       render: () => {
         const show = (props) =>
           setMenu({
-            kind,
+            group,
             items: props.items,
             command: props.command,
             rect: props.clientRect?.() ?? null,
@@ -194,7 +226,7 @@ export function RichNotesEditor({
   const lastValueRef = useRef(value)
   const editor = useEditor({
     extensions: [
-      ...baseExtensions({ suggestions: [suggestionFor('person'), suggestionFor('place')] }),
+      ...baseExtensions({ suggestions: GROUP_ORDER.map(suggestionFor) }),
       Placeholder.configure({ placeholder }),
     ],
     content: toEditorContent(value),
@@ -234,23 +266,24 @@ export function RichNotesEditor({
     }),
   })
 
-  // Toolbar shortcut for players who don't know the @ / # triggers: types
-  // the trigger character for them, adding a space first if needed since
-  // a trigger glued to the previous word doesn't open the suggestions.
-  function insertTrigger(kind) {
+  // Toolbar shortcut for players who don't know the trigger characters:
+  // types it for them, adding a space first if needed since a trigger
+  // glued to the previous word doesn't open the suggestions.
+  function insertTrigger(group) {
     if (!editor) return
     const { $from } = editor.state.selection
     const before = $from.parent.textBetween(Math.max(0, $from.parentOffset - 1), $from.parentOffset)
     const prefix = before && !/\s/.test(before) ? ' ' : ''
-    editor.chain().focus().insertContent(`${prefix}${KINDS[kind].char}`).run()
+    editor.chain().focus().insertContent(`${prefix}${TAG_GROUPS[group].char}`).run()
   }
 
   // Toolbar buttons act on mousedown-prevented clicks so the editor keeps
   // its selection instead of losing focus to the button.
   const keepFocus = (event) => event.preventDefault()
 
-  const toolbarButton = (label, title, isActive, onClick) => (
+  const toolbarButton = (key, label, title, isActive, onClick) => (
     <button
+      key={key}
       type="button"
       className={`rich-notes__tool${isActive ? ' rich-notes__tool--active' : ''}`}
       title={title}
@@ -263,28 +296,38 @@ export function RichNotesEditor({
     </button>
   )
 
+  const capitalize = (text) => text[0].toUpperCase() + text.slice(1)
+
   return (
     <div className={`rich-notes${disabled ? ' rich-notes--disabled' : ''} ${className}`}>
       <div className="rich-notes__toolbar" role="toolbar" aria-label="Formatting">
-        {toolbarButton(<strong>B</strong>, 'Bold', active?.bold, () =>
+        {toolbarButton('bold', <strong>B</strong>, 'Bold', active?.bold, () =>
           editor.chain().focus().toggleBold().run(),
         )}
-        {toolbarButton(<em>I</em>, 'Italic', active?.italic, () =>
+        {toolbarButton('italic', <em>I</em>, 'Italic', active?.italic, () =>
           editor.chain().focus().toggleItalic().run(),
         )}
-        {toolbarButton('• List', 'Bulleted list', active?.bulletList, () =>
+        {toolbarButton('list', '• List', 'Bulleted list', active?.bulletList, () =>
           editor.chain().focus().toggleBulletList().run(),
         )}
         <span className="rich-notes__toolbar-divider" aria-hidden="true" />
-        {toolbarButton('👤 Person', 'Tag a person (or type @)', false, () => insertTrigger('person'))}
-        {toolbarButton('📍 Place', 'Tag a place (or type #)', false, () => insertTrigger('place'))}
+        {GROUP_ORDER.map((group) => {
+          const { icon, noun, char } = TAG_GROUPS[group]
+          return toolbarButton(
+            group,
+            `${icon} ${capitalize(noun)}`,
+            `Tag ${noun === 'person' ? 'a person' : noun === 'place' ? 'a place' : noun} (or type ${char})`,
+            false,
+            () => insertTrigger(group),
+          )
+        })}
       </div>
 
       <EditorContent editor={editor} />
 
       <p className="rich-notes__hint">
-        Type <kbd>@</kbd> to tag a person or <kbd>#</kbd> to tag a place. New names are added to
-        the NPCs / Lore tabs automatically.
+        Tag with <kbd>@</kbd> person, <kbd>#</kbd> place, <kbd>~</kbd> lore, <kbd>$</kbd> loot —
+        e.g. <kbd>#city Waterdeep</kbd>. New ones are added to their tab automatically.
       </p>
       {createError && <p className="empty-state empty-state--error">{createError}</p>}
 
@@ -296,7 +339,7 @@ export function RichNotesEditor({
             style={{ top: menu.rect.bottom + 4, left: menu.rect.left }}
           >
             {menu.items.map((item, index) => (
-              <li key={item.create ? '__create__' : item.id}>
+              <li key={item.create ? `__create__${item.kind}` : item.id}>
                 <button
                   type="button"
                   role="option"
@@ -309,13 +352,17 @@ export function RichNotesEditor({
                 >
                   {item.create ? (
                     <>
-                      {creating ? 'Adding…' : `+ New ${KINDS[menu.kind].noun}:`}{' '}
+                      {creating
+                        ? 'Adding…'
+                        : `+ New ${item.kind ? tagText(menu.group, item.kind) : TAG_GROUPS[menu.group].noun}:`}{' '}
                       <strong>{item.label}</strong>
                     </>
                   ) : (
                     <>
-                      <span aria-hidden="true">{menu.kind === 'place' ? '📍' : '👤'}</span>{' '}
-                      {item.label}
+                      <span aria-hidden="true">{TAG_GROUPS[menu.group].icon}</span> {item.label}
+                      {item.kind && (
+                        <span className="rich-notes__option-tag">{tagText(menu.group, item.kind)}</span>
+                      )}
                     </>
                   )}
                 </button>

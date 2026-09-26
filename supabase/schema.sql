@@ -175,6 +175,20 @@ create table if not exists loot (
 -- button on their card; "used" flips once a player confirms using it.
 alter table loot add column if not exists usable boolean not null default false;
 alter table loot add column if not exists used boolean not null default false;
+-- The $tag the item was logged with from session notes ('Item',
+-- 'Artifact', 'Magic Item'), or '' for untagged loot.
+alter table loot add column if not exists kind text not null default '';
+
+-- Named places shown as cards under the Maps tab. Usually created by
+-- tagging "#city Waterdeep" etc. in session notes; kind is that tag.
+create table if not exists places (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  name text not null,
+  kind text not null default 'Location',
+  notes text not null default '',
+  created_at timestamptz not null default now()
+);
 
 create table if not exists quests (
   id uuid primary key default gen_random_uuid(),
@@ -436,6 +450,7 @@ alter table maps               enable row level security;
 alter table map_markers         enable row level security;
 alter table npcs               enable row level security;
 alter table loot                enable row level security;
+alter table places              enable row level security;
 alter table quests              enable row level security;
 alter table party_members       enable row level security;
 alter table party_goals         enable row level security;
@@ -459,6 +474,7 @@ drop policy if exists "anon full access maps"               on maps;
 drop policy if exists "anon full access map_markers"        on map_markers;
 drop policy if exists "anon full access npcs"               on npcs;
 drop policy if exists "anon full access loot"               on loot;
+drop policy if exists "anon full access places"             on places;
 drop policy if exists "anon full access quests"             on quests;
 drop policy if exists "anon full access party_members"      on party_members;
 drop policy if exists "anon full access party_goals"        on party_goals;
@@ -477,6 +493,7 @@ create policy "anon full access maps"               on maps               for al
 create policy "anon full access map_markers"        on map_markers        for all to anon using (true) with check (true);
 create policy "anon full access npcs"               on npcs               for all to anon using (true) with check (true);
 create policy "anon full access loot"               on loot               for all to anon using (true) with check (true);
+create policy "anon full access places"             on places             for all to anon using (true) with check (true);
 create policy "anon full access quests"             on quests             for all to anon using (true) with check (true);
 create policy "anon full access party_members"      on party_members      for all to anon using (true) with check (true);
 create policy "anon full access party_goals"        on party_goals        for all to anon using (true) with check (true);

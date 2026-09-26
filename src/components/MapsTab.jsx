@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import WorldMapViewer from './WorldMapViewer.jsx'
+import PlacesSection from './PlacesSection.jsx'
 import './MapsTab.scss'
 
 const BUCKET = 'maps'
@@ -164,6 +165,8 @@ function MapsTab({ campaignId }) {
           ))}
         </div>
       )}
+
+      <PlacesSection campaignId={campaignId} />
 
       {lightboxMap && (
         <div

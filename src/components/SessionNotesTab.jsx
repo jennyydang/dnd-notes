@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
 import { extractMentions, notesToPlainText } from '../lib/richNotes.js'
+import { TAG_GROUPS } from '../lib/tags.js'
 import Modal from './Modal.jsx'
 import SessionNoteForm from './SessionNoteForm.jsx'
 import { RichNotesView } from './RichNotesEditor.jsx'
@@ -57,37 +58,41 @@ function SessionPartyPanel({ campaignId }) {
   )
 }
 
-// Everyone tagged with @ / # in this recap, as links over to the tab
-// where their card lives.
-function SessionMentionsPanel({ notes, onOpenTab }) {
-  const { people, places } = useMemo(() => extractMentions(notes), [notes])
-  if (people.length === 0 && places.length === 0) return null
+const MENTION_SECTIONS = [
+  { group: 'person', title: 'People Met', tabLabel: 'NPCs' },
+  { group: 'place', title: 'Places Visited', tabLabel: 'Maps' },
+  { group: 'lore', title: 'Lore', tabLabel: 'Lore' },
+  { group: 'loot', title: 'Loot Found', tabLabel: 'Loot' },
+]
 
-  const section = (title, list, tab, kind) =>
-    list.length > 0 && (
-      <>
-        <h4>{title}</h4>
-        <ul className="session-detail__mention-list">
-          {list.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                className={`mention mention--${kind} session-detail__mention`}
-                onClick={() => onOpenTab?.(tab)}
-                title={`Open the ${tab === 'npcs' ? 'NPCs' : 'Lore'} tab`}
-              >
-                {item.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </>
-    )
+// Everything tagged in this recap (@ / # / ~ / $), as links over to the
+// tab where each one's card lives.
+function SessionMentionsPanel({ notes, onOpenTab }) {
+  const mentions = useMemo(() => extractMentions(notes), [notes])
+  const sections = MENTION_SECTIONS.filter(({ group }) => mentions[group].length > 0)
+  if (sections.length === 0) return null
 
   return (
     <aside className="session-detail__mentions panel">
-      {section('People Met', people, 'npcs', 'person')}
-      {section('Places Visited', places, 'lore', 'place')}
+      {sections.map(({ group, title, tabLabel }) => (
+        <section key={group}>
+          <h4>{title}</h4>
+          <ul className="session-detail__mention-list">
+            {mentions[group].map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={`mention mention--${group} session-detail__mention`}
+                  onClick={() => onOpenTab?.(TAG_GROUPS[group].tab)}
+                  title={`Open the ${tabLabel} tab`}
+                >
+                  {item.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </aside>
   )
 }

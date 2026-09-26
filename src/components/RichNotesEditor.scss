@@ -144,6 +144,12 @@
       }
     }
   }
+
+  &__option-tag {
+    margin-left: 0.4rem;
+    font-size: 0.75rem;
+    color: $text-muted;
+  }
 }
 
 .mention {
@@ -171,6 +177,26 @@
 
     &::before {
       content: '📍 ';
+    }
+  }
+
+  &--lore {
+    background: rgba($gray-light, 0.3);
+    border: 1px solid rgba($gray-light, 0.9);
+    color: $gray-text;
+
+    &::before {
+      content: '📜 ';
+    }
+  }
+
+  &--loot {
+    background: rgba($gold, 0.18);
+    border: 1px solid rgba($gold, 0.8);
+    color: $gold-light;
+
+    &::before {
+      content: '💰 ';
     }
   }
 }
