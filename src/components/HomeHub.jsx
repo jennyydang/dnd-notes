@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Children, useState } from 'react'
 import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
 import { useActiveCharacter } from '../hooks/useActiveCharacter.js'
 import { useCharacterSheet } from '../hooks/useCharacterSheet.js'
@@ -10,7 +10,6 @@ import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessi
 import { exportCampaign } from '../lib/exportCampaign.js'
 import QuickNoteInput from './QuickNoteInput.jsx'
 import { SectionCard, StatusMessage } from './ui.jsx'
-import CardRail from './CardRail.jsx'
 import './HomeHub.scss'
 
 const QUICK_ACTIONS = [
@@ -20,9 +19,22 @@ const QUICK_ACTIONS = [
   { type: 'clue', label: 'Clue', icon: '🔎' },
 ]
 
-const RECENT_LIMIT = 8
+const RECENT_LIMIT = 5
+const THREAD_LIMIT = 5
+const SESSION_LIMIT = 3
 
-// One card in a Home rail.
+// A plain vertical list of MiniCards (children keep their own keys).
+function CardList({ label, children }) {
+  return (
+    <ul className="home-hub__cards" aria-label={label}>
+      {Children.toArray(children).map((child) => (
+        <li key={child.key}>{child}</li>
+      ))}
+    </ul>
+  )
+}
+
+// One compact card in a Home list.
 function MiniCard({ icon, type, title, meta, onClick }) {
   return (
     <button type="button" className="mini-card" onClick={onClick}>
@@ -228,8 +240,8 @@ function HomeHub({ campaignName }) {
             No active quests or party goals. Add one when the story hands you a hook.
           </StatusMessage>
           {openThreads.length > 0 && (
-            <CardRail label="Open threads">
-              {openThreads.map((e) => (
+            <CardList label="Open threads">
+              {openThreads.slice(0, THREAD_LIMIT).map((e) => (
                 <MiniCard
                   key={`${e.type}-${e.id}`}
                   icon={e.icon}
@@ -239,7 +251,7 @@ function HomeHub({ campaignName }) {
                   onClick={() => open(e)}
                 />
               ))}
-            </CardRail>
+            </CardList>
           )}
         </SectionCard>
 
@@ -256,8 +268,8 @@ function HomeHub({ campaignName }) {
             No session recaps yet. End a session to turn your quick notes into one.
           </StatusMessage>
           {sessions.length > 0 && (
-            <CardRail label="Recent sessions">
-              {sessions.slice(0, 6).map((s) => (
+            <CardList label="Recent sessions">
+              {sessions.slice(0, SESSION_LIMIT).map((s) => (
                 <MiniCard
                   key={s.id}
                   icon="📖"
@@ -267,7 +279,7 @@ function HomeHub({ campaignName }) {
                   onClick={() => open(s)}
                 />
               ))}
-            </CardRail>
+            </CardList>
           )}
         </SectionCard>
 
@@ -276,7 +288,7 @@ function HomeHub({ campaignName }) {
             Nothing yet — NPCs, places and quests you add will show up here.
           </StatusMessage>
           {(recentEntries.length > 0 || quickNotes.notes.length > 0) && (
-            <CardRail label="Recently added">
+            <CardList label="Recently added">
               {[
                 ...quickNotes.notes.slice(0, 2).map((n) => (
                   <MiniCard
@@ -299,7 +311,7 @@ function HomeHub({ campaignName }) {
                   />
                 )),
               ]}
-            </CardRail>
+            </CardList>
           )}
         </SectionCard>
       </div>
