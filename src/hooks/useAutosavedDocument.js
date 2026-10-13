@@ -22,6 +22,8 @@ export function useAutosavedDocument({ table, filters, enabled = true, fromRow, 
     : Object.fromEntries(Object.keys(filters).map((key) => [key, NEVER_MATCHES]))
   const { items, loading, error, addItem, updateItem } = useSupabaseTable(table, {
     fromRow: identity,
+    // Every autosaved table has updated_at (session_prep has no created_at).
+    orderBy: 'updated_at',
     filters: safeFilters,
   })
   const row = enabled ? items[0] || null : null
@@ -39,9 +41,11 @@ export function useAutosavedDocument({ table, filters, enabled = true, fromRow, 
   toPayloadRef.current = toPayload
 
   // Seed once. Later refetches (our own saves echoing back, or another
-  // device) don't overwrite what's on screen mid-edit.
+  // device) don't overwrite what's on screen mid-edit. Never seed from a
+  // failed load: an empty document would then be saved as a new row on
+  // top of the one we couldn't read.
   useEffect(() => {
-    if (!enabled || loading) return
+    if (!enabled || loading || error) return
     if (seededRef.current) {
       if (row && !rowIdRef.current) rowIdRef.current = row.id
       return
@@ -53,7 +57,7 @@ export function useAutosavedDocument({ table, filters, enabled = true, fromRow, 
     setDoc(initial)
     // fromRow is a pure mapping supplied by the caller.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, loading, row])
+  }, [enabled, loading, error, row])
 
   const save = useCallback(async () => {
     clearTimeout(timerRef.current)
