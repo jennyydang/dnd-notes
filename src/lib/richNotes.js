@@ -36,7 +36,10 @@ function parse(notes) {
 export function notesToPlainText(notes) {
   if (!notes || !isHtml(notes)) return notes || ''
   const doc = parse(notes)
+  // A list item's text usually sits in its own <p>; only take the <li>
+  // itself when it has none, or the line shows up twice.
   return [...doc.body.querySelectorAll('p, li')]
+    .filter((el) => el.tagName === 'P' || !el.querySelector(':scope > p'))
     .map((el) => el.textContent)
     .join('\n')
     .trim()

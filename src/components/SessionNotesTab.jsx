@@ -7,6 +7,7 @@ import { TAG_GROUPS } from '../lib/tags.js'
 import Modal from './Modal.jsx'
 import { confirmDelete } from '../lib/confirm.js'
 import SessionNoteForm from './SessionNoteForm.jsx'
+import ExportNotesDialog from './ExportNotesDialog.jsx'
 import { RichNotesView } from './RichNotesEditor.jsx'
 import './SessionNotesTab.scss'
 
@@ -19,6 +20,7 @@ const fromRow = (r) => ({
   title: r.title,
   sessionDate: r.session_date,
   notes: r.notes,
+  createdAt: r.created_at,
 })
 
 const partyFromRow = (r) => ({
@@ -99,7 +101,7 @@ function SessionMentionsPanel({ notes, onOpenTab }) {
   )
 }
 
-function SessionNotesTab({ campaignId, playerId, onOpenTab, addRequest }) {
+function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addRequest }) {
   // Session notes are personal — scoped to this player within the
   // campaign, not shared like every other tab. Admin has no playerId
   // (isn't a player account), so it falls back to seeing every note in
@@ -120,6 +122,8 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab, addRequest }) {
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [viewingId, setViewingId] = useState(null)
+  // What the Export dialog is for: 'all', or one session's id.
+  const [exportTarget, setExportTarget] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
   // Saving waits on the insert plus a refetch, which can take a second or
@@ -228,10 +232,25 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab, addRequest }) {
             </button>
           )}
         </div>
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add Session Notes
-        </button>
+        <div className="session-notes-tab__toolbar-right">
+          {sortedSessions.length > 1 && !viewingSession && (
+            <button type="button" className="btn" onClick={() => setExportTarget('all')}>
+              ⬇ Export all
+            </button>
+          )}
+          <button type="button" className="btn btn--primary" onClick={startAdding}>
+            + Add Session Notes
+          </button>
+        </div>
       </div>
+
+      {exportTarget && (
+        <ExportNotesDialog
+          sessions={exportTarget === 'all' ? sortedSessions : sortedSessions.filter((s) => s.id === exportTarget)}
+          campaignName={campaignName}
+          onClose={() => setExportTarget(null)}
+        />
+      )}
 
       {isAdding && (
         <Modal onClose={cancelForm} label="Add Session Notes">
@@ -276,6 +295,9 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab, addRequest }) {
             </div>
             <RichNotesView value={viewingSession.notes} className="session-detail__notes" />
             <div className="session-detail__actions">
+              <button type="button" className="btn btn--text" onClick={() => setExportTarget(viewingSession.id)}>
+                Export
+              </button>
               <button type="button" className="btn btn--text" onClick={() => startEditing(viewingSession)}>
                 Edit
               </button>
@@ -318,6 +340,14 @@ function SessionNotesTab({ campaignId, playerId, onOpenTab, addRequest }) {
                 </div>
                 <p className="session-card__notes">{notesToPlainText(session.notes)}</p>
                 <div className="session-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => setExportTarget(session.id)}
+                    aria-label={`Export ${session.title || 'Untitled Session'}`}
+                  >
+                    Export
+                  </button>
                   <button
                     type="button"
                     className="btn btn--text"

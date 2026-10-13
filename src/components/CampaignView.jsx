@@ -315,6 +315,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {knownTab === 'sessions' && (
                 <SessionNotesTab
                   campaignId={campaignId}
+                  campaignName={campaignName}
                   playerId={playerId}
                   onOpenTab={setActiveTab}
                   addRequest={addRequestFor('sessions')}
