@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
+import ArtViewer from './ArtViewer.jsx'
+import ShareStatus from './ShareStatus.jsx'
+import { useDmShares } from '../hooks/useDmShares.js'
+import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import './ArtGallery.scss'
 
 const BUCKET = 'campaign-art'
@@ -27,10 +31,10 @@ function titleFromFile(name) {
   return base ? base.charAt(0).toUpperCase() + base.slice(1) : 'Untitled'
 }
 
-// Every piece of art used in the campaign. The DM view (`manage`) uploads,
-// labels, and chooses what players can see; the players' view shows only
-// what's been shared. Both open pieces in a full-screen viewer, handy for
-// showing art at the table.
+// Every piece of art used in the campaign. The DM view (`manage`) uploads
+// and labels it privately, then Shares a piece: players get a notification
+// and one of them adds it to the players' Art tab (which shows only those).
+// Both open pieces in a full-screen viewer, handy for showing at the table.
 function ArtGallery({ campaignId, manage = false }) {
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('campaign_art', {
     fromRow,
@@ -54,6 +58,11 @@ function ArtGallery({ campaignId, manage = false }) {
   const usedCategories = ART_CATEGORIES.filter((c) => pieces.some((a) => a.category === c))
   const visible = pieces.filter((a) => category === 'all' || a.category === category)
   const sharedCount = pieces.filter((a) => a.shared).length
+  const { byKey } = useDmShares(campaignId)
+  const [sharingId, setSharingId] = useState(null)
+  // 'added' (in the players' Art tab), 'sent' (notification out), 'private'.
+  const statusOf = (piece) =>
+    piece.shared ? 'added' : byKey.has(shareKey('art', piece.id)) ? 'sent' : 'private'
 
   async function uploadFiles(event) {
     const files = [...(event.target.files || [])]
@@ -89,12 +98,34 @@ function ArtGallery({ campaignId, manage = false }) {
     }
   }
 
-  const toggleShared = (piece) => run(() => updateItem(piece.id, { shared: !piece.shared }))
+  async function share(piece) {
+    setSharingId(piece.id)
+    await run(() =>
+      shareWithPlayers({
+        campaignId,
+        kind: 'art',
+        sourceId: piece.id,
+        title: piece.title || 'Untitled',
+        payload: { title: piece.title, category: piece.category, notes: piece.notes, image_path: piece.imagePath },
+      }),
+    )
+    setSharingId(null)
+  }
+
+  // Takes it back out of the players' Art tab; Share again to re-send.
+  function unshare(piece) {
+    if (!window.confirm(`Remove “${piece.title || 'this art'}” from the players’ Art tab?`)) return
+    run(async () => {
+      await updateItem(piece.id, { shared: false })
+      await removeSharesFor(piece.id)
+    })
+  }
 
   async function remove(piece) {
     if (!confirmDelete(`“${piece.title || 'this art'}”`)) return
     await run(async () => {
       await removeItem(piece.id)
+      await removeSharesFor(piece.id)
       removeImage(BUCKET, piece.imagePath)
       setViewingId(null)
     })
@@ -107,7 +138,6 @@ function ArtGallery({ campaignId, manage = false }) {
         title: editing.title.trim(),
         category: editing.category,
         notes: editing.notes,
-        shared: editing.shared,
       })
       setEditing(null)
     })
@@ -157,7 +187,7 @@ function ArtGallery({ campaignId, manage = false }) {
 
       {manage && pieces.length > 0 && (
         <p className="art-gallery__summary">
-          {sharedCount} of {pieces.length} shown to players. Tap a piece to view it full screen.
+          {sharedCount} of {pieces.length} in the players’ Art tab. Tap a piece to view, share or edit it.
         </p>
       )}
 
@@ -203,15 +233,9 @@ function ArtGallery({ campaignId, manage = false }) {
                 </span>
               </button>
               {manage && (
-                <button
-                  type="button"
-                  className={`art-tile__share${piece.shared ? ' art-tile__share--on' : ''}`}
-                  onClick={() => toggleShared(piece)}
-                  aria-pressed={piece.shared}
-                  aria-label={`${piece.shared ? 'Hide' : 'Show'} “${piece.title || 'Untitled'}” ${piece.shared ? 'from' : 'to'} players`}
-                >
-                  {piece.shared ? '👁 Shared' : '🔒 DM only'}
-                </button>
+                <span className={`art-tile__share art-tile__share--${statusOf(piece)}`}>
+                  {{ added: '👁 Players have it', sent: '📨 Sent', private: '🔒 Private' }[statusOf(piece)]}
+                </span>
               )}
             </li>
           ))}
@@ -227,13 +251,21 @@ function ArtGallery({ campaignId, manage = false }) {
           actions={
             manage && (
               <>
-                <button type="button" className="btn" onClick={() => toggleShared(viewing)} aria-pressed={viewing.shared}>
-                  {viewing.shared ? '👁 Shared with players' : '🔒 Share with players'}
-                </button>
+                <ShareStatus
+                  kind="art"
+                  status={statusOf(viewing)}
+                  sharing={sharingId === viewing.id}
+                  onShare={() => share(viewing)}
+                />
+                {viewing.shared && (
+                  <button type="button" className="btn btn--text" onClick={() => unshare(viewing)}>
+                    Remove from players
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn btn--text"
-                  onClick={() => setEditing({ id: viewing.id, title: viewing.title, category: viewing.category, notes: viewing.notes, shared: viewing.shared })}
+                  onClick={() => setEditing({ id: viewing.id, title: viewing.title, category: viewing.category, notes: viewing.notes })}
                 >
                   Edit details
                 </button>
@@ -284,14 +316,6 @@ function ArtGallery({ campaignId, manage = false }) {
                 placeholder="Which session, who it shows, where it came from…"
               />
             </div>
-            <label className="art-form__check">
-              <input
-                type="checkbox"
-                checked={editing.shared}
-                onChange={(e) => setEditing({ ...editing, shared: e.target.checked })}
-              />
-              Show this in the players’ Art tab
-            </label>
             <div className="form-actions">
               <button type="button" className="btn btn--text" onClick={() => setEditing(null)}>
                 Cancel
@@ -304,81 +328,6 @@ function ArtGallery({ campaignId, manage = false }) {
         </Modal>
       )}
     </section>
-  )
-}
-
-// Full-screen viewer: arrow keys / buttons step through, Escape closes,
-// and "Full screen" hides everything but the art (for showing the table).
-function ArtViewer({ piece, position, onStep, onClose, actions }) {
-  const stageRef = useRef(null)
-  const closeRef = useRef(null)
-
-  useEffect(() => {
-    const previous = document.activeElement
-    closeRef.current?.focus()
-    const { overflow } = document.body.style
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = overflow
-      previous?.focus?.()
-    }
-  }, [])
-
-  useEffect(() => {
-    function onKeyDown(event) {
-      if (document.querySelector('.modal__backdrop')) return // an edit dialog is on top
-      if (event.key === 'Escape' && !document.fullscreenElement) onClose()
-      if (event.key === 'ArrowRight') onStep?.(1)
-      if (event.key === 'ArrowLeft') onStep?.(-1)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose, onStep])
-
-  const canFullscreen = typeof document !== 'undefined' && document.fullscreenEnabled
-
-  return (
-    <div className="art-viewer" role="dialog" aria-modal="true" aria-label={piece.title || 'Campaign art'}>
-      <div className="art-viewer__bar">
-        <div className="art-viewer__heading">
-          <h3 className="art-viewer__title">{piece.title || 'Untitled'}</h3>
-          <span className="art-viewer__meta">
-            {piece.category} · {position}
-          </span>
-        </div>
-        <div className="art-viewer__bar-actions">
-          {canFullscreen && (
-            <button type="button" className="btn btn--text" onClick={() => stageRef.current?.requestFullscreen?.()}>
-              ⛶ Full screen
-            </button>
-          )}
-          <button ref={closeRef} type="button" className="btn btn--text" onClick={onClose} aria-label="Close viewer">
-            ✕
-          </button>
-        </div>
-      </div>
-
-      <div className="art-viewer__stage" ref={stageRef}>
-        <img src={piece.url} alt={piece.title || 'Campaign art'} />
-        {onStep && (
-          <>
-            <button type="button" className="art-viewer__nav art-viewer__nav--prev" onClick={() => onStep(-1)} aria-label="Previous piece">
-              ‹
-            </button>
-            <button type="button" className="art-viewer__nav art-viewer__nav--next" onClick={() => onStep(1)} aria-label="Next piece">
-              ›
-            </button>
-          </>
-        )}
-      </div>
-
-      {(piece.notes || actions) && (
-        <div className="art-viewer__footer">
-          {piece.notes && <p className="art-viewer__notes">{piece.notes}</p>}
-          {actions && <div className="art-viewer__actions">{actions}</div>}
-        </div>
-      )}
-    </div>
   )
 }
 

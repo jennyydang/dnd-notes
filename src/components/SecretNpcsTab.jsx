@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
-import { useCampaignNav } from '../hooks/useCampaignData.js'
+import { useDmShares } from '../hooks/useDmShares.js'
+import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
+import ShareStatus from './ShareStatus.jsx'
 import './NpcsTab.scss'
 import './SecretNpcsTab.scss'
 
-// Shares the NPC portrait bucket, so revealing an NPC can hand its photo
-// to the players' copy without uploading it again.
+// Same bucket as the players' NPC portraits; adding a shared NPC copies
+// the photo, so each side owns its own file.
 const BUCKET = 'npc-portraits'
 
 const FILTERS = [
   { id: 'all', label: 'All' },
-  { id: 'hidden', label: 'Not met yet' },
-  { id: 'revealed', label: 'Revealed' },
+  { id: 'private', label: 'Private' },
+  { id: 'shared', label: 'Shared' },
 ]
 
 const emptyForm = {
@@ -45,24 +47,29 @@ const fromRow = (r) => ({
   createdAt: r.created_at,
 })
 
-const npcFromRow = (r) => ({ id: r.id })
+const npcFromRow = (r) => ({ id: r.id, dmNpcId: r.dm_npc_id })
 
 // The DM's private NPC workshop: draft NPCs as you invent them (with
-// secrets players never see), then "Reveal" one to drop a player-safe copy
-// into the shared NPCs tab when the party meets them.
+// secrets players never see), then "Share" one when the party meets them.
+// Players get a notification and can add a player-safe copy to their NPCs
+// tab (see DmSharesInbox).
 function SecretNpcsTab({ campaignId, addRequest }) {
-  const { openEntity } = useCampaignNav()
+  const { byKey } = useDmShares(campaignId)
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_npcs', {
     fromRow,
     filters: { campaign_id: campaignId },
   })
-  // Only used to add the revealed copy (and to notice if players' copy
-  // was deleted, which the foreign key also handles).
-  const { items: sharedNpcs, addItem: addSharedNpc } = useSupabaseTable('npcs', {
+  // The players' NPCs, to tell which of these they've added.
+  const { items: partyNpcs } = useSupabaseTable('npcs', {
     fromRow: npcFromRow,
     filters: { campaign_id: campaignId },
   })
-  const sharedIds = useMemo(() => new Set(sharedNpcs.map((n) => n.id)), [sharedNpcs])
+  const addedIds = useMemo(() => {
+    const ids = new Set(partyNpcs.map((n) => n.dmNpcId).filter(Boolean))
+    return ids
+  }, [partyNpcs])
+  const partyIds = useMemo(() => new Set(partyNpcs.map((n) => n.id)), [partyNpcs])
+  const [sharingId, setSharingId] = useState(null)
 
   const [filter, setFilter] = useState('all')
   const [query, setQuery] = useState('')
@@ -77,21 +84,29 @@ function SecretNpcsTab({ campaignId, addRequest }) {
 
   useEffect(() => () => objectUrlRef.current && URL.revokeObjectURL(objectUrlRef.current), [])
 
-  // Home's "Secret NPC" quick action lands here with the form open.
+  // Home's quick action lands here with the form open.
   useEffect(() => {
     if (addRequest) openForm()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addRequest])
 
-  const isRevealed = (npc) => Boolean(npc.revealedNpcId && sharedIds.has(npc.revealedNpcId))
+  // 'added' (in the players' NPCs — including ones revealed before
+  // sharing existed), 'sent' (notification out) or 'private'.
+  const statusOf = (npc) =>
+    addedIds.has(npc.id) || (npc.revealedNpcId && partyIds.has(npc.revealedNpcId))
+      ? 'added'
+      : byKey.has(shareKey('npc', npc.id))
+        ? 'sent'
+        : 'private'
+  const isShared = (npc) => statusOf(npc) !== 'private'
   const counts = {
     all: items.length,
-    hidden: items.filter((n) => !isRevealed(n)).length,
-    revealed: items.filter(isRevealed).length,
+    private: items.filter((n) => !isShared(n)).length,
+    shared: items.filter(isShared).length,
   }
   const needle = query.trim().toLowerCase()
   const visible = items
-    .filter((n) => filter === 'all' || (filter === 'revealed') === isRevealed(n))
+    .filter((n) => filter === 'all' || (filter === 'shared') === isShared(n))
     .filter(
       (n) =>
         !needle ||
@@ -174,48 +189,56 @@ function SecretNpcsTab({ campaignId, addRequest }) {
     }
   }
 
-  async function reveal(npc) {
+  async function share(npc) {
     const ok = window.confirm(
-      `Add ${npc.name} to the party's NPCs tab?\n\nPlayers will see their name, race, where they're found, description and portrait — not your secret notes.`,
+      `Share ${npc.name} with the players?\n\nEveryone gets a notification and can add them to the NPCs tab. They'll see the name, race, where they're found, description and portrait — never your secret notes.`,
     )
     if (!ok) return
     setActionError(null)
+    setSharingId(npc.id)
     try {
-      const description = [npc.occupation, npc.description].filter((v) => v?.trim()).join('\n\n')
-      const created = await addSharedNpc({
-        name: npc.name,
-        race: npc.race,
-        met_at: npc.location,
-        status: 'Alive',
-        description,
-        photo_path: npc.photoPath || null,
+      await shareWithPlayers({
+        campaignId,
+        kind: 'npc',
+        sourceId: npc.id,
+        title: npc.name,
+        payload: {
+          name: npc.name,
+          race: npc.race,
+          location: npc.location,
+          description: [npc.occupation, npc.description].filter((v) => v?.trim()).join('\n\n'),
+          photo_path: npc.photoPath || null,
+        },
       })
-      await updateItem(npc.id, { revealed_npc_id: created.id })
     } catch (err) {
-      setActionError(`Couldn’t reveal ${npc.name}: ${err.message}`)
+      setActionError(`Couldn’t share ${npc.name}: ${err.message}`)
+    } finally {
+      setSharingId(null)
     }
   }
 
   async function remove(npc) {
-    if (isRevealed(npc)) {
+    const status = statusOf(npc)
+    if (status === 'added') {
       const ok = window.confirm(
-        `Delete your secret notes on “${npc.name}”? The players’ copy in the NPCs tab stays. This can't be undone.`,
+        `Delete your secret notes on “${npc.name}”? The players’ copy in their NPCs tab stays. This can't be undone.`,
       )
       if (!ok) return
-    } else if (!confirmDelete(`the secret NPC “${npc.name}”`)) return
+    } else if (!confirmDelete(`the NPC “${npc.name}”`)) return
     setActionError(null)
     try {
       await removeItem(npc.id)
-      // The players' copy shares the portrait, so only clean it up if
-      // nothing else uses it.
-      if (npc.photoPath && !isRevealed(npc)) removeImage(BUCKET, npc.photoPath)
+      if (status === 'sent') await removeSharesFor(npc.id)
+      // The players' copy (and an unadded notification) may still point at
+      // the portrait, so only clean it up for an NPC that was never shared.
+      if (npc.photoPath && status === 'private') removeImage(BUCKET, npc.photoPath)
     } catch (err) {
       setActionError(`Couldn’t delete: ${err.message}`)
     }
   }
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
-  const editingRevealed = editingId && isRevealed(items.find((n) => n.id === editingId) || {})
+  const editingStatus = editingId ? statusOf(items.find((n) => n.id === editingId) || {}) : 'private'
 
   return (
     <section className="secret-npcs">
@@ -227,10 +250,10 @@ function SecretNpcsTab({ campaignId, addRequest }) {
           activeTab={filter}
           onSelect={setFilter}
           className="tab-nav--pill secret-npcs__filter"
-          label="Filter secret NPCs"
+          label="Filter NPCs"
         />
         <button type="button" className="btn btn--primary" onClick={() => openForm()}>
-          + Secret NPC
+          + Add NPC
         </button>
       </div>
 
@@ -241,7 +264,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search names, places, secrets…"
-          aria-label="Search secret NPCs"
+          aria-label="Search your NPCs"
         />
       )}
 
@@ -260,21 +283,21 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       {!loading && !error && visible.length === 0 && (
         <p className="empty-state">
           {items.length === 0
-            ? 'No secret NPCs yet. Jot them down as you invent them — players can’t see this list. When the party meets one, press Reveal.'
+            ? 'No NPCs yet. Jot them down as you invent them — players can’t see this list. When the party meets one, press Share.'
             : needle
               ? `Nothing matches “${query.trim()}”.`
-              : filter === 'revealed'
-                ? 'No one revealed yet.'
-                : 'Everyone here has been revealed.'}
+              : filter === 'shared'
+                ? 'Nothing shared yet.'
+                : 'Everyone here has been shared.'}
         </p>
       )}
 
       {!loading && !error && visible.length > 0 && (
         <div className="npc-list">
           {visible.map((npc) => {
-            const revealed = isRevealed(npc)
+            const status = statusOf(npc)
             return (
-              <article className={`npc-card secret-npc panel${revealed ? ' secret-npc--revealed' : ''}`} key={npc.id}>
+              <article className={`npc-card secret-npc panel${status !== 'private' ? ' secret-npc--revealed' : ''}`} key={npc.id}>
                 <div className="npc-card__main">
                   <div className="npc-card__identity">
                     <div className="npc-card__avatar">
@@ -287,8 +310,8 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                       )}
                     </div>
                   </div>
-                  <span className={`secret-npc__badge${revealed ? ' secret-npc__badge--revealed' : ''}`}>
-                    {revealed ? '👁 Revealed' : '🔒 Hidden'}
+                  <span className={`secret-npc__badge${status !== 'private' ? ' secret-npc__badge--revealed' : ''}`}>
+                    {status === 'private' ? '🔒 Private' : '👁 Shared'}
                   </span>
                 </div>
                 {npc.location && <p className="secret-npc__meta">📍 {npc.location}</p>}
@@ -300,15 +323,13 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                   </div>
                 )}
                 <div className="npc-card__actions">
-                  {revealed ? (
-                    <button type="button" className="btn btn--text" onClick={() => openEntity('npc', npc.revealedNpcId)}>
-                      Players’ copy
-                    </button>
-                  ) : (
-                    <button type="button" className="btn btn--primary secret-npc__reveal" onClick={() => reveal(npc)}>
-                      Reveal
-                    </button>
-                  )}
+                  <ShareStatus
+                    kind="npc"
+                    status={status}
+                    sharing={sharingId === npc.id}
+                    onShare={() => share(npc)}
+                    className="secret-npc__share"
+                  />
                   <button type="button" className="btn btn--text" onClick={() => openForm(npc)}>
                     Edit
                   </button>
@@ -323,9 +344,9 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       )}
 
       {formOpen && (
-        <Modal onClose={closeForm} label={editingId ? 'Edit secret NPC' : 'New secret NPC'}>
+        <Modal onClose={closeForm} label={editingId ? 'Edit NPC' : 'New NPC'}>
           <form className="npc-form" onSubmit={submitForm} noValidate>
-            <h3 className="section-card__title">{editingId ? 'Edit secret NPC' : 'New secret NPC'}</h3>
+            <h3 className="section-card__title">{editingId ? 'Edit NPC' : 'New NPC'}</h3>
             <div className="npc-form__layout">
               <div className="npc-form__photo">
                 <button
@@ -391,8 +412,8 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                 placeholder="Motives, what they know, plot hooks…"
               />
             </div>
-            {editingRevealed && (
-              <p className="field-hint">Already revealed — edits here don’t change the players’ copy.</p>
+            {editingStatus !== 'private' && (
+              <p className="field-hint">Already shared — edits here don’t change what players have already added.</p>
             )}
             {formError && (
               <p className="field-error" role="alert">
@@ -404,7 +425,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                 Cancel
               </button>
               <button type="submit" className="btn btn--primary" disabled={saving}>
-                {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Save Secret NPC'}
+                {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Save NPC'}
               </button>
             </div>
           </form>

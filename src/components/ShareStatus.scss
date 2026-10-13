@@ -1,0 +1,21 @@
+@use '../styles/variables' as *;
+
+// The DM's per-item share control (ShareStatus.jsx).
+.share-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba($gold-dim, 0.7);
+  color: $gold-light;
+
+  &--added {
+    border-color: rgba($green-light, 0.8);
+    color: $green-text;
+  }
+
+  &__button {
+    white-space: nowrap;
+  }
+}

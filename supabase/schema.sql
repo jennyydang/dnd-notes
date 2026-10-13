@@ -938,3 +938,52 @@ drop policy if exists "anon full access campaign-art bucket" on storage.objects;
 create policy "anon full access campaign-art bucket"
   on storage.objects for all to anon
   using (bucket_id = 'campaign-art') with check (bucket_id = 'campaign-art');
+
+-- ── DM sharing ────────────────────────────────────────────────────────
+-- The DM keeps NPCs, art and maps private, then presses Share: that posts
+-- a dm_shares row (a notification every player sees) carrying a snapshot
+-- of the player-safe fields. Any player can Add it to the right tab. The
+-- unique dm_npc_id / dm_map_id columns are what stop two players adding
+-- the same item twice — the second insert simply fails and is ignored.
+
+-- Private maps the DM has uploaded (images live in the "maps" bucket).
+create table if not exists dm_maps (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  image_path text not null,
+  caption text not null default '',
+  notes text not null default '',
+  created_at timestamptz not null default now()
+);
+
+alter table npcs add column if not exists dm_npc_id uuid unique references dm_npcs(id) on delete set null;
+alter table maps add column if not exists dm_map_id uuid unique references dm_maps(id) on delete set null;
+
+create table if not exists dm_shares (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  kind text not null check (kind in ('npc', 'art', 'map')),
+  source_id uuid not null,         -- dm_npcs / campaign_art / dm_maps row
+  title text not null default '',
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- A player clearing a notification from their own list.
+create table if not exists dm_share_dismissals (
+  id uuid primary key default gen_random_uuid(),
+  share_id uuid not null references dm_shares(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (share_id, player_id)
+);
+
+alter table dm_maps             enable row level security;
+alter table dm_shares           enable row level security;
+alter table dm_share_dismissals enable row level security;
+drop policy if exists "anon full access dm_maps" on dm_maps;
+drop policy if exists "anon full access dm_shares" on dm_shares;
+drop policy if exists "anon full access dm_share_dismissals" on dm_share_dismissals;
+create policy "anon full access dm_maps"             on dm_maps             for all to anon using (true) with check (true);
+create policy "anon full access dm_shares"           on dm_shares           for all to anon using (true) with check (true);
+create policy "anon full access dm_share_dismissals" on dm_share_dismissals for all to anon using (true) with check (true);

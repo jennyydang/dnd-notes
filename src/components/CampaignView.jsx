@@ -7,6 +7,8 @@ import NpcsTab from './NpcsTab.jsx'
 import CreaturesTab from './CreaturesTab.jsx'
 import SecretNpcsTab from './SecretNpcsTab.jsx'
 import ArtGallery from './ArtGallery.jsx'
+import DmMapsTab from './DmMapsTab.jsx'
+import { DmSharesBell } from './DmSharesInbox.jsx'
 import LootTab from './LootTab.jsx'
 import QuestsTab from './QuestsTab.jsx'
 import SessionNotesTab from './SessionNotesTab.jsx'
@@ -52,8 +54,9 @@ const TAB_DEFS = {
   spells: { label: 'Spells', icon: '✨' },
   party: { label: 'Party', icon: '🛡️' },
   prep: { label: 'Session Prep', icon: '🗒️' },
-  'dm-npcs': { label: 'Secret NPCs', icon: '🕵️' },
-  'dm-art': { label: 'Art Gallery', icon: '🖼️' },
+  'dm-npcs': { label: 'NPCs', icon: '👥' },
+  'dm-art': { label: 'Art', icon: '🖼️' },
+  'dm-maps': { label: 'Maps', icon: '🗺️' },
 }
 
 const AREAS = [
@@ -68,9 +71,16 @@ const AREAS = [
   },
   { id: 'character', label: 'Character', icon: '🎭', tabs: ['character', 'spells', 'party'] },
   { id: 'prep', label: 'Prep', icon: '🗒️', tabs: ['prep'] },
-  // Only for players marked DM in this campaign (not just its creator),
-  // plus the admin.
-  { id: 'dm', label: 'DM', icon: '👁️', tabs: ['dm-npcs', 'dm-art'], dmOnly: true },
+  // The admin's view of the DM tools (DMs themselves get DM_AREAS).
+  { id: 'dm', label: 'DM', icon: '👁️', tabs: ['dm-npcs', 'dm-art', 'dm-maps'], dmOnly: true },
+]
+
+// A DM's whole view of the campaign: just their private NPCs, art and maps,
+// each with a Share button that notifies the players.
+const DM_AREAS = [
+  { id: 'dm-npcs', label: 'NPCs', icon: '👥', tabs: ['dm-npcs'] },
+  { id: 'dm-art', label: 'Art', icon: '🖼️', tabs: ['dm-art'] },
+  { id: 'dm-maps', label: 'Maps', icon: '🗺️', tabs: ['dm-maps'] },
 ]
 
 const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
@@ -121,16 +131,21 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     icon: tab.isPrivate ? '🔒' : '📄',
   }))
 
-  // DM tools show only for players marked DM in this campaign — creating
-  // a campaign isn't enough. The admin account has no player, so (as
-  // elsewhere) it sees everything.
+  // Players marked DM in this campaign (creating it isn't enough) see only
+  // the DM tools. The admin account has no player, so (as elsewhere) it
+  // sees everything, DM tools included.
   const { items: memberships, loading: roleLoading } = useSupabaseTable('campaign_memberships', {
     fromRow: membershipFromRow,
     orderBy: 'name',
     filters: { id: campaignId, player_id: playerId || NO_PLAYER },
   })
   const isDm = !playerId || memberships.some((m) => m.role === 'dm')
-  const areas = AREAS.filter((area) => !area.dmOnly || isDm)
+  const dmView = Boolean(playerId) && isDm
+  // Hold the screen until the role is known, so a DM doesn't see the
+  // player layout flash first.
+  const roleReady = !playerId || !roleLoading
+  const areas = dmView ? DM_AREAS : AREAS.filter((area) => !area.dmOnly || isDm)
+  const homeTab = dmView ? 'dm-npcs' : 'home'
 
   const areaTabs = (area) => [
     ...area.tabs.map((id) => ({ id, ...TAB_DEFS[id] })),
@@ -151,7 +166,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   // custom tab someone deleted) or isn't this player's to see. While the
   // role is still loading, a remembered DM tab is held rather than lost.
   const knownTab =
-    allTabs.some((t) => t.id === activeTab) || (roleLoading && TAB_DEFS[activeTab]) ? activeTab : 'home'
+    allTabs.some((t) => t.id === activeTab) || (roleLoading && TAB_DEFS[activeTab]) ? activeTab : homeTab
   const activeArea =
     areas.find((area) => areaTabs(area).some((t) => t.id === knownTab)) || areas[0]
 
@@ -229,20 +244,26 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               &larr; Campaigns
             </button>
 
-            <button
-              type="button"
-              className="campaign-view__search"
-              onClick={() => setSearchOpen(true)}
-              aria-label="Search the campaign"
-            >
-              <span className="campaign-view__search-icon" aria-hidden="true">
-                &#128269;
-              </span>
-              <span className="campaign-view__search-placeholder">
-                Search NPCs, places, quests, notes…
-              </span>
-              <kbd className="campaign-view__search-hint">&#8984;K</kbd>
-            </button>
+            {dmView ? (
+              <span className="campaign-view__search-spacer" />
+            ) : (
+              <button
+                type="button"
+                className="campaign-view__search"
+                onClick={() => setSearchOpen(true)}
+                aria-label="Search the campaign"
+              >
+                <span className="campaign-view__search-icon" aria-hidden="true">
+                  &#128269;
+                </span>
+                <span className="campaign-view__search-placeholder">
+                  Search NPCs, places, quests, notes…
+                </span>
+                <kbd className="campaign-view__search-hint">&#8984;K</kbd>
+              </button>
+            )}
+
+            {playerId && roleReady && !isDm && <DmSharesBell campaignId={campaignId} playerId={playerId} />}
 
             <AccountMenu
               username={username}
@@ -264,7 +285,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
             </Modal>
           )}
 
-          {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
+          {searchOpen && !dmView && <GlobalSearch onClose={() => setSearchOpen(false)} />}
 
           {topDetail && (
             <EntityDetailModal
@@ -298,7 +319,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                   <h2 className="campaign-view__name">{campaignName}</h2>
                 </div>
 
-                {areas.map((area) => (
+                {roleReady && areas.map((area) => (
                   <div className="campaign-view__group" key={area.id}>
                     {area.tabs.length > 1 && (
                       <h3 className="campaign-view__group-label">{area.label}</h3>
@@ -330,7 +351,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                 />
               )}
 
+              {!roleReady && <p className="empty-state">Loading…</p>}
               {/* Keyed per screen so each one fades in when you switch to it. */}
+              {roleReady && (
               <div key={knownTab} className="campaign-view__screen">
               {knownTab === 'home' && <HomeHub campaignName={campaignName} />}
               {knownTab === 'session' && <SessionMode />}
@@ -359,6 +382,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                 <SecretNpcsTab campaignId={campaignId} addRequest={addRequestFor('dm-npcs')} />
               )}
               {isDm && knownTab === 'dm-art' && <ArtGallery campaignId={campaignId} manage />}
+              {isDm && knownTab === 'dm-maps' && <DmMapsTab campaignId={campaignId} />}
               {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}
               {activeCustomTab && (
                 <CustomTab
@@ -370,11 +394,12 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                 />
               )}
               </div>
+              )}
             </div>
           </div>
 
           <nav className="bottom-nav" aria-label="Primary">
-            {areas.map((area) => {
+            {roleReady && areas.map((area) => {
               const active = area.id === activeArea.id
               return (
                 <button
@@ -395,7 +420,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
           {/* Home and Session Mode already have quick capture, so the
               floating widget only shows elsewhere. */}
-          {playerId && !['home', 'session'].includes(activeArea.id) && (
+          {playerId && roleReady && !dmView && !['home', 'session'].includes(activeArea.id) && (
             <QuickView campaignId={campaignId} playerId={playerId} />
           )}
         </div>

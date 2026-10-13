@@ -26,6 +26,11 @@
     }
   }
 
+  // Takes the search box's place in a DM's top bar (no search there).
+  &__search-spacer {
+    flex: 1;
+  }
+
   &__search {
     position: relative;
     flex: 1;
@@ -191,6 +196,10 @@
 
     &__mobile-title {
       display: block;
+    }
+
+    &__search-spacer {
+      display: none;
     }
 
     &__search {

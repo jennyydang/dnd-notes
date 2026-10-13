@@ -26,3 +26,14 @@ export async function removeImage(bucket, path) {
   if (!path) return
   await supabase.storage.from(bucket).remove([path])
 }
+
+// Copies an object to a new random key in the same bucket, so two rows
+// (e.g. the DM's private map and the party's copy) don't share a file
+// that deleting either one would remove.
+export async function copyImage(bucket, path) {
+  const ext = path.split('.').pop()
+  const newPath = `${crypto.randomUUID()}.${ext}`
+  const { error } = await supabase.storage.from(bucket).copy(path, newPath)
+  if (error) throw error
+  return newPath
+}
