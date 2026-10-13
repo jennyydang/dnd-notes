@@ -371,19 +371,23 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
                       <li key={m.campaignId} className="player-card__campaign">
                         <span className="player-card__campaign-name">{m.campaignName}</span>
                         <span className={`player-card__role player-card__role--${m.role}`}>
-                          {m.role === 'dm' ? 'DM' : m.role}
+                          {m.role === 'dm' ? (m.isCreator ? 'Creator · DM' : 'DM') : m.role}
                         </span>
-                        {m.role !== 'creator' && (
-                          <button
-                            type="button"
-                            className="btn btn--text player-card__dm-toggle"
-                            onClick={() =>
-                              run(() => setMembershipRole(player.id, m.campaignId, m.role === 'dm' ? 'player' : 'dm'))
-                            }
-                          >
-                            {m.role === 'dm' ? 'Remove DM' : 'Make DM'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="btn btn--text player-card__dm-toggle"
+                          onClick={() =>
+                            run(() =>
+                              setMembershipRole(
+                                player.id,
+                                m.campaignId,
+                                m.role !== 'dm' ? 'dm' : m.isCreator ? 'creator' : 'player',
+                              ),
+                            )
+                          }
+                        >
+                          {m.role === 'dm' ? 'Remove DM' : 'Make DM'}
+                        </button>
                       </li>
                     ))}
                   </ul>

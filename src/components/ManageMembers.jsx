@@ -3,7 +3,7 @@ import { listCampaignMembers } from '../lib/campaigns.js'
 import { supabase } from '../lib/supabaseClient.js'
 import './ManageMembers.scss'
 
-function ManageMembers({ campaignId, campaignName, joinCode, onClose }) {
+function ManageMembers({ campaignId, campaignName, joinCode, createdBy, onClose }) {
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -55,7 +55,8 @@ function ManageMembers({ campaignId, campaignName, joinCode, onClose }) {
             <li key={member.membershipId}>
               <span className="manage-members__username">{member.username}</span>
               <span className="manage-members__role">{member.role}</span>
-              {member.role !== 'creator' && (
+              {/* A creator made DM keeps creator protection. */}
+              {member.role !== 'creator' && member.playerId !== createdBy && (
                 <button
                   type="button"
                   className="btn btn--danger"

@@ -68,7 +68,8 @@ const AREAS = [
   },
   { id: 'character', label: 'Character', icon: '🎭', tabs: ['character', 'spells', 'party'] },
   { id: 'prep', label: 'Prep', icon: '🗒️', tabs: ['prep'] },
-  // Only for the campaign's DMs (and creator), plus the admin.
+  // Only for players marked DM in this campaign (not just its creator),
+  // plus the admin.
   { id: 'dm', label: 'DM', icon: '👁️', tabs: ['dm-npcs', 'dm-art'], dmOnly: true },
 ]
 
@@ -120,14 +121,15 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     icon: tab.isPrivate ? '🔒' : '📄',
   }))
 
-  // DM tools show for this campaign's DMs/creator. The admin account has
-  // no player, so (as elsewhere) it sees everything.
+  // DM tools show only for players marked DM in this campaign — creating
+  // a campaign isn't enough. The admin account has no player, so (as
+  // elsewhere) it sees everything.
   const { items: memberships, loading: roleLoading } = useSupabaseTable('campaign_memberships', {
     fromRow: membershipFromRow,
     orderBy: 'name',
     filters: { id: campaignId, player_id: playerId || NO_PLAYER },
   })
-  const isDm = !playerId || memberships.some((m) => m.role === 'dm' || m.role === 'creator')
+  const isDm = !playerId || memberships.some((m) => m.role === 'dm')
   const areas = AREAS.filter((area) => !area.dmOnly || isDm)
 
   const areaTabs = (area) => [

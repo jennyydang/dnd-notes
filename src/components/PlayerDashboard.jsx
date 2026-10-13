@@ -30,6 +30,7 @@ const fromRow = (r) => ({
   joinCode: r.join_code,
   cover: getPublicUrl(BUCKET, r.cover_image_path),
   role: r.role,
+  createdBy: r.created_by,
 })
 
 function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
@@ -284,6 +285,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
           campaignId={managingMembersCampaign.id}
           campaignName={managingMembersCampaign.name}
           joinCode={managingMembersCampaign.joinCode}
+          createdBy={managingMembersCampaign.createdBy}
           onClose={() => setManagingMembersId(null)}
         />
       )}

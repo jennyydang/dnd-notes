@@ -37,9 +37,10 @@ export async function addPlayerToCampaign(playerId, campaignId) {
 }
 
 // Promotes/demotes a player's role within one campaign — used by the admin
-// panel to make someone a DM (or undo that). 'dm' gets the same in-app
-// access as 'creator' (see PlayerDashboard's isManager check); 'creator'
-// itself is never reassigned this way, it's fixed at campaign creation.
+// panel to make someone a DM (or undo that). 'dm' gets the same campaign
+// management as 'creator' (see PlayerDashboard) plus the DM tools. A
+// creator can be made DM too: who created the campaign is still recorded
+// in campaigns.created_by, and removing DM gives them 'creator' back.
 export async function setMembershipRole(playerId, campaignId, role) {
   const { error } = await supabase
     .from('campaign_members')
@@ -75,5 +76,6 @@ export async function listAllMemberships() {
     campaignId: r.id,
     campaignName: r.name,
     joinCode: r.join_code,
+    isCreator: Boolean(r.created_by) && r.created_by === r.player_id,
   }))
 }
