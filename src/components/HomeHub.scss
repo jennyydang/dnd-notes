@@ -59,11 +59,234 @@
     letter-spacing: 0;
   }
 
-  &__grid {
+  // Fixed areas (not auto-flow) so every visit looks the same: who you
+  // are + quick capture on top, the story below, recent finds last.
+  &__layout {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-areas:
+      'character quick'
+      'last threads'
+      'recent recent';
     gap: 1.25rem;
     align-items: start;
+  }
+
+  &__area {
+    &--character {
+      grid-area: character;
+    }
+
+    &--quick {
+      grid-area: quick;
+    }
+
+    &--last {
+      grid-area: last;
+    }
+
+    &--threads {
+      grid-area: threads;
+    }
+
+    &--recent {
+      grid-area: recent;
+    }
+  }
+
+  // "Your DM shared…" banner; opens the bell's inbox.
+  &__dm-news {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    width: 100%;
+    padding: 0.85rem 1.1rem;
+    text-align: left;
+    color: $text-light;
+    border: 1px solid $gold;
+    box-shadow: inset 4px 0 0 $gold;
+
+    &:hover,
+    &:focus-visible {
+      background: linear-gradient(rgba($gold, 0.08), rgba($gold, 0.08)), $bg-panel;
+    }
+  }
+
+  &__dm-news-icon {
+    font-size: 1.5rem;
+  }
+
+  &__dm-news-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+
+    strong {
+      color: $gold-light;
+      font-family: $font-display;
+      font-weight: normal;
+    }
+
+    span {
+      font-size: 0.9rem;
+      color: $text-muted;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__dm-news-cta {
+    flex-shrink: 0;
+    color: $gold-light;
+    font-size: 0.9rem;
+  }
+
+  &__character-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__vitals {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.9rem;
+    margin-top: 0.4rem;
+  }
+
+  &__hp {
+    flex: 1;
+    min-width: 9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  &__hp-text {
+    font-size: 0.85rem;
+    color: $text-light;
+  }
+
+  &__hp-bar {
+    display: block;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: $green-light;
+      transition: width 0.3s ease;
+    }
+
+    &--low span {
+      background: $maroon-light;
+    }
+  }
+
+  &__ac {
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid $gold-dim;
+    font-size: 0.85rem;
+    color: $parchment;
+    white-space: nowrap;
+  }
+
+  &__links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+  }
+
+  &__link {
+    min-height: 2.75rem;
+  }
+
+  // Featured last-session recap.
+  &__recap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    text-align: left;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-left: 3px solid $maroon-light;
+    border-radius: $radius-lg;
+    color: $text-light;
+
+    &:hover,
+    &:focus-visible {
+      border-color: $gold;
+      border-left-color: $maroon-light;
+    }
+  }
+
+  &__recap-title {
+    font-family: $font-display;
+    font-size: 1.1rem;
+    color: $parchment;
+  }
+
+  &__recap-date {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: $text-muted;
+  }
+
+  &__recap-body {
+    margin-top: 0.25rem;
+    line-height: 1.5;
+    white-space: pre-line;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__recap-more {
+    margin-top: 0.3rem;
+    font-size: 0.88rem;
+    color: $gold-light;
+  }
+
+  &__earlier {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    margin-top: 0.6rem;
+  }
+
+  &__earlier-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $text-muted;
+  }
+
+  &__earlier-link {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.9rem;
+  }
+
+  // Recently added: a row of cards that wraps.
+  &__recent {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+    gap: 0.5rem;
   }
 
   &__character {
@@ -169,6 +392,18 @@
     flex-direction: column;
     align-items: center;
     gap: 0.25rem;
+  }
+
+  @media (max-width: 860px) {
+    &__layout {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'character' 'quick' 'last' 'threads' 'recent';
+    }
+
+    // One column of cards gets long fast on a phone.
+    &__recent li:nth-child(n + 5) {
+      display: none;
+    }
   }
 
   @media (max-width: 720px) {

@@ -4,6 +4,7 @@ import { useActiveCharacter } from '../hooks/useActiveCharacter.js'
 import { useCharacterSheet } from '../hooks/useCharacterSheet.js'
 import { usePrep } from '../hooks/usePrep.js'
 import { useQuickNotes } from '../hooks/useQuickNotes.js'
+import { OPEN_DM_INBOX, useDmInbox } from '../hooks/useDmInbox.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { formatSessionDate, sessionDateTimestamp } from '../lib/sessionNotes.js'
 import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessionMode.js'
@@ -21,7 +22,8 @@ const QUICK_ACTIONS = [
 
 const RECENT_LIMIT = 5
 const THREAD_LIMIT = 5
-const SESSION_LIMIT = 3
+const EARLIER_LIMIT = 2
+const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
 
 // A plain vertical list of MiniCards (children keep their own keys).
 function CardList({ label, children }) {
@@ -50,6 +52,9 @@ function MiniCard({ icon, type, title, meta, onClick }) {
 function CharacterSummary({ campaignId, character }) {
   const { sheet } = useCharacterSheet(campaignId, character.id)
   const hp = sheet?.mechanics.hp
+  const ac = sheet?.mechanics.ac
+  const hasHp = hp && hp.max !== null && hp.current !== null && hp.max > 0
+  const hpPct = hasHp ? Math.max(0, Math.min(100, (hp.current / hp.max) * 100)) : 0
   const photo = getPublicUrl('party-portraits', character.photo_path)
   return (
     <div className="home-hub__character">
@@ -60,16 +65,37 @@ function CharacterSummary({ campaignId, character }) {
           {character.name?.[0]?.toUpperCase() || '?'}
         </span>
       )}
-      <div>
+      <div className="home-hub__character-info">
         <p className="home-hub__character-name">{character.name}</p>
         <p className="home-hub__character-meta">
           {[character.race_class, character.level && `Level ${character.level}`].filter(Boolean).join(' · ')}
         </p>
-        {hp && hp.max !== null && hp.current !== null && (
-          <p className="home-hub__character-meta mechanics">
-            HP {hp.current} / {hp.max}
-            {hp.temp ? ` (+${hp.temp} temp)` : ''}
-          </p>
+        {(hasHp || ac != null) && (
+          <div className="home-hub__vitals">
+            {hasHp && (
+              <div className="home-hub__hp">
+                <span className="home-hub__hp-text mechanics">
+                  HP {hp.current} / {hp.max}
+                  {hp.temp ? ` (+${hp.temp})` : ''}
+                </span>
+                <span
+                  className={`home-hub__hp-bar${hpPct <= 25 ? ' home-hub__hp-bar--low' : ''}`}
+                  role="meter"
+                  aria-label="Hit points"
+                  aria-valuemin={0}
+                  aria-valuemax={hp.max}
+                  aria-valuenow={hp.current}
+                >
+                  <span style={{ width: `${hpPct}%` }} />
+                </span>
+              </div>
+            )}
+            {ac != null && (
+              <span className="home-hub__ac mechanics" title="Armor Class">
+                🛡️ AC {ac}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -105,7 +131,12 @@ function HomeHub({ campaignName }) {
         sessionDateTimestamp(b.raw.session_date) - sessionDateTimestamp(a.raw.session_date) ||
         new Date(b.createdAt) - new Date(a.createdAt),
     )
+  const [lastSession, ...olderSessions] = sessions
+  const earlierSessions = olderSessions.slice(0, EARLIER_LIMIT)
   const openThreads = entities.filter((e) => e.open)
+  // Same inbox as the top-bar bell; the admin (no player) never has one.
+  const dmInbox = useDmInbox(campaignId, playerId || NO_PLAYER)
+  const dmNews = playerId && !nav.isDm && !dmInbox.error ? dmInbox.inbox : []
   const recentEntries = entities
     .filter((e) => !['session', 'note', 'character'].includes(e.type))
     .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
@@ -158,6 +189,25 @@ function HomeHub({ campaignName }) {
         </button>
       </section>
 
+      {dmNews.length > 0 && (
+        <button
+          type="button"
+          className="home-hub__dm-news panel"
+          onClick={() => window.dispatchEvent(new Event(OPEN_DM_INBOX))}
+        >
+          <span className="home-hub__dm-news-icon" aria-hidden="true">
+            🔔
+          </span>
+          <span className="home-hub__dm-news-text">
+            <strong>
+              Your DM shared {dmNews.length} new {dmNews.length === 1 ? 'thing' : 'things'}
+            </strong>
+            <span>{dmNews.slice(0, 3).map((share) => share.title || 'Untitled').join(' · ')}</span>
+          </span>
+          <span className="home-hub__dm-news-cta">View →</span>
+        </button>
+      )}
+
       {isEmpty && (
         <SectionCard title="Getting started" icon="🧭" className="home-hub__onboarding">
           <ol className="home-hub__steps">
@@ -180,18 +230,27 @@ function HomeHub({ campaignName }) {
         </SectionCard>
       )}
 
-      <div className="home-hub__grid">
+      <div className="home-hub__layout">
         <SectionCard
           title={isAdmin ? 'Character' : 'Your character'}
           icon="🎭"
-          action={
-            <button type="button" className="btn btn--text" onClick={() => nav.goTo('character')}>
-              Open sheet
-            </button>
-          }
+          className="home-hub__area home-hub__area--character"
         >
           {character ? (
-            <CharacterSummary key={character.id} campaignId={campaignId} character={character} />
+            <>
+              <CharacterSummary key={character.id} campaignId={campaignId} character={character} />
+              <div className="home-hub__links">
+                <button type="button" className="btn home-hub__link" onClick={() => nav.goTo('character')}>
+                  <span aria-hidden="true">📜</span> Sheet
+                </button>
+                <button type="button" className="btn home-hub__link" onClick={() => nav.goTo('spells')}>
+                  <span aria-hidden="true">✨</span> Spells
+                </button>
+                <button type="button" className="btn home-hub__link" onClick={() => nav.goTo('party')}>
+                  <span aria-hidden="true">🛡️</span> Party
+                </button>
+              </div>
+            </>
           ) : (
             <p className="inline-state">
               {isAdmin
@@ -204,7 +263,7 @@ function HomeHub({ campaignName }) {
           )}
         </SectionCard>
 
-        <SectionCard title="Quick add" icon="➕">
+        <SectionCard title="Quick add" icon="➕" className="home-hub__area home-hub__area--quick">
           {quickNotes.enabled && <QuickNoteInput onAdd={quickNotes.add} />}
           <div className="home-hub__actions">
             {QUICK_ACTIONS.map((action) => (
@@ -228,8 +287,46 @@ function HomeHub({ campaignName }) {
         </SectionCard>
 
         <SectionCard
+          title="Last session"
+          icon="📖"
+          className="home-hub__area home-hub__area--last"
+          action={
+            sessions.length > 0 && (
+              <button type="button" className="btn btn--text" onClick={() => nav.goTo('sessions')}>
+                All sessions
+              </button>
+            )
+          }
+        >
+          <StatusMessage loading={loading && !entities.length} empty={!lastSession}>
+            No session recaps yet. End a session to turn your quick notes into one.
+          </StatusMessage>
+          {lastSession && (
+            <button type="button" className="home-hub__recap" onClick={() => open(lastSession)}>
+              <span className="home-hub__recap-title">{lastSession.title || 'Untitled Session'}</span>
+              {lastSession.raw.session_date && (
+                <span className="home-hub__recap-date">{formatSessionDate(lastSession.raw.session_date)}</span>
+              )}
+              {lastSession.body && <span className="home-hub__recap-body">{lastSession.body}</span>}
+              <span className="home-hub__recap-more">Read the recap →</span>
+            </button>
+          )}
+          {earlierSessions.length > 0 && (
+            <div className="home-hub__earlier">
+              <span className="home-hub__earlier-label">Earlier</span>
+              {earlierSessions.map((sess) => (
+                <button key={sess.id} type="button" className="btn btn--text home-hub__earlier-link" onClick={() => open(sess)}>
+                  {sess.title || 'Untitled Session'}
+                </button>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard
           title="Open threads"
           icon="🧵"
+          className="home-hub__area home-hub__area--threads"
           action={
             <button type="button" className="btn btn--text" onClick={() => nav.goTo('quests')}>
               All quests
@@ -253,65 +350,42 @@ function HomeHub({ campaignName }) {
               ))}
             </CardList>
           )}
-        </SectionCard>
-
-        <SectionCard
-          title="Recent sessions"
-          icon="📖"
-          action={
-            <button type="button" className="btn btn--text" onClick={() => nav.goTo('sessions')}>
-              All sessions
-            </button>
-          }
-        >
-          <StatusMessage loading={loading && !entities.length} empty={!sessions.length}>
-            No session recaps yet. End a session to turn your quick notes into one.
-          </StatusMessage>
-          {sessions.length > 0 && (
-            <CardList label="Recent sessions">
-              {sessions.slice(0, SESSION_LIMIT).map((s) => (
-                <MiniCard
-                  key={s.id}
-                  icon="📖"
-                  type={formatSessionDate(s.raw.session_date) || 'Session'}
-                  title={s.title}
-                  meta={s.body}
-                  onClick={() => open(s)}
-                />
-              ))}
-            </CardList>
+          {openThreads.length > THREAD_LIMIT && (
+            <p className="field-hint">+ {openThreads.length - THREAD_LIMIT} more in Quests</p>
           )}
         </SectionCard>
 
-        <SectionCard title="Recently added" icon="🕮">
+        <SectionCard title="Recently added" icon="🕮" className="home-hub__area home-hub__area--recent">
           <StatusMessage loading={loading && !entities.length} empty={!recentEntries.length && !quickNotes.notes.length}>
             Nothing yet — NPCs, places and quests you add will show up here.
           </StatusMessage>
           {(recentEntries.length > 0 || quickNotes.notes.length > 0) && (
-            <CardList label="Recently added">
+            <ul className="home-hub__recent" aria-label="Recently added">
               {[
                 ...quickNotes.notes.slice(0, 2).map((n) => (
-                  <MiniCard
-                    key={`note-${n.id}`}
-                    icon="✏️"
-                    type="Quick note"
-                    title={n.content}
-                    meta={formatDateTime(n.createdAt)}
-                    onClick={() => nav.openEntity('note', n.id)}
-                  />
+                  <li key={`note-${n.id}`}>
+                    <MiniCard
+                      icon="✏️"
+                      type="Quick note"
+                      title={n.content}
+                      meta={formatDateTime(n.createdAt)}
+                      onClick={() => nav.openEntity('note', n.id)}
+                    />
+                  </li>
                 )),
                 ...recentEntries.map((e) => (
-                  <MiniCard
-                    key={`${e.type}-${e.id}`}
-                    icon={e.icon}
-                    type={e.label}
-                    title={e.title}
-                    meta={e.subtitle || e.body}
-                    onClick={() => open(e)}
-                  />
+                  <li key={`${e.type}-${e.id}`}>
+                    <MiniCard
+                      icon={e.icon}
+                      type={e.label}
+                      title={e.title}
+                      meta={e.subtitle || e.body}
+                      onClick={() => open(e)}
+                    />
+                  </li>
                 )),
               ]}
-            </CardList>
+            </ul>
           )}
         </SectionCard>
       </div>
