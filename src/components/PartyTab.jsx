@@ -6,6 +6,7 @@ import PartyGoals from './PartyGoals.jsx'
 import Modal from './Modal.jsx'
 import './PartyTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
+import { useImageCrop } from '../hooks/useImageCrop.jsx'
 
 const BUCKET = 'party-portraits'
 const MEMBER_TYPES = ['Player', 'NPC']
@@ -156,10 +157,10 @@ function PartyTab({ campaignId, playerId }) {
     setIsEditingDetails(false)
   }
 
-  function handlePhotoSelected(event) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
+  // Every picked photo goes through the crop/zoom/move step first.
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto })
+
+  function applyPhoto(file) {
 
     revokeTrackedObjectUrl()
     const previewUrl = URL.createObjectURL(file)
@@ -308,13 +309,19 @@ function PartyTab({ campaignId, playerId }) {
                 type="file"
                 accept="image/*"
                 hidden
-                onChange={handlePhotoSelected}
+                onChange={photoCrop.fromInput}
               />
               {!readOnly && form.photoPreview && (
-                <button type="button" className="btn btn--text" onClick={removePhoto}>
-                  Remove photo
-                </button>
+                <>
+                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                    Adjust
+                  </button>
+                  <button type="button" className="btn btn--text" onClick={removePhoto}>
+                    Remove photo
+                  </button>
+                </>
               )}
+              {photoCrop.dialog}
             </div>
 
             <div className="party-form__grid">

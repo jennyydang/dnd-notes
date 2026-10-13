@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createCampaign, joinCampaign } from '../lib/campaigns.js'
 import { uploadImage } from '../lib/storage.js'
+import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import './NewOrJoinCampaign.scss'
 
 const BUCKET = 'campaign-covers'
@@ -50,10 +51,10 @@ function NewCampaignForm({ playerId, onDone, onBack }) {
     }
   }, [])
 
-  function handlePhotoSelected(event) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
+  // Every picked photo goes through the crop/zoom/move step first.
+  const photoCrop = useImageCrop({ aspect: 16 / 9, shape: 'rect', onCropped: applyPhoto })
+
+  function applyPhoto(file) {
 
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
     const previewUrl = URL.createObjectURL(file)
@@ -120,8 +121,14 @@ function NewCampaignForm({ playerId, onDone, onBack }) {
             type="file"
             accept="image/*"
             hidden
-            onChange={handlePhotoSelected}
+            onChange={photoCrop.fromInput}
           />
+          {photoPreview && (
+            <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(photoFile, photoPreview)}>
+              Adjust
+            </button>
+          )}
+          {photoCrop.dialog}
         </div>
         <div className="new-or-join__fields">
           <div className="field">

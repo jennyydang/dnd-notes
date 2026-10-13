@@ -1,0 +1,124 @@
+@use '../styles/variables' as *;
+
+.image-crop {
+  padding: 1.5rem;
+  width: min(100%, 36rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+
+  .section-card__title {
+    align-self: flex-start;
+  }
+
+  &__stage {
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+    border-radius: $radius;
+    border: 1px solid $gold-dim;
+    // Checkerboard shows where a zoomed-out image leaves empty space.
+    background:
+      repeating-conic-gradient(#2a221c 0% 25%, #1c1612 0% 50%) 0 0 / 20px 20px;
+    user-select: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $gold;
+      outline-offset: 3px;
+    }
+  }
+
+  &__image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: none;
+    pointer-events: none;
+    transform-origin: 0 0;
+  }
+
+  // Dims what a round avatar will cut off.
+  &__circle {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55);
+    border: 2px solid rgba($gold-light, 0.8);
+    pointer-events: none;
+  }
+
+  // Rule-of-thirds guides.
+  &__grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.25) 33.33%, transparent calc(33.33% + 0.5px)),
+      linear-gradient(to right, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.25) 66.66%, transparent calc(66.66% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255, 255, 255, 0.25) 33.33%, transparent calc(33.33% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(66.66% - 0.5px), rgba(255, 255, 255, 0.25) 66.66%, transparent calc(66.66% + 0.5px));
+  }
+
+  &__hint {
+    margin: -0.35rem 0 0;
+    font-size: 0.85rem;
+    color: $text-muted;
+    text-align: center;
+  }
+
+  &__zoom {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: min(100%, 22rem);
+
+    input[type='range'] {
+      flex: 1;
+      accent-color: $gold;
+      min-height: 2rem;
+    }
+  }
+
+  &__zoom-btn {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 1px solid $gold-dim;
+    background: $bg-deep;
+    color: $gold-light;
+    font-size: 1.3rem;
+    line-height: 1;
+
+    &:hover,
+    &:focus-visible {
+      border-color: $gold;
+    }
+  }
+
+  &__tools {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+
+    .chip-row {
+      justify-content: center;
+    }
+  }
+
+  &__tool-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__actions {
+    align-self: stretch;
+  }
+}

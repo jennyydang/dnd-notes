@@ -8,6 +8,7 @@ import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ShareStatus from './ShareStatus.jsx'
+import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import './NpcsTab.scss'
 import './SecretNpcsTab.scss'
 
@@ -151,10 +152,10 @@ function SecretNpcsTab({ campaignId, addRequest }) {
     setFormError(null)
   }
 
-  function pickPhoto(event) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
+  // Every picked photo goes through the crop/zoom/move step first.
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto })
+
+  function applyPhoto(file) {
     revokePreview()
     objectUrlRef.current = URL.createObjectURL(file)
     setForm((prev) => ({ ...prev, photoFile: file, photoPreview: objectUrlRef.current, photoRemoved: false }))
@@ -361,19 +362,25 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                     <span className="npc-form__photo-placeholder">+ Photo</span>
                   )}
                 </button>
-                <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={pickPhoto} />
+                <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={photoCrop.fromInput} />
                 {form.photoPreview && (
-                  <button
-                    type="button"
-                    className="btn btn--text"
-                    onClick={() => {
-                      revokePreview()
-                      setForm((prev) => ({ ...prev, photoFile: null, photoPreview: '', photoRemoved: true }))
-                    }}
-                  >
-                    Remove photo
-                  </button>
+                  <>
+                    <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                      Adjust
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--text"
+                      onClick={() => {
+                        revokePreview()
+                        setForm((prev) => ({ ...prev, photoFile: null, photoPreview: '', photoRemoved: true }))
+                      }}
+                    >
+                      Remove photo
+                    </button>
+                  </>
                 )}
+                {photoCrop.dialog}
               </div>
               <div className="npc-form__grid">
                 <div className="field">

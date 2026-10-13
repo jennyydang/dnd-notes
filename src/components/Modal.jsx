@@ -1,14 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import './Modal.scss'
+
+// Open modals, innermost last — so Escape closes only the top one when a
+// dialog opens another (e.g. the image cropper over an edit form).
+const openModals = []
 
 // Generic popup dialog: dark backdrop, centered panel, dismissible via
 // Escape or by clicking outside the panel. Content (typically a form) is
 // passed as children — this component only owns the overlay/positioning,
 // same visual pattern as the existing spell flavor-text popup.
 function Modal({ onClose, label, children }) {
+  const idRef = useRef(null)
+  if (!idRef.current) idRef.current = {}
+
+  useEffect(() => {
+    const id = idRef.current
+    openModals.push(id)
+    return () => openModals.splice(openModals.indexOf(id), 1)
+  }, [])
+
   useEffect(() => {
     function onKeyDown(event) {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape' && openModals[openModals.length - 1] === idRef.current) onClose()
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)

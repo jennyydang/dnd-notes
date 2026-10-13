@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { supabase } from '../lib/supabaseClient.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
+import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import './WorldMapViewer.scss'
 
 const MARKER_BUCKET = 'map-marker-photos'
@@ -363,10 +364,10 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
     setFormError(null)
   }
 
-  function handleMarkerPhotoSelected(event) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
+  // Every picked photo goes through the crop/zoom/move step first.
+  const photoCrop = useImageCrop({ aspect: 4 / 3, shape: 'rect', onCropped: applyMarkerPhoto })
+
+  function applyMarkerPhoto(file) {
 
     revokeTrackedObjectUrl()
     const previewUrl = URL.createObjectURL(file)
@@ -640,13 +641,19 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
                   type="file"
                   accept="image/*"
                   hidden
-                  onChange={handleMarkerPhotoSelected}
+                  onChange={photoCrop.fromInput}
                 />
                 {markerForm.photoPreview && (
-                  <button type="button" className="btn btn--text" onClick={removeMarkerPhoto}>
-                    Remove photo
-                  </button>
+                  <>
+                    <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(markerForm.photoFile, markerForm.photoPreview)}>
+                      Adjust
+                    </button>
+                    <button type="button" className="btn btn--text" onClick={removeMarkerPhoto}>
+                      Remove photo
+                    </button>
+                  </>
                 )}
+                {photoCrop.dialog}
               </div>
             </div>
             {formError && <p className="empty-state empty-state--error">{formError}</p>}

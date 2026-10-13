@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import TabNav from './TabNav.jsx'
 import Modal from './Modal.jsx'
@@ -7,6 +7,10 @@ import { TAG_GROUPS, tagText } from '../lib/tags.js'
 import './LootTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
+import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import { getPublicUrl, uploadImage } from '../lib/storage.js'
+
+const BUCKET = 'loot-photos'
 
 const ALL_HOLDERS = 'all'
 const UNCLAIMED = '__unclaimed__'
@@ -16,7 +20,18 @@ const SORT_MODES = [
   { id: 'alpha', label: 'A → Z' },
 ]
 
-const emptyForm = { item: '', kind: '', foundAt: '', holder: '', notes: '', usable: false, used: false }
+const emptyForm = {
+  item: '',
+  kind: '',
+  foundAt: '',
+  holder: '',
+  notes: '',
+  usable: false,
+  used: false,
+  photoFile: null,
+  photoPreview: '',
+  photoRemoved: false,
+}
 
 const fromRow = (r) => ({
   id: r.id,
@@ -27,6 +42,7 @@ const fromRow = (r) => ({
   notes: r.notes,
   usable: r.usable,
   used: r.used,
+  photo: getPublicUrl(BUCKET, r.photo_path),
   createdAt: r.created_at,
 })
 
@@ -50,6 +66,31 @@ function LootTab({ campaignId }) {
   const [sortMode, setSortMode] = useState('recent')
   const [usingEntry, setUsingEntry] = useState(null)
   const [useError, setUseError] = useState(null)
+  const [viewingPhoto, setViewingPhoto] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const photoInputRef = useRef(null)
+  const objectUrlRef = useRef(null)
+
+  useEffect(() => () => objectUrlRef.current && URL.revokeObjectURL(objectUrlRef.current), [])
+
+  function revokePreview() {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+    objectUrlRef.current = null
+  }
+
+  // Every picked photo goes through the crop/zoom/move step first.
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'rect', onCropped: applyPhoto })
+
+  function applyPhoto(file) {
+    revokePreview()
+    objectUrlRef.current = URL.createObjectURL(file)
+    setForm((prev) => ({ ...prev, photoFile: file, photoPreview: objectUrlRef.current, photoRemoved: false }))
+  }
+
+  function removePhoto() {
+    revokePreview()
+    setForm((prev) => ({ ...prev, photoFile: null, photoPreview: '', photoRemoved: true }))
+  }
 
   // Sorted client-side rather than via the hook's server-side orderBy so
   // the toggle can flip instantly without a refetch. "Last Added" reads
@@ -93,6 +134,7 @@ function LootTab({ campaignId }) {
   })
 
   function startAdding() {
+    revokePreview()
     setForm(emptyForm)
     setEditingId(null)
     setFormError(null)
@@ -108,13 +150,18 @@ function LootTab({ campaignId }) {
       notes: entry.notes,
       usable: entry.usable,
       used: entry.used,
+      photoFile: null,
+      photoPreview: entry.photo || '',
+      photoRemoved: false,
     })
+    revokePreview()
     setIsAdding(false)
     setFormError(null)
     setEditingId(entry.id)
   }
 
   function cancelForm() {
+    revokePreview()
     setIsAdding(false)
     setEditingId(null)
     setForm(emptyForm)
@@ -123,7 +170,7 @@ function LootTab({ campaignId }) {
 
   async function submitForm(event) {
     event.preventDefault()
-    if (!form.item.trim()) return
+    if (!form.item.trim() || saving) return
 
     const payload = {
       item: form.item,
@@ -137,7 +184,10 @@ function LootTab({ campaignId }) {
       used: form.usable && form.used,
     }
 
+    setSaving(true)
     try {
+      if (form.photoFile) payload.photo_path = await uploadImage(BUCKET, form.photoFile)
+      else if (form.photoRemoved) payload.photo_path = null
       if (editingId) {
         await updateItem(editingId, payload)
       } else {
@@ -146,6 +196,8 @@ function LootTab({ campaignId }) {
       cancelForm()
     } catch (err) {
       setFormError(err.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -173,6 +225,28 @@ function LootTab({ campaignId }) {
   function renderLootForm(standalone) {
     return (
     <form className={`loot-form panel${standalone ? ' loot-form--standalone' : ''}`} onSubmit={submitForm}>
+          <div className="loot-form__photo">
+            <button
+              type="button"
+              className="loot-form__photo-btn"
+              onClick={() => photoInputRef.current?.click()}
+              aria-label={form.photoPreview ? 'Change the picture' : 'Add a picture'}
+            >
+              {form.photoPreview ? <img src={form.photoPreview} alt="" /> : <span>+ Picture</span>}
+            </button>
+            <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={photoCrop.fromInput} />
+            {form.photoPreview && (
+              <div className="loot-form__photo-actions">
+                <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                  Adjust
+                </button>
+                <button type="button" className="btn btn--text" onClick={removePhoto}>
+                  Remove
+                </button>
+              </div>
+            )}
+            {photoCrop.dialog}
+          </div>
           <div className="loot-form__grid">
             <div className="field">
               <label htmlFor="loot-item">Item</label>
@@ -255,8 +329,8 @@ function LootTab({ campaignId }) {
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
             </button>
-            <button type="submit" className="btn btn--primary">
-              {editingId ? 'Save Changes' : 'Add Loot'}
+            <button type="submit" className="btn btn--primary" disabled={saving}>
+              {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Loot'}
             </button>
           </div>
         </form>
@@ -276,6 +350,15 @@ function LootTab({ campaignId }) {
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Loot">
           {renderLootForm(false)}
+        </Modal>
+      )}
+
+      {viewingPhoto && (
+        <Modal onClose={() => setViewingPhoto(null)} label={viewingPhoto.item}>
+          <figure className="loot-photo-view">
+            <img src={viewingPhoto.photo} alt={viewingPhoto.item} />
+            <figcaption>{viewingPhoto.item}</figcaption>
+          </figure>
         </Modal>
       )}
 
@@ -350,12 +433,24 @@ function LootTab({ campaignId }) {
               {entry.usable && entry.used && (
                 <span className="loot-card__used-tag">Used</span>
               )}
-              <div className="loot-card__main">
-                <h3 className="loot-card__item">{entry.item}</h3>
-                <TagBadge group="loot" kind={entry.kind} />
-                {entry.foundAt && (
-                  <span className="loot-card__found-at">{entry.foundAt}</span>
+              <div className="loot-card__head">
+                {entry.photo && (
+                  <button
+                    type="button"
+                    className="loot-card__photo"
+                    onClick={() => setViewingPhoto(entry)}
+                    aria-label={`View picture of ${entry.item}`}
+                  >
+                    <img src={entry.photo} alt="" loading="lazy" />
+                  </button>
                 )}
+                <div className="loot-card__main">
+                  <h3 className="loot-card__item">{entry.item}</h3>
+                  <TagBadge group="loot" kind={entry.kind} />
+                  {entry.foundAt && (
+                    <span className="loot-card__found-at">{entry.foundAt}</span>
+                  )}
+                </div>
               </div>
               {entry.holder && (
                 <p className="loot-card__holder">

@@ -5,6 +5,7 @@ import Modal from './Modal.jsx'
 import './NpcsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
+import { useImageCrop } from '../hooks/useImageCrop.jsx'
 
 const BUCKET = 'npc-portraits'
 const LIFE_STATUSES = ['Alive', 'Deceased', 'Unknown', 'Missing']
@@ -89,10 +90,10 @@ function NpcsTab({ campaignId }) {
     setSubmitting(false)
   }
 
-  function handlePhotoSelected(event) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
+  // Every picked photo goes through the crop/zoom/move step first.
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto })
+
+  function applyPhoto(file) {
 
     revokeTrackedObjectUrl()
     const previewUrl = URL.createObjectURL(file)
@@ -171,13 +172,19 @@ function NpcsTab({ campaignId }) {
                 type="file"
                 accept="image/*"
                 hidden
-                onChange={handlePhotoSelected}
+                onChange={photoCrop.fromInput}
               />
               {form.photoPreview && (
-                <button type="button" className="btn btn--text" onClick={removePhoto}>
-                  Remove photo
-                </button>
+                <>
+                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                    Adjust
+                  </button>
+                  <button type="button" className="btn btn--text" onClick={removePhoto}>
+                    Remove photo
+                  </button>
+                </>
               )}
+              {photoCrop.dialog}
             </div>
 
             <div className="npc-form__grid">

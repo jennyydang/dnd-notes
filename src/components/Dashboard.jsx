@@ -6,6 +6,7 @@ import TabNav from './TabNav.jsx'
 import './Dashboard.scss'
 import CampaignSearch from './CampaignSearch.jsx'
 import { matchesCampaign } from '../lib/search.js'
+import { useImageCrop } from '../hooks/useImageCrop.jsx'
 
 const BUCKET = 'campaign-covers'
 
@@ -80,10 +81,10 @@ function Dashboard({ onOpenCampaign }) {
     setFormError(null)
   }
 
-  function handlePhotoSelected(event) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
+  // Every picked photo goes through the crop/zoom/move step first.
+  const photoCrop = useImageCrop({ aspect: 16 / 9, shape: 'rect', onCropped: applyPhoto })
+
+  function applyPhoto(file) {
 
     revokeTrackedObjectUrl()
     const previewUrl = URL.createObjectURL(file)
@@ -169,13 +170,19 @@ function Dashboard({ onOpenCampaign }) {
                 type="file"
                 accept="image/*"
                 hidden
-                onChange={handlePhotoSelected}
+                onChange={photoCrop.fromInput}
               />
               {form.photoPreview && (
-                <button type="button" className="btn btn--text" onClick={removePhoto}>
-                  Remove cover
-                </button>
+                <>
+                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                    Adjust
+                  </button>
+                  <button type="button" className="btn btn--text" onClick={removePhoto}>
+                    Remove cover
+                  </button>
+                </>
               )}
+              {photoCrop.dialog}
             </div>
 
             <div className="campaign-form__fields">

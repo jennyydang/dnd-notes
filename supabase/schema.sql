@@ -1016,3 +1016,15 @@ alter table dm_shares add constraint dm_shares_kind_check
 alter table dm_creatures enable row level security;
 drop policy if exists "anon full access dm_creatures" on dm_creatures;
 create policy "anon full access dm_creatures" on dm_creatures for all to anon using (true) with check (true);
+
+-- Optional picture for a loot item (object key in "loot-photos").
+alter table loot add column if not exists photo_path text;
+
+insert into storage.buckets (id, name, public)
+values ('loot-photos', 'loot-photos', true)
+on conflict (id) do nothing;
+
+drop policy if exists "anon full access loot-photos bucket" on storage.objects;
+create policy "anon full access loot-photos bucket"
+  on storage.objects for all to anon
+  using (bucket_id = 'loot-photos') with check (bucket_id = 'loot-photos');
