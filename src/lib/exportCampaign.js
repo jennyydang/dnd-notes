@@ -16,6 +16,9 @@ const CAMPAIGN_TABLES = [
   'character_sheets',
 ]
 
+// DM-only tables: in a DM's backup, never a player's.
+const DM_TABLES = ['dm_npcs', 'campaign_art']
+
 // Private tables: exported for the logged-in player only (or everyone's,
 // for the admin account, matching what the admin can already see).
 const PLAYER_TABLES = [
@@ -59,7 +62,7 @@ function download(filename, contents) {
 // load — e.g. one added by SQL that hasn't been run yet — is listed under
 // `errors` instead of aborting the whole backup. Resolves to the number of
 // rows exported.
-export async function exportCampaign({ campaignId, campaignName, playerId }) {
+export async function exportCampaign({ campaignId, campaignName, playerId, includeDm = false }) {
   const backup = {
     format: 'adventurers-log-backup',
     version: 1,
@@ -73,7 +76,7 @@ export async function exportCampaign({ campaignId, campaignName, playerId }) {
   const playerFilter = playerId ? { campaign_id: campaignId, player_id: playerId } : campaignFilter
 
   const jobs = [
-    ...CAMPAIGN_TABLES.map((table) => [table, () => selectAll(table, campaignFilter)]),
+    ...[...CAMPAIGN_TABLES, ...(includeDm ? DM_TABLES : [])].map((table) => [table, () => selectAll(table, campaignFilter)]),
     ...PLAYER_TABLES.map((table) => [table, () => selectAll(table, playerFilter)]),
   ]
   await Promise.all(

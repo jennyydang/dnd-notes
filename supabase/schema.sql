@@ -887,3 +887,54 @@ create table if not exists creatures (
 alter table creatures enable row level security;
 drop policy if exists "anon full access creatures" on creatures;
 create policy "anon full access creatures" on creatures for all to anon using (true) with check (true);
+
+-- ── DM tools ──────────────────────────────────────────────────────────
+-- Only campaign DMs/creators see these in the app. Like everything else
+-- here that is UI-level privacy, not database security: the anon key can
+-- still read these tables (see the Row Level Security note above).
+
+-- NPCs the DM is drafting before the party meets them. "Reveal" copies
+-- the player-safe fields into npcs (never `secrets`) and records which
+-- row it made; deleting that npcs row clears the link again.
+create table if not exists dm_npcs (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  name text not null,
+  race text not null default '',
+  occupation text not null default '',
+  location text not null default '',
+  description text not null default '',
+  secrets text not null default '',
+  photo_path text,                 -- object key in the "npc-portraits" bucket, nullable
+  revealed_npc_id uuid references npcs(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- Art the DM has used in the campaign. `shared` pieces also show in the
+-- players' Journal → Art tab.
+create table if not exists campaign_art (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  image_path text not null,        -- object key in the "campaign-art" bucket
+  title text not null default '',
+  category text not null default 'Other',
+  notes text not null default '',
+  shared boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table dm_npcs      enable row level security;
+alter table campaign_art enable row level security;
+drop policy if exists "anon full access dm_npcs" on dm_npcs;
+drop policy if exists "anon full access campaign_art" on campaign_art;
+create policy "anon full access dm_npcs"      on dm_npcs      for all to anon using (true) with check (true);
+create policy "anon full access campaign_art" on campaign_art for all to anon using (true) with check (true);
+
+insert into storage.buckets (id, name, public)
+values ('campaign-art', 'campaign-art', true)
+on conflict (id) do nothing;
+
+drop policy if exists "anon full access campaign-art bucket" on storage.objects;
+create policy "anon full access campaign-art bucket"
+  on storage.objects for all to anon
+  using (bucket_id = 'campaign-art') with check (bucket_id = 'campaign-art');

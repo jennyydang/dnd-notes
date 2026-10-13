@@ -182,6 +182,44 @@
   }
 }
 
+// DM tools card: two big tap targets with counts.
+.home-hub__dm-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.home-hub__dm-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  background: $bg-deep;
+  border: 1px solid $ink-soft;
+  border-radius: $radius-lg;
+  color: $text-light;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $gold;
+  }
+}
+
+.home-hub__dm-value {
+  font-family: $font-display;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  color: $parchment;
+}
+
+.home-hub__dm-label {
+  font-size: 0.82rem;
+  color: $text-muted;
+}
+
 .quick-note-input {
   display: flex;
   align-items: flex-end;

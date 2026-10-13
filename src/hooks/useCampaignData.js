@@ -18,6 +18,7 @@ export const CampaignNavContext = createContext({
   openSearch: () => {},
   openQuickCreate: () => {},
   tabs: [],
+  isDm: false,
 })
 
 export const useCampaignNav = () => useContext(CampaignNavContext)

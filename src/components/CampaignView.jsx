@@ -5,6 +5,8 @@ import LoreTab from './LoreTab.jsx'
 import PartyTab from './PartyTab.jsx'
 import NpcsTab from './NpcsTab.jsx'
 import CreaturesTab from './CreaturesTab.jsx'
+import SecretNpcsTab from './SecretNpcsTab.jsx'
+import ArtGallery from './ArtGallery.jsx'
 import LootTab from './LootTab.jsx'
 import QuestsTab from './QuestsTab.jsx'
 import SessionNotesTab from './SessionNotesTab.jsx'
@@ -41,6 +43,7 @@ const TAB_DEFS = {
   timeline: { label: 'Timeline', icon: '⏳' },
   npcs: { label: 'NPCs', icon: '👥' },
   creatures: { label: 'Monsters & Creatures', icon: '🐉' },
+  art: { label: 'Art', icon: '🖼️' },
   maps: { label: 'Maps & Places', icon: '🗺️' },
   quests: { label: 'Quests', icon: '⚔️' },
   loot: { label: 'Loot', icon: '💰' },
@@ -49,6 +52,8 @@ const TAB_DEFS = {
   spells: { label: 'Spells', icon: '✨' },
   party: { label: 'Party', icon: '🛡️' },
   prep: { label: 'Session Prep', icon: '🗒️' },
+  'dm-npcs': { label: 'Secret NPCs', icon: '🕵️' },
+  'dm-art': { label: 'Art Gallery', icon: '🖼️' },
 }
 
 const AREAS = [
@@ -58,12 +63,17 @@ const AREAS = [
     id: 'journal',
     label: 'Journal',
     icon: '📖',
-    tabs: ['sessions', 'timeline', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore'],
+    tabs: ['sessions', 'timeline', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
     custom: true,
   },
   { id: 'character', label: 'Character', icon: '🎭', tabs: ['character', 'spells', 'party'] },
   { id: 'prep', label: 'Prep', icon: '🗒️', tabs: ['prep'] },
+  // Only for the campaign's DMs (and creator), plus the admin.
+  { id: 'dm', label: 'DM', icon: '👁️', tabs: ['dm-npcs', 'dm-art'], dmOnly: true },
 ]
+
+const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
+const membershipFromRow = (r) => ({ id: r.id, role: r.role })
 
 const customTabPrefix = 'custom:'
 
@@ -110,11 +120,21 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     icon: tab.isPrivate ? '🔒' : '📄',
   }))
 
+  // DM tools show for this campaign's DMs/creator. The admin account has
+  // no player, so (as elsewhere) it sees everything.
+  const { items: memberships, loading: roleLoading } = useSupabaseTable('campaign_memberships', {
+    fromRow: membershipFromRow,
+    orderBy: 'name',
+    filters: { id: campaignId, player_id: playerId || NO_PLAYER },
+  })
+  const isDm = !playerId || memberships.some((m) => m.role === 'dm' || m.role === 'creator')
+  const areas = AREAS.filter((area) => !area.dmOnly || isDm)
+
   const areaTabs = (area) => [
     ...area.tabs.map((id) => ({ id, ...TAB_DEFS[id] })),
     ...(area.custom ? customTabItems : []),
   ]
-  const allTabs = AREAS.flatMap(areaTabs)
+  const allTabs = areas.flatMap(areaTabs)
 
   const setActiveTab = useCallback(
     (tab) => {
@@ -126,11 +146,12 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   )
 
   // Falls back to Home if the remembered tab no longer exists (e.g. a
-  // custom tab someone deleted).
+  // custom tab someone deleted) or isn't this player's to see. While the
+  // role is still loading, a remembered DM tab is held rather than lost.
   const knownTab =
-    TAB_DEFS[activeTab] || customTabItems.some((t) => t.id === activeTab) ? activeTab : 'home'
+    allTabs.some((t) => t.id === activeTab) || (roleLoading && TAB_DEFS[activeTab]) ? activeTab : 'home'
   const activeArea =
-    AREAS.find((area) => areaTabs(area).some((t) => t.id === knownTab)) || AREAS[0]
+    areas.find((area) => areaTabs(area).some((t) => t.id === knownTab)) || areas[0]
 
   // Cmd/Ctrl+K opens global search from anywhere in the campaign.
   useEffect(() => {
@@ -178,6 +199,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     openSearch: () => setSearchOpen(true),
     openQuickCreate: (type = 'npc', initial = {}) => setQuickCreate({ type, initial }),
     tabs: allTabs,
+    isDm,
   }
   const addRequestFor = (tab) => (addRequest?.tab === tab ? addRequest.at : null)
 
@@ -274,7 +296,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                   <h2 className="campaign-view__name">{campaignName}</h2>
                 </div>
 
-                {AREAS.map((area) => (
+                {areas.map((area) => (
                   <div className="campaign-view__group" key={area.id}>
                     {area.tabs.length > 1 && (
                       <h3 className="campaign-view__group-label">{area.label}</h3>
@@ -330,6 +352,11 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {knownTab === 'npcs' && <NpcsTab campaignId={campaignId} />}
               {knownTab === 'creatures' && <CreaturesTab campaignId={campaignId} />}
               {knownTab === 'lore' && <LoreTab campaignId={campaignId} />}
+              {knownTab === 'art' && <ArtGallery campaignId={campaignId} />}
+              {isDm && knownTab === 'dm-npcs' && (
+                <SecretNpcsTab campaignId={campaignId} addRequest={addRequestFor('dm-npcs')} />
+              )}
+              {isDm && knownTab === 'dm-art' && <ArtGallery campaignId={campaignId} manage />}
               {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}
               {activeCustomTab && (
                 <CustomTab
@@ -345,7 +372,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           </div>
 
           <nav className="bottom-nav" aria-label="Primary">
-            {AREAS.map((area) => {
+            {areas.map((area) => {
               const active = area.id === activeArea.id
               return (
                 <button

@@ -1,0 +1,278 @@
+@use '../styles/variables' as *;
+
+.art-gallery {
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  &__filter {
+    margin-bottom: 0;
+    max-width: 100%;
+    overflow-x: auto;
+
+    .tab-nav__list {
+      flex-wrap: nowrap;
+    }
+
+    .tab-nav__item {
+      white-space: nowrap;
+    }
+  }
+
+  &__upload {
+    margin-left: auto;
+  }
+
+  &__summary {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: $text-muted;
+  }
+
+  .empty-state ul {
+    margin: 0.4rem 0 0;
+    padding-left: 1.2rem;
+  }
+}
+
+.art-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(46%, 200px), 1fr));
+  gap: 0.9rem;
+}
+
+.art-tile {
+  position: relative;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  border: 1px solid rgba($gold-dim, 0.5);
+  background: $bg-deep;
+  animation: rise-in 0.3s ease-out backwards;
+
+  &__open {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    text-align: left;
+    cursor: zoom-in;
+
+    img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      transition: transform 0.25s ease;
+    }
+
+    &:hover img,
+    &:focus-visible img {
+      transform: scale(1.04);
+    }
+  }
+
+  &__caption {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    padding: 0.5rem 0.65rem 0.6rem;
+    background: $bg-panel;
+  }
+
+  &__title {
+    font-family: $font-display;
+    font-size: 0.92rem;
+    color: $parchment;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__category {
+    font-size: 0.75rem;
+    color: $text-muted;
+  }
+
+  &__share {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    min-height: 2rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    border-radius: 999px;
+    background: rgba($bg-deep, 0.85);
+    border: 1px solid rgba($gold-dim, 0.8);
+    color: $text-light;
+    backdrop-filter: blur(2px);
+
+    &--on {
+      border-color: $green-light;
+      color: $green-text;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: $gold;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+
+    &__open img {
+      transition: none;
+    }
+
+    &__open:hover img,
+    &__open:focus-visible img {
+      transform: none;
+    }
+  }
+}
+
+.art-form {
+  padding: 1.5rem;
+  min-width: min(100%, 360px);
+
+  &__check {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: $text-light;
+    cursor: pointer;
+
+    input {
+      width: 1.1rem;
+      height: 1.1rem;
+      accent-color: $gold;
+    }
+  }
+}
+
+// Full-screen viewer, above everything but dialogs opened from it.
+.art-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  background: #0a0806;
+  animation: fade-in 0.18s ease-out both;
+
+  &__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba($gold-dim, 0.35);
+  }
+
+  &__heading {
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 1.1rem;
+    color: $parchment;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+
+  &__bar-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  &__stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: #000;
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    &:fullscreen {
+      padding: 0;
+    }
+  }
+
+  &__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 1px solid rgba($gold-dim, 0.8);
+    background: rgba($bg-deep, 0.7);
+    color: $gold-light;
+    font-size: 1.8rem;
+    line-height: 1;
+
+    &:hover,
+    &:focus-visible {
+      border-color: $gold;
+      background: rgba($bg-deep, 0.9);
+    }
+
+    &--prev {
+      left: 0.75rem;
+    }
+
+    &--next {
+      right: 0.75rem;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba($gold-dim, 0.35);
+  }
+
+  &__notes {
+    margin: 0;
+    flex: 1 1 18rem;
+    color: $text-light;
+    white-space: pre-wrap;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+}

@@ -4,6 +4,7 @@ import { useActiveCharacter } from '../hooks/useActiveCharacter.js'
 import { useCharacterSheet } from '../hooks/useCharacterSheet.js'
 import { usePrep } from '../hooks/usePrep.js'
 import { useQuickNotes } from '../hooks/useQuickNotes.js'
+import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { formatSessionDate, sessionDateTimestamp } from '../lib/sessionNotes.js'
 import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessionMode.js'
@@ -46,6 +47,45 @@ function MiniCard({ icon, type, title, meta, onClick }) {
     </button>
   )
 }
+
+// The DM's corner of Home: counts plus one-tap entry to the DM tools.
+function DmToolsCard({ campaignId }) {
+  const nav = useCampaignNav()
+  const filters = { campaign_id: campaignId }
+  const secret = useSupabaseTable('dm_npcs', { fromRow: dmNpcFromRow, filters })
+  const art = useSupabaseTable('campaign_art', { fromRow: artFromRow, filters })
+  const hidden = secret.items.filter((n) => !n.revealed).length
+  const shared = art.items.filter((a) => a.shared).length
+  return (
+    <SectionCard title="DM tools" icon="👁️">
+      {secret.error || art.error ? (
+        <p className="inline-state">Run the latest supabase/schema.sql to turn on Secret NPCs and the Art Gallery.</p>
+      ) : (
+        <div className="home-hub__dm-stats">
+          <button type="button" className="home-hub__dm-stat" onClick={() => nav.goTo('dm-npcs')}>
+            <span className="home-hub__dm-value">{secret.loading ? '–' : hidden}</span>
+            <span className="home-hub__dm-label">🕵️ Secret NPCs not met yet</span>
+          </button>
+          <button type="button" className="home-hub__dm-stat" onClick={() => nav.goTo('dm-art')}>
+            <span className="home-hub__dm-value">{art.loading ? '–' : art.items.length}</span>
+            <span className="home-hub__dm-label">🖼️ Art pieces · {shared} shared</span>
+          </button>
+        </div>
+      )}
+      <div className="home-hub__actions">
+        <button type="button" className="btn home-hub__action" onClick={() => nav.goTo('dm-npcs', { add: true })}>
+          <span aria-hidden="true">🕵️</span> Secret NPC
+        </button>
+        <button type="button" className="btn home-hub__action" onClick={() => nav.goTo('dm-art')}>
+          <span aria-hidden="true">🖼️</span> Upload art
+        </button>
+      </div>
+    </SectionCard>
+  )
+}
+
+const dmNpcFromRow = (r) => ({ id: r.id, revealed: Boolean(r.revealed_npc_id) })
+const artFromRow = (r) => ({ id: r.id, shared: r.shared })
 
 function CharacterSummary({ campaignId, character }) {
   const { sheet } = useCharacterSheet(campaignId, character.id)
@@ -117,7 +157,7 @@ function HomeHub({ campaignName }) {
     setExporting(true)
     setExportMessage(null)
     try {
-      const count = await exportCampaign({ campaignId, campaignName, playerId })
+      const count = await exportCampaign({ campaignId, campaignName, playerId, includeDm: nav.isDm })
       setExportMessage(`Downloaded a backup with ${count} records.`)
     } catch (err) {
       setExportMessage(`Export failed: ${err.message}`)
@@ -181,28 +221,32 @@ function HomeHub({ campaignName }) {
       )}
 
       <div className="home-hub__grid">
-        <SectionCard
-          title={isAdmin ? 'Character' : 'Your character'}
-          icon="🎭"
-          action={
-            <button type="button" className="btn btn--text" onClick={() => nav.goTo('character')}>
-              Open sheet
-            </button>
-          }
-        >
-          {character ? (
-            <CharacterSummary key={character.id} campaignId={campaignId} character={character} />
-          ) : (
-            <p className="inline-state">
-              {isAdmin
-                ? 'Pick a party member on the Character screen to view their sheet.'
-                : 'You haven’t claimed a character in this campaign yet.'}{' '}
-              <button type="button" className="btn btn--text home-hub__inline-link" onClick={() => nav.goTo(isAdmin ? 'character' : 'party')}>
-                {isAdmin ? 'Choose one' : 'Claim one on the Party screen'}
+        {nav.isDm && <DmToolsCard campaignId={campaignId} />}
+
+        {(character || !nav.isDm || isAdmin) && (
+          <SectionCard
+            title={isAdmin ? 'Character' : 'Your character'}
+            icon="🎭"
+            action={
+              <button type="button" className="btn btn--text" onClick={() => nav.goTo('character')}>
+                Open sheet
               </button>
-            </p>
-          )}
-        </SectionCard>
+            }
+          >
+            {character ? (
+              <CharacterSummary key={character.id} campaignId={campaignId} character={character} />
+            ) : (
+              <p className="inline-state">
+                {isAdmin
+                  ? 'Pick a party member on the Character screen to view their sheet.'
+                  : 'You haven’t claimed a character in this campaign yet.'}{' '}
+                <button type="button" className="btn btn--text home-hub__inline-link" onClick={() => nav.goTo(isAdmin ? 'character' : 'party')}>
+                  {isAdmin ? 'Choose one' : 'Claim one on the Party screen'}
+                </button>
+              </p>
+            )}
+          </SectionCard>
+        )}
 
         <SectionCard title="Quick add" icon="➕">
           {quickNotes.enabled && <QuickNoteInput onAdd={quickNotes.add} />}
