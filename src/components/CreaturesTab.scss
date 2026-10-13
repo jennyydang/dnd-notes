@@ -1,0 +1,135 @@
+@use '../styles/variables' as *;
+
+.creatures-tab {
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  &__filter {
+    margin-bottom: 0;
+    max-width: 100%;
+    overflow-x: auto;
+
+    .tab-nav__list {
+      flex-wrap: nowrap;
+    }
+
+    .tab-nav__item {
+      white-space: nowrap;
+    }
+  }
+}
+
+.creature-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.creature-card {
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-top: 3px solid $gold-dim;
+
+  // Kind is shown as text too, so the colour is only a secondary cue.
+  &--monster {
+    border-top-color: $maroon-light;
+  }
+
+  &--creature {
+    border-top-color: $green-light;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__name {
+    font-size: 1.15rem;
+    color: $parchment;
+    overflow-wrap: anywhere;
+  }
+
+  &__kind {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+
+    &--monster {
+      background: rgba($maroon-light, 0.3);
+      border: 1px solid rgba($maroon-light, 0.8);
+      color: $maroon-text;
+    }
+
+    &--creature {
+      background: rgba($green-light, 0.25);
+      border: 1px solid rgba($green-light, 0.8);
+      color: $green-text;
+    }
+  }
+
+  &__meta,
+  &__where {
+    margin: 0;
+    font-size: 0.9rem;
+    color: $text-muted;
+  }
+
+  &__stats {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0;
+
+    div {
+      min-width: 3.5rem;
+      padding: 0.3rem 0.6rem;
+      text-align: center;
+      background: $bg-deep;
+      border: 1px solid $ink-soft;
+      border-radius: $radius;
+    }
+
+    dt {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: $text-muted;
+    }
+
+    dd {
+      margin: 0;
+      font-family: $font-display;
+      font-size: 1.1rem;
+      color: $parchment;
+    }
+  }
+
+  &__notes {
+    margin: 0;
+    color: $text-light;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+}

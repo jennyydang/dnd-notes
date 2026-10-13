@@ -866,3 +866,24 @@ create policy "anon full access character_sheets" on character_sheets for all to
 create policy "anon full access quick_notes"      on quick_notes      for all to anon using (true) with check (true);
 create policy "anon full access entity_links"     on entity_links     for all to anon using (true) with check (true);
 create policy "anon full access session_prep"     on session_prep     for all to anon using (true) with check (true);
+
+-- Monsters & Creatures the party has run into, shared by the whole
+-- campaign (any player can add, edit or remove). kind splits the list
+-- into the tab's Monsters / Creatures filter.
+create table if not exists creatures (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  name text not null,
+  kind text not null default 'Monster' check (kind in ('Monster','Creature')),
+  creature_type text not null default '',
+  challenge text not null default '',
+  armor_class integer check (armor_class is null or armor_class between 0 and 50),
+  hit_points integer check (hit_points is null or hit_points between 0 and 9999),
+  encountered_at text not null default '',
+  notes text not null default '',
+  created_at timestamptz not null default now()
+);
+
+alter table creatures enable row level security;
+drop policy if exists "anon full access creatures" on creatures;
+create policy "anon full access creatures" on creatures for all to anon using (true) with check (true);

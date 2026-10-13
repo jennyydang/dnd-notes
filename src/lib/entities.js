@@ -142,6 +142,22 @@ export const ENTITY_TYPES = {
   },
 }
 
+// Monsters & creatures (one table, split by kind).
+ENTITY_TYPES.creature = {
+  table: 'creatures',
+  label: 'Creature',
+  plural: 'Monsters & creatures',
+  icon: '🐉',
+  tab: 'creatures',
+  normalize: (r) => ({
+    title: text(r.name),
+    subtitle: [r.creature_type, r.challenge && `CR ${r.challenge}`].filter(Boolean).join(' · '),
+    body: [r.encountered_at && `Met: ${r.encountered_at}`, r.notes].filter(Boolean).join('\n'),
+    tags: [r.kind, r.creature_type].filter(Boolean),
+    label: r.kind === 'Monster' ? 'Monster' : 'Creature',
+  }),
+}
+
 // Searchable but not stored as linkable rows of their own kind: spells
 // (private per player), maps and their pins, custom-tab entries, and
 // timeline events (read out of session recaps — see CampaignDataProvider).

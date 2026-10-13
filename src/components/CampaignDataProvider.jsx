@@ -31,6 +31,7 @@ function CampaignDataProvider({ campaignId, playerId, children }) {
     goal: useSupabaseTable('party_goals', opts('goal')),
     spell: useSupabaseTable('spells', opts('spell')),
     map: useSupabaseTable('maps', opts('map')),
+    creature: useSupabaseTable('creatures', opts('creature')),
   }
   const links = useSupabaseTable('entity_links', { fromRow: identity, filters: shared })
 

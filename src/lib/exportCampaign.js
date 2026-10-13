@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient.js'
 const CAMPAIGN_TABLES = [
   'maps',
   'npcs',
+  'creatures',
   'places',
   'loot',
   'quests',

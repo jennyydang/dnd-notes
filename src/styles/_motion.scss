@@ -106,7 +106,7 @@
 
 $card-lists: '.npc-list', '.loot-list', '.quest-list', '.lore-list', '.party-list', '.goal-list',
   '.custom-entry-list', '.session-list', '.spell-list', '.campaign-list', '.places-section__grid',
-  '.home-hub__grid', '.prep__grid', '.maps-tab__grid';
+  '.home-hub__grid', '.prep__grid', '.maps-tab__grid', '.creature-list';
 
 @each $list in $card-lists {
   // `backwards`, not `both`: once finished, the animation lets go of
@@ -123,7 +123,8 @@ $card-lists: '.npc-list', '.loot-list', '.quest-list', '.lore-list', '.party-lis
 }
 
 $cards: '.npc-card', '.loot-card', '.quest-card', '.lore-card', '.party-card', '.place-card',
-  '.goal-card', '.custom-entry-card', '.campaign-card', '.session-card', '.spell-card', '.map-card';
+  '.goal-card', '.custom-entry-card', '.campaign-card', '.session-card', '.spell-card', '.map-card',
+  '.creature-card';
 
 @each $card in $cards {
   #{$card} {

@@ -4,6 +4,7 @@ import MapsTab from './MapsTab.jsx'
 import LoreTab from './LoreTab.jsx'
 import PartyTab from './PartyTab.jsx'
 import NpcsTab from './NpcsTab.jsx'
+import CreaturesTab from './CreaturesTab.jsx'
 import LootTab from './LootTab.jsx'
 import QuestsTab from './QuestsTab.jsx'
 import SessionNotesTab from './SessionNotesTab.jsx'
@@ -39,6 +40,7 @@ const TAB_DEFS = {
   sessions: { label: 'Session Notes', icon: '📖' },
   timeline: { label: 'Timeline', icon: '⏳' },
   npcs: { label: 'NPCs', icon: '👥' },
+  creatures: { label: 'Monsters & Creatures', icon: '🐉' },
   maps: { label: 'Maps & Places', icon: '🗺️' },
   quests: { label: 'Quests', icon: '⚔️' },
   loot: { label: 'Loot', icon: '💰' },
@@ -56,7 +58,7 @@ const AREAS = [
     id: 'journal',
     label: 'Journal',
     icon: '📖',
-    tabs: ['sessions', 'timeline', 'npcs', 'maps', 'quests', 'loot', 'lore'],
+    tabs: ['sessions', 'timeline', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore'],
     custom: true,
   },
   { id: 'character', label: 'Character', icon: '🎭', tabs: ['character', 'spells', 'party'] },
@@ -325,6 +327,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {knownTab === 'loot' && <LootTab campaignId={campaignId} />}
               {knownTab === 'quests' && <QuestsTab campaignId={campaignId} />}
               {knownTab === 'npcs' && <NpcsTab campaignId={campaignId} />}
+              {knownTab === 'creatures' && <CreaturesTab campaignId={campaignId} />}
               {knownTab === 'lore' && <LoreTab campaignId={campaignId} />}
               {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}
               {activeCustomTab && (
