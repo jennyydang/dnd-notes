@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import Modal from './Modal.jsx'
+import TabNav from './TabNav.jsx'
 import './Dashboard.scss'
 import CampaignSearch from './CampaignSearch.jsx'
 import { matchesCampaign } from '../lib/search.js'
@@ -216,22 +217,23 @@ function Dashboard({ onOpenCampaign }) {
   return (
     <section className="dashboard">
       <div className="dashboard__toolbar">
-        <button
-          type="button"
-          className="btn btn--text"
-          onClick={() => setShowArchived((prev) => !prev)}
-        >
-          {showArchived ? 'Show active campaigns' : `Show archived (${archivedCount})`}
-        </button>
+        <TabNav
+          tabs={[
+            { id: 'active', label: `Active (${campaigns.length - archivedCount})` },
+            { id: 'archived', label: `Archived (${archivedCount})` },
+          ]}
+          activeTab={showArchived ? 'archived' : 'active'}
+          onSelect={(id) => setShowArchived(id === 'archived')}
+          className="tab-nav--pill dashboard__filter"
+          label="Active or archived campaigns"
+        />
         <button type="button" className="btn btn--primary" onClick={startAdding}>
           + New Campaign
         </button>
       </div>
 
-      {isAdding && renderCampaignForm(true)}
-
-      {editingId && (
-        <Modal onClose={cancelForm} label="Edit Campaign">
+      {(isAdding || editingId) && (
+        <Modal onClose={cancelForm} label={editingId ? 'Edit Campaign' : 'New Campaign'}>
           {renderCampaignForm(false)}
         </Modal>
       )}
