@@ -59,8 +59,16 @@
   align-items: flex-start;
   gap: 1rem;
 
+  // The card caps at the shared max height (_shared.scss), but only the
+  // recap text scrolls — title and Edit/Delete/Export stay put.
+  .session-list & {
+    align-items: stretch;
+    overflow: hidden;
+  }
+
   &__badge {
     flex-shrink: 0;
+    align-self: flex-start;
     width: 2.4rem;
     height: 2.4rem;
     border-radius: $radius;
@@ -74,6 +82,7 @@
   &__body {
     flex: 1;
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -109,16 +118,26 @@
   }
 
   &__notes {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     margin: 0;
     color: $text-muted;
     line-height: 1.6;
     white-space: pre-wrap;
   }
 
+  &__main,
+  &__actions {
+    flex-shrink: 0;
+  }
+
   &__actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
+    margin-top: auto;
     padding-top: 0.5rem;
     border-top: 1px solid rgba($gold-dim, 0.3);
   }

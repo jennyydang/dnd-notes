@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { setPlayerSession, verifyLogin } from '../lib/auth.js'
+import { PasswordInput } from './ui.jsx'
 import './PlayerLogin.scss'
 
 function PlayerLogin({ onLoggedIn }) {
@@ -37,11 +38,11 @@ function PlayerLogin({ onLoggedIn }) {
         </div>
         <div className="field">
           <label htmlFor="login-password">Password</label>
-          <input
+          <PasswordInput
             id="login-password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
             required
           />
         </div>

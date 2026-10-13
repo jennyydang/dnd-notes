@@ -450,6 +450,40 @@
   gap: 0.6rem;
 }
 
+.password-input {
+  position: relative;
+  display: flex;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding-right: 4.25rem;
+  }
+
+  &__toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.3rem;
+    transform: translateY(-50%);
+    min-width: 3.5rem;
+    min-height: 2.2rem;
+    padding: 0.2rem 0.6rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: $radius;
+    color: $gold-light;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: $gold-dim;
+      background: rgba($gold, 0.08);
+    }
+  }
+}
+
 .field-hint {
   margin: 0;
   font-size: 0.8rem;

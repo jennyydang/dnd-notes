@@ -15,6 +15,7 @@ import { getStored, setStored } from '../lib/sessionMode.js'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
+import { PasswordInput } from './ui.jsx'
 import './AdminGate.scss'
 
 const SECTION_KEY = 'dnd-notes-admin-section'
@@ -74,9 +75,8 @@ function AdminLogin({ onLogin }) {
         <p className="admin-gate__hint">Manage campaigns, players and feedback.</p>
         <div className="field">
           <label htmlFor="admin-password">Admin password</label>
-          <input
+          <PasswordInput
             id="admin-password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             aria-invalid={Boolean(error)}
@@ -442,9 +442,8 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
             </div>
             <div className="field">
               <label htmlFor="new-player-password">Password</label>
-              <input
+              <PasswordInput
                 id="new-player-password"
-                type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 autoComplete="new-password"
@@ -501,9 +500,8 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
             </div>
             <div className="field">
               <label htmlFor="edit-player-password">New password</label>
-              <input
+              <PasswordInput
                 id="edit-player-password"
-                type="password"
                 value={editing.password}
                 onChange={(e) => setEditing({ ...editing, password: e.target.value })}
                 placeholder="Leave blank to keep the current one"

@@ -1,5 +1,28 @@
+import { useState } from 'react'
+
 // Small shared building blocks used across Home, Session Mode, Character
 // and Prep, so those screens share one look (styles in styles/_shared.scss).
+
+// A password field with a Show/Hide toggle, so people can check what
+// they typed (especially on phones). Other props go to the <input>.
+export function PasswordInput({ className = '', ...props }) {
+  const [visible, setVisible] = useState(false)
+  return (
+    <div className={`password-input ${className}`}>
+      <input {...props} type={visible ? 'text' : 'password'} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+      <button
+        type="button"
+        className="password-input__toggle"
+        onClick={() => setVisible((v) => !v)}
+        aria-pressed={visible}
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        aria-controls={props.id}
+      >
+        {visible ? 'Hide' : 'Show'}
+      </button>
+    </div>
+  )
+}
 
 export function SectionCard({ title, icon, action, className = '', children, headingLevel = 3 }) {
   const Heading = `h${headingLevel}`
