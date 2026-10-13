@@ -987,3 +987,32 @@ drop policy if exists "anon full access dm_share_dismissals" on dm_share_dismiss
 create policy "anon full access dm_maps"             on dm_maps             for all to anon using (true) with check (true);
 create policy "anon full access dm_shares"           on dm_shares           for all to anon using (true) with check (true);
 create policy "anon full access dm_share_dismissals" on dm_share_dismissals for all to anon using (true) with check (true);
+
+-- Monsters & creatures the DM preps privately. Sharing works like NPCs:
+-- a player's Add copies the player-safe fields into `creatures` (stats
+-- only when the DM ticks share_stats), linked by the unique
+-- dm_creature_id so it can't be added twice.
+create table if not exists dm_creatures (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  name text not null,
+  kind text not null default 'Monster' check (kind in ('Monster','Creature')),
+  creature_type text not null default '',
+  challenge text not null default '',
+  armor_class integer check (armor_class is null or armor_class between 0 and 50),
+  hit_points integer check (hit_points is null or hit_points between 0 and 9999),
+  description text not null default '',
+  secrets text not null default '',
+  share_stats boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table creatures add column if not exists dm_creature_id uuid unique references dm_creatures(id) on delete set null;
+
+alter table dm_shares drop constraint if exists dm_shares_kind_check;
+alter table dm_shares add constraint dm_shares_kind_check
+  check (kind in ('npc', 'art', 'map', 'creature'));
+
+alter table dm_creatures enable row level security;
+drop policy if exists "anon full access dm_creatures" on dm_creatures;
+create policy "anon full access dm_creatures" on dm_creatures for all to anon using (true) with check (true);

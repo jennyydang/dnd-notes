@@ -7,6 +7,13 @@ export const SHARE_KINDS = {
   npc: { label: 'NPC', icon: '👤', tab: 'npcs', tabLabel: 'NPCs', bucket: 'npc-portraits' },
   art: { label: 'Art', icon: '🖼️', tab: 'art', tabLabel: 'Art', bucket: 'campaign-art' },
   map: { label: 'Map', icon: '🗺️', tab: 'maps', tabLabel: 'Maps', bucket: 'maps' },
+  creature: { label: 'Monster', icon: '🐉', tab: 'creatures', tabLabel: 'Monsters & Creatures', bucket: null },
+}
+
+// "Monster" or "Creature" for a creature share; the kind's label otherwise.
+export function shareLabel(share) {
+  if (share.kind === 'creature') return share.payload.kind === 'Creature' ? 'Creature' : 'Monster'
+  return SHARE_KINDS[share.kind].label
 }
 
 export const shareKey = (kind, sourceId) => `${kind}:${sourceId}`
@@ -59,6 +66,28 @@ export async function addShareToParty(share, campaignId) {
     const { error: updateError } = await supabase.from('campaign_art').update({ shared: true }).eq('id', sourceId)
     if (updateError) throw new Error(updateError.message)
     notifyTableChanged('campaign_art')
+    return 'added'
+  }
+
+  if (kind === 'creature') {
+    if (await exists('creatures', 'dm_creature_id', sourceId)) return 'already'
+    const { error } = await supabase.from('creatures').insert({
+      campaign_id: campaignId,
+      name: payload.name || share.title || 'Unnamed',
+      kind: payload.kind === 'Creature' ? 'Creature' : 'Monster',
+      creature_type: payload.creature_type || '',
+      challenge: payload.challenge || '',
+      armor_class: payload.armor_class ?? null,
+      hit_points: payload.hit_points ?? null,
+      notes: payload.description || '',
+      dm_creature_id: sourceId,
+    })
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) return 'already'
+      if (error.code === FOREIGN_KEY_VIOLATION) return 'gone'
+      throw new Error(error.message)
+    }
+    notifyTableChanged('creatures')
     return 'added'
   }
 

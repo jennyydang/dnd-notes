@@ -8,6 +8,7 @@ import CreaturesTab from './CreaturesTab.jsx'
 import SecretNpcsTab from './SecretNpcsTab.jsx'
 import ArtGallery from './ArtGallery.jsx'
 import DmMapsTab from './DmMapsTab.jsx'
+import DmCreaturesTab from './DmCreaturesTab.jsx'
 import { DmSharesBell } from './DmSharesInbox.jsx'
 import LootTab from './LootTab.jsx'
 import QuestsTab from './QuestsTab.jsx'
@@ -57,6 +58,7 @@ const TAB_DEFS = {
   'dm-npcs': { label: 'NPCs', icon: '👥' },
   'dm-art': { label: 'Art', icon: '🖼️' },
   'dm-maps': { label: 'Maps', icon: '🗺️' },
+  'dm-creatures': { label: 'Monsters', icon: '🐉' },
 }
 
 const AREAS = [
@@ -72,13 +74,14 @@ const AREAS = [
   { id: 'character', label: 'Character', icon: '🎭', tabs: ['character', 'spells', 'party'] },
   { id: 'prep', label: 'Prep', icon: '🗒️', tabs: ['prep'] },
   // The admin's view of the DM tools (DMs themselves get DM_AREAS).
-  { id: 'dm', label: 'DM', icon: '👁️', tabs: ['dm-npcs', 'dm-art', 'dm-maps'], dmOnly: true },
+  { id: 'dm', label: 'DM', icon: '👁️', tabs: ['dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
 
-// A DM's whole view of the campaign: just their private NPCs, art and maps,
+// A DM's whole view of the campaign: just their private NPCs, monsters, art and maps,
 // each with a Share button that notifies the players.
 const DM_AREAS = [
   { id: 'dm-npcs', label: 'NPCs', icon: '👥', tabs: ['dm-npcs'] },
+  { id: 'dm-creatures', label: 'Monsters', icon: '🐉', tabs: ['dm-creatures'] },
   { id: 'dm-art', label: 'Art', icon: '🖼️', tabs: ['dm-art'] },
   { id: 'dm-maps', label: 'Maps', icon: '🗺️', tabs: ['dm-maps'] },
 ]
@@ -383,6 +386,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               )}
               {isDm && knownTab === 'dm-art' && <ArtGallery campaignId={campaignId} manage />}
               {isDm && knownTab === 'dm-maps' && <DmMapsTab campaignId={campaignId} />}
+              {isDm && knownTab === 'dm-creatures' && <DmCreaturesTab campaignId={campaignId} />}
               {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}
               {activeCustomTab && (
                 <CustomTab

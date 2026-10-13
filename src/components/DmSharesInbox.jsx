@@ -3,7 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { useDmShares } from '../hooks/useDmShares.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
 import { getPublicUrl } from '../lib/storage.js'
-import { SHARE_KINDS, addShareToParty, shareKey } from '../lib/dmShares.js'
+import { SHARE_KINDS, addShareToParty, shareKey, shareLabel } from '../lib/dmShares.js'
 import { formatDateTime } from '../lib/sessionMode.js'
 import Modal from './Modal.jsx'
 import './DmSharesInbox.scss'
@@ -15,6 +15,7 @@ const POLL_MS = 45000
 const dismissalFromRow = (r) => ({ id: r.id, shareId: r.share_id })
 const npcLinkFromRow = (r) => ({ id: r.id, dmNpcId: r.dm_npc_id })
 const mapLinkFromRow = (r) => ({ id: r.id, dmMapId: r.dm_map_id })
+const creatureLinkFromRow = (r) => ({ id: r.id, dmCreatureId: r.dm_creature_id })
 const artFromRow = (r) => ({ id: r.id, shared: r.shared })
 
 function useDmInbox(campaignId, playerId) {
@@ -27,6 +28,7 @@ function useDmInbox(campaignId, playerId) {
   const npcs = useSupabaseTable('npcs', { fromRow: npcLinkFromRow, filters: campaignFilter })
   const maps = useSupabaseTable('maps', { fromRow: mapLinkFromRow, filters: campaignFilter })
   const art = useSupabaseTable('campaign_art', { fromRow: artFromRow, filters: campaignFilter })
+  const creatures = useSupabaseTable('creatures', { fromRow: creatureLinkFromRow, filters: campaignFilter })
 
   useEffect(() => {
     const check = () => {
@@ -35,6 +37,7 @@ function useDmInbox(campaignId, playerId) {
         npcs.refetch({ silent: true })
         maps.refetch({ silent: true })
         art.refetch({ silent: true })
+        creatures.refetch({ silent: true })
       }
     }
     const timer = setInterval(check, POLL_MS)
@@ -54,8 +57,9 @@ function useDmInbox(campaignId, playerId) {
       npc: new Set(npcs.items.map((n) => n.dmNpcId).filter(Boolean)),
       map: new Set(maps.items.map((m) => m.dmMapId).filter(Boolean)),
       art: new Set(art.items.filter((a) => a.shared).map((a) => a.id)),
+      creature: new Set(creatures.items.map((c) => c.dmCreatureId).filter(Boolean)),
     }),
-    [npcs.items, maps.items, art.items],
+    [npcs.items, maps.items, art.items, creatures.items],
   )
 
   // Only the latest share of each item; `inbox` drops the ones this player
@@ -104,14 +108,20 @@ export function DmSharesBell({ campaignId, playerId }) {
 }
 
 function shareImage(share) {
+  const { bucket } = SHARE_KINDS[share.kind]
+  if (!bucket) return ''
   const path = share.kind === 'npc' ? share.payload.photo_path : share.payload.image_path
-  return getPublicUrl(SHARE_KINDS[share.kind].bucket, path)
+  return getPublicUrl(bucket, path)
 }
 
 function shareDetail(share) {
   const p = share.payload
   if (share.kind === 'npc') return [p.race, p.location].filter(Boolean).join(' · ')
   if (share.kind === 'art') return p.category || ''
+  if (share.kind === 'creature') {
+    const stats = [p.challenge && `CR ${p.challenge}`, p.armor_class != null && `AC ${p.armor_class}`, p.hit_points != null && `HP ${p.hit_points}`]
+    return [p.creature_type, ...stats].filter(Boolean).join(' · ')
+  }
   return ''
 }
 
@@ -167,19 +177,20 @@ function DmSharesPanel({ campaignId, inbox, onClose }) {
               const result = results[share.id]
               const image = shareImage(share)
               const detail = shareDetail(share)
+              const icon = share.kind === 'creature' && share.payload.kind === 'Creature' ? '🦌' : kind.icon
               return (
                 <li key={share.id} className={`dm-share dm-share--${share.kind}`}>
                   <div className="dm-share__thumb" aria-hidden="true">
-                    {image ? <img src={image} alt="" /> : <span>{kind.icon}</span>}
+                    {image ? <img src={image} alt="" /> : <span>{icon}</span>}
                   </div>
                   <div className="dm-share__body">
                     <span className="dm-share__kind">
-                      {kind.icon} New {kind.label === 'Art' ? 'art' : kind.label}
+                      {icon} New {share.kind === 'art' ? 'art' : shareLabel(share)}
                       <span className="dm-share__time"> · {formatDateTime(share.createdAt)}</span>
                     </span>
                     <span className="dm-share__title">{share.title || 'Untitled'}</span>
                     {detail && <span className="dm-share__detail">{detail}</span>}
-                    {share.kind === 'npc' && share.payload.description && (
+                    {['npc', 'creature'].includes(share.kind) && share.payload.description && (
                       <span className="dm-share__description">{share.payload.description}</span>
                     )}
                     {result && (
