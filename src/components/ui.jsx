@@ -153,3 +153,27 @@ export function EntityChip({ entity, missingLabel = 'Deleted entry', onOpen, suf
     </span>
   )
 }
+
+const VIEW_MODES = [
+  { id: 'cards', label: 'Cards', icon: 'grid' },
+  { id: 'compact', label: 'Compact', icon: 'rows' },
+]
+
+// Cards / Compact switch for a list's toolbar.
+export function ViewToggle({ value, onChange, label = 'Card size' }) {
+  return (
+    <div className="view-toggle" role="group" aria-label={label}>
+      {VIEW_MODES.map((m) => (
+        <button
+          key={m.id}
+          type="button"
+          className={`view-toggle__btn${value === m.id ? ' view-toggle__btn--active' : ''}`}
+          aria-pressed={value === m.id}
+          onClick={() => onChange(m.id)}
+        >
+          <Icon name={m.icon} /> <span className="view-toggle__label">{m.label}</span>
+        </button>
+      ))}
+    </div>
+  )
+}

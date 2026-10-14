@@ -3,9 +3,23 @@
 .npcs-tab {
   &__toolbar {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
     margin-bottom: 1.25rem;
+
+    .view-toggle {
+      margin-right: auto;
+    }
   }
+}
+
+// Compact view: one tight row per NPC, more of them per screen.
+.npc-list--compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 0.6rem;
 }
 
 .npc-form {
@@ -126,6 +140,69 @@
   &__name {
     font-size: 1.15rem;
     color: $parchment;
+  }
+
+  &--compact {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0.6rem 0.55rem 0.75rem;
+  }
+
+  &__avatar--small {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+  }
+
+  &__summary {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  // The name opens the NPC's detail view (links and related entries).
+  &__name-btn {
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: $font-display;
+    font-size: 1rem;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      text-decoration: underline;
+    }
+  }
+
+  &__meta {
+    max-width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    .status-badge {
+      padding: 0.1rem 0.45rem;
+      font-size: 0.66rem;
+    }
+  }
+
+  &__meta-text {
+    font-size: 0.85rem;
+    color: $text-muted;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__details {
