@@ -26,7 +26,11 @@ function othersFrom(state, playerId) {
   for (const entries of Object.values(state)) {
     for (const entry of entries) {
       if (entry.playerId && entry.playerId !== playerId && !seen.has(entry.playerId)) {
-        seen.set(entry.playerId, { playerId: entry.playerId, username: entry.username || 'Someone' })
+        seen.set(entry.playerId, {
+          playerId: entry.playerId,
+          username: entry.username || 'Someone',
+          avatarUrl: entry.avatarUrl || '',
+        })
       }
     }
   }
@@ -37,8 +41,9 @@ function othersFrom(state, playerId) {
 // presence (nothing is stored). Each device announces its player; the
 // list is everyone else, one entry per player even with several tabs open,
 // and it updates live as people come and go. The admin (no playerId)
-// watches without appearing.
-export function usePartyPresence(campaignId, playerId, username) {
+// watches without appearing. `avatarUrl` (the player's profile picture,
+// if any) travels with them so others see it on their face.
+export function usePartyPresence(campaignId, playerId, username, avatarUrl = '') {
   const [others, setOthers] = useState([])
 
   useEffect(() => {
@@ -51,7 +56,7 @@ export function usePartyPresence(campaignId, playerId, username) {
     let retryTimer = null
 
     const announce = () => {
-      if (joined && playerId) channel.track({ playerId, username }).catch(() => {})
+      if (joined && playerId) channel.track({ playerId, username, avatarUrl }).catch(() => {})
     }
 
     async function join() {
@@ -97,7 +102,7 @@ export function usePartyPresence(campaignId, playerId, username) {
       if (channel) leave(topic, channel)
       setOthers([])
     }
-  }, [campaignId, playerId, username])
+  }, [campaignId, playerId, username, avatarUrl])
 
   return others
 }

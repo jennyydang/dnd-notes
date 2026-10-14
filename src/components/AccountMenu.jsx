@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
+import ProfilePictureDialog from './ProfilePictureDialog.jsx'
+import { usePlayerAvatar } from '../lib/profiles.js'
 import './AccountMenu.scss'
 
 // Shared avatar-button + dropdown used everywhere a logged-in player is
 // shown "who they are" (the Player Dashboard toolbar and every campaign's
-// top bar) — Settings and Send Feedback live here, with Log Out last.
-function AccountMenu({ username, onOpenSettings, onSendFeedback, onLogOut }) {
+// top bar) — Profile picture, Settings and Send Feedback live here, with
+// Log Out last. The button shows the player's picture once they've added
+// one (players only; the admin has no account to attach it to).
+function AccountMenu({ playerId, username, onOpenSettings, onSendFeedback, onLogOut }) {
   const [open, setOpen] = useState(false)
+  const [editingPicture, setEditingPicture] = useState(false)
+  const avatar = usePlayerAvatar(playerId)
   const menuRef = useRef(null)
 
   // Closes the menu on any click outside it, same as every other dropdown
@@ -23,17 +29,29 @@ function AccountMenu({ username, onOpenSettings, onSendFeedback, onLogOut }) {
     <div className="account-menu" ref={menuRef}>
       <button
         type="button"
-        className="account-menu__avatar"
+        className={`account-menu__avatar${avatar ? ' account-menu__avatar--photo' : ''}`}
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="true"
         aria-expanded={open}
         aria-label="Account menu"
       >
-        {username?.[0]?.toUpperCase() || '?'}
+        {avatar ? <img src={avatar} alt="" /> : username?.[0]?.toUpperCase() || '?'}
       </button>
       {open && (
         <div className="account-menu__dropdown panel">
           {username && <div className="account-menu__name">{username}</div>}
+          {playerId && (
+            <button
+              type="button"
+              className="btn btn--text"
+              onClick={() => {
+                setOpen(false)
+                setEditingPicture(true)
+              }}
+            >
+              Profile picture
+            </button>
+          )}
           <button
             type="button"
             className="btn btn--text"
@@ -65,6 +83,9 @@ function AccountMenu({ username, onOpenSettings, onSendFeedback, onLogOut }) {
             Log Out
           </button>
         </div>
+      )}
+      {editingPicture && (
+        <ProfilePictureDialog playerId={playerId} username={username} onClose={() => setEditingPicture(false)} />
       )}
     </div>
   )

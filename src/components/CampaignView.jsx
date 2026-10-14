@@ -276,6 +276,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {playerId && roleReady && !isDm && <DmSharesBell campaignId={campaignId} playerId={playerId} />}
 
               <AccountMenu
+                playerId={playerId}
                 username={username}
                 onOpenSettings={() => setShowSettings(true)}
                 onSendFeedback={() => setShowFeedback(true)}

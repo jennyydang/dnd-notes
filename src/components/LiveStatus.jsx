@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Icon from './Icon.jsx'
 import { usePartyPresence } from '../hooks/usePartyPresence.js'
 import { dismissFailed, getSyncStatus, subscribeSyncStatus } from '../lib/offline.js'
+import { usePlayerAvatar } from '../lib/profiles.js'
 import './LiveStatus.scss'
 
 const MAX_FACES = 3
@@ -12,7 +13,8 @@ const initial = (name) => (name.trim()[0] || '?').toUpperCase()
 // or focusing a face shows that player's name; clicking opens the full
 // list. Faces pop in as people arrive, no reload needed.
 export function PartyPresence({ campaignId, playerId, username }) {
-  const others = usePartyPresence(campaignId, playerId, username)
+  const myAvatar = usePlayerAvatar(playerId)
+  const others = usePartyPresence(campaignId, playerId, username, myAvatar)
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
 
@@ -49,7 +51,11 @@ export function PartyPresence({ campaignId, playerId, username }) {
             aria-expanded={open}
             aria-label={`${o.username} is here now`}
           >
-            <span aria-hidden="true">{initial(o.username)}</span>
+            {o.avatarUrl ? (
+              <img className="party-presence__photo" src={o.avatarUrl} alt="" />
+            ) : (
+              <span aria-hidden="true">{initial(o.username)}</span>
+            )}
             <span className="party-presence__tip" aria-hidden="true">
               {o.username}
             </span>
@@ -73,7 +79,11 @@ export function PartyPresence({ campaignId, playerId, username }) {
           <ul>
             {others.map((o) => (
               <li key={o.playerId}>
-                <span className="party-presence__dot" aria-hidden="true" />
+                {o.avatarUrl ? (
+                  <img className="party-presence__mini" src={o.avatarUrl} alt="" />
+                ) : (
+                  <span className="party-presence__dot" aria-hidden="true" />
+                )}
                 {o.username}
               </li>
             ))}

@@ -90,6 +90,16 @@ only from the character's recorded notes, for use in any assistant.
   The read cache and write queue live in `src/lib/offline.js`, the service
   worker in `public/sw.js` (production builds only).
 
+### Profile pictures
+
+Players add, change or remove a profile picture from the account menu
+(their initial at the top right) → **Profile picture**. It's cropped to a
+circle and shows on their account button and, to the rest of the party,
+on their face in the "here now" row while they're in a campaign. Pictures
+live in the `player-avatars` bucket and the `player_profiles` table, from
+the "Profile pictures" block at the end of `supabase/schema.sql` (run it
+on an existing database first; until then the dialog says so).
+
 ## Original features
 
 A D&D campaign notes app built with React and SCSS. Players log in and see
