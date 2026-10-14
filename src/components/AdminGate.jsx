@@ -179,7 +179,7 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
       id: 'feedback',
       icon: 'inbox',
       label: 'Feedback',
-      value: feedback.loading ? '–' : feedback.items.length,
+      value: feedback.loading ? '–' : feedback.items.filter((f) => f.status !== 'solved').length,
       detail: issues ? `${issues} issue${issues === 1 ? '' : 's'} reported` : 'No open issues',
       attention: issues > 0,
     },
@@ -587,20 +587,29 @@ function formatFeedbackDate(value) {
 
 // Who sent each submission is never shown. Players who asked to hear back
 // are recorded on it (senderId), so "Solved" can notify them; for the
-// rest, Solved just marks it done. Dismissing deletes a submission.
+// rest, Solved just marks it done. Solved feedback moves to Archived,
+// where it can be reopened. Dismissing deletes a submission.
 function FeedbackInbox({ items: submissions, loading, error, removeItem, updateItem }) {
   const [filter, setFilter] = useState('all')
+  const [showArchived, setShowArchived] = useState(false)
   const [dismissError, setDismissError] = useState(null)
   const [busyId, setBusyId] = useState(null)
   const [notices, setNotices] = useState({}) // id → { ok, text }
+  const [flash, setFlash] = useState(null) // { ok, text } after solving or reopening
+  const archivedCount = submissions.filter((s) => s.status === 'solved').length
+  const inView = submissions.filter((s) => (s.status === 'solved') === showArchived)
   const counts = {
-    all: submissions.length,
-    issue: submissions.filter((s) => s.kind === 'issue').length,
-    suggestion: submissions.filter((s) => s.kind !== 'issue').length,
+    all: inView.length,
+    issue: inView.filter((s) => s.kind === 'issue').length,
+    suggestion: inView.filter((s) => s.kind !== 'issue').length,
   }
-  const visible = submissions.filter(
+  const visible = inView.filter(
     (s) => filter === 'all' || (filter === 'issue' ? s.kind === 'issue' : s.kind !== 'issue'),
   )
+  const preview = (item) => {
+    const text = item.message.trim().replace(/\s+/g, ' ')
+    return text.length > 60 ? `${text.slice(0, 57)}…` : text
+  }
 
   async function dismiss(item) {
     setDismissError(null)
@@ -613,6 +622,7 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem, updateI
 
   async function solve(item) {
     setBusyId(item.id)
+    setFlash(null)
     setNotices((n) => ({ ...n, [item.id]: null }))
     try {
       await updateItem(item.id, { status: 'solved', solved_at: new Date().toISOString() })
@@ -624,22 +634,27 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem, updateI
       setBusyId(null)
       return
     }
+    const solved = `Solved and archived “${preview(item)}”.`
     if (item.senderId) {
       try {
         await notifyPlayer(item.senderId, feedbackSolvedNotice(item))
-        setNotices((n) => ({ ...n, [item.id]: { ok: true, text: 'Solved. The sender has been notified.' } }))
+        setFlash({ ok: true, text: `${solved} The sender has been notified.` })
       } catch (err) {
-        setNotices((n) => ({ ...n, [item.id]: { ok: false, text: `Marked solved, but couldn’t notify the sender: ${err.message}` } }))
+        setFlash({ ok: false, text: `${solved} Couldn’t notify the sender: ${err.message}` })
       }
+    } else {
+      setFlash({ ok: true, text: solved })
     }
     setBusyId(null)
   }
 
   async function reopen(item) {
     setBusyId(item.id)
+    setFlash(null)
     try {
       await updateItem(item.id, { status: 'open', solved_at: null })
       setNotices((n) => ({ ...n, [item.id]: null }))
+      setFlash({ ok: true, text: `Reopened “${preview(item)}”. It’s back in the inbox.` })
     } catch (err) {
       setNotices((n) => ({ ...n, [item.id]: { ok: false, text: err.message } }))
     } finally {
@@ -647,16 +662,32 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem, updateI
     }
   }
 
+  function toggleArchived() {
+    setShowArchived((v) => !v)
+    setFlash(null)
+  }
+
   return (
     <section className="feedback-inbox">
       {submissions.length > 0 && (
-        <TabNav
-          tabs={FEEDBACK_FILTERS.map((f) => ({ ...f, label: `${f.label} (${counts[f.id]})` }))}
-          activeTab={filter}
-          onSelect={setFilter}
-          className="tab-nav--pill feedback-inbox__filter"
-          label="Filter feedback"
-        />
+        <div className="feedback-inbox__toolbar">
+          <TabNav
+            tabs={FEEDBACK_FILTERS.map((f) => ({ ...f, label: `${f.label} (${counts[f.id]})` }))}
+            activeTab={filter}
+            onSelect={setFilter}
+            className="tab-nav--pill feedback-inbox__filter"
+            label="Filter feedback"
+          />
+          <button type="button" className="btn btn--text" onClick={toggleArchived}>
+            {showArchived ? '← Back to inbox' : `Archived (${archivedCount})`}
+          </button>
+        </div>
+      )}
+      {showArchived && <h3 className="feedback-inbox__heading">Archived — solved feedback</h3>}
+      {flash && (
+        <p className={`feedback-inbox__notice${flash.ok ? '' : ' feedback-inbox__notice--error'}`} role="status">
+          {flash.text}
+        </p>
       )}
 
       {dismissError && <p className="empty-state empty-state--error">Couldn’t dismiss: {dismissError}</p>}
@@ -666,7 +697,11 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem, updateI
         <p className="empty-state">
           {submissions.length === 0
             ? 'Inbox zero. Issues and suggestions players send will land here.'
-            : `No ${filter === 'issue' ? 'issues' : 'suggestions'}.`}
+            : showArchived
+              ? `Nothing archived${filter === 'all' ? '' : ` in ${filter === 'issue' ? 'issues' : 'suggestions'}`} yet. Solved feedback goes here.`
+              : inView.length === 0
+                ? 'Inbox zero. Everything’s been solved — see Archived.'
+                : `No open ${filter === 'issue' ? 'issues' : 'suggestions'}.`}
         </p>
       )}
 
@@ -705,7 +740,13 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem, updateI
               )}
               <div className="feedback-inbox__actions">
                 {item.status === 'solved' ? (
-                  <button type="button" className="btn btn--text" disabled={busyId === item.id} onClick={() => reopen(item)}>
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    disabled={busyId === item.id}
+                    onClick={() => reopen(item)}
+                    title="Move it back to the inbox"
+                  >
                     Reopen
                   </button>
                 ) : (
@@ -714,7 +755,7 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem, updateI
                     className="btn btn--primary"
                     disabled={busyId === item.id}
                     onClick={() => solve(item)}
-                    title={item.senderId ? 'Marks it solved and notifies the sender' : 'Marks it solved'}
+                    title={item.senderId ? 'Marks it solved, notifies the sender and archives it' : 'Marks it solved and archives it'}
                   >
                     {busyId === item.id ? 'Saving…' : 'Solved'}
                   </button>
