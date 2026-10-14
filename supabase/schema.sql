@@ -1410,3 +1410,41 @@ language sql stable security definer set search_path = public, pg_temp as $$
   order by cm.role = 'player', lower(coalesce(nullif(p.display_name, ''), p.username));
 $$;
 grant execute on function list_campaign_players(uuid) to anon;
+
+-- ── Existing players can use invite links ────────────────────────────
+-- Needs the two invite blocks above. A player who already has an account
+-- can open a campaign invite link and join with it (logged in, or by
+-- logging in from the link) — there's no limit on how many campaigns a
+-- player is in. The link is used up only if they weren't already a
+-- member. Links with no campaign are for new accounts only.
+create or replace function accept_player_invite(p_player_id uuid, p_token text)
+returns table(campaign_id uuid, campaign_name text)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+#variable_conflict use_column
+declare
+  v_invite player_invites%rowtype;
+  v_added integer;
+begin
+  if not exists (select 1 from players where id = p_player_id) then
+    raise exception 'Log in again, then open the invite link';
+  end if;
+  select * into v_invite from player_invites where token = trim(coalesce(p_token, '')) for update;
+  if v_invite.id is null or v_invite.revoked_at is not null or v_invite.used_at is not null or v_invite.expires_at < now() then
+    raise exception 'This invite link is no longer valid — ask whoever invited you for a new one';
+  end if;
+  if v_invite.campaign_id is null then
+    raise exception 'This invite link is for making a new account. To join a campaign, use the join code from your DM.';
+  end if;
+
+  insert into campaign_members (campaign_id, player_id, role)
+  values (v_invite.campaign_id, p_player_id, 'player')
+  on conflict (campaign_id, player_id) do nothing;
+  get diagnostics v_added = row_count;
+  if v_added > 0 then
+    update player_invites set used_at = now(), used_by = p_player_id where id = v_invite.id;
+  end if;
+
+  return query select c.id, c.name from campaigns c where c.id = v_invite.campaign_id;
+end;
+$$;
+grant execute on function accept_player_invite(uuid, text) to anon;

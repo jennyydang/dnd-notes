@@ -217,8 +217,13 @@ so your whole party can share one set of notes from any browser.
   send invite links too, from the new **Players** tab in their view —
   always for their own campaign. That tab also lists who's in the
   campaign with the character(s) each has claimed, and characters nobody
-  has claimed yet. Run the "Sign-up by invite link" and "DM invites and
-  the DM's Players tab" blocks at the end of `supabase/schema.sql` first.
+  has claimed yet. Players can be in **any number of campaigns**: someone
+  who already has an account can open a campaign's invite link (or log in
+  from it) and their dashboard offers **Join campaign**, or they can use
+  **+ Campaign → Join Existing** with a join code. Run the "Sign-up by
+  invite link", "DM invites and the DM's Players tab" and "Existing
+  players can use invite links" blocks at the end of `supabase/schema.sql`
+  first.
   Emails are only visible to the admin; DMs see names. A
   player logs in at the normal app URL and sees a personal dashboard of
   just the campaigns they created or joined. Creating a campaign gives it
