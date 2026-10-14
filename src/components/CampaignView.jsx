@@ -25,6 +25,7 @@ import GlobalSearch from './GlobalSearch.jsx'
 import EntityDetailModal from './EntityDetailModal.jsx'
 import QuickCreateModal from './QuickCreateModal.jsx'
 import AccountMenu from './AccountMenu.jsx'
+import { PartyPresence, SyncStatus } from './LiveStatus.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import Modal from './Modal.jsx'
@@ -265,6 +266,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                 <kbd className="campaign-view__search-hint">&#8984;K</kbd>
               </button>
             )}
+
+            <SyncStatus />
+            <PartyPresence campaignId={campaignId} playerId={playerId} username={username} />
 
             {playerId && roleReady && !isDm && <DmSharesBell campaignId={campaignId} playerId={playerId} />}
 

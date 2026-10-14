@@ -5,6 +5,7 @@ import PlayerDashboard from './components/PlayerDashboard.jsx'
 import CampaignView from './components/CampaignView.jsx'
 import { clearPlayerSession, getAdminSession, getPlayerSession } from './lib/auth.js'
 import { isSupabaseConfigured } from './lib/supabaseClient.js'
+import { clearCache } from './lib/offline.js'
 import { applySettings, getSettings } from './lib/settings.js'
 import { getStored, setStored } from './lib/sessionMode.js'
 import './App.scss'
@@ -35,6 +36,8 @@ function App() {
   }, [])
 
   function logOut() {
+    // Cached rows are this player's; queued writes stay and still sync.
+    clearCache()
     clearPlayerSession()
     setPlayerSession(null)
     setSelectedCampaign(null)

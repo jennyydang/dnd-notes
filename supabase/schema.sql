@@ -1028,3 +1028,32 @@ drop policy if exists "anon full access loot-photos bucket" on storage.objects;
 create policy "anon full access loot-photos bucket"
   on storage.objects for all to anon
   using (bucket_id = 'loot-photos') with check (bucket_id = 'loot-photos');
+
+-- ── Live updates (Supabase Realtime) ─────────────────────────────────
+-- The app subscribes to changes on these tables so one player's edits
+-- show up on everyone else's screen without a reload. Adds each table to
+-- the supabase_realtime publication if it isn't there yet (and skips any
+-- that don't exist), so this block is safe to re-run. `players` is
+-- deliberately left out.
+do $$
+declare
+  t text;
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+  foreach t in array array[
+    'campaigns', 'campaign_members', 'maps', 'map_markers', 'npcs', 'loot', 'places', 'quests',
+    'party_members', 'party_goals', 'party_notes', 'spells', 'player_wallets', 'player_shards',
+    'session_notes', 'lore_entries', 'custom_tabs', 'custom_tab_entries', 'character_sheets',
+    'quick_notes', 'entity_links', 'session_prep', 'creatures', 'dm_npcs', 'campaign_art',
+    'dm_maps', 'dm_shares', 'dm_share_dismissals', 'dm_creatures'
+  ] loop
+    if to_regclass('public.' || t) is not null and not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;
