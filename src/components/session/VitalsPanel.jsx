@@ -10,6 +10,7 @@ import {
   proficiencyBonus,
 } from '../../lib/character.js'
 import { Chip, SaveStatus, SectionCard, Stepper } from '../ui.jsx'
+import AnimatedNumber from '../AnimatedNumber.jsx'
 
 function StatTile({ label, value, hint }) {
   return (
@@ -136,8 +137,8 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
         <div className="vitals__hp-numbers">
           <span className="vitals__hp-label">Hit points</span>
           {hpKnown ? (
-            <span key={current} className="vitals__hp-value" aria-live="polite">
-              {current}
+            <span className="vitals__hp-value" aria-live="polite">
+              <AnimatedNumber value={current} />
               <span className="vitals__hp-max"> / {hp.max}</span>
               {hp.temp > 0 && <span className="vitals__hp-temp"> +{hp.temp} temp</span>}
             </span>

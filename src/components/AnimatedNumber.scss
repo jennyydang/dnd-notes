@@ -1,0 +1,40 @@
+@use '../styles/variables' as *;
+
+// AnimatedNumber.jsx: the number glows green or red while it counts.
+.animated-number {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  transition:
+    color 0.3s ease,
+    text-shadow 0.3s ease;
+
+  &--good {
+    color: $green-text;
+    text-shadow: 0 0 0.6em rgba($green-light, 0.7);
+    animation: number-bump 0.5s ease-out;
+  }
+
+  &--bad {
+    color: $maroon-text;
+    text-shadow: 0 0 0.6em rgba($maroon-light, 0.8);
+    animation: number-shake 0.45s ease-out;
+  }
+}
+
+@keyframes number-bump {
+  40% {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes number-shake {
+  20% {
+    transform: translateX(-0.12em);
+  }
+  40% {
+    transform: translateX(0.1em);
+  }
+  60% {
+    transform: translateX(-0.06em);
+  }
+}

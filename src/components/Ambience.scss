@@ -1,0 +1,117 @@
+@use '../styles/variables' as *;
+
+// Ambience.jsx — sits behind everything (the app is lifted above it in
+// App.scss) and never takes clicks.
+.ambience {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+
+  &__fog {
+    position: absolute;
+    width: 140vmax;
+    height: 70vmax;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba($parchment, 0.07), transparent 65%);
+    filter: blur(2rem);
+    will-change: transform;
+
+    &--one {
+      bottom: -30vmax;
+      left: -40vmax;
+      animation: fog-drift 48s ease-in-out infinite alternate;
+    }
+
+    &--two {
+      top: -35vmax;
+      right: -50vmax;
+      opacity: 0.7;
+      animation: fog-drift 63s ease-in-out -20s infinite alternate-reverse;
+    }
+  }
+
+  &__embers span {
+    position: absolute;
+    bottom: -2vh;
+    left: var(--x);
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    background: $gold-light;
+    box-shadow:
+      0 0 6px 1px rgba($gold, 0.8),
+      0 0 14px 2px rgba(#e8823a, 0.35);
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: ember-rise var(--duration) linear var(--delay) infinite;
+  }
+
+  &__vignette {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba($maroon, 0.45) 100%);
+  }
+}
+
+// Combat: red, faster embers and a blood-red edge.
+html[data-combat] .ambience {
+  &__embers span {
+    background: #ff8a5c;
+    box-shadow:
+      0 0 6px 1px rgba(#ff5a3c, 0.9),
+      0 0 16px 3px rgba($maroon-light, 0.6);
+    animation-duration: calc(var(--duration) * 0.45);
+  }
+
+  &__fog {
+    background: radial-gradient(ellipse at center, rgba($maroon-light, 0.12), transparent 65%);
+  }
+
+  &__vignette {
+    opacity: 1;
+  }
+}
+
+html[data-ambience='fog'] .ambience__embers,
+html[data-ambience='off'] .ambience {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambience {
+    display: none;
+  }
+}
+
+@keyframes ember-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  10% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  70% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift), -105vh, 0) scale(0.4);
+  }
+}
+
+@keyframes fog-drift {
+  from {
+    transform: translate3d(-6vw, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(8vw, -3vh, 0) scale(1.12);
+  }
+}

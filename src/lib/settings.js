@@ -12,6 +12,8 @@ const DEFAULTS = {
   bg: 'vista',
   font: 'classic',
   fontSize: 'medium',
+  // The moving background: 'embers' (embers and fog), 'fog' or 'off'.
+  ambience: 'embers',
   // Storage object key for a player-uploaded background (bucket:
   // player-backgrounds), only meaningful when bg === 'custom'.
   customBgPath: null,
@@ -78,4 +80,7 @@ export function applySettings(settings) {
 
   if (applied.fontSize !== DEFAULTS.fontSize) root.setAttribute('data-font-size', applied.fontSize)
   else root.removeAttribute('data-font-size')
+
+  if (applied.ambience !== DEFAULTS.ambience) root.setAttribute('data-ambience', applied.ambience)
+  else root.removeAttribute('data-ambience')
 }

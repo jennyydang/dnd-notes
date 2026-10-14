@@ -17,9 +17,13 @@ function revealNoun(share) {
   return `${/^[aeiou]|^NPC/i.test(label) ? 'an' : 'a'} ${label}`
 }
 
+const SPARKS = 12
+
 // When the DM presses "Reveal now", the NPC, monster, art or map fills the
 // screen of every player who has the campaign open — like sliding a
-// handout across the table. Each reveal shows once per device.
+// handout across the table. It arrives sealed: a wax seal drops in and
+// cracks, sparks fly, and the handout unrolls like a scroll. Each reveal
+// shows once per device.
 function RevealOverlay({ campaignId }) {
   const { shares } = useDmShares(campaignId)
   const seenKey = `dnd-notes-reveals-seen:${campaignId}`
@@ -84,37 +88,62 @@ function RevealOverlay({ campaignId }) {
   }
 
   return (
-    <div className="reveal" role="dialog" aria-modal="true" aria-labelledby="reveal-title" onClick={close}>
-      <div className={`reveal__card reveal__card--${reveal.kind}`} onClick={(e) => e.stopPropagation()}>
-        <p className="reveal__eyebrow">
-          <Icon name="eye" /> Your DM reveals {revealNoun(reveal)}
-        </p>
-        {image ? (
-          <img className="reveal__image" src={image} alt={reveal.title || ''} />
-        ) : (
-          <div className="reveal__placeholder" aria-hidden="true">
-            {reveal.kind === 'npc' ? (reveal.title || '?').charAt(0).toUpperCase() : <Icon name={kind.icon} />}
-          </div>
-        )}
-        <h2 id="reveal-title" className="reveal__title">
-          {reveal.title || 'Untitled'}
-        </h2>
-        {detail && <p className="reveal__detail">{detail}</p>}
-        {description && <p className="reveal__description">{description}</p>}
-        {result && (
-          <p className="reveal__result" role="status">
-            {result}
+    <div
+      className={`reveal reveal--${reveal.kind}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reveal-title"
+      onClick={close}
+      key={reveal.id}
+    >
+      <div className="reveal__glow" aria-hidden="true" />
+      <div className="reveal__seal" aria-hidden="true">
+        <span className="reveal__seal-half reveal__seal-half--left">
+          <Icon name={kind.icon} />
+        </span>
+        <span className="reveal__seal-half reveal__seal-half--right">
+          <Icon name={kind.icon} />
+        </span>
+      </div>
+      <div className="reveal__sparks" aria-hidden="true">
+        {Array.from({ length: SPARKS }, (_, i) => (
+          <span key={i} style={{ '--i': i }} />
+        ))}
+      </div>
+      <div className="reveal__scroll" onClick={(e) => e.stopPropagation()}>
+        <span className="reveal__roller reveal__roller--top" aria-hidden="true" />
+        <span className="reveal__roller reveal__roller--bottom" aria-hidden="true" />
+        <div className={`reveal__card reveal__card--${reveal.kind}`}>
+          <p className="reveal__eyebrow">
+            <Icon name="eye" /> Your DM reveals {revealNoun(reveal)}
           </p>
-        )}
-        <div className="reveal__actions">
-          {!result && (
-            <button type="button" className="btn btn--primary" onClick={add} disabled={adding}>
-              {adding ? 'Adding…' : `+ Add to ${kind.tabLabel}`}
-            </button>
+          {image ? (
+            <img className="reveal__image" src={image} alt={reveal.title || ''} />
+          ) : (
+            <div className="reveal__placeholder" aria-hidden="true">
+              {reveal.kind === 'npc' ? (reveal.title || '?').charAt(0).toUpperCase() : <Icon name={kind.icon} />}
+            </div>
           )}
-          <button type="button" className="btn" onClick={close} ref={closeRef}>
-            Close
-          </button>
+          <h2 id="reveal-title" className="reveal__title">
+            {reveal.title || 'Untitled'}
+          </h2>
+          {detail && <p className="reveal__detail">{detail}</p>}
+          {description && <p className="reveal__description">{description}</p>}
+          {result && (
+            <p className="reveal__result" role="status">
+              {result}
+            </p>
+          )}
+          <div className="reveal__actions">
+            {!result && (
+              <button type="button" className="btn btn--primary" onClick={add} disabled={adding}>
+                {adding ? 'Adding…' : `+ Add to ${kind.tabLabel}`}
+              </button>
+            )}
+            <button type="button" className="btn" onClick={close} ref={closeRef}>
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
