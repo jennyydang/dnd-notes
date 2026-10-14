@@ -88,6 +88,25 @@
     color: $text-muted;
   }
 
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
+  }
+
+  // Doubled class so it beats .btn--text's colour.
+  &__remove#{&}__remove {
+    color: $maroon-text;
+    font-size: 0.85rem;
+  }
+
+  &__error {
+    margin: 0;
+    font-size: 0.9rem;
+    color: $maroon-text;
+  }
+
   &__role {
     flex-shrink: 0;
     padding: 0.15rem 0.6rem;

@@ -64,6 +64,40 @@
   flex-direction: column;
   gap: 1rem;
 
+  &__count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+
+    input {
+      width: 5rem;
+      padding: 0.4rem 0.5rem;
+      text-align: center;
+      font-size: 1.5rem;
+      background: $bg-deep;
+      border: 1px solid $ink-soft;
+      border-radius: $radius;
+      color: $text-light;
+
+      &:focus {
+        border-color: $gold;
+      }
+    }
+
+    .icon-btn {
+      font-size: 1.4rem;
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+  }
+
+  & &__left {
+    text-align: center;
+    color: $text-muted;
+    font-size: 0.9rem;
+  }
+
   p {
     margin: 0;
     color: $text-light;
@@ -91,7 +125,14 @@
   // Leave room for the Use button / Used tag pinned to the top-right
   // corner so a long item name doesn't run underneath it.
   &--usable &__main {
-    padding-right: 4rem;
+    padding-right: 5.5rem;
+  }
+
+  &__qty {
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: $gold-light;
   }
 
   &--used {

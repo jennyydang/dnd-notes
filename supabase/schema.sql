@@ -1448,3 +1448,11 @@ begin
 end;
 $$;
 grant execute on function accept_player_invite(uuid, text) to anon;
+
+-- ── Loot quantities ───────────────────────────────────────────────────
+-- How many of an item the party has (potions, arrows, scrolls…). Blank
+-- (null) is a single item. Using a counted, usable item asks how many and
+-- deducts them; at 0 it shows as used up.
+alter table loot add column if not exists quantity integer;
+alter table loot drop constraint if exists loot_quantity_check;
+alter table loot add constraint loot_quantity_check check (quantity is null or quantity between 0 and 9999);
