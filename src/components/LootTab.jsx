@@ -31,6 +31,7 @@ const emptyForm = {
   notes: '',
   usable: false,
   used: false,
+  quantity: '',
   photoFile: null,
   photoPreview: '',
   photoRemoved: false,
@@ -45,11 +46,18 @@ const fromRow = (r) => ({
   notes: r.notes,
   usable: r.usable,
   used: r.used,
+  // null = not counted (a single item); a number = how many the party has.
+  quantity: r.quantity ?? null,
   photo: getPublicUrl(BUCKET, r.photo_path),
   createdAt: r.created_at,
 })
 
 const partyFromRow = (r) => ({ id: r.id, name: r.name })
+
+const hasQuantity = (entry) => entry.quantity !== null && entry.quantity !== undefined
+// Used up: a counted item down to 0, or a single item marked used.
+const isUsedUp = (entry) => entry.usable && (hasQuantity(entry) ? entry.quantity <= 0 : entry.used)
+const QUANTITY_MISSING = 'Run the latest supabase/schema.sql first (it adds loot quantities).'
 
 function LootTab({ campaignId }) {
   const { openEntity } = useCampaignNav()
@@ -70,6 +78,7 @@ function LootTab({ campaignId }) {
   const [view, setView] = useViewMode('loot')
   const [usingEntry, setUsingEntry] = useState(null)
   const [useError, setUseError] = useState(null)
+  const [useCount, setUseCount] = useState(1)
   const [viewingPhoto, setViewingPhoto] = useState(null)
   const [saving, setSaving] = useState(false)
   const photoInputRef = useRef(null)
@@ -154,6 +163,7 @@ function LootTab({ campaignId }) {
       notes: entry.notes,
       usable: entry.usable,
       used: entry.used,
+      quantity: hasQuantity(entry) ? String(entry.quantity) : '',
       photoFile: null,
       photoPreview: entry.photo || '',
       photoRemoved: false,
@@ -176,6 +186,12 @@ function LootTab({ campaignId }) {
     event.preventDefault()
     if (!form.item.trim() || saving) return
 
+    const quantityText = String(form.quantity).trim()
+    const quantity = quantityText === '' ? null : Number(quantityText)
+    if (quantity !== null && (!Number.isInteger(quantity) || quantity < 0 || quantity > 9999)) {
+      setFormError('Quantity is a whole number from 0 to 9999, or leave it blank.')
+      return
+    }
     const payload = {
       item: form.item,
       kind: form.kind,
@@ -184,9 +200,14 @@ function LootTab({ campaignId }) {
       notes: form.notes,
       usable: form.usable,
       // An item that's no longer usable can't stay "used" — otherwise it
-      // would sit dimmed with no Use button to explain why.
-      used: form.usable && form.used,
+      // would sit dimmed with no Use button to explain why. A counted
+      // item is used up exactly when its quantity reaches 0.
+      used: form.usable && (quantity === null ? form.used : quantity === 0),
     }
+    // Only sent when there's a count to save (or one to clear), so loot
+    // still saves on a database without the quantity column.
+    const editingEntry = editingId ? loot.find((x) => x.id === editingId) : null
+    if (quantity !== null || (editingEntry && hasQuantity(editingEntry))) payload.quantity = quantity
 
     setSaving(true)
     try {
@@ -199,10 +220,16 @@ function LootTab({ campaignId }) {
       }
       cancelForm()
     } catch (err) {
-      setFormError(err.message)
+      setFormError(/quantity/.test(err.message) ? QUANTITY_MISSING : err.message)
     } finally {
       setSaving(false)
     }
+  }
+
+  function startUse(entry) {
+    setUseError(null)
+    setUseCount(1)
+    setUsingEntry(entry)
   }
 
   function cancelUse() {
@@ -210,12 +237,16 @@ function LootTab({ campaignId }) {
     setUseError(null)
   }
 
+  // A counted item asks how many and deducts them, fading once it hits 0;
+  // a single item just gets marked used.
   async function confirmUse() {
+    const counted = hasQuantity(usingEntry)
+    const left = counted ? Math.max(0, usingEntry.quantity - useCount) : 0
     try {
-      await updateItem(usingEntry.id, { used: true })
+      await updateItem(usingEntry.id, counted ? { quantity: left, used: left === 0 } : { used: true })
       cancelUse()
     } catch (err) {
-      setUseError(err.message)
+      setUseError(/quantity/.test(err.message) ? QUANTITY_MISSING : err.message)
     }
   }
 
@@ -298,6 +329,20 @@ function LootTab({ campaignId }) {
                 placeholder="Party stash / Thessaly"
               />
             </div>
+            <div className="field">
+              <label htmlFor="loot-quantity">Quantity</label>
+              <input
+                id="loot-quantity"
+                type="number"
+                inputMode="numeric"
+                min="0"
+                max="9999"
+                step="1"
+                value={form.quantity}
+                onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+                placeholder="Leave blank for a single item"
+              />
+            </div>
           </div>
           <div className="field">
             <label htmlFor="loot-notes">Notes</label>
@@ -317,7 +362,7 @@ function LootTab({ campaignId }) {
               />
               Can be used
             </label>
-            {form.usable && (
+            {form.usable && String(form.quantity).trim() === '' && (
               <label className="loot-form__check">
                 <input
                   type="checkbox"
@@ -369,20 +414,75 @@ function LootTab({ campaignId }) {
 
       {usingEntry && (
         <Modal onClose={cancelUse} label="Use Loot">
-          <div className="loot-use-confirm">
-            <p>
-              Are you sure you want to use <strong>{usingEntry.item}</strong>?
-            </p>
-            {useError && <p className="empty-state empty-state--error">{useError}</p>}
-            <div className="loot-form__actions">
-              <button type="button" className="btn btn--text" onClick={cancelUse}>
-                No
-              </button>
-              <button type="button" className="btn btn--primary" onClick={confirmUse} autoFocus>
-                Yes
-              </button>
+          {hasQuantity(usingEntry) ? (
+            <div className="loot-use-confirm">
+              <p>
+                How many <strong>{usingEntry.item}</strong> do you want to use?
+              </p>
+              <div className="loot-use-confirm__count">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setUseCount((n) => Math.max(1, n - 1))}
+                  disabled={useCount <= 1}
+                  aria-label="One fewer"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  max={usingEntry.quantity}
+                  value={useCount}
+                  onChange={(e) => {
+                    const n = Math.floor(Number(e.target.value))
+                    setUseCount(Number.isFinite(n) ? Math.min(usingEntry.quantity, Math.max(1, n)) : 1)
+                  }}
+                  aria-label="How many to use"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setUseCount((n) => Math.min(usingEntry.quantity, n + 1))}
+                  disabled={useCount >= usingEntry.quantity}
+                  aria-label="One more"
+                >
+                  +
+                </button>
+              </div>
+              <p className="loot-use-confirm__left">
+                {usingEntry.quantity - useCount === 0
+                  ? 'That uses the last of them.'
+                  : `${usingEntry.quantity - useCount} of ${usingEntry.quantity} left afterwards.`}
+              </p>
+              {useError && <p className="empty-state empty-state--error">{useError}</p>}
+              <div className="loot-form__actions">
+                <button type="button" className="btn btn--text" onClick={cancelUse}>
+                  Cancel
+                </button>
+                <button type="button" className="btn btn--primary" onClick={confirmUse}>
+                  Use {useCount}
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="loot-use-confirm">
+              <p>
+                Are you sure you want to use <strong>{usingEntry.item}</strong>?
+              </p>
+              {useError && <p className="empty-state empty-state--error">{useError}</p>}
+              <div className="loot-form__actions">
+                <button type="button" className="btn btn--text" onClick={cancelUse}>
+                  No
+                </button>
+                <button type="button" className="btn btn--primary" onClick={confirmUse} autoFocus>
+                  Yes
+                </button>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
 
@@ -423,7 +523,7 @@ function LootTab({ campaignId }) {
         <div className="loot-list loot-list--compact">
           {visibleLoot.map((entry) => (
             <article
-              className={`loot-card loot-card--compact panel${entry.usable && entry.used ? ' loot-card--used' : ''}`}
+              className={`loot-card loot-card--compact panel${isUsedUp(entry) ? ' loot-card--used' : ''}`}
               key={entry.id}
             >
               {entry.photo ? (
@@ -451,15 +551,18 @@ function LootTab({ campaignId }) {
                 </button>
                 <span className="loot-card__meta">
                   <TagBadge group="loot" kind={entry.kind} />
+                  {hasQuantity(entry) && <span className="loot-card__qty">×{entry.quantity}</span>}
                   {entry.holder && <span className="loot-card__meta-text">Held by {entry.holder}</span>}
                 </span>
               </div>
-              {entry.usable && !entry.used && (
-                <button type="button" className="btn btn--primary loot-card__use-compact" onClick={() => setUsingEntry(entry)}>
+              {entry.usable && !isUsedUp(entry) && (
+                <button type="button" className="btn btn--primary loot-card__use-compact" onClick={() => startUse(entry)}>
                   Use
                 </button>
               )}
-              {entry.usable && entry.used && <span className="loot-card__used-tag loot-card__used-tag--inline">Used</span>}
+              {isUsedUp(entry) && (
+                <span className="loot-card__used-tag loot-card__used-tag--inline">{hasQuantity(entry) ? 'Used up' : 'Used'}</span>
+              )}
               <div className="compact-actions">
                 <button type="button" className="icon-btn" onClick={() => startEditing(entry)} aria-label={`Edit ${entry.item}`}>
                   <Icon name="edit" />
@@ -482,20 +585,20 @@ function LootTab({ campaignId }) {
         <div className="loot-list">
           {visibleLoot.map((entry) => (
             <article
-              className={`loot-card panel${entry.usable ? ' loot-card--usable' : ''}${entry.usable && entry.used ? ' loot-card--used' : ''}`}
+              className={`loot-card panel${entry.usable ? ' loot-card--usable' : ''}${isUsedUp(entry) ? ' loot-card--used' : ''}`}
               key={entry.id}
             >
-              {entry.usable && !entry.used && (
+              {entry.usable && !isUsedUp(entry) && (
                 <button
                   type="button"
                   className="btn btn--primary loot-card__use"
-                  onClick={() => setUsingEntry(entry)}
+                  onClick={() => startUse(entry)}
                 >
                   Use
                 </button>
               )}
-              {entry.usable && entry.used && (
-                <span className="loot-card__used-tag">Used</span>
+              {isUsedUp(entry) && (
+                <span className="loot-card__used-tag">{hasQuantity(entry) ? 'Used up' : 'Used'}</span>
               )}
               <div className="loot-card__head">
                 {entry.photo && (
@@ -511,6 +614,11 @@ function LootTab({ campaignId }) {
                 <div className="loot-card__main">
                   <h3 className="loot-card__item">{entry.item}</h3>
                   <TagBadge group="loot" kind={entry.kind} />
+                  {hasQuantity(entry) && (
+                    <span className="loot-card__qty">
+                      {entry.usable ? `${entry.quantity} left` : `×${entry.quantity}`}
+                    </span>
+                  )}
                   {entry.foundAt && (
                     <span className="loot-card__found-at">{entry.foundAt}</span>
                   )}
