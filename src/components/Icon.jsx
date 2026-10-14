@@ -1,8 +1,8 @@
 import {
   Backpack, Bell, ChevronLeft, ChevronRight, BookOpen, Brain, Bug, Calendar, ChartBar, CircleHelp, Clipboard, ClipboardList, Coins, Compass,
   Crown, Dices, Download, Eye, Feather, File, FileText, Flame, Gem, Handshake, Heart, Hourglass, House, IdCard,
-  Image, Inbox, Library, Lightbulb, Link, ListTodo, Lock, Map, MapPin, Menu, Maximize, MessageCircle, MessageSquare,
-  NotebookPen, Pause, PawPrint, Pencil, Pin, Play, Plus, RefreshCw, ScrollText, Search, Send, Shield, ShieldCheck, Skull,
+  Image, Inbox, LayoutGrid, Library, Lightbulb, Link, ListTodo, Lock, Map, MapPin, Menu, Maximize, MessageCircle, MessageSquare,
+  NotebookPen, Pause, PawPrint, Pencil, Pin, Play, Plus, RefreshCw, Rows3, ScrollText, Search, Send, Shield, ShieldCheck, Skull,
   Sparkles, Speech, SquareCheck, Star, Swords, Target, Trash2, TrendingUp, TriangleAlert, User, Users, VenetianMask, WifiOff, Wrench, X, Zap,
   ZoomIn,
 } from 'lucide-react'
@@ -38,6 +38,7 @@ const ICONS = {
   'file-text': FileText,
   flame: Flame,
   gem: Gem,
+  grid: LayoutGrid,
   handshake: Handshake,
   heart: Heart,
   help: CircleHelp,
@@ -65,6 +66,7 @@ const ICONS = {
   prep: ClipboardList,
   pushpin: Pin,
   quest: Swords,
+  rows: Rows3,
   scroll: ScrollText,
   search: Search,
   send: Send,

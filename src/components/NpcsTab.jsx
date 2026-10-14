@@ -6,6 +6,9 @@ import './NpcsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import { ViewToggle } from './ui.jsx'
+import { useViewMode } from '../hooks/useViewMode.js'
+import Icon from './Icon.jsx'
 
 const BUCKET = 'npc-portraits'
 const LIFE_STATUSES = ['Alive', 'Deceased', 'Unknown', 'Missing']
@@ -35,6 +38,7 @@ function NpcsTab({ campaignId }) {
   const { openEntity } = useCampaignNav()
   const { items: npcs, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('npcs', { fromRow, orderBy: 'met_at', filters: { campaign_id: campaignId } })
+  const [view, setView] = useViewMode('npcs')
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -260,6 +264,7 @@ function NpcsTab({ campaignId }) {
   return (
     <section className="npcs-tab">
       <div className="npcs-tab__toolbar">
+        {npcs.length > 0 && <ViewToggle value={view} onChange={setView} label="NPC card size" />}
         <button type="button" className="btn btn--primary" onClick={startAdding}>
           + Add NPC
         </button>
@@ -282,7 +287,52 @@ function NpcsTab({ campaignId }) {
         </p>
       )}
 
-      {!loading && !error && npcs.length > 0 && (
+      {!loading && !error && npcs.length > 0 && view === 'compact' && (
+        <div className="npc-list npc-list--compact">
+          {npcs.map((npc) => (
+            <article className="npc-card npc-card--compact panel" key={npc.id}>
+              <div className="npc-card__avatar npc-card__avatar--small">
+                {npc.photo ? (
+                  <img src={npc.photo} alt="" />
+                ) : (
+                  <span aria-hidden="true">{npc.name.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="npc-card__summary">
+                <button
+                  type="button"
+                  className="npc-card__name npc-card__name-btn"
+                  onClick={() => openEntity('npc', npc.id)}
+                  title="Open with links and related entries"
+                >
+                  {npc.name}
+                </button>
+                <span className="npc-card__meta">
+                  <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>{npc.status}</span>
+                  {(npc.race || npc.metAt) && (
+                    <span className="npc-card__meta-text">{[npc.race, npc.metAt].filter(Boolean).join(' · ')}</span>
+                  )}
+                </span>
+              </div>
+              <div className="compact-actions">
+                <button type="button" className="icon-btn" onClick={() => startEditing(npc)} aria-label={`Edit ${npc.name}`}>
+                  <Icon name="edit" />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--danger"
+                  onClick={() => removeNpc(npc.id)}
+                  aria-label={`Delete ${npc.name}`}
+                >
+                  <Icon name="trash" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {!loading && !error && npcs.length > 0 && view === 'cards' && (
         <div className="npc-list">
           {npcs.map((npc) => (
             <article className="npc-card panel" key={npc.id}>

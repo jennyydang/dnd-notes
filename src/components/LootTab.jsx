@@ -9,6 +9,9 @@ import { confirmDelete } from '../lib/confirm.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
+import { ViewToggle } from './ui.jsx'
+import { useViewMode } from '../hooks/useViewMode.js'
+import Icon from './Icon.jsx'
 
 const BUCKET = 'loot-photos'
 
@@ -64,6 +67,7 @@ function LootTab({ campaignId }) {
   const [formError, setFormError] = useState(null)
   const [holderView, setHolderView] = useState(ALL_HOLDERS)
   const [sortMode, setSortMode] = useState('recent')
+  const [view, setView] = useViewMode('loot')
   const [usingEntry, setUsingEntry] = useState(null)
   const [useError, setUseError] = useState(null)
   const [viewingPhoto, setViewingPhoto] = useState(null)
@@ -340,6 +344,7 @@ function LootTab({ campaignId }) {
   return (
     <section className="loot-tab">
       <div className="loot-tab__toolbar">
+        {loot.length > 0 && <ViewToggle value={view} onChange={setView} label="Loot card size" />}
         <button type="button" className="btn btn--primary" onClick={startAdding}>
           + Add Loot
         </button>
@@ -414,7 +419,66 @@ function LootTab({ campaignId }) {
         <p className="empty-state">Nobody here — try a different holder.</p>
       )}
 
-      {!loading && !error && visibleLoot.length > 0 && (
+      {!loading && !error && visibleLoot.length > 0 && view === 'compact' && (
+        <div className="loot-list loot-list--compact">
+          {visibleLoot.map((entry) => (
+            <article
+              className={`loot-card loot-card--compact panel${entry.usable && entry.used ? ' loot-card--used' : ''}`}
+              key={entry.id}
+            >
+              {entry.photo ? (
+                <button
+                  type="button"
+                  className="loot-card__photo loot-card__photo--small"
+                  onClick={() => setViewingPhoto(entry)}
+                  aria-label={`View picture of ${entry.item}`}
+                >
+                  <img src={entry.photo} alt="" loading="lazy" />
+                </button>
+              ) : (
+                <span className="loot-card__thumb" aria-hidden="true">
+                  <Icon name="gem" />
+                </span>
+              )}
+              <div className="loot-card__summary">
+                <button
+                  type="button"
+                  className="loot-card__item loot-card__item-btn"
+                  onClick={() => openEntity('loot', entry.id)}
+                  title="Open with links and related entries"
+                >
+                  {entry.item}
+                </button>
+                <span className="loot-card__meta">
+                  <TagBadge group="loot" kind={entry.kind} />
+                  {entry.holder && <span className="loot-card__meta-text">Held by {entry.holder}</span>}
+                </span>
+              </div>
+              {entry.usable && !entry.used && (
+                <button type="button" className="btn btn--primary loot-card__use-compact" onClick={() => setUsingEntry(entry)}>
+                  Use
+                </button>
+              )}
+              {entry.usable && entry.used && <span className="loot-card__used-tag loot-card__used-tag--inline">Used</span>}
+              <div className="compact-actions">
+                <button type="button" className="icon-btn" onClick={() => startEditing(entry)} aria-label={`Edit ${entry.item}`}>
+                  <Icon name="edit" />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--danger"
+                  onClick={() => removeLoot(entry.id)}
+                  aria-label={`Delete ${entry.item}`}
+                >
+                  <Icon name="trash" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {!loading && !error && visibleLoot.length > 0 && view === 'cards' && (
         <div className="loot-list">
           {visibleLoot.map((entry) => (
             <article
