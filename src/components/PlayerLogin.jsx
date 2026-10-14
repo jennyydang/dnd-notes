@@ -108,7 +108,7 @@ function PlayerLogin({ onLoggedIn }) {
           ) : (
             <>
               <p className="player-login__error" role="alert">
-                {problem} Ask the admin for a new invite link.
+                {problem} Ask whoever invited you for a new link.
               </p>
               <p className="player-login__switch">
                 Already have an account?{' '}
@@ -241,7 +241,7 @@ function PlayerLogin({ onLoggedIn }) {
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Logging in…' : 'Log In'}
         </button>
-        <p className="player-login__note">New players need an invite link from the admin.</p>
+        <p className="player-login__note">New players need an invite link from their DM or the admin.</p>
       </form>
     </div>
   )

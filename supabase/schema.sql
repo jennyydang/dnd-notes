@@ -1270,7 +1270,7 @@ begin
   -- Locked so the same link can't make two accounts at once.
   select * into v_invite from player_invites where token = trim(coalesce(p_invite_token, '')) for update;
   if v_invite.id is null or v_invite.revoked_at is not null or v_invite.used_at is not null or v_invite.expires_at < now() then
-    raise exception 'This invite link is no longer valid — ask the admin for a new one';
+    raise exception 'This invite link is no longer valid — ask whoever invited you for a new one';
   end if;
 
   if v_username !~ '^[A-Za-z0-9_.-]{3,30}$' then
