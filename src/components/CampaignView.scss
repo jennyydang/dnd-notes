@@ -1,13 +1,34 @@
 @use '../styles/variables' as *;
 
 .campaign-view {
+  // Three columns with equal outer tracks, so the search box sits in the
+  // true centre however much is on either side of it.
   &__topbar {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 32rem) minmax(0, 1fr);
+    grid-template-areas: 'start search end';
     align-items: center;
     gap: 1rem;
     padding-bottom: 1.25rem;
     margin-bottom: 1.5rem;
     border-bottom: 1px solid rgba($gold-dim, 0.4);
+  }
+
+  &__topbar-start {
+    grid-area: start;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  &__topbar-end {
+    grid-area: end;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    min-width: 0;
   }
 
   &__hamburger {
@@ -28,21 +49,16 @@
 
   // Takes the search box's place in a DM's top bar (no search there).
   &__search-spacer {
-    flex: 1;
+    grid-area: search;
   }
 
   &__search {
+    grid-area: search;
     position: relative;
-    flex: 1;
+    width: 100%;
     text-align: left;
     cursor: pointer;
     min-height: 2.75rem;
-    max-width: 24rem;
-    // Grows to its cap and then no further — this margin absorbs whatever
-    // free space is left over past that, pushing the search box (and the
-    // avatar right after it) flush to the top bar's right edge instead of
-    // leaving them stranded next to the hamburger with dead space after.
-    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -175,11 +191,19 @@
     // Leaves room for the fixed bottom bar (+ iOS home-indicator inset).
     padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
 
+    // Back link and icons on one row, full-width search below.
     &__topbar {
-      flex-wrap: wrap;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'start end'
+        'search search';
       gap: 0.5rem;
       margin-bottom: 1rem;
       padding-bottom: 0.75rem;
+    }
+
+    &__topbar-end {
+      gap: 0.5rem;
     }
 
     &__hamburger,
@@ -202,12 +226,6 @@
       display: none;
     }
 
-    &__search {
-      order: 1;
-      max-width: none;
-      flex-basis: 100%;
-      margin-left: 0;
-    }
 
     // Stretch (not flex-start) so the content column is exactly the
     // screen's width — otherwise wide content (a swipeable row, the
