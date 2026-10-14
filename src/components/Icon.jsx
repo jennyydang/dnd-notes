@@ -2,8 +2,8 @@ import {
   Backpack, Bell, ChevronLeft, ChevronRight, BookOpen, Brain, Bug, Calendar, ChartBar, CircleHelp, Clipboard, ClipboardList, Coins, Compass,
   Crown, Dices, Download, Eye, Feather, File, FileText, Flame, Gem, Handshake, Heart, Hourglass, House, IdCard,
   Image, Inbox, Library, Lightbulb, Link, ListTodo, Lock, Map, MapPin, Menu, Maximize, MessageCircle, MessageSquare,
-  NotebookPen, Pause, PawPrint, Pencil, Pin, Play, Plus, ScrollText, Search, Send, Shield, ShieldCheck, Skull,
-  Sparkles, Speech, SquareCheck, Star, Swords, Target, Trash2, TrendingUp, User, Users, VenetianMask, Wrench, Zap,
+  NotebookPen, Pause, PawPrint, Pencil, Pin, Play, Plus, RefreshCw, ScrollText, Search, Send, Shield, ShieldCheck, Skull,
+  Sparkles, Speech, SquareCheck, Star, Swords, Target, Trash2, TrendingUp, TriangleAlert, User, Users, VenetianMask, WifiOff, Wrench, Zap,
   ZoomIn,
 } from 'lucide-react'
 
@@ -12,6 +12,7 @@ import {
 // round joins — in currentColor, so they take the text or status colour
 // they sit next to. Always decorative: pair each with a visible word.
 const ICONS = {
+  alert: TriangleAlert,
   backpack: Backpack,
   bell: Bell,
   book: BookOpen,
@@ -71,6 +72,7 @@ const ICONS = {
   speech: Speech,
   spell: Sparkles,
   star: Star,
+  sync: RefreshCw,
   target: Target,
   threads: ListTodo,
   tools: Wrench,
@@ -78,6 +80,7 @@ const ICONS = {
   trend: TrendingUp,
   user: User,
   users: Users,
+  'wifi-off': WifiOff,
   zap: Zap,
   zoom: ZoomIn,
 }

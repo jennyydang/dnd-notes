@@ -71,6 +71,25 @@ request/response contract is documented in `src/lib/roleplayAssistant.js`.
 Without it the assistant says so plainly and offers **Copy prompt**, built
 only from the character's recorded notes, for use in any assistant.
 
+### Live sync and offline play
+
+- **Live updates.** When anyone in the party adds or edits something, every
+  other open screen updates within a moment; no reload needed. Faces at the
+  top of the campaign show who else has it open right now. This uses
+  Supabase Realtime: the block at the end of `supabase/schema.sql` adds the
+  campaign tables to the `supabase_realtime` publication (re-run it on an
+  existing database). Without it, everything works as before, but
+  changes only show up after a refresh.
+- **Works offline.** The app installs to a phone's home screen and opens
+  with no connection. Anything you've opened on the device before is still
+  there, and notes, HP and other edits made offline are saved on the device
+  and sent once you reconnect. The top bar shows *Offline · N to sync*
+  while that happens. If the server turns a queued change down (say, the
+  entry was deleted by someone else), the bar says so instead of dropping
+  it silently. Picture uploads and DM sharing still need a connection.
+  The read cache and write queue live in `src/lib/offline.js`, the service
+  worker in `public/sw.js` (production builds only).
+
 ## Original features
 
 A D&D campaign notes app built with React and SCSS. Players log in and see
@@ -168,7 +187,7 @@ so your whole party can share one set of notes from any browser.
 - `npm run preview` — preview the production build
 - `npm run lint` — run Oxlint
 - `npm test` — run the unit tests (Vitest) for search, character rules,
-  initiative, recap building and the roleplay helpers
+  initiative, recap building, the roleplay helpers and the offline queue
 
 ## Upgrading an existing database
 
@@ -180,4 +199,5 @@ and those screens explain what's missing instead of failing.
 
 Per-device state that isn't campaign content — the open campaign and tab,
 whether a session is in progress, the current initiative order, unsent
-quick-note drafts — lives in `localStorage`.
+quick-note drafts, the offline copy of loaded rows and the queue of
+changes waiting to sync — lives in `localStorage`.

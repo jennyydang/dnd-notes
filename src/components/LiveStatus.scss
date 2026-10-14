@@ -1,0 +1,99 @@
+@use '../styles/variables' as *;
+
+.party-presence {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+
+  &__face {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 2px solid $bg-deep;
+    background: $green;
+    color: $text-light;
+    font-family: $font-display;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    & + & {
+      margin-left: -0.5rem;
+    }
+
+    &--more {
+      background: $bg-panel-raised;
+      color: $text-muted;
+    }
+  }
+}
+
+.sync-status {
+  position: relative;
+  flex-shrink: 0;
+
+  &:empty {
+    display: none;
+  }
+
+  &__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0 0.85rem;
+    border-radius: 999px;
+    border: 1px solid rgba($gold-dim, 0.6);
+    background: $bg-panel;
+    color: $text-muted;
+    font-size: 0.95rem;
+    white-space: nowrap;
+
+    &--offline {
+      border-color: $gold;
+      color: $gold-light;
+    }
+
+    &--error {
+      border-color: $maroon-light;
+      color: $maroon-text;
+      cursor: pointer;
+    }
+  }
+
+  &__spin {
+    animation: sync-spin 1.2s linear infinite;
+  }
+
+  &__panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    width: min(22rem, 90vw);
+    padding: 1rem;
+    border-radius: $radius-lg;
+    border: $border-gold;
+    background: $bg-panel-raised;
+    box-shadow: $shadow-panel;
+    color: $text-light;
+
+    p {
+      margin: 0 0 0.5rem;
+      color: $text-muted;
+    }
+
+    ul {
+      margin: 0 0 0.75rem;
+      padding-left: 1.1rem;
+    }
+  }
+}
+
+@keyframes sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
