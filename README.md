@@ -206,7 +206,16 @@ so your whole party can share one set of notes from any browser.
   and replace both occurrences, then re-run the script, if you want to
   change it). The admin can create player accounts and sees every
   campaign, unrestricted.
-- **Players**: created only by the admin — there's no self-signup. A
+- **Players**: accounts are **by invite only**. The admin either creates
+  an account directly (**+ Add Player**) or uses **Invite by link** on the
+  Players screen: optionally pick a campaign the new player joins on
+  sign-up (or none — they join one later with its join code), then copy or
+  share the link (`https://your-app/?invite=…`). Each link works once,
+  expires after 30 days and can be cancelled from the invite list. The
+  login screen has no sign-up of its own; an invite link opens the
+  sign-up form (username, name, email, password). Run the "Sign-up by
+  invite link" block at the end of `supabase/schema.sql` first. Names and
+  emails are only visible to the admin. A
   player logs in at the normal app URL and sees a personal dashboard of
   just the campaigns they created or joined. Creating a campaign gives it
   a short join code to share with your group; anyone who enters that code

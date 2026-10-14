@@ -18,6 +18,7 @@ import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import { PasswordInput } from './ui.jsx'
 import Icon from './Icon.jsx'
+import { InviteDialog, InviteList } from './InvitePlayers.jsx'
 import './AdminGate.scss'
 
 const SECTION_KEY = 'dnd-notes-admin-section'
@@ -235,6 +236,8 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
   const [formError, setFormError] = useState(null)
   const [actionError, setActionError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [inviting, setInviting] = useState(false)
+  const [invitesChanged, setInvitesChanged] = useState(0)
   const joinableCampaigns = campaigns.filter((c) => !c.archived)
 
   const membershipsByPlayer = useMemo(() => {
@@ -336,10 +339,28 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
         ) : (
           <span />
         )}
-        <button type="button" className="btn btn--primary" onClick={openAdd}>
-          + Add Player
-        </button>
+        <div className="manage-players__add">
+          <button type="button" className="btn" onClick={() => setInviting(true)}>
+            <Icon name="send" /> Invite by link
+          </button>
+          <button type="button" className="btn btn--primary" onClick={openAdd}>
+            + Add Player
+          </button>
+        </div>
       </div>
+
+      {inviting && (
+        <InviteDialog
+          adminPassword={adminPassword}
+          campaigns={campaigns}
+          onClose={() => {
+            setInviting(false)
+            reload()
+          }}
+          onCreated={() => setInvitesChanged((n) => n + 1)}
+        />
+      )}
+      <InviteList adminPassword={adminPassword} refreshKey={invitesChanged} onChanged={reload} />
 
       {actionError && (
         <p className="empty-state empty-state--error" role="alert">
@@ -368,6 +389,11 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
                   </span>
                   <div className="player-card__who">
                     <h3 className="player-card__name">{player.username}</h3>
+                    {(player.display_name || player.email) && (
+                      <p className="player-card__contact">
+                        {[player.display_name, player.email].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
                     <p className="player-card__count">
                       {playerCampaigns.length === 0
                         ? 'Not in any campaign'

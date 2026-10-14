@@ -1,0 +1,131 @@
+@use '../styles/variables' as *;
+
+.invite-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+
+  &__lead {
+    margin: 0;
+    color: $text-muted;
+  }
+
+  &__error {
+    margin: 0;
+    padding: 0.6rem 0.75rem;
+    border-radius: $radius;
+    border: 1px solid rgba($maroon-light, 0.6);
+    background: rgba($maroon, 0.25);
+    color: $maroon-text;
+  }
+
+  select {
+    min-height: 2.75rem;
+  }
+}
+
+.invite-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  &__url {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border-radius: $radius;
+    border: 1px solid $gold-dim;
+    background: $bg-deep;
+    color: $text-light;
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+.invite-list {
+  margin: 1.5rem 0;
+  max-width: 52rem;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1rem;
+    color: $gold-light;
+  }
+
+  &__count {
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    background: rgba($gold, 0.15);
+    font-family: $font-body;
+    font-size: 0.8rem;
+    color: $gold-light;
+  }
+
+  &__empty {
+    margin: 0;
+    color: $text-muted;
+  }
+
+  &__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: $radius;
+    border: 1px solid $ink-soft;
+    background: $bg-panel;
+
+    &--used,
+    &--expired,
+    &--revoked {
+      opacity: 0.7;
+    }
+  }
+
+  &__who {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__note {
+    color: $text-light;
+    overflow-wrap: anywhere;
+  }
+
+  &__meta {
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.25rem;
+  }
+}
