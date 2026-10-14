@@ -486,24 +486,28 @@ function LootTab({ campaignId }) {
         </Modal>
       )}
 
-      {!loading && !error && loot.length > 1 && (
-        <TabNav
-          tabs={SORT_MODES}
-          activeTab={sortMode}
-          onSelect={setSortMode}
-          className="tab-nav--pill"
-          label="Sort loot"
-        />
-      )}
-
-      {!loading && !error && holderTabs.length > 1 && (
-        <TabNav
-          tabs={holderTabs}
-          activeTab={effectiveHolderView}
-          onSelect={setHolderView}
-          className="tab-nav--pill"
-          label="Filter loot by holder"
-        />
+      {/* Sort on the left, who-has-it filter on the right. */}
+      {!loading && !error && (loot.length > 1 || holderTabs.length > 1) && (
+        <div className="loot-tab__filters">
+          {loot.length > 1 && (
+            <TabNav
+              tabs={SORT_MODES}
+              activeTab={sortMode}
+              onSelect={setSortMode}
+              className="tab-nav--pill"
+              label="Sort loot"
+            />
+          )}
+          {holderTabs.length > 1 && (
+            <TabNav
+              tabs={holderTabs}
+              activeTab={effectiveHolderView}
+              onSelect={setHolderView}
+              className="tab-nav--pill loot-tab__holders"
+              label="Filter loot by holder"
+            />
+          )}
+        </div>
       )}
 
       {loading && <p className="empty-state">Loading…</p>}
