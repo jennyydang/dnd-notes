@@ -1,6 +1,5 @@
-// Shared between SessionNotesTab.jsx (the full tab) and QuickView.jsx
-// (the sticky bottom-right widget) — both need the same "what's the
-// newest session note" ordering and the same date formatting.
+// Session-note dates: formatting and "newest first" ordering, shared by
+// every screen that lists sessions.
 
 // Dates are stored as ISO strings (YYYY-MM-DD) from the native date
 // picker. Older rows may still hold free-text dates from before this

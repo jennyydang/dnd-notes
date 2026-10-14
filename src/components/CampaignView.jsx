@@ -27,7 +27,6 @@ import QuickCreateModal from './QuickCreateModal.jsx'
 import AccountMenu from './AccountMenu.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
-import QuickView from './QuickView.jsx'
 import Modal from './Modal.jsx'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { CampaignNavContext } from '../hooks/useCampaignData.js'
@@ -331,7 +330,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                       tabs={areaTabs(area)}
                       activeTab={knownTab}
                       onSelect={setActiveTab}
-                      onAddTab={area.custom ? handleAddTab : undefined}
                       className="tab-nav--sidebar"
                       label={`${area.label} sections`}
                       vertical
@@ -422,11 +420,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
             })}
           </nav>
 
-          {/* Home and Session Mode already have quick capture, so the
-              floating widget only shows elsewhere. */}
-          {playerId && roleReady && !dmView && !['home', 'session'].includes(activeArea.id) && (
-            <QuickView campaignId={campaignId} playerId={playerId} />
-          )}
         </div>
       </CampaignNavContext.Provider>
     </CampaignDataProvider>

@@ -1,10 +1,9 @@
 import { formatSessionDate } from '../lib/sessionNotes.js'
 import { RichNotesEditor } from './RichNotesEditor.jsx'
 
-// The title/date/notes fields shared by the full Session Notes tab
-// (SessionNotesTab.jsx, inside its Add/Edit modal) and the Quick View
-// widget's compact editor (QuickView.jsx). `idPrefix` keeps the two
-// instances' DOM ids apart in case both are ever mounted at once.
+// The title/date/notes fields of a session recap (used by the Session
+// Notes tab and the End Session recap). `idPrefix` keeps DOM ids unique if more
+// than one copy is ever mounted at once.
 function SessionNoteForm({
   idPrefix,
   campaignId,
