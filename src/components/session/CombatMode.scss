@@ -190,3 +190,107 @@ body.combat-shake .app {
     background: $blood-dark;
   }
 }
+
+// ── A player's initiative roll (alert and tracker) ────────────────────
+.roll-for-me {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+
+  &--compact {
+    align-items: flex-start;
+  }
+
+  &__hint,
+  &__or,
+  &__added {
+    margin: 0;
+    color: $text-light;
+
+    strong {
+      color: $gold-light;
+    }
+  }
+
+  &__or {
+    font-size: 0.88rem;
+    color: $text-muted;
+  }
+
+  &__added {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: $green-text;
+  }
+
+  // The result, big enough to read across the table.
+  &__big {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  &--compact &__big {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__big-label {
+    font-family: $font-display;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
+  &__big-value {
+    min-width: 6rem;
+    padding: 0.1rem 1rem;
+    border-radius: $radius-lg;
+    border: 2px solid $gold;
+    background: $bg-deep;
+    box-shadow: 0 0 1.5rem rgba($gold, 0.25);
+    color: $gold-light;
+    font-family: $font-display;
+    font-size: clamp(3.5rem, 14vw, 5rem);
+    line-height: 1.1;
+    text-align: center;
+    animation: roll-pop 0.35s cubic-bezier(0.2, 1.5, 0.4, 1);
+  }
+
+  &__big--compact &__big-value {
+    min-width: 4rem;
+    font-size: 2.75rem;
+    box-shadow: none;
+  }
+
+  &__breakdown {
+    margin: 0;
+    color: $text-muted;
+    text-align: center;
+  }
+
+  &--compact &__breakdown {
+    text-align: left;
+  }
+
+  &__natural {
+    color: $gold-light;
+  }
+}
+
+@keyframes roll-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

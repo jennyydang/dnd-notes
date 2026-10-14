@@ -887,11 +887,29 @@
     }
   }
 
+  // A small caption over a row's numbers ("INIT", "HP") so it's clear
+  // what each one is.
+  &__label {
+    font-family: $font-body;
+    font-size: 0.62rem;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
   &__score {
-    min-width: 2rem;
-    text-align: center;
+    min-width: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  &__value {
     font-family: $font-display;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
+    line-height: 1;
     color: $parchment;
   }
 
@@ -908,8 +926,9 @@
 
   &__hp {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.15rem;
     font-size: 0.8rem;
     color: $text-muted;
 

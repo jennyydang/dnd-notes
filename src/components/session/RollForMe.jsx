@@ -8,6 +8,16 @@ import Icon from '../Icon.jsx'
 
 const signed = (n) => `${n >= 0 ? '+' : ''}${n}`
 
+// The roll result, big enough to read across the table.
+function BigNumber({ label, value, compact }) {
+  return (
+    <p className={`roll-for-me__big${compact ? ' roll-for-me__big--compact' : ''}`}>
+      <span className="roll-for-me__big-label">{label}</span>
+      <span className="roll-for-me__big-value">{value}</span>
+    </p>
+  )
+}
+
 // A player's initiative roll with the dice the DM called for, plus their
 // sheet's initiative bonus. "Roll for me" rolls it in the app and puts
 // them straight into the shared order; otherwise they roll real dice and
@@ -39,17 +49,17 @@ function RollForMe({ character, dice, compact = false }) {
     )
   }
 
+  const natural = rolled && rolled.die === (dice?.sides || 20) ? 'Natural max!' : rolled?.die === 1 ? 'Ouch — a 1.' : null
+
   if (rolled) {
     return (
       <div className={`roll-for-me${compact ? ' roll-for-me--compact' : ''}`} role="status">
-        <p className="roll-for-me__result">
-          <span className="roll-for-me__total">{rolled.total}</span>
-          <span>
-            {describeDice(dice)} rolled {rolled.rolls.join(' & ')}
-            {rolled.rolls.length > 1 ? ` (kept ${rolled.die})` : ''}
-            {bonus ? ` ${signed(bonus)}` : ''}
-            {rolled.die === (dice?.sides || 20) ? ' — natural max!' : rolled.die === 1 ? ' — ouch.' : ''}
-          </span>
+        <BigNumber label="Your initiative" value={rolled.total} compact={compact} />
+        <p className="roll-for-me__breakdown">
+          {describeDice(dice)}: rolled {rolled.rolls.join(' & ')}
+          {rolled.rolls.length > 1 ? `, kept ${rolled.die}` : ''}
+          {bonus ? `, ${signed(bonus)}` : ''} = {rolled.total}
+          {natural && <strong className="roll-for-me__natural"> {natural}</strong>}
         </p>
         <p className="roll-for-me__added">
           <Icon name="check-square" />{' '}
@@ -62,9 +72,12 @@ function RollForMe({ character, dice, compact = false }) {
 
   if (entry) {
     return (
-      <p className="roll-for-me__hint">
-        You’re in the order at <strong>#{index + 1}</strong> with initiative <strong>{entry.initiative}</strong>.
-      </p>
+      <div className={`roll-for-me${compact ? ' roll-for-me--compact' : ''}`}>
+        <BigNumber label="Your initiative" value={entry.initiative} compact={compact} />
+        <p className="roll-for-me__added">
+          <Icon name="check-square" /> #{index + 1} of {state.combatants.length} in the order.
+        </p>
+      </div>
     )
   }
 

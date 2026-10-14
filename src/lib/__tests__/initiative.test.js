@@ -115,14 +115,15 @@ describe('calling for initiative', () => {
 describe('ordering, player rolls and dice', () => {
   const list = (s) => s.combatants.map((x) => x.id)
 
-  it('slots new combatants in by score without undoing a manual order', () => {
-    let s = [c('a', 15), c('b', 10), c('c', 5)].reduce(addCombatant, emptyEncounter())
-    s = moveCombatant(s, 'c', 0) // DM puts c first
-    expect(list(s)).toEqual(['c', 'a', 'b'])
-    s = addCombatant(s, c('d', 12)) // lands before b (10), after a
-    expect(list(s)).toEqual(['c', 'a', 'd', 'b'])
-    s = addCombatant(s, c('e', 10)) // ties go after
-    expect(list(s)).toEqual(['c', 'a', 'd', 'b', 'e'])
+  it('re-sorts by score whenever someone is added, keeping the DM’s tie order', () => {
+    let s = [c('a', 15), c('b', 10), c('c', 10)].reduce(addCombatant, emptyEncounter())
+    s = moveCombatant(s, 'c', 1) // DM breaks the 10–10 tie: c before b
+    expect(list(s)).toEqual(['a', 'c', 'b'])
+    s = addCombatant(s, c('d', 12))
+    expect(list(s)).toEqual(['a', 'd', 'c', 'b']) // tie order kept
+    s = moveCombatant(s, 'b', 0) // a drag across scores (b above a and d)…
+    s = addCombatant(s, c('e', 10)) // …is undone by the next sort; new ties go last
+    expect(list(s)).toEqual(['a', 'd', 'b', 'c', 'e'])
   })
 
   it('keeps the current creature up when the DM moves someone', () => {
