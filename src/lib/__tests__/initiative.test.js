@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   addCombatant,
+  addPlayerRoll,
+  describeDice,
+  moveCombatant,
+  rollInitiative,
   addCondition,
   callForInitiative,
   emptyEncounter,
@@ -105,5 +109,46 @@ describe('calling for initiative', () => {
     expect(isFreshAlert({ id: 'a1', at }, ['a1'], t + 60_000)).toBe(false)
     expect(isFreshAlert({ id: 'a1', at }, [], t + 6 * 60_000)).toBe(false)
     expect(isFreshAlert(null, [], t)).toBe(false)
+  })
+})
+
+describe('ordering, player rolls and dice', () => {
+  const list = (s) => s.combatants.map((x) => x.id)
+
+  it('slots new combatants in by score without undoing a manual order', () => {
+    let s = [c('a', 15), c('b', 10), c('c', 5)].reduce(addCombatant, emptyEncounter())
+    s = moveCombatant(s, 'c', 0) // DM puts c first
+    expect(list(s)).toEqual(['c', 'a', 'b'])
+    s = addCombatant(s, c('d', 12)) // lands before b (10), after a
+    expect(list(s)).toEqual(['c', 'a', 'd', 'b'])
+    s = addCombatant(s, c('e', 10)) // ties go after
+    expect(list(s)).toEqual(['c', 'a', 'd', 'b', 'e'])
+  })
+
+  it('keeps the current creature up when the DM moves someone', () => {
+    let s = [c('a', 15), c('b', 10), c('c', 5)].reduce(addCombatant, emptyEncounter())
+    s = nextTurn(nextTurn(s)) // b's turn
+    s = moveCombatant(s, 'c', 0)
+    expect(s.combatants[s.turn].id).toBe('b')
+    expect(moveCombatant(s, 'nope', 0)).toBe(s)
+  })
+
+  it('replaces a player’s earlier roll and re-slots them', () => {
+    let s = [c('ogre', 12), c('wolf', 8)].reduce(addCombatant, emptyEncounter())
+    s = addPlayerRoll(s, { id: 'r1', name: 'Seiya', initiative: 10, playerId: 'p1', conditions: [] })
+    expect(list(s)).toEqual(['ogre', 'r1', 'wolf'])
+    s = addPlayerRoll(s, { id: 'r2', name: 'Seiya', initiative: 19, playerId: 'p1', conditions: [] })
+    expect(list(s)).toEqual(['r1', 'ogre', 'wolf']) // same entry, new place
+    expect(s.combatants[0].initiative).toBe(19)
+  })
+
+  it('rolls the DM’s dice with advantage, disadvantage and other sizes', () => {
+    const seq = (...values) => () => values.shift()
+    expect(rollInitiative({ sides: 20, mode: 'normal' }, 2, seq(0.5))).toEqual({ rolls: [11], die: 11, total: 13 })
+    expect(rollInitiative({ sides: 20, mode: 'advantage' }, 0, seq(0.1, 0.9))).toMatchObject({ rolls: [3, 19], die: 19 })
+    expect(rollInitiative({ sides: 20, mode: 'disadvantage' }, -1, seq(0.1, 0.9))).toMatchObject({ die: 3, total: 2 })
+    expect(rollInitiative({ sides: 6, mode: 'normal' }, 0, seq(0.999)).die).toBe(6)
+    expect(describeDice({ sides: 20, mode: 'advantage' })).toBe('d20 with advantage')
+    expect(describeDice(null)).toBe('d20')
   })
 })

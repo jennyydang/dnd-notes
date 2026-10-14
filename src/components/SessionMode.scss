@@ -611,6 +611,93 @@
     color: #f4d6cd;
   }
 
+  &__call-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    border-radius: $radius-lg;
+    border: 1px solid rgba(#e2735c, 0.45);
+    background: rgba(#6e1a12, 0.18);
+  }
+
+  &__dice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  &__dice-size {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: $text-muted;
+    font-size: 0.9rem;
+
+    select {
+      min-height: 2.5rem;
+      padding: 0 0.6rem;
+      border-radius: $radius;
+      border: 1px solid $ink-soft;
+      background: $bg-deep;
+      color: $text-light;
+      font-family: $font-display;
+    }
+  }
+
+  &__modes {
+    display: inline-flex;
+    padding: 0.2rem;
+    gap: 0.2rem;
+    border-radius: 999px;
+    border: 1px solid rgba($gold-dim, 0.5);
+    background: $bg-deep;
+  }
+
+  &__mode {
+    min-height: 2.3rem;
+    padding: 0 0.8rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: $text-muted;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &--on {
+      background: $bg-panel-raised;
+      color: $gold-light;
+      box-shadow: inset 0 0 0 1px rgba($gold, 0.55);
+    }
+  }
+
+  &__grip {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.5rem;
+    margin-left: -0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-muted;
+    cursor: grab;
+    touch-action: none;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      background: $bg-panel-raised;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
   &__rolling {
     display: flex;
     flex-wrap: wrap;
@@ -770,7 +857,15 @@
     transition:
       background 0.25s ease,
       border-color 0.25s ease,
-      box-shadow 0.25s ease;
+      box-shadow 0.25s ease,
+      transform 0.15s ease;
+
+    &--dragging {
+      border-color: $gold;
+      box-shadow: $shadow-panel;
+      opacity: 0.95;
+    }
+
     display: flex;
     flex-direction: column;
     gap: 0.35rem;

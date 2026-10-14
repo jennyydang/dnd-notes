@@ -101,12 +101,17 @@ only from the character's recorded notes, for use in any assistant.
   Conditions can be added per combatant with an optional number of
   rounds; they count down at the start of that combatant's turn and the
   tracker says when one ends. Stored in the `encounters` table.
-- **Roll for initiative.** On the Combat tab the DM has **Call for
-  initiative!**: every player's screen shakes (phones buzz) under a "Roll
-  for initiative!" alert showing their own d20 + bonus (with an optional
-  "Roll it for me"), and the whole app switches to a red combat theme
-  with a "Combat · Round N" badge. The DM types the rolls into the
-  tracker; **End combat** returns everyone to normal. Uses the same
+- **Roll for initiative.** On the Combat tab the DM picks the dice (d20
+  by default, or d12/d10/d8/d6/d4; normal, advantage or disadvantage)
+  and presses **Call for initiative!**: every player's screen shakes
+  (phones buzz) under a "Roll for initiative!" alert with that roll plus
+  their sheet's bonus, and the whole app switches to a red combat theme
+  with a round badge. **Roll for me** rolls it in the app and drops the
+  player straight into the order; anyone rolling real dice tells the DM,
+  who types it in. The DM can drag rows (or use ↑/↓ on the handle) to
+  reorder; new rolls still slot in by score. **End combat** returns
+  everyone to normal. Saves re-read the latest order first, so rolls
+  arriving together can't overwrite each other. Uses the same
   `encounters` table — no extra SQL.
 - **Live reveals.** Next to **Share**, the DM has **Reveal now**: the NPC,
   monster, art or map pops up full-screen on every player's open app (and

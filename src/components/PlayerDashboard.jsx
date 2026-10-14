@@ -254,14 +254,16 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
             + Campaign
           </button>
         </div>
-        <NotificationBell playerId={playerId} />
-        <AccountMenu
-          playerId={playerId}
-          username={username}
-          onOpenSettings={() => setShowSettings(true)}
-          onSendFeedback={() => setShowFeedback(true)}
-          onLogOut={onLogOut}
-        />
+        <div className="dashboard__toolbar-account">
+          <NotificationBell playerId={playerId} />
+          <AccountMenu
+            playerId={playerId}
+            username={username}
+            onOpenSettings={() => setShowSettings(true)}
+            onSendFeedback={() => setShowFeedback(true)}
+            onLogOut={onLogOut}
+          />
+        </div>
       </div>
 
       {showChooser && (

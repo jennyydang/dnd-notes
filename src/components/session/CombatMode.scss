@@ -141,34 +141,6 @@ body.combat-shake .app {
     color: $gold-light;
   }
 
-  &__roll {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.6rem;
-  }
-
-  &__result {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    color: $text-muted;
-    text-align: left;
-  }
-
-  &__total {
-    min-width: 3.5rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: $radius;
-    border: 1px solid $gold;
-    background: $bg-panel-raised;
-    color: $gold-light;
-    font-family: $font-display;
-    font-size: 2rem;
-    text-align: center;
-  }
-
   &__ready {
     min-width: 10rem;
     margin-top: 0.5rem;
@@ -216,19 +188,5 @@ body.combat-shake .app {
   &:hover,
   &:focus-visible {
     background: $blood-dark;
-  }
-
-  // Phones: just the swords, to keep the top bar on one row.
-  @media (max-width: 480px) {
-    padding: 0 0.75rem;
-
-    span {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      white-space: nowrap;
-    }
   }
 }
