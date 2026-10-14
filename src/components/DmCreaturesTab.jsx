@@ -158,9 +158,12 @@ function DmCreaturesTab({ campaignId }) {
     }
   }
 
-  async function share(c) {
+  async function share(c, reveal = false) {
     const what = c.shareStats ? 'name, type, description and stats (CR, AC, HP)' : 'name, type and description — not its stats'
-    if (!window.confirm(`Share ${c.name} with the players?\n\nEveryone gets a notification and can add it to Monsters & Creatures. They'll see its ${what}. Never your DM notes.`)) return
+    const message = reveal
+      ? `Reveal ${c.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications. They'll see its ${what}. Never your DM notes.`
+      : `Share ${c.name} with the players?\n\nEveryone gets a notification and can add it to Monsters & Creatures. They'll see its ${what}. Never your DM notes.`
+    if (!window.confirm(message)) return false
     setActionError(null)
     setSharingId(c.id)
     try {
@@ -176,9 +179,12 @@ function DmCreaturesTab({ campaignId }) {
           description: c.description,
           ...(c.shareStats ? { challenge: c.challenge, armor_class: c.armorClass, hit_points: c.hitPoints } : {}),
         },
+        reveal,
       })
+      return true
     } catch (err) {
       setActionError(`Couldn’t share ${c.name}: ${err.message}`)
+      return false
     } finally {
       setSharingId(null)
     }
@@ -284,7 +290,13 @@ function DmCreaturesTab({ campaignId }) {
                   <Icon name={c.shareStats ? 'chart' : 'lock'} /> {c.shareStats ? 'Stats are shared with players' : 'Stats stay hidden when shared'}
                 </p>
                 <div className="creature-card__actions">
-                  <ShareStatus kind="creature" status={status} sharing={sharingId === c.id} onShare={() => share(c)} />
+                  <ShareStatus
+                    kind="creature"
+                    status={status}
+                    sharing={sharingId === c.id}
+                    onShare={() => share(c)}
+                    onReveal={() => share(c, true)}
+                  />
                   <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
                     Edit
                   </button>

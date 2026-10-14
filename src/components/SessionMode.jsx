@@ -6,6 +6,7 @@ import { useQuickNotes } from '../hooks/useQuickNotes.js'
 import { initiativeBonus } from '../lib/character.js'
 import { formatDateTime } from '../lib/sessionMode.js'
 import { useActiveSession } from '../hooks/useActiveSession.js'
+import PreviouslyOn from './session/PreviouslyOn.jsx'
 import TabNav from './TabNav.jsx'
 import VitalsPanel from './session/VitalsPanel.jsx'
 import QuickNotesPanel from './session/QuickNotesPanel.jsx'
@@ -64,8 +65,8 @@ function CharacterPanels({ campaignId, character, nav, panelClass }) {
 // Low-distraction live-game screen. On phones one panel shows at a time
 // (switcher at the top, big touch targets); wider screens show them all
 // side by side. Nothing here requires leaving the screen to record a note.
-function SessionMode() {
-  const { campaignId, playerId } = useCampaignData()
+function SessionMode({ campaignName }) {
+  const { campaignId, playerId, entities } = useCampaignData()
   const nav = useCampaignNav()
   const { character, party, isAdmin, pick, loading } = useActiveCharacter()
   const quickNotes = useQuickNotes()
@@ -73,6 +74,13 @@ function SessionMode() {
   const [panel, setPanel] = useState('vitals')
   const [ending, setEnding] = useState(false)
   const [endedMessage, setEndedMessage] = useState(null)
+  const [showPreviously, setShowPreviously] = useState(false)
+  const hasStory = entities.some((e) => e.type === 'session' || e.open)
+
+  function begin() {
+    setShowPreviously(false)
+    save({ startedAt: new Date().toISOString(), paused: false })
+  }
 
   const sessionNotes = active
     ? quickNotes.notes.filter((n) => !n.sessionNoteId && new Date(n.createdAt) >= new Date(active.startedAt))
@@ -106,7 +114,8 @@ function SessionMode() {
               className="btn btn--primary"
               onClick={() => {
                 setEndedMessage(null)
-                save({ startedAt: new Date().toISOString(), paused: false })
+                if (hasStory) setShowPreviously(true)
+                else begin()
               }}
             >
               <Icon name="play" /> Start session
@@ -171,6 +180,10 @@ function SessionMode() {
           </>
         )}
       </div>
+
+      {showPreviously && (
+        <PreviouslyOn campaignName={campaignName} onClose={() => setShowPreviously(false)} onBegin={begin} />
+      )}
 
       {ending && (
         <EndSessionModal

@@ -1,0 +1,84 @@
+@use '../../styles/variables' as *;
+
+// Top-centre banner when the shared initiative reaches this player.
+.turn-alert {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  z-index: 95;
+  transform: translateX(-50%);
+  width: min(26rem, calc(100vw - 1.5rem));
+  display: flex;
+  align-items: stretch;
+  border-radius: $radius-lg;
+  border: 1px solid rgba($gold, 0.6);
+  background: $bg-panel-raised;
+  box-shadow: $shadow-panel;
+  animation: turn-alert-in 0.25s ease-out;
+
+  &--now {
+    border-color: $gold-light;
+    background: linear-gradient(180deg, #4a3a1a, $bg-panel-raised);
+    box-shadow:
+      $shadow-panel,
+      0 0 0 3px rgba($gold, 0.25);
+  }
+
+  &__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.5rem 0.7rem 1rem;
+    border: 0;
+    background: transparent;
+    color: $text-light;
+    text-align: left;
+    font-size: 1.3rem;
+    cursor: pointer;
+
+    > span {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      font-size: 1rem;
+    }
+
+    strong {
+      font-family: $font-display;
+      color: $gold-light;
+    }
+  }
+
+  &__sub {
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__close {
+    flex-shrink: 0;
+    width: 2.75rem;
+    border: 0;
+    border-radius: 0 $radius-lg $radius-lg 0;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+    }
+  }
+}
+
+@keyframes turn-alert-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

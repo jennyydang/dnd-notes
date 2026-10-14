@@ -191,11 +191,13 @@ function SecretNpcsTab({ campaignId, addRequest }) {
     }
   }
 
-  async function share(npc) {
+  async function share(npc, reveal = false) {
     const ok = window.confirm(
-      `Share ${npc.name} with the players?\n\nEveryone gets a notification and can add them to the NPCs tab. They'll see the name, race, where they're found, description and portrait — never your secret notes.`,
+      reveal
+        ? `Reveal ${npc.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications. They'll see the name, race, where they're found, description and portrait — never your secret notes.`
+        : `Share ${npc.name} with the players?\n\nEveryone gets a notification and can add them to the NPCs tab. They'll see the name, race, where they're found, description and portrait — never your secret notes.`,
     )
-    if (!ok) return
+    if (!ok) return false
     setActionError(null)
     setSharingId(npc.id)
     try {
@@ -211,9 +213,12 @@ function SecretNpcsTab({ campaignId, addRequest }) {
           description: [npc.occupation, npc.description].filter((v) => v?.trim()).join('\n\n'),
           photo_path: npc.photoPath || null,
         },
+        reveal,
       })
+      return true
     } catch (err) {
       setActionError(`Couldn’t share ${npc.name}: ${err.message}`)
+      return false
     } finally {
       setSharingId(null)
     }
@@ -330,6 +335,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                     status={status}
                     sharing={sharingId === npc.id}
                     onShare={() => share(npc)}
+                    onReveal={() => share(npc, true)}
                     className="secret-npc__share"
                   />
                   <button type="button" className="btn btn--text" onClick={() => openForm(npc)}>
