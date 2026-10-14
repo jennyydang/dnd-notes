@@ -312,7 +312,13 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
                       <Icon name="grip" />
                     </button>
                   )}
-                  <span className="initiative__score">{c.initiative}</span>
+                  <span className="initiative__score">
+                    <span className="initiative__label" aria-hidden="true">
+                      Init
+                    </span>
+                    <span className="initiative__value">{c.initiative}</span>
+                    <span className="sr-only"> initiative</span>
+                  </span>
                   <span className="initiative__name">
                     {isCurrent && (
                       <span className="initiative__marker">
@@ -324,7 +330,10 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
                   </span>
                   {c.hp !== null && c.hp !== undefined && (
                     <label className="initiative__hp">
-                      <span className="sr-only">{c.name} HP</span>
+                      <span className="initiative__label" aria-hidden="true">
+                        HP
+                      </span>
+                      <span className="sr-only">{c.name} hit points</span>
                       <input
                         type="number"
                         inputMode="numeric"
@@ -333,7 +342,6 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
                           update((s) => updateCombatant(s, c.id, { hp: e.target.value === '' ? 0 : Number(e.target.value) }))
                         }
                       />
-                      <span aria-hidden="true">HP</span>
                     </label>
                   )}
                   <button

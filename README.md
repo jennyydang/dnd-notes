@@ -108,8 +108,9 @@ only from the character's recorded notes, for use in any assistant.
   their sheet's bonus, and the whole app switches to a red combat theme
   with a round badge. **Roll for me** rolls it in the app and drops the
   player straight into the order; anyone rolling real dice tells the DM,
-  who types it in. The DM can drag rows (or use ↑/↓ on the handle) to
-  reorder; new rolls still slot in by score. **End combat** returns
+  who types it in. Adding anyone re-sorts the order by initiative
+  (highest first); the DM can drag rows (or use ↑/↓ on the handle), which
+  is handy for breaking ties. **End combat** returns
   everyone to normal. Saves re-read the latest order first, so rolls
   arriving together can't overwrite each other. Uses the same
   `encounters` table — no extra SQL.

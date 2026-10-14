@@ -6,8 +6,8 @@
 //   combat: bool — the app is in combat mode for everyone,
 //   alert: { id, at, dice } — the DM's latest "roll for initiative" call,
 //   dice: { sides, mode: 'normal' | 'advantage' | 'disadvantage' } }
-// The list's order is the turn order. New combatants slot in by their
-// initiative, but the DM can drag anyone anywhere and that order sticks.
+// The list's order is the turn order: adding anyone re-sorts it by
+// initiative; the DM can also drag rows (handy for breaking ties).
 // `playerId` links a combatant to the player who plays it (for "your
 // turn" alerts); `rounds` counts down at the start of that combatant's
 // turn, and null means "until removed".
@@ -116,14 +116,14 @@ function keepTurn(state, combatants) {
   return { ...state, combatants, turn: Math.max(0, turn) }
 }
 
-// Inserts by initiative — right after the last combatant with the same or
-// a higher score — without re-sorting the rest, so the DM's manual order
-// survives new arrivals. On an unsorted-by-hand list this is plain
-// "highest first, ties in the order they came".
+// Adds a combatant and re-sorts the order by initiative, highest first.
+// Ties keep their current order, so where the DM has dragged tied
+// combatants to break a tie, that sticks.
 export function addCombatant(state, combatant) {
-  const at = state.combatants.findLastIndex((c) => c.initiative >= combatant.initiative) + 1
-  const combatants = [...state.combatants]
-  combatants.splice(at, 0, combatant)
+  const combatants = [...state.combatants, combatant]
+    .map((c, index) => ({ c, index }))
+    .sort((a, b) => b.c.initiative - a.c.initiative || a.index - b.index)
+    .map(({ c }) => c)
   return keepTurn(state, combatants)
 }
 
