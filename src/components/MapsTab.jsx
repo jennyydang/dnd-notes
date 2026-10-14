@@ -25,7 +25,9 @@ function MapsTab({ campaignId }) {
   const [lightboxMap, setLightboxMap] = useState(null)
   const [activeWorldMapId, setActiveWorldMapId] = useState(null)
   const [uploadError, setUploadError] = useState(null)
-  const [captionDrafts, setCaptionDrafts] = useState({})
+  // Rename on a card: { id, value } while editing that map's name.
+  const [renaming, setRenaming] = useState(null)
+  const [renameError, setRenameError] = useState(null)
   const fileInputRef = useRef(null)
   const activeWorldMap = maps.find((m) => m.id === activeWorldMapId) || null
   // Zoom-area maps (nested under a 'zoom' marker on another map) aren't
@@ -52,19 +54,26 @@ function MapsTab({ campaignId }) {
     }
   }
 
-  function draftCaption(id, caption) {
-    setCaptionDrafts((prev) => ({ ...prev, [id]: caption }))
+  function startRename(map) {
+    setRenameError(null)
+    setRenaming({ id: map.id, value: map.caption || '' })
   }
 
-  async function commitCaption(map) {
-    const draft = captionDrafts[map.id]
-    if (draft === undefined || draft === map.caption) return
-    await updateItem(map.id, { caption: draft })
-    setCaptionDrafts((prev) => {
-      const next = { ...prev }
-      delete next[map.id]
-      return next
-    })
+  async function renameMap(id, caption) {
+    await updateItem(id, { caption: caption.trim() })
+  }
+
+  async function saveRename(event) {
+    event.preventDefault()
+    const map = maps.find((m) => m.id === renaming.id)
+    if (!map) return setRenaming(null)
+    if (renaming.value.trim() === (map.caption || '')) return setRenaming(null)
+    try {
+      await renameMap(map.id, renaming.value)
+      setRenaming(null)
+    } catch (err) {
+      setRenameError(err.message)
+    }
   }
 
   async function removeMap(map) {
@@ -140,14 +149,42 @@ function MapsTab({ campaignId }) {
                 <img src={map.src} alt={map.caption || 'Campaign map'} />
               </button>
               {map.isWorldMap && <span className="map-card__world-badge">World Map</span>}
-              <input
-                className="map-card__caption"
-                type="text"
-                value={captionDrafts[map.id] ?? map.caption}
-                placeholder="Map name"
-                onChange={(e) => draftCaption(map.id, e.target.value)}
-                onBlur={() => commitCaption(map)}
-              />
+              {renaming?.id === map.id ? (
+                <form className="map-card__rename" onSubmit={saveRename}>
+                  <input
+                    type="text"
+                    value={renaming.value}
+                    onChange={(e) => setRenaming({ ...renaming, value: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Escape' && setRenaming(null)}
+                    placeholder="Map name"
+                    aria-label="Map name"
+                    autoFocus
+                  />
+                  <div className="map-card__rename-actions">
+                    <button type="button" className="btn btn--text" onClick={() => setRenaming(null)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn--primary">
+                      Save
+                    </button>
+                  </div>
+                  {renameError && <p className="field-error">{renameError}</p>}
+                </form>
+              ) : (
+                <div className="map-card__name-row">
+                  <span className={`map-card__name${map.caption ? '' : ' map-card__name--empty'}`}>
+                    {map.caption || 'Untitled map'}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn--text map-card__rename-btn"
+                    onClick={() => startRename(map)}
+                    aria-label={`Rename ${map.caption || 'this map'}`}
+                  >
+                    ✏️ Rename
+                  </button>
+                </div>
+              )}
               <button
                 type="button"
                 className="map-card__world-toggle btn btn--text"
@@ -195,6 +232,7 @@ function MapsTab({ campaignId }) {
           map={activeWorldMap}
           campaignId={campaignId}
           onClose={() => setActiveWorldMapId(null)}
+          onRenameMap={(caption) => renameMap(activeWorldMap.id, caption)}
         />
       )}
     </section>

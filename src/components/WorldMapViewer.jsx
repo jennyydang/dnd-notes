@@ -58,7 +58,8 @@ function clamp(value, min, max) {
 // sync, since it's a separate component instance with its own local state.
 // onRenameSelf works the same way for the marker's title, and onUpdated
 // tells the parent the new caption/image so this view refreshes.
-function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onRenameSelf, onUpdated }) {
+// onRenameMap (top-level map only) renames it through MapsTab's hook.
+function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onRenameSelf, onUpdated, onRenameMap }) {
   const { items: markers, addItem, updateItem, removeItem } =
     useSupabaseTable('map_markers', { fromRow: markerFromRow, filters: { map_id: map.id } })
 
@@ -431,6 +432,16 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
     setZoomForm((prev) => ({ ...prev, imageFile: file, imagePreview: previewUrl }))
   }
 
+  async function renameThisMap() {
+    const name = window.prompt('Rename this map', map.caption || '')
+    if (name === null || name.trim() === (map.caption || '')) return
+    try {
+      await onRenameMap(name)
+    } catch (err) {
+      setFormError(err.message)
+    }
+  }
+
   // Editing the zoom area you're inside: rename it and/or swap its image.
   function startEditingZoomArea() {
     revokeTrackedObjectUrl()
@@ -549,6 +560,11 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
           {onRenameSelf && (
             <button type="button" className="btn btn--text" onClick={startEditingZoomArea}>
               Edit This Area
+            </button>
+          )}
+          {onRenameMap && (
+            <button type="button" className="btn btn--text" onClick={renameThisMap}>
+              ✏️ Rename Map
             </button>
           )}
           {onDeleteSelf && (

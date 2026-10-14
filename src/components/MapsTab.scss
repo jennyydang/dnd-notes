@@ -40,20 +40,59 @@
     }
   }
 
-  &__caption {
-    width: 100%;
-    background: transparent;
-    border: none;
+  &__name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.45rem 0.4rem 0.45rem 0.75rem;
     border-top: 1px solid rgba($gold-dim, 0.4);
+  }
+
+  &__name {
+    min-width: 0;
     color: $parchment;
     font-family: $font-display;
     font-size: 0.95rem;
-    text-align: center;
-    padding: 0.6rem 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
-    &:focus {
-      background: rgba($gold, 0.08);
+    &--empty {
+      color: $text-muted;
+      font-style: italic;
     }
+  }
+
+  &__rename-btn {
+    flex-shrink: 0;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  &__rename {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.6rem;
+    border-top: 1px solid rgba($gold-dim, 0.4);
+
+    input {
+      width: 100%;
+      min-height: 2.5rem;
+      background: $bg-deep;
+      border: 1px solid $gold;
+      border-radius: $radius;
+      color: $text-light;
+      padding: 0.4rem 0.6rem;
+      font-size: 1rem;
+    }
+  }
+
+  &__rename-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.4rem;
   }
 
   &__remove {
