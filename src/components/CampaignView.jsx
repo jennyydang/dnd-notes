@@ -30,6 +30,7 @@ import SessionDock from './session/SessionDock.jsx'
 import TurnAlert from './session/TurnAlert.jsx'
 import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
+import DownedPulse from './session/DownedPulse.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import DmPlayersTab from './DmPlayersTab.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
@@ -340,6 +341,8 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           {roleReady && <CombatMode showAlert={Boolean(playerId) && !isDm} />}
           {/* Players see the DM's live reveals; the DM is the one sending them. */}
           {playerId && roleReady && !isDm && <RevealOverlay campaignId={campaignId} />}
+          {/* A heartbeat at the screen edges while your character is dying. */}
+          {playerId && roleReady && !isDm && <DownedPulse />}
 
           <div
             className={`campaign-view__body${sidebarOpen ? '' : ' campaign-view__body--sidebar-collapsed'}`}

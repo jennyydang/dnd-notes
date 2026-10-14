@@ -290,7 +290,10 @@ function NpcsTab({ campaignId }) {
       {!loading && !error && npcs.length > 0 && view === 'compact' && (
         <div className="npc-list npc-list--compact">
           {npcs.map((npc) => (
-            <article className="npc-card npc-card--compact panel" key={npc.id}>
+            <article
+              className={`npc-card npc-card--compact panel${npc.status === 'Deceased' ? ' npc-card--deceased' : ''}`}
+              key={npc.id}
+            >
               <div className="npc-card__avatar npc-card__avatar--small">
                 {npc.photo ? (
                   <img src={npc.photo} alt="" />
@@ -335,7 +338,7 @@ function NpcsTab({ campaignId }) {
       {!loading && !error && npcs.length > 0 && view === 'cards' && (
         <div className="npc-list">
           {npcs.map((npc) => (
-            <article className="npc-card panel" key={npc.id}>
+            <article className={`npc-card panel${npc.status === 'Deceased' ? ' npc-card--deceased' : ''}`} key={npc.id}>
               <div className="npc-card__main">
                 <div className="npc-card__identity">
                   <div className="npc-card__avatar">
