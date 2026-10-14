@@ -336,8 +336,24 @@
 }
 
 .feedback-inbox {
-  &__filter {
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
     margin-bottom: 1.25rem;
+  }
+
+  &__heading {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: $text-muted;
+  }
+
+  // The "Solved and archived …" line above the list.
+  > .feedback-inbox__notice {
+    margin-bottom: 1rem;
   }
 
   &__list {

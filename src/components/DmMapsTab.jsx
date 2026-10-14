@@ -40,7 +40,8 @@ function DmMapsTab({ campaignId }) {
     fromRow: partyMapFromRow,
     filters: { campaign_id: campaignId },
   })
-  const { byKey } = useDmShares(campaignId)
+  const { byKey, revealedKeys } = useDmShares(campaignId)
+  const isRevealed = (map) => revealedKeys.has(shareKey('map', map.id))
   const addedIds = useMemo(() => new Set(partyMaps.map((m) => m.dmMapId).filter(Boolean)), [partyMaps])
   const statusOf = (map) =>
     addedIds.has(map.id) ? 'added' : byKey.has(shareKey('map', map.id)) ? 'sent' : 'private'
@@ -191,7 +192,7 @@ function DmMapsTab({ campaignId }) {
           {maps.map((map) => {
             const status = statusOf(map)
             return (
-              <li key={map.id} className="art-tile">
+              <li key={map.id} className={`art-tile${isRevealed(map) ? ' dm-revealed' : ''}`}>
                 <button type="button" className="art-tile__open" onClick={() => setViewingId(map.id)}>
                   <img src={map.url} alt={map.title || 'Map'} loading="lazy" />
                   <span className="art-tile__caption">
@@ -222,6 +223,7 @@ function DmMapsTab({ campaignId }) {
                 sharing={sharingId === viewing.id}
                 onShare={() => share(viewing)}
                 onReveal={() => share(viewing, true)}
+                revealed={isRevealed(viewing)}
               />
               <button
                 type="button"

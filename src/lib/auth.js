@@ -85,9 +85,23 @@ const SIGNUP_MISSING =
   'Sign-up isn’t set up yet. Ask your admin to run the latest supabase/schema.sql.'
 const missingFn = (error) => /could not find the function|does not exist/i.test(error.message)
 
-// The link a new player opens to sign up.
+// The link a new player opens to sign up (or an existing one, to join
+// the campaign it's for).
 export function inviteLink(token) {
   return `${window.location.origin}/?invite=${token}`
+}
+
+// The invite token from an invite link (…/?invite=TOKEN), if any.
+export function inviteFromUrl() {
+  try {
+    return new URLSearchParams(window.location.search).get('invite')?.trim() || ''
+  } catch {
+    return ''
+  }
+}
+
+export function clearInviteFromUrl() {
+  window.history.replaceState(null, '', window.location.pathname)
 }
 
 // Admin: a single-use invite link, optionally joining a campaign on sign-up.
@@ -146,6 +160,18 @@ export async function checkInvite(token) {
   const { data, error } = await supabase.rpc('check_player_invite', { p_token: token })
   if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
   return { status: data?.[0]?.status || 'invalid', campaignName: data?.[0]?.campaign_name || null }
+}
+
+// A player who already has an account joining the campaign an invite
+// link is for. Resolves to { campaignId, campaignName }.
+export async function acceptInvite(playerId, token) {
+  const { data, error } = await supabase.rpc('accept_player_invite', { p_player_id: playerId, p_token: token })
+  if (error) {
+    throw new Error(
+      missingFn(error) ? 'Joining with an invite link isn’t set up yet. Ask your DM for the join code instead.' : error.message,
+    )
+  }
+  return { campaignId: data?.[0]?.campaign_id, campaignName: data?.[0]?.campaign_name }
 }
 
 // Sign-up with an invite link. Returns the new player's id; the database

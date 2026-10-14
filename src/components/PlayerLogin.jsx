@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { checkInvite, registerPlayer, setPlayerSession, verifyLogin } from '../lib/auth.js'
+import {
+  checkInvite,
+  clearInviteFromUrl,
+  inviteFromUrl,
+  registerPlayer,
+  setPlayerSession,
+  verifyLogin,
+} from '../lib/auth.js'
 import { PasswordInput } from './ui.jsx'
 import './PlayerLogin.scss'
 
@@ -12,22 +19,10 @@ const INVITE_PROBLEMS = {
   invalid: 'This invite link isn’t valid.',
 }
 
-// The invite token from a sign-up link (…/?invite=TOKEN), if any.
-function inviteFromUrl() {
-  try {
-    return new URLSearchParams(window.location.search).get('invite')?.trim() || ''
-  } catch {
-    return ''
-  }
-}
-
-function clearInviteFromUrl() {
-  window.history.replaceState(null, '', window.location.pathname)
-}
-
 // Accounts are by invite only: an invite link from the admin opens the
 // sign-up form (username, name, email, password); without one, this is
-// just the login.
+// just the login. Someone who already has an account can log in from a
+// campaign's invite link instead, and the dashboard offers to join it.
 function PlayerLogin({ onLoggedIn }) {
   const [token] = useState(inviteFromUrl)
   const [invite, setInvite] = useState(token ? { status: 'checking' } : null)
@@ -49,15 +44,19 @@ function PlayerLogin({ onLoggedIn }) {
     }
   }, [token])
 
-  function finish(playerId, name) {
-    if (token) clearInviteFromUrl()
+  // A valid link for a campaign stays in the URL through a login, so the
+  // dashboard can offer to join it.
+  const joinable = invite?.status === 'ok' && Boolean(invite.campaignName)
+
+  function finish(playerId, name, signedUp = false) {
+    if (token && (signedUp || !joinable)) clearInviteFromUrl()
     const session = { playerId, username: name.trim() }
     setPlayerSession(session)
     onLoggedIn(session)
   }
 
   function goToLogin() {
-    clearInviteFromUrl()
+    if (!joinable) clearInviteFromUrl()
     setMode('login')
     setError(null)
   }
@@ -83,7 +82,7 @@ function PlayerLogin({ onLoggedIn }) {
     }
     setBusy(true)
     try {
-      finish(await registerPlayer({ token, ...signup }), signup.username)
+      finish(await registerPlayer({ token, ...signup }), signup.username, true)
     } catch (err) {
       setError(err.message)
       setBusy(false)
@@ -208,6 +207,11 @@ function PlayerLogin({ onLoggedIn }) {
     <div className="player-login">
       <form className="player-login__form panel" onSubmit={submitLogin}>
         <h2>Log In</h2>
+        {joinable && (
+          <p className="player-login__lead">
+            Log in to join <strong>{invite.campaignName}</strong>.
+          </p>
+        )}
         <div className="field">
           <label htmlFor="login-username">Username</label>
           <input
@@ -241,7 +245,16 @@ function PlayerLogin({ onLoggedIn }) {
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Logging in…' : 'Log In'}
         </button>
-        <p className="player-login__note">New players need an invite link from their DM or the admin.</p>
+        {joinable ? (
+          <p className="player-login__switch">
+            New here?{' '}
+            <button type="button" className="player-login__link" onClick={() => setMode('signup')}>
+              Create an account
+            </button>
+          </p>
+        ) : (
+          <p className="player-login__note">New players need an invite link from their DM or the admin.</p>
+        )}
       </form>
     </div>
   )

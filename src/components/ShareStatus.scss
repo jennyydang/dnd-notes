@@ -15,8 +15,20 @@
     color: $green-text;
   }
 
+  &--revealed {
+    color: $text-muted;
+    border-style: dashed;
+    gap: 0.3rem;
+  }
+
   &__button,
   &__reveal {
     white-space: nowrap;
   }
+}
+
+// A card or tile the DM has already revealed to the table fades back,
+// like used loot, so what's still unrevealed stands out.
+.dm-revealed {
+  opacity: 0.5;
 }

@@ -8,8 +8,9 @@ const REVEALED_MS = 3000
 // The DM's share control on an NPC / art / map / monster card:
 // private → "Share" button; sent → waiting; added → where it went. With
 // `onReveal`, a "Reveal now" button also pops it up full-screen for the
-// players at the table (it resolves true once sent).
-function ShareStatus({ kind, status, onShare, onReveal, sharing = false, className = '' }) {
+// players at the table (it resolves true once sent). Once `revealed`, the
+// button gives way to a quiet "Revealed" tag.
+function ShareStatus({ kind, status, onShare, onReveal, revealed = false, sharing = false, className = '' }) {
   const { tabLabel } = SHARE_KINDS[kind]
   const [revealState, setRevealState] = useState(null) // null | 'sending' | 'done'
 
@@ -46,6 +47,16 @@ function ShareStatus({ kind, status, onShare, onReveal, sharing = false, classNa
     )
   }
   if (!onReveal) return main
+  if (revealed && revealState !== 'done') {
+    return (
+      <>
+        {main}
+        <span className="share-status share-status--revealed">
+          <Icon name="eye" /> Revealed
+        </span>
+      </>
+    )
+  }
 
   return (
     <>

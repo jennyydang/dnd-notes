@@ -9,6 +9,7 @@ import SettingsPanel from './SettingsPanel.jsx'
 import AccountMenu from './AccountMenu.jsx'
 import { NotificationBell } from './DmSharesInbox.jsx'
 import Modal from './Modal.jsx'
+import InviteBanner from './InviteBanner.jsx'
 import './Dashboard.scss'
 import CampaignSearch from './CampaignSearch.jsx'
 import { matchesCampaign } from '../lib/search.js'
@@ -265,6 +266,8 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
           />
         </div>
       </div>
+
+      <InviteBanner playerId={playerId} onJoined={onOpenCampaign} />
 
       {showChooser && (
         <NewOrJoinCampaign
