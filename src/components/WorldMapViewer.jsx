@@ -12,7 +12,7 @@ const ZOOM_MAX = 6
 const DRAG_THRESHOLD_PX = 5
 
 const emptyMarkerForm = { title: '', notes: '', photoFile: null, photoPreview: '', photoRemoved: false }
-const emptyZoomForm = { title: '', imageFile: null, imagePreview: '' }
+const emptyZoomForm = { title: '', imageFile: null, imagePreview: '', editing: false }
 
 const markerFromRow = (r) => ({
   id: r.id,
@@ -56,7 +56,9 @@ function clamp(value, min, max) {
 // routing the delete through the parent's hook (rather than this level
 // deleting the marker directly) is what keeps the parent's marker list in
 // sync, since it's a separate component instance with its own local state.
-function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
+// onRenameSelf works the same way for the marker's title, and onUpdated
+// tells the parent the new caption/image so this view refreshes.
+function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onRenameSelf, onUpdated }) {
   const { items: markers, addItem, updateItem, removeItem } =
     useSupabaseTable('map_markers', { fromRow: markerFromRow, filters: { map_id: map.id } })
 
@@ -429,12 +431,47 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
     setZoomForm((prev) => ({ ...prev, imageFile: file, imagePreview: previewUrl }))
   }
 
+  // Editing the zoom area you're inside: rename it and/or swap its image.
+  function startEditingZoomArea() {
+    revokeTrackedObjectUrl()
+    setFormError(null)
+    setZoomForm({ title: map.caption || '', imageFile: null, imagePreview: map.src, editing: true })
+  }
+
+  async function saveZoomAreaEdits() {
+    const title = zoomForm.title.trim()
+    let newPath = null
+    try {
+      const patch = { caption: title }
+      if (zoomForm.imageFile) {
+        newPath = await uploadImage(MAP_BUCKET, zoomForm.imageFile)
+        patch.image_path = newPath
+      }
+      const { error: updateError } = await supabase.from('maps').update(patch).eq('id', map.id)
+      if (updateError) throw new Error(updateError.message)
+      await onRenameSelf?.(title)
+      if (newPath) await removeImage(MAP_BUCKET, map.imagePath)
+      onUpdated?.({
+        caption: title,
+        ...(newPath ? { imagePath: newPath, src: getPublicUrl(MAP_BUCKET, newPath) } : {}),
+      })
+      cancelZoomForm()
+    } catch (err) {
+      if (newPath) await removeImage(MAP_BUCKET, newPath)
+      setFormError(err.message)
+    }
+  }
+
   // Placing a zoom area is a two-table write: the marker on this map, and
   // the nested map row it points to (see supabase/schema.sql). If the
   // second insert fails, roll back the marker and the uploaded image
   // rather than leaving a zoom marker that opens nothing.
   async function submitZoomForm(event) {
     event.preventDefault()
+    if (zoomForm.editing) {
+      if (zoomForm.title.trim()) await saveZoomAreaEdits()
+      return
+    }
     if (!zoomForm.title.trim() || !zoomForm.imageFile) return
 
     let imagePath = null
@@ -509,6 +546,11 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
           >
             {placementMode === 'zoom' ? 'Click the map to place it' : '+ Add Zoom Area'}
           </button>
+          {onRenameSelf && (
+            <button type="button" className="btn btn--text" onClick={startEditingZoomArea}>
+              Edit This Area
+            </button>
+          )}
           {onDeleteSelf && (
             <button type="button" className="btn btn--danger" onClick={deleteZoomArea}>
               Delete This Area
@@ -681,7 +723,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
             onPointerDown={(e) => e.stopPropagation()}
             onSubmit={submitZoomForm}
           >
-            <h3>New Zoom Area</h3>
+            <h3>{zoomForm.editing ? 'Edit Zoom Area' : 'New Zoom Area'}</h3>
             <div className="field">
               <label htmlFor="zoom-title">Title</label>
               <input
@@ -694,7 +736,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
               />
             </div>
             <div className="field">
-              <label>Zoomed-in image</label>
+              <label>{zoomForm.editing ? 'Zoomed-in image (tap to replace)' : 'Zoomed-in image'}</label>
               <div className="world-map-viewer__photo-picker">
                 <button
                   type="button"
@@ -722,8 +764,12 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
               <button type="button" className="btn btn--text" onClick={cancelZoomForm}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn--primary" disabled={!zoomForm.title.trim() || !zoomForm.imageFile}>
-                Add Zoom Area
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={!zoomForm.title.trim() || (!zoomForm.editing && !zoomForm.imageFile)}
+              >
+                {zoomForm.editing ? 'Save Changes' : 'Add Zoom Area'}
               </button>
             </div>
           </form>
@@ -779,6 +825,8 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf }) {
           backLabel={map.caption || 'World Map'}
           onClose={() => setOpenZoomMap(null)}
           onDeleteSelf={() => removeItem(openZoomMap.sourceMarkerId)}
+          onRenameSelf={(title) => updateItem(openZoomMap.sourceMarkerId, { title })}
+          onUpdated={(patch) => setOpenZoomMap((current) => (current ? { ...current, ...patch } : current))}
         />
       )}
     </div>
