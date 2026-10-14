@@ -188,17 +188,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   const activeArea =
     areas.find((area) => areaTabs(area).some((t) => t.id === knownTab)) || areas[0]
 
-  // Which way the page turns when you switch tabs: forward when moving
-  // to a later tab in the nav, back when moving to an earlier one.
-  // Set once per tab change (during render, React's "adjust state when a
-  // prop changes" pattern) so the class never flips mid-animation.
-  const tabIndex = allTabs.findIndex((t) => t.id === knownTab)
-  const [pageTurn, setPageTurn] = useState({ tab: knownTab, index: tabIndex, dir: 'forward' })
-  if (pageTurn.tab !== knownTab) {
-    setPageTurn({ tab: knownTab, index: tabIndex, dir: tabIndex < pageTurn.index ? 'back' : 'forward' })
-  }
-  const turn = pageTurn.dir
-
   // Cmd/Ctrl+K opens global search from anywhere in the campaign.
   useEffect(() => {
     function onKeyDown(e) {
@@ -403,9 +392,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               )}
 
               {!roleReady && <p className="empty-state">Loading…</p>}
-              {/* Keyed per screen so each one fades in when you switch to it. */}
+              {/* Keyed per screen so each tab starts fresh. */}
               {roleReady && (
-              <div key={knownTab} className={`campaign-view__screen campaign-view__screen--${turn}`}>
+              <div key={knownTab} className="campaign-view__screen">
               {knownTab === 'home' && <HomeHub campaignName={campaignName} />}
               {knownTab === 'session' && <SessionMode campaignName={campaignName} />}
               {knownTab === 'prep' && <PrepTab />}
