@@ -7,7 +7,8 @@ import { useQuickNotes } from '../hooks/useQuickNotes.js'
 import { OPEN_DM_INBOX, useDmInbox } from '../hooks/useDmInbox.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { formatSessionDate, sessionDateTimestamp } from '../lib/sessionNotes.js'
-import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessionMode.js'
+import { formatDateTime } from '../lib/sessionMode.js'
+import { useActiveSession } from '../hooks/useActiveSession.js'
 import { exportCampaign } from '../lib/exportCampaign.js'
 import QuickNoteInput from './QuickNoteInput.jsx'
 import { SectionCard, StatusMessage } from './ui.jsx'
@@ -112,16 +113,12 @@ function HomeHub({ campaignName }) {
   const { character, isAdmin } = useActiveCharacter()
   const prep = usePrep(campaignId, playerId)
   const quickNotes = useQuickNotes()
-  const [active, setActive] = useState(() => getActiveSession(campaignId, playerId))
+  const [active, setActive] = useActiveSession(campaignId, playerId)
   const [exporting, setExporting] = useState(false)
   const [exportMessage, setExportMessage] = useState(null)
 
   function startSession() {
-    if (!active) {
-      const session = { startedAt: new Date().toISOString(), paused: false }
-      setActiveSession(campaignId, playerId, session)
-      setActive(session)
-    }
+    if (!active) setActive({ startedAt: new Date().toISOString(), paused: false })
     nav.goTo('session')
   }
 

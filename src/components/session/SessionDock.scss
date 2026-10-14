@@ -1,0 +1,146 @@
+@use '../../styles/variables' as *;
+
+// Floats over every screen except Home and Session Mode while a session
+// runs. Sits above the phone bottom bar.
+.session-dock {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+  max-width: calc(100vw - 2rem);
+
+  @media (max-width: 720px) {
+    right: 0.75rem;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 3rem;
+    padding: 0 1.1rem;
+    border-radius: 999px;
+    border: 1px solid $gold;
+    background: $bg-panel-raised;
+    box-shadow: $shadow-panel;
+    color: $gold-light;
+    font-family: $font-display;
+    font-size: 0.95rem;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: #3a2e24;
+    }
+  }
+
+  &__dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: $green-light;
+    box-shadow: 0 0 0 0 rgba($green-light, 0.6);
+    animation: session-dock-pulse 2s ease-out infinite;
+
+    &--paused {
+      background: $gold;
+      animation: none;
+    }
+  }
+
+  &__panel {
+    width: min(24rem, calc(100vw - 1.5rem));
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    box-shadow: $shadow-panel;
+    animation: scale-in 0.16s ease-out;
+    transform-origin: bottom right;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  &__state {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: $text-light;
+    font-size: 0.95rem;
+  }
+
+  &__quick {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  &__quick-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    min-height: 2.75rem;
+    padding: 0.4rem 0.3rem;
+    font-size: 0.78rem;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba($gold-dim, 0.35);
+  }
+
+  &__count {
+    color: $text-muted;
+    font-size: 0.88rem;
+  }
+
+  &__controls {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: auto;
+
+    .btn {
+      padding: 0.45rem 0.8rem;
+    }
+  }
+
+  &__ended {
+    margin: 0;
+    padding: 0.7rem 1rem;
+    border-radius: $radius-lg;
+    border: 1px solid rgba($green, 0.6);
+    background: $bg-panel-raised;
+    box-shadow: $shadow-panel;
+    color: $green-text;
+  }
+}
+
+@keyframes session-dock-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba($green-light, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 0.45rem rgba($green-light, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba($green-light, 0);
+  }
+}

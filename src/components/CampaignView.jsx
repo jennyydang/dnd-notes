@@ -26,6 +26,7 @@ import EntityDetailModal from './EntityDetailModal.jsx'
 import QuickCreateModal from './QuickCreateModal.jsx'
 import AccountMenu from './AccountMenu.jsx'
 import { PartyPresence, SyncStatus } from './LiveStatus.jsx'
+import SessionDock from './session/SessionDock.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import Modal from './Modal.jsx'
@@ -319,6 +320,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               onClose={() => setQuickCreate(null)}
             />
           )}
+
+          {/* Home and Session Mode have their own quick add and session controls. */}
+          {!dmView && <SessionDock hidden={knownTab === 'home' || knownTab === 'session'} />}
 
           <div
             className={`campaign-view__body${sidebarOpen ? '' : ' campaign-view__body--sidebar-collapsed'}`}

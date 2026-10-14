@@ -4,7 +4,8 @@ import { useActiveCharacter } from '../hooks/useActiveCharacter.js'
 import { useCharacterSheet } from '../hooks/useCharacterSheet.js'
 import { useQuickNotes } from '../hooks/useQuickNotes.js'
 import { initiativeBonus } from '../lib/character.js'
-import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessionMode.js'
+import { formatDateTime } from '../lib/sessionMode.js'
+import { useActiveSession } from '../hooks/useActiveSession.js'
 import TabNav from './TabNav.jsx'
 import VitalsPanel from './session/VitalsPanel.jsx'
 import QuickNotesPanel from './session/QuickNotesPanel.jsx'
@@ -68,15 +69,10 @@ function SessionMode() {
   const nav = useCampaignNav()
   const { character, party, isAdmin, pick, loading } = useActiveCharacter()
   const quickNotes = useQuickNotes()
-  const [active, setActive] = useState(() => getActiveSession(campaignId, playerId))
+  const [active, save] = useActiveSession(campaignId, playerId)
   const [panel, setPanel] = useState('vitals')
   const [ending, setEnding] = useState(false)
   const [endedMessage, setEndedMessage] = useState(null)
-
-  function save(next) {
-    setActiveSession(campaignId, playerId, next)
-    setActive(next)
-  }
 
   const sessionNotes = active
     ? quickNotes.notes.filter((n) => !n.sessionNoteId && new Date(n.createdAt) >= new Date(active.startedAt))
