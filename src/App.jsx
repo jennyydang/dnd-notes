@@ -9,6 +9,7 @@ import { PLAYER_SESSION_CHANGED, clearPlayerSession, getAdminSession, getPlayerS
 import { isSupabaseConfigured } from './lib/supabaseClient.js'
 import { clearCache } from './lib/offline.js'
 import { applySettings, getSettings } from './lib/settings.js'
+import { installCardTilt } from './lib/cardTilt.js'
 import { getStored, setStored } from './lib/sessionMode.js'
 import './App.scss'
 
@@ -39,6 +40,8 @@ function App() {
   useEffect(() => {
     applySettings(getSettings())
   }, [])
+
+  useEffect(() => installCardTilt(), [])
 
   // Picks up a changed session (e.g. a new username from Account).
   useEffect(() => {

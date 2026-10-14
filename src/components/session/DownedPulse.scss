@@ -1,0 +1,86 @@
+@use '../../styles/variables' as *;
+
+// DownedPulse.jsx — a heartbeat at the screen edges while you're dying.
+.downed-pulse {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+
+  &__edge {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba($maroon, 0.55) 85%, rgba(#3a0505, 0.85) 100%);
+    animation: heartbeat 1.15s ease-in-out infinite;
+  }
+
+  &__label {
+    position: absolute;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    max-width: calc(100% - 2rem);
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    background: #2a0808;
+    border: 1px solid rgba($maroon-light, 0.9);
+    color: $maroon-text;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 0 1rem rgba($maroon-light, 0.45);
+  }
+
+  &__heart {
+    display: inline-block;
+    color: #ff6b6b;
+    animation: heart-thump 1.15s ease-in-out infinite;
+  }
+}
+
+// lub-dub, pause.
+@keyframes heartbeat {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  12% {
+    opacity: 1;
+  }
+  24% {
+    opacity: 0.6;
+  }
+  36% {
+    opacity: 0.95;
+  }
+  60% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes heart-thump {
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.35);
+  }
+  24% {
+    transform: scale(1.05);
+  }
+  36% {
+    transform: scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .downed-pulse__edge,
+  .downed-pulse__heart {
+    animation: none;
+    opacity: 0.8;
+  }
+}
