@@ -11,6 +11,7 @@ import './DmPlayersTab.scss'
 
 const ROLE_LABELS = { dm: 'DM', creator: 'Creator', player: 'Player' }
 const membershipFromRow = (r) => ({ id: r.id, playerId: r.player_id, role: r.role })
+const campaignFromRow = (r) => ({ id: r.id, createdBy: r.created_by })
 
 function CharacterChip({ member }) {
   const photo = member.photo_path ? getPublicUrl('party-portraits', member.photo_path) : ''
@@ -28,7 +29,7 @@ function CharacterChip({ member }) {
   )
 }
 
-function PlayerCard({ player, characters, onRemove }) {
+function PlayerCard({ player, characters, isCreator, onRemove }) {
   const avatar = usePlayerAvatar(player.playerId)
   const name = player.displayName || player.username
   const [removing, setRemoving] = useState(false)
@@ -55,7 +56,13 @@ function PlayerCard({ player, characters, onRemove }) {
           <span className="dm-player__name">{name}</span>
           {player.displayName && <span className="dm-player__username">@{player.username}</span>}
         </span>
-        <span className={`dm-player__role dm-player__role--${player.role}`}>{ROLE_LABELS[player.role] || player.role}</span>
+        <span className="dm-player__roles">
+          <span className={`dm-player__role dm-player__role--${player.role}`}>{ROLE_LABELS[player.role] || player.role}</span>
+          {/* A DM who also owns the campaign (e.g. after taking it over). */}
+          {isCreator && player.role !== 'creator' && (
+            <span className="dm-player__role dm-player__role--creator">Creator</span>
+          )}
+        </span>
       </header>
       {characters.length > 0 ? (
         <ul className="dm-player__characters" aria-label={`${name}'s characters`}>
@@ -93,6 +100,8 @@ function DmPlayersTab({ campaignName }) {
     filters: { campaign_id: campaignId },
   })
   const membershipKey = memberships.items.map((m) => `${m.playerId}:${m.role}`).sort().join(',')
+  const campaignRow = useSupabaseTable('campaigns', { fromRow: campaignFromRow, filters: { id: campaignId } })
+  const createdBy = campaignRow.items[0]?.createdBy || null
   const [players, setPlayers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -120,17 +129,28 @@ function DmPlayersTab({ campaignName }) {
   const unclaimed = party.filter((m) => m.member_type !== 'NPC' && (!m.claimed_by || !memberIds.has(m.claimed_by)))
   const playerCount = players.filter((p) => p.role === 'player').length
 
+  const isCreatorOf = (p) => p.role === 'creator' || p.playerId === createdBy
+  // Who takes over as creator when the creator is removed: the DM doing
+  // it, or (for the admin, who isn't a member) the campaign's first DM.
+  const successor = playerId || players.find((p) => p.role === 'dm')?.playerId || null
+
   // Takes them out of this campaign only — their account stays.
   async function removePlayer(player, name, characters) {
     const chars = characters.map((c) => c.name).filter(Boolean)
+    const creator = isCreatorOf(player)
+    const heir = successor && players.find((p) => p.playerId === successor)
+    const heirName = heir ? (playerId ? 'you' : heir.displayName || heir.username) : null
     const ok = window.confirm(
       `Remove ${name} from ${campaignName}?\n\n` +
+        (creator
+          ? `${name} created this campaign. ${heirName ? `The creator tag and permissions pass to ${heirName}.` : ''} `
+          : '') +
         'Their account stays, along with any other campaigns they’re in — they just lose access to this one.' +
         (chars.length ? ` ${chars.join(' and ')} stays in the party, unclaimed.` : '') +
         ' They can rejoin with the join code or a new invite link.',
     )
     if (!ok) return false
-    await removeFromCampaign(campaignId, player.playerId)
+    await removeFromCampaign(campaignId, player.playerId, { newCreatorId: creator ? successor : undefined })
     setPlayers((list) => list.filter((p) => p.playerId !== player.playerId))
     return true
   }
@@ -177,8 +197,10 @@ function DmPlayersTab({ campaignName }) {
               key={p.playerId}
               player={p}
               characters={byPlayer.get(p.playerId) || []}
-              // DMs and the campaign's creator can't be removed from here.
-              onRemove={p.role === 'player' && p.playerId !== playerId ? removePlayer : null}
+              isCreator={isCreatorOf(p)}
+              // Players and the creator can be removed (the creator spot then
+              // passes to the DM); other DMs and yourself can't, from here.
+              onRemove={p.role !== 'dm' && p.playerId !== playerId && (!isCreatorOf(p) || successor) ? removePlayer : null}
             />
           ))}
         </ul>
