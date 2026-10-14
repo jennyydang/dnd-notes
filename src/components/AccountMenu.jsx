@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import ProfilePictureDialog from './ProfilePictureDialog.jsx'
+import AccountDialog from './AccountDialog.jsx'
 import { usePlayerAvatar } from '../lib/profiles.js'
 import './AccountMenu.scss'
 
 // Shared avatar-button + dropdown used everywhere a logged-in player is
 // shown "who they are" (the Player Dashboard toolbar and every campaign's
-// top bar) — Profile picture, Settings and Send Feedback live here, with
+// top bar) — Account, Profile picture, Settings and Send Feedback live here, with
 // Log Out last. The button shows the player's picture once they've added
 // one (players only; the admin has no account to attach it to).
 function AccountMenu({ playerId, username, onOpenSettings, onSendFeedback, onLogOut }) {
   const [open, setOpen] = useState(false)
   const [editingPicture, setEditingPicture] = useState(false)
+  const [editingAccount, setEditingAccount] = useState(false)
   const avatar = usePlayerAvatar(playerId)
   const menuRef = useRef(null)
 
@@ -40,6 +42,18 @@ function AccountMenu({ playerId, username, onOpenSettings, onSendFeedback, onLog
       {open && (
         <div className="account-menu__dropdown panel">
           {username && <div className="account-menu__name">{username}</div>}
+          {playerId && (
+            <button
+              type="button"
+              className="btn btn--text"
+              onClick={() => {
+                setOpen(false)
+                setEditingAccount(true)
+              }}
+            >
+              Account
+            </button>
+          )}
           {playerId && (
             <button
               type="button"
@@ -84,6 +98,7 @@ function AccountMenu({ playerId, username, onOpenSettings, onSendFeedback, onLog
           </button>
         </div>
       )}
+      {editingAccount && <AccountDialog playerId={playerId} onClose={() => setEditingAccount(false)} />}
       {editingPicture && (
         <ProfilePictureDialog playerId={playerId} username={username} onClose={() => setEditingPicture(false)} />
       )}

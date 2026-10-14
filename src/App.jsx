@@ -3,7 +3,8 @@ import AdminGate from './components/AdminGate.jsx'
 import PlayerLogin from './components/PlayerLogin.jsx'
 import PlayerDashboard from './components/PlayerDashboard.jsx'
 import CampaignView from './components/CampaignView.jsx'
-import { clearPlayerSession, getAdminSession, getPlayerSession } from './lib/auth.js'
+import ResetPassword from './components/ResetPassword.jsx'
+import { PLAYER_SESSION_CHANGED, clearPlayerSession, getAdminSession, getPlayerSession, resetFromUrl } from './lib/auth.js'
 import { isSupabaseConfigured } from './lib/supabaseClient.js'
 import { clearCache } from './lib/offline.js'
 import { applySettings, getSettings } from './lib/settings.js'
@@ -18,6 +19,9 @@ const OPEN_CAMPAIGN_KEY = `dnd-notes-open-campaign${isAdminPath ? ':admin' : ''}
 
 function App() {
   const [playerSession, setPlayerSession] = useState(() => getPlayerSession())
+  // A password reset link (…/?reset=TOKEN) shows its page first, even on
+  // a device where someone is logged in.
+  const [resetToken, setResetToken] = useState(() => (isAdminPath ? '' : resetFromUrl()))
   const [selectedCampaign, setSelectedCampaignState] = useState(() =>
     (isAdminPath ? getAdminSession() : getPlayerSession()) ? getStored(OPEN_CAMPAIGN_KEY, null) : null,
   )
@@ -33,6 +37,13 @@ function App() {
   // attributes on <html> (see src/styles/_base.scss).
   useEffect(() => {
     applySettings(getSettings())
+  }, [])
+
+  // Picks up a changed session (e.g. a new username from Account).
+  useEffect(() => {
+    const sync = () => setPlayerSession(getPlayerSession())
+    window.addEventListener(PLAYER_SESSION_CHANGED, sync)
+    return () => window.removeEventListener(PLAYER_SESSION_CHANGED, sync)
   }, [])
 
   function logOut() {
@@ -56,6 +67,8 @@ function App() {
         </p>
       </div>
     )
+  } else if (resetToken) {
+    content = <ResetPassword token={resetToken} onDone={() => setResetToken('')} />
   } else if (selectedCampaign) {
     content = (
       <CampaignView

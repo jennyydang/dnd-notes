@@ -4,6 +4,7 @@ import {
   clearInviteFromUrl,
   inviteFromUrl,
   registerPlayer,
+  requestPasswordReset,
   setPlayerSession,
   verifyLogin,
 } from '../lib/auth.js'
@@ -26,7 +27,9 @@ const INVITE_PROBLEMS = {
 function PlayerLogin({ onLoggedIn }) {
   const [token] = useState(inviteFromUrl)
   const [invite, setInvite] = useState(token ? { status: 'checking' } : null)
-  const [mode, setMode] = useState(token ? 'signup' : 'login') // login | signup
+  const [mode, setMode] = useState(token ? 'signup' : 'login') // login | signup | forgot
+  const [forgotFor, setForgotFor] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [signup, setSignup] = useState(emptySignup)
@@ -69,6 +72,28 @@ function PlayerLogin({ onLoggedIn }) {
       finish(await verifyLogin(username, password), username)
     } catch (err) {
       setError(err.message)
+      setBusy(false)
+    }
+  }
+
+  function openForgot() {
+    setForgotFor(username)
+    setForgotSent(false)
+    setError(null)
+    setMode('forgot')
+  }
+
+  async function submitForgot(event) {
+    event.preventDefault()
+    if (!forgotFor.trim()) return
+    setError(null)
+    setBusy(true)
+    try {
+      await requestPasswordReset(forgotFor)
+      setForgotSent(true)
+    } catch (err) {
+      setError(err.message)
+    } finally {
       setBusy(false)
     }
   }
@@ -203,6 +228,56 @@ function PlayerLogin({ onLoggedIn }) {
     )
   }
 
+  if (mode === 'forgot') {
+    return (
+      <div className="player-login">
+        <form className="player-login__form panel" onSubmit={submitForgot}>
+          <h2>Forgot Password</h2>
+          {forgotSent ? (
+            <p className="player-login__lead" role="status">
+              Thanks — if that account exists, the admin has been asked to reset it. They’ll send you a link to
+              choose a new password.
+            </p>
+          ) : (
+            <>
+              <p className="player-login__lead">
+                Enter your username or email. The admin will send you a link to set a new password.
+              </p>
+              <div className="field">
+                <label htmlFor="forgot-identifier">Username or email</label>
+                <input
+                  id="forgot-identifier"
+                  type="text"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoComplete="username"
+                  value={forgotFor}
+                  onChange={(e) => setForgotFor(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+              {error && (
+                <p className="player-login__error" role="alert">
+                  {error}
+                </p>
+              )}
+              <button type="submit" className="btn btn--primary" disabled={busy || !forgotFor.trim()}>
+                {busy ? 'Sending…' : 'Ask for a reset link'}
+              </button>
+            </>
+          )}
+          <p className="player-login__switch">
+            <button type="button" className="player-login__link" onClick={() => setMode('login')}>
+              ← Back to log in
+            </button>
+          </p>
+        </form>
+      </div>
+    )
+  }
+
   return (
     <div className="player-login">
       <form className="player-login__form panel" onSubmit={submitLogin}>
@@ -245,6 +320,11 @@ function PlayerLogin({ onLoggedIn }) {
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Logging in…' : 'Log In'}
         </button>
+        <p className="player-login__switch">
+          <button type="button" className="player-login__link" onClick={openForgot}>
+            Forgot password?
+          </button>
+        </p>
         {joinable ? (
           <p className="player-login__switch">
             New here?{' '}

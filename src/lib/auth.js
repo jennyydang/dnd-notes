@@ -12,6 +12,10 @@ export function getPlayerSession() {
   }
 }
 
+// Other parts of the app (App.jsx) listen for this to pick up a changed
+// session, e.g. after a player renames themselves.
+export const PLAYER_SESSION_CHANGED = 'player-session-changed'
+
 export function setPlayerSession(session) {
   localStorage.setItem(PLAYER_SESSION_KEY, JSON.stringify(session))
 }
@@ -102,6 +106,92 @@ export function inviteFromUrl() {
 
 export function clearInviteFromUrl() {
   window.history.replaceState(null, '', window.location.pathname)
+}
+
+// ── Account settings and password resets ──
+
+const ACCOUNT_MISSING = 'Account settings aren’t set up yet. Ask your admin to run the latest supabase/schema.sql.'
+
+// { username, displayName, emailHint } — the email comes back masked.
+export async function getMyAccount(playerId) {
+  const { data, error } = await supabase.rpc('get_my_account', { p_player_id: playerId })
+  if (error) throw new Error(missingFn(error) ? ACCOUNT_MISSING : error.message)
+  const row = data?.[0] || {}
+  return { username: row.username || '', displayName: row.display_name || '', emailHint: row.email_hint || '' }
+}
+
+// Blank fields are left as they are. Needs the current password.
+export async function updateMyAccount(playerId, { currentPassword, username, displayName, email, newPassword }) {
+  const { error } = await supabase.rpc('update_my_account', {
+    p_player_id: playerId,
+    p_current_password: currentPassword,
+    p_username: username?.trim() || null,
+    p_display_name: displayName?.trim() || null,
+    p_email: email?.trim() || null,
+    p_new_password: newPassword || null,
+  })
+  if (error) throw new Error(missingFn(error) ? ACCOUNT_MISSING : error.message)
+}
+
+// "Forgot password?" — the database never says whether the account exists.
+export async function requestPasswordReset(identifier) {
+  const { error } = await supabase.rpc('request_password_reset', { p_identifier: identifier.trim() })
+  if (error) throw new Error(missingFn(error) ? 'Password resets aren’t set up yet. Ask your DM or the admin directly.' : error.message)
+}
+
+export function resetLink(token) {
+  return `${window.location.origin}/?reset=${token}`
+}
+
+export function resetFromUrl() {
+  try {
+    return new URLSearchParams(window.location.search).get('reset')?.trim() || ''
+  } catch {
+    return ''
+  }
+}
+
+// Admin: open "Forgot password?" requests.
+export async function listResetRequests(adminPassword) {
+  const { data, error } = await supabase.rpc('list_password_reset_requests', { p_admin_password: adminPassword })
+  if (error) {
+    // An older database without resets just has no requests.
+    if (missingFn(error)) return []
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function dismissResetRequest(requestId, adminPassword) {
+  const { error } = await supabase.rpc('dismiss_password_reset_request', {
+    p_admin_password: adminPassword,
+    p_request_id: requestId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+// Admin: a single-use reset link (24 hours) for a player.
+export async function createPasswordReset(playerId, adminPassword) {
+  const { data, error } = await supabase.rpc('create_password_reset', {
+    p_admin_password: adminPassword,
+    p_player_id: playerId,
+  })
+  if (error) throw new Error(missingFn(error) ? ACCOUNT_MISSING : error.message)
+  return data
+}
+
+// { status: 'ok' | 'used' | 'expired' | 'invalid', username }
+export async function checkPasswordReset(token) {
+  const { data, error } = await supabase.rpc('check_password_reset', { p_token: token })
+  if (error) throw new Error(missingFn(error) ? ACCOUNT_MISSING : error.message)
+  return { status: data?.[0]?.status || 'invalid', username: data?.[0]?.username || '' }
+}
+
+// Sets the new password; resolves to the username.
+export async function completePasswordReset(token, newPassword) {
+  const { data, error } = await supabase.rpc('complete_password_reset', { p_token: token, p_new_password: newPassword })
+  if (error) throw new Error(error.message)
+  return data
 }
 
 // Admin: a single-use invite link, optionally joining a campaign on sign-up.

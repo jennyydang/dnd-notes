@@ -1456,3 +1456,217 @@ grant execute on function accept_player_invite(uuid, text) to anon;
 alter table loot add column if not exists quantity integer;
 alter table loot drop constraint if exists loot_quantity_check;
 alter table loot add constraint loot_quantity_check check (quantity is null or quantity between 0 and 9999);
+
+-- ── Account settings and password resets ─────────────────────────────
+-- Needs the "Sign-up by invite link" block above. Players change their
+-- own username, name, email and password (always confirming the current
+-- password). There's no email sending, so a forgotten password goes via
+-- the admin: "Forgot password?" on the login records a request, the
+-- admin makes a single-use reset link (24 hours) and sends it, and the
+-- player picks a new password from it. Passwords stay bcrypt-hashed —
+-- nobody, the admin included, can read them; the admin can only reset.
+create table if not exists password_reset_requests (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references players(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  handled_at timestamptz
+);
+create table if not exists password_resets (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references players(id) on delete cascade,
+  token text not null unique,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null default now() + interval '24 hours',
+  used_at timestamptz
+);
+-- RLS on, no policies: only reachable through the functions below.
+alter table password_reset_requests enable row level security;
+alter table password_resets enable row level security;
+
+-- The player's own details for the Account screen; the email is masked
+-- (j•••@example.com) since player ids aren't secret.
+create or replace function get_my_account(p_player_id uuid)
+returns table(username text, display_name text, email_hint text)
+language sql stable security definer set search_path = public, pg_temp as $$
+  select p.username, p.display_name,
+    case when p.email is null or p.email = '' then null
+         else left(p.email, 1) || '•••' || substring(p.email from position('@' in p.email)) end
+  from players p where p.id = p_player_id;
+$$;
+grant execute on function get_my_account(uuid) to anon;
+
+-- Changes only what's passed (null = keep). The current password is
+-- always required.
+create or replace function update_my_account(
+  p_player_id uuid,
+  p_current_password text,
+  p_username text default null,
+  p_display_name text default null,
+  p_email text default null,
+  p_new_password text default null
+)
+returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+declare
+  v_player players%rowtype;
+  v_username text := nullif(trim(coalesce(p_username, '')), '');
+  v_name text := nullif(trim(coalesce(p_display_name, '')), '');
+  v_email text := nullif(lower(trim(coalesce(p_email, ''))), '');
+begin
+  select * into v_player from players where id = p_player_id for update;
+  if v_player.id is null or v_player.password_hash <> extensions.crypt(coalesce(p_current_password, ''), v_player.password_hash) then
+    raise exception 'Your current password isn’t right';
+  end if;
+
+  if v_username is not null and v_username <> v_player.username then
+    if v_username !~ '^[A-Za-z0-9_.-]{3,30}$' then
+      raise exception 'Usernames are 3–30 letters, numbers, dots, dashes or underscores';
+    end if;
+    if exists (select 1 from players where lower(username) = lower(v_username) and id <> p_player_id) then
+      raise exception 'That username is already taken';
+    end if;
+  end if;
+  if v_name is not null and length(v_name) > 60 then
+    raise exception 'Names are up to 60 characters';
+  end if;
+  if v_email is not null then
+    if v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(v_email) > 254 then
+      raise exception 'Enter a valid email address';
+    end if;
+    if exists (select 1 from players where lower(email) = v_email and id <> p_player_id) then
+      raise exception 'An account with that email already exists';
+    end if;
+  end if;
+  if p_new_password is not null and p_new_password <> '' and length(p_new_password) < 8 then
+    raise exception 'Passwords need at least 8 characters';
+  end if;
+
+  begin
+    update players set
+      username = coalesce(v_username, username),
+      display_name = coalesce(v_name, display_name),
+      email = coalesce(v_email, email),
+      password_hash = case when coalesce(p_new_password, '') <> ''
+        then extensions.crypt(p_new_password, extensions.gen_salt('bf', 8)) else password_hash end
+    where id = p_player_id;
+  exception when unique_violation then
+    raise exception 'That username or email is already taken';
+  end;
+end;
+$$;
+grant execute on function update_my_account(uuid, text, text, text, text, text) to anon;
+
+-- "Forgot password?" — always succeeds, so it never reveals whether an
+-- account exists. One open request per player.
+create or replace function request_password_reset(p_identifier text)
+returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_id uuid;
+  v_key text := lower(trim(coalesce(p_identifier, '')));
+begin
+  if v_key = '' then return; end if;
+  select id into v_id from players where lower(username) = v_key or lower(email) = v_key limit 1;
+  if v_id is null then return; end if;
+  update password_reset_requests set created_at = now() where player_id = v_id and handled_at is null;
+  if not found then
+    insert into password_reset_requests (player_id) values (v_id);
+  end if;
+end;
+$$;
+grant execute on function request_password_reset(text) to anon;
+
+create or replace function list_password_reset_requests(p_admin_password text)
+returns table(id uuid, player_id uuid, username text, display_name text, email text, created_at timestamptz)
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+  return query
+    select r.id, p.id, p.username, p.display_name, p.email, r.created_at
+    from password_reset_requests r join players p on p.id = r.player_id
+    where r.handled_at is null
+    order by r.created_at desc;
+end;
+$$;
+grant execute on function list_password_reset_requests(text) to anon;
+
+create or replace function dismiss_password_reset_request(p_admin_password text, p_request_id uuid)
+returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+  update password_reset_requests set handled_at = now() where id = p_request_id;
+end;
+$$;
+grant execute on function dismiss_password_reset_request(text, uuid) to anon;
+
+-- Admin: a single-use reset link for a player (older unused links stop
+-- working; their open request is marked handled).
+create or replace function create_password_reset(p_admin_password text, p_player_id uuid)
+returns text
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+declare
+  v_token text := encode(extensions.gen_random_bytes(18), 'hex');
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+  if not exists (select 1 from players where id = p_player_id) then
+    raise exception 'That player no longer exists';
+  end if;
+  update password_resets set expires_at = least(expires_at, now())
+    where player_id = p_player_id and used_at is null;
+  insert into password_resets (player_id, token) values (p_player_id, v_token);
+  update password_reset_requests set handled_at = now() where player_id = p_player_id and handled_at is null;
+  return v_token;
+end;
+$$;
+grant execute on function create_password_reset(text, uuid) to anon;
+
+create or replace function check_password_reset(p_token text)
+returns table(status text, username text)
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_reset password_resets%rowtype;
+begin
+  select * into v_reset from password_resets where token = trim(coalesce(p_token, ''));
+  if v_reset.id is null then
+    return query select 'invalid'::text, null::text;
+  elsif v_reset.used_at is not null then
+    return query select 'used'::text, null::text;
+  elsif v_reset.expires_at < now() then
+    return query select 'expired'::text, null::text;
+  else
+    return query select 'ok'::text, (select p.username from players p where p.id = v_reset.player_id);
+  end if;
+end;
+$$;
+grant execute on function check_password_reset(text) to anon;
+
+-- Sets the new password and returns the username, for logging in.
+create or replace function complete_password_reset(p_token text, p_new_password text)
+returns text
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+declare
+  v_reset password_resets%rowtype;
+  v_username text;
+begin
+  select * into v_reset from password_resets where token = trim(coalesce(p_token, '')) for update;
+  if v_reset.id is null or v_reset.used_at is not null or v_reset.expires_at < now() then
+    raise exception 'This reset link is no longer valid — ask the admin for a new one';
+  end if;
+  if length(coalesce(p_new_password, '')) < 8 then
+    raise exception 'Passwords need at least 8 characters';
+  end if;
+  update players set password_hash = extensions.crypt(p_new_password, extensions.gen_salt('bf', 8))
+    where id = v_reset.player_id
+    returning username into v_username;
+  update password_resets set used_at = now() where id = v_reset.id;
+  return v_username;
+end;
+$$;
+grant execute on function complete_password_reset(text, text) to anon;

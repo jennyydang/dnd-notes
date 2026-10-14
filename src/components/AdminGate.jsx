@@ -3,11 +3,15 @@ import Dashboard from './Dashboard.jsx'
 import {
   clearAdminSession,
   createInvite,
+  createPasswordReset,
   createPlayer,
   deletePlayer,
+  dismissResetRequest,
   getAdminSession,
   listInvites,
   listPlayers,
+  listResetRequests,
+  resetLink,
   revokeInvite,
   setAdminSession,
   updatePlayer,
@@ -21,7 +25,7 @@ import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import { PasswordInput } from './ui.jsx'
 import Icon from './Icon.jsx'
-import { InviteDialog, InviteList } from './InvitePlayers.jsx'
+import { InviteDialog, InviteList, LinkBox } from './InvitePlayers.jsx'
 import './AdminGate.scss'
 
 const SECTION_KEY = 'dnd-notes-admin-section'
@@ -139,6 +143,32 @@ function usePlayers(adminPassword) {
   return { players, memberships, loading, error, reload }
 }
 
+// Open "Forgot password?" requests, checked now and then.
+function useResetRequests(adminPassword) {
+  const [requests, setRequests] = useState([])
+  const [error, setError] = useState(null)
+
+  const reload = useCallback(async () => {
+    try {
+      setRequests(await listResetRequests(adminPassword))
+      setError(null)
+    } catch (err) {
+      setError(err.message)
+    }
+  }, [adminPassword])
+
+  useEffect(() => {
+    reload()
+    const timer = setInterval(() => document.visibilityState === 'visible' && reload(), 60000)
+    return () => clearInterval(timer)
+  }, [reload])
+
+  return { requests, error, reload }
+}
+
+const formatWhen = (value) =>
+  new Date(value).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+
 function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
   const [section, setSectionState] = useState(() => {
     const saved = getStored(SECTION_KEY, 'campaigns')
@@ -150,6 +180,7 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
   }
 
   const playerData = usePlayers(adminPassword)
+  const resets = useResetRequests(adminPassword)
   const { items: campaigns } = useSupabaseTable('campaigns', { fromRow: campaignFromRow })
   const feedback = useSupabaseTable('feedback', { fromRow: feedbackFromRow, ascending: false })
 
@@ -172,8 +203,12 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
       icon: 'users',
       label: 'Players',
       value: playerData.loading ? '–' : playerData.players.length,
-      detail: unassigned ? `${unassigned} not in a campaign` : 'All in a campaign',
-      attention: unassigned > 0,
+      detail: resets.requests.length
+        ? `${resets.requests.length} password reset${resets.requests.length === 1 ? '' : 's'} requested`
+        : unassigned
+          ? `${unassigned} not in a campaign`
+          : 'All in a campaign',
+      attention: unassigned > 0 || resets.requests.length > 0,
     },
     {
       id: 'feedback',
@@ -221,7 +256,7 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
         <h3 className="admin-dash__section-title">{SECTION_TITLES[section]}</h3>
         {section === 'campaigns' && <Dashboard onOpenCampaign={onOpenCampaign} />}
         {section === 'players' && (
-          <ManagePlayers adminPassword={adminPassword} campaigns={campaigns} {...playerData} />
+          <ManagePlayers adminPassword={adminPassword} campaigns={campaigns} resets={resets} {...playerData} />
         )}
         {section === 'feedback' && <FeedbackInbox {...feedback} />}
       </div>
@@ -231,7 +266,7 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
 
 const emptyPlayerForm = { username: '', password: '', campaignId: '' }
 
-function ManagePlayers({ adminPassword, campaigns, players, memberships, loading, error, reload }) {
+function ManagePlayers({ adminPassword, campaigns, resets, players, memberships, loading, error, reload }) {
   const [query, setQuery] = useState('')
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState(emptyPlayerForm)
@@ -241,6 +276,7 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
   const [saving, setSaving] = useState(false)
   const [inviting, setInviting] = useState(false)
   const [invitesChanged, setInvitesChanged] = useState(0)
+  const [resetFor, setResetFor] = useState(null) // { player, link?, error? }
   const joinableCampaigns = campaigns.filter((c) => !c.archived)
 
   const membershipsByPlayer = useMemo(() => {
@@ -320,6 +356,29 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
     }
   }
 
+  // A single-use link (24 hours) the admin sends to a player who's
+  // forgotten their password. Passwords can't be shown — only reset.
+  async function makeResetLink(player) {
+    setResetFor({ player })
+    try {
+      const token = await createPasswordReset(player.id, adminPassword)
+      setResetFor({ player, link: resetLink(token) })
+      resets.reload()
+    } catch (err) {
+      setResetFor({ player, error: err.message })
+    }
+  }
+
+  async function dismissRequest(request) {
+    setActionError(null)
+    try {
+      await dismissResetRequest(request.id, adminPassword)
+      resets.reload()
+    } catch (err) {
+      setActionError(err.message)
+    }
+  }
+
   function removePlayer(player) {
     const confirmed = window.confirm(
       `Delete player "${player.username}"? This removes their access to every campaign they've joined. Campaigns they created stay, just without an owner.`,
@@ -363,6 +422,71 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
           onCreated={() => setInvitesChanged((n) => n + 1)}
         />
       )}
+      {resets.requests.length > 0 && (
+        <section className="reset-requests panel" aria-labelledby="reset-requests-title">
+          <h4 id="reset-requests-title" className="reset-requests__title">
+            <Icon name="alert" /> Password reset requests
+          </h4>
+          <ul className="reset-requests__list">
+            {resets.requests.map((r) => (
+              <li key={r.id} className="reset-requests__item">
+                <span className="reset-requests__who">
+                  <strong>{r.display_name || r.username}</strong> @{r.username}
+                  {r.email && <span className="reset-requests__email"> · {r.email}</span>}
+                  <span className="reset-requests__when"> · {formatWhen(r.created_at)}</span>
+                </span>
+                <span className="reset-requests__actions">
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    onClick={() => makeResetLink({ id: r.player_id, username: r.username, email: r.email })}
+                  >
+                    Create reset link
+                  </button>
+                  <button type="button" className="btn btn--text" onClick={() => dismissRequest(r)}>
+                    Dismiss
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {resets.error && <p className="empty-state empty-state--error">{resets.error}</p>}
+
+      {resetFor && (
+        <Modal onClose={() => setResetFor(null)} label={`Reset link for ${resetFor.player.username}`} size="narrow">
+          <div className="form-stack reset-link">
+            <h3 className="section-card__title">Reset link for {resetFor.player.username}</h3>
+            {resetFor.error ? (
+              <p className="empty-state empty-state--error">{resetFor.error}</p>
+            ) : !resetFor.link ? (
+              <p className="empty-state">Making a link…</p>
+            ) : (
+              <>
+                <p className="reset-link__note">
+                  Send this to {resetFor.player.username}
+                  {resetFor.player.email ? ` (${resetFor.player.email})` : ''}. It works once, for 24 hours, and lets
+                  them choose a new password. Any older reset link for them stops working.
+                </p>
+                <LinkBox
+                  link={resetFor.link}
+                  id="reset-link-url"
+                  label="Password reset link"
+                  shareTitle="Reset your Adventurer’s Log password"
+                  shareText="Your link to choose a new Adventurer’s Log password"
+                />
+              </>
+            )}
+            <div className="form-actions">
+              <button type="button" className="btn btn--text" onClick={() => setResetFor(null)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       <InviteList
         load={() => listInvites(adminPassword)}
         revoke={(id) => revokeInvite(id, adminPassword)}
@@ -455,6 +579,14 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
                 )}
 
                 <div className="player-card__actions">
+                  <button
+                    type="button"
+                    className="btn btn--text"
+                    onClick={() => makeResetLink(player)}
+                    title="A single-use link for them to choose a new password"
+                  >
+                    Reset link
+                  </button>
                   <button type="button" className="btn btn--text" onClick={() => openEdit(player)}>
                     Edit
                   </button>
