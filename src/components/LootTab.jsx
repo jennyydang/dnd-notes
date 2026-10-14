@@ -638,14 +638,6 @@ function LootTab({ campaignId }) {
                 <button
                   type="button"
                   className="btn btn--text"
-                  onClick={() => openEntity('loot', entry.id)}
-                  aria-label={`Links and related entries for ${entry.item}`}
-                >
-                  Links
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--text"
                   onClick={() => startEditing(entry)}
                 >
                   Edit
