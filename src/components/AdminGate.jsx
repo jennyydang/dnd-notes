@@ -2,10 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Dashboard from './Dashboard.jsx'
 import {
   clearAdminSession,
+  createInvite,
   createPlayer,
   deletePlayer,
   getAdminSession,
+  listInvites,
   listPlayers,
+  revokeInvite,
   setAdminSession,
   updatePlayer,
   verifyAdminPassword,
@@ -351,7 +354,7 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
 
       {inviting && (
         <InviteDialog
-          adminPassword={adminPassword}
+          create={(invite) => createInvite(invite, adminPassword)}
           campaigns={campaigns}
           onClose={() => {
             setInviting(false)
@@ -360,7 +363,12 @@ function ManagePlayers({ adminPassword, campaigns, players, memberships, loading
           onCreated={() => setInvitesChanged((n) => n + 1)}
         />
       )}
-      <InviteList adminPassword={adminPassword} refreshKey={invitesChanged} onChanged={reload} />
+      <InviteList
+        load={() => listInvites(adminPassword)}
+        revoke={(id) => revokeInvite(id, adminPassword)}
+        refreshKey={invitesChanged}
+        onChanged={reload}
+      />
 
       {actionError && (
         <p className="empty-state empty-state--error" role="alert">

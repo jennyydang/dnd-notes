@@ -213,9 +213,13 @@ so your whole party can share one set of notes from any browser.
   share the link (`https://your-app/?invite=…`). Each link works once,
   expires after 30 days and can be cancelled from the invite list. The
   login screen has no sign-up of its own; an invite link opens the
-  sign-up form (username, name, email, password). Run the "Sign-up by
-  invite link" block at the end of `supabase/schema.sql` first. Names and
-  emails are only visible to the admin. A
+  sign-up form (username, name, email, password). A campaign's **DM** can
+  send invite links too, from the new **Players** tab in their view —
+  always for their own campaign. That tab also lists who's in the
+  campaign with the character(s) each has claimed, and characters nobody
+  has claimed yet. Run the "Sign-up by invite link" and "DM invites and
+  the DM's Players tab" blocks at the end of `supabase/schema.sql` first.
+  Emails are only visible to the admin; DMs see names. A
   player logs in at the normal app URL and sees a personal dashboard of
   just the campaigns they created or joined. Creating a campaign gives it
   a short join code to share with your group; anyone who enters that code

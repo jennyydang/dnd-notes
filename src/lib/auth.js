@@ -115,6 +115,32 @@ export async function revokeInvite(inviteId, adminPassword) {
   if (error) throw new Error(error.message)
 }
 
+// DM: invite links for their own campaign (the database checks they're
+// its DM or creator).
+export async function createCampaignInvite(playerId, campaignId, note = '') {
+  const { data, error } = await supabase.rpc('create_campaign_invite', {
+    p_player_id: playerId,
+    p_campaign_id: campaignId,
+    p_note: note,
+  })
+  if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
+  return data[0]
+}
+
+export async function listCampaignInvites(playerId, campaignId) {
+  const { data, error } = await supabase.rpc('list_campaign_invites', {
+    p_player_id: playerId,
+    p_campaign_id: campaignId,
+  })
+  if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
+  return data
+}
+
+export async function revokeCampaignInvite(playerId, inviteId) {
+  const { error } = await supabase.rpc('revoke_campaign_invite', { p_player_id: playerId, p_invite_id: inviteId })
+  if (error) throw new Error(error.message)
+}
+
 // Sign-up page: { status: 'ok' | 'used' | 'expired' | 'revoked' | 'invalid', campaignName }.
 export async function checkInvite(token) {
   const { data, error } = await supabase.rpc('check_player_invite', { p_token: token })

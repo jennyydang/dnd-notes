@@ -1328,3 +1328,85 @@ begin
 end;
 $$;
 grant execute on function list_players(text) to anon;
+
+-- ── DM invites and the DM's Players tab ──────────────────────────────
+-- Needs the "Sign-up by invite link" block above. A campaign's DM (or its
+-- creator) can make sign-up links for that campaign only, see them and
+-- cancel them, and list who's in the campaign by name. Same trust model
+-- as the rest of the app: the caller passes their player id.
+alter table player_invites add column if not exists created_by uuid references players(id) on delete set null;
+
+create or replace function is_campaign_dm(p_player_id uuid, p_campaign_id uuid)
+returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  select exists (
+    select 1 from campaign_members
+    where campaign_id = p_campaign_id and player_id = p_player_id and role in ('dm', 'creator')
+  ) or exists (
+    select 1 from campaigns where id = p_campaign_id and created_by = p_player_id
+  );
+$$;
+
+create or replace function create_campaign_invite(p_player_id uuid, p_campaign_id uuid, p_note text default '')
+returns table(id uuid, token text)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if not is_campaign_dm(p_player_id, p_campaign_id) then
+    raise exception 'Only this campaign''s DM can invite players to it';
+  end if;
+  return query
+    insert into player_invites (token, campaign_id, note, created_by)
+    values (encode(extensions.gen_random_bytes(18), 'hex'), p_campaign_id, left(trim(coalesce(p_note, '')), 120), p_player_id)
+    returning player_invites.id, player_invites.token;
+end;
+$$;
+grant execute on function create_campaign_invite(uuid, uuid, text) to anon;
+
+create or replace function list_campaign_invites(p_player_id uuid, p_campaign_id uuid)
+returns table(
+  id uuid, token text, campaign_id uuid, campaign_name text, note text,
+  created_at timestamptz, expires_at timestamptz, used_at timestamptz,
+  used_by_username text, revoked_at timestamptz
+)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if not is_campaign_dm(p_player_id, p_campaign_id) then
+    raise exception 'Only this campaign''s DM can see its invites';
+  end if;
+  return query
+    select i.id, i.token, i.campaign_id, c.name, i.note, i.created_at, i.expires_at, i.used_at, p.username, i.revoked_at
+    from player_invites i
+    join campaigns c on c.id = i.campaign_id
+    left join players p on p.id = i.used_by
+    where i.campaign_id = p_campaign_id
+    order by i.created_at desc;
+end;
+$$;
+grant execute on function list_campaign_invites(uuid, uuid) to anon;
+
+create or replace function revoke_campaign_invite(p_player_id uuid, p_invite_id uuid)
+returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+declare
+  v_campaign_id uuid;
+begin
+  select campaign_id into v_campaign_id from player_invites where id = p_invite_id;
+  if v_campaign_id is null or not is_campaign_dm(p_player_id, v_campaign_id) then
+    raise exception 'Only this campaign''s DM can cancel its invites';
+  end if;
+  update player_invites set revoked_at = now() where id = p_invite_id and used_at is null and revoked_at is null;
+end;
+$$;
+grant execute on function revoke_campaign_invite(uuid, uuid) to anon;
+
+-- Who's in a campaign, by name (no emails), for the DM's Players tab.
+create or replace function list_campaign_players(p_campaign_id uuid)
+returns table(player_id uuid, username text, display_name text, role text, joined_at timestamptz)
+language sql stable security definer set search_path = public, pg_temp as $$
+  select cm.player_id, p.username, p.display_name, cm.role, cm.created_at
+  from campaign_members cm
+  join players p on p.id = cm.player_id
+  where cm.campaign_id = p_campaign_id
+  order by cm.role = 'player', lower(coalesce(nullif(p.display_name, ''), p.username));
+$$;
+grant execute on function list_campaign_players(uuid) to anon;

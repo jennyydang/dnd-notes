@@ -31,6 +31,7 @@ import TurnAlert from './session/TurnAlert.jsx'
 import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
+import DmPlayersTab from './DmPlayersTab.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import Modal from './Modal.jsx'
@@ -66,6 +67,7 @@ const TAB_DEFS = {
   'dm-maps': { label: 'Maps', icon: 'map' },
   'dm-creatures': { label: 'Monsters', icon: 'monster' },
   'dm-combat': { label: 'Combat', icon: 'quest' },
+  'dm-players': { label: 'Players', icon: 'shield' },
 }
 
 const AREAS = [
@@ -81,12 +83,14 @@ const AREAS = [
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
   { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep'] },
   // The admin's view of the DM tools (DMs themselves get DM_AREAS).
-  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
+  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-players', 'dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
 
 // A DM's whole view of the campaign: just their private NPCs, monsters, art and maps,
 // each with a Share button that notifies the players.
 const DM_AREAS = [
+  // Who's in the campaign, their characters, and sign-up invite links.
+  { id: 'dm-players', label: 'Players', icon: 'shield', tabs: ['dm-players'] },
   { id: 'dm-npcs', label: 'NPCs', icon: 'users', tabs: ['dm-npcs'] },
   { id: 'dm-creatures', label: 'Monsters', icon: 'monster', tabs: ['dm-creatures'] },
   { id: 'dm-art', label: 'Art', icon: 'image', tabs: ['dm-art'] },
@@ -414,6 +418,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {isDm && knownTab === 'dm-art' && <ArtGallery campaignId={campaignId} manage />}
               {isDm && knownTab === 'dm-maps' && <DmMapsTab campaignId={campaignId} />}
               {isDm && knownTab === 'dm-creatures' && <DmCreaturesTab campaignId={campaignId} />}
+              {isDm && knownTab === 'dm-players' && <DmPlayersTab campaignName={campaignName} />}
               {isDm && knownTab === 'dm-combat' && (
                 <div className="campaign-view__combat">
                   <InitiativeTracker />

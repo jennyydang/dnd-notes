@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { createInvite, inviteLink, listInvites, revokeInvite } from '../lib/auth.js'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { inviteLink } from '../lib/auth.js'
 import Modal from './Modal.jsx'
 import Icon from './Icon.jsx'
 import './InvitePlayers.scss'
@@ -60,23 +60,24 @@ function LinkBox({ link, onCopied }) {
   )
 }
 
-// Admin: invite a player by link — optionally into a campaign — and keep
-// track of the links sent (waiting, used, expired, cancelled).
-export function InviteDialog({ adminPassword, campaigns, onClose, onCreated }) {
+// Invite a player by sign-up link. The admin picks a campaign (or none);
+// a DM's invite is always for their campaign (`fixedCampaign`).
+// `create({ campaignId, note })` makes the invite and resolves to it.
+export function InviteDialog({ create, campaigns = [], fixedCampaign = null, onClose, onCreated }) {
   const [campaignId, setCampaignId] = useState('')
   const [note, setNote] = useState('')
   const [link, setLink] = useState(null)
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const active = campaigns.filter((c) => !c.archived).sort((a, b) => a.name.localeCompare(b.name))
-  const chosen = active.find((c) => c.id === campaignId)
+  const chosen = fixedCampaign || active.find((c) => c.id === campaignId)
 
   async function submit(event) {
     event.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      const invite = await createInvite({ campaignId: campaignId || null, note }, adminPassword)
+      const invite = await create({ campaignId: fixedCampaign ? fixedCampaign.id : campaignId || null, note })
       setLink(inviteLink(invite.token))
       onCreated?.()
     } catch (err) {
@@ -106,19 +107,23 @@ export function InviteDialog({ adminPassword, campaigns, onClose, onCreated }) {
         <form className="invite-dialog" onSubmit={submit}>
           <h3 className="section-card__title">Invite a player</h3>
           <p className="invite-dialog__lead">
-            Creates a sign-up link only they can use. Accounts can’t be made without one.
+            {fixedCampaign
+              ? `Creates a sign-up link only they can use. They’ll join ${fixedCampaign.name} when they sign up.`
+              : 'Creates a sign-up link only they can use. Accounts can’t be made without one.'}
           </p>
-          <div className="field">
-            <label htmlFor="invite-campaign">Campaign</label>
-            <select id="invite-campaign" value={campaignId} onChange={(e) => setCampaignId(e.target.value)}>
-              <option value="">No campaign — they’ll join one later with a code</option>
-              {active.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!fixedCampaign && (
+            <div className="field">
+              <label htmlFor="invite-campaign">Campaign</label>
+              <select id="invite-campaign" value={campaignId} onChange={(e) => setCampaignId(e.target.value)}>
+                <option value="">No campaign — they’ll join one later with a code</option>
+                {active.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="field">
             <label htmlFor="invite-note">Who’s it for? (optional)</label>
             <input
@@ -149,22 +154,25 @@ export function InviteDialog({ adminPassword, campaigns, onClose, onCreated }) {
   )
 }
 
-// The admin's list of invite links: copy a waiting one again, or cancel it.
-export function InviteList({ adminPassword, refreshKey, onChanged }) {
+// A list of invite links: copy a waiting one again, or cancel it.
+// `load()` resolves to the invites; `revoke(id)` cancels one.
+export function InviteList({ load: fetchInvites, revoke: cancelInvite, refreshKey, onChanged, showCampaign = true }) {
   const [invites, setInvites] = useState([])
   const [error, setError] = useState(null)
   const [showAll, setShowAll] = useState(false)
   const [copiedId, setCopiedId] = useState(null)
   const [now] = useState(() => Date.now())
 
+  const fetchRef = useRef(fetchInvites)
+  fetchRef.current = fetchInvites
   const load = useCallback(async () => {
     try {
-      setInvites(await listInvites(adminPassword))
+      setInvites(await fetchRef.current())
       setError(null)
     } catch (err) {
       setError(err.message)
     }
-  }, [adminPassword])
+  }, [])
 
   useEffect(() => {
     load()
@@ -173,7 +181,7 @@ export function InviteList({ adminPassword, refreshKey, onChanged }) {
   async function revoke(invite) {
     if (!window.confirm(`Cancel this invite${invite.note ? ` for ${invite.note}` : ''}? The link will stop working.`)) return
     try {
-      await revokeInvite(invite.id, adminPassword)
+      await cancelInvite(invite.id)
       await load()
       onChanged?.()
     } catch (err) {
@@ -206,7 +214,8 @@ export function InviteList({ adminPassword, refreshKey, onChanged }) {
             <div className="invite-list__who">
               <span className="invite-list__note">{invite.note || 'Invite'}</span>
               <span className="invite-list__meta">
-                {invite.campaign_name ? `Joins ${invite.campaign_name}` : 'No campaign'} · {invite.status.label}
+                {showCampaign && `${invite.campaign_name ? `Joins ${invite.campaign_name}` : 'No campaign'} · `}
+                {invite.status.label}
               </span>
             </div>
             {invite.status.id === 'waiting' && (

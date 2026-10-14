@@ -79,3 +79,15 @@ export async function listAllMemberships() {
     isCreator: Boolean(r.created_by) && r.created_by === r.player_id,
   }))
 }
+
+// Who's in a campaign, with display names (DM's Players tab). Falls back
+// to usernames only on a database without the "DM invites" SQL.
+export async function listCampaignPlayers(campaignId) {
+  const { data, error } = await supabase.rpc('list_campaign_players', { p_campaign_id: campaignId })
+  if (!error) {
+    return data.map((r) => ({ playerId: r.player_id, username: r.username, displayName: r.display_name || '', role: r.role }))
+  }
+  if (!/could not find the function|does not exist/i.test(error.message)) throw new Error(error.message)
+  const members = await listCampaignMembers(campaignId)
+  return members.map((m) => ({ playerId: m.playerId, username: m.username, displayName: '', role: m.role }))
+}
