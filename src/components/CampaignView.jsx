@@ -28,6 +28,7 @@ import AccountMenu from './AccountMenu.jsx'
 import { PartyPresence, SyncStatus } from './LiveStatus.jsx'
 import SessionDock from './session/SessionDock.jsx'
 import TurnAlert from './session/TurnAlert.jsx'
+import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
@@ -277,6 +278,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
             )}
 
             <div className="campaign-view__topbar-end">
+              {roleReady && <CombatBadge target={dmView ? 'dm-combat' : 'session'} />}
               <SyncStatus />
               <PartyPresence campaignId={campaignId} playerId={playerId} username={username} />
 
@@ -330,6 +332,8 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           {/* Home and Session Mode have their own quick add and session controls. */}
           {!dmView && <SessionDock hidden={knownTab === 'home' || knownTab === 'session'} />}
           {roleReady && <TurnAlert />}
+          {/* Combat theme for everyone; the shake-and-roll alert is for players. */}
+          {roleReady && <CombatMode showAlert={Boolean(playerId) && !isDm} />}
           {/* Players see the DM's live reveals; the DM is the one sending them. */}
           {playerId && roleReady && !isDm && <RevealOverlay campaignId={campaignId} />}
 

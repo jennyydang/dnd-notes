@@ -2,12 +2,37 @@
 // { combatants: [{ id, name, initiative, hp, isPlayer, playerId,
 //                  conditions: [{ id, name, rounds }] }],
 //   turn: index into the sorted list, round: 1-based, started: bool,
-//   expired: [{ combatant, condition }] — conditions that just ran out }
+//   expired: [{ combatant, condition }] — conditions that just ran out,
+//   combat: bool — the app is in combat mode for everyone,
+//   alert: { id, at } — the DM's latest "roll for initiative" call }
 // `playerId` links a combatant to the player who plays it (for "your
 // turn" alerts); `rounds` counts down at the start of that combatant's
 // turn, and null means "until removed".
 
-export const emptyEncounter = () => ({ combatants: [], turn: 0, round: 1, started: false, expired: [] })
+export const emptyEncounter = () => ({
+  combatants: [],
+  turn: 0,
+  round: 1,
+  started: false,
+  expired: [],
+  combat: false,
+  alert: null,
+})
+
+// The DM's "Roll for initiative!": a fresh encounter in combat mode, with
+// an alert every player's device shows once.
+export function callForInitiative(alert) {
+  return { ...emptyEncounter(), combat: true, alert }
+}
+
+// Alerts this old aren't shown to someone who opens the app later.
+export const ALERT_FRESH_MS = 5 * 60 * 1000
+
+export function isFreshAlert(alert, seenIds, now) {
+  if (!alert?.id || seenIds.includes(alert.id)) return false
+  const at = new Date(alert.at).getTime()
+  return Number.isFinite(at) && now - at < ALERT_FRESH_MS
+}
 
 // Fills in fields older saved encounters may lack.
 export function normalizeEncounter(state) {
@@ -17,6 +42,8 @@ export function normalizeEncounter(state) {
     ...state,
     combatants: state.combatants.map((c) => ({ ...c, conditions: Array.isArray(c.conditions) ? c.conditions : [] })),
     expired: Array.isArray(state.expired) ? state.expired : [],
+    combat: Boolean(state.combat),
+    alert: state.alert?.id ? state.alert : null,
   }
 }
 

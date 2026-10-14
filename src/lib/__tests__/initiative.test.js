@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   addCombatant,
   addCondition,
+  callForInitiative,
   emptyEncounter,
+  isFreshAlert,
   nextTurn,
   normalizeEncounter,
   previousTurn,
@@ -85,5 +87,23 @@ describe('conditions and turn info', () => {
     const old = normalizeEncounter({ combatants: [c('a', 1)], turn: 0, round: 1, started: false })
     expect(old.combatants[0].conditions).toEqual([])
     expect(old.expired).toEqual([])
+  })
+})
+
+describe('calling for initiative', () => {
+  it('starts a fresh encounter in combat mode with the alert', () => {
+    const s = callForInitiative({ id: 'a1', at: '2026-10-14T20:00:00Z' })
+    expect(s).toMatchObject({ combatants: [], started: false, combat: true, alert: { id: 'a1' } })
+    expect(emptyEncounter().combat).toBe(false)
+    expect(normalizeEncounter({ combatants: [] }).alert).toBeNull()
+  })
+
+  it('shows an alert once per device, and only while it is recent', () => {
+    const at = '2026-10-14T20:00:00Z'
+    const t = new Date(at).getTime()
+    expect(isFreshAlert({ id: 'a1', at }, [], t + 60_000)).toBe(true)
+    expect(isFreshAlert({ id: 'a1', at }, ['a1'], t + 60_000)).toBe(false)
+    expect(isFreshAlert({ id: 'a1', at }, [], t + 6 * 60_000)).toBe(false)
+    expect(isFreshAlert(null, [], t)).toBe(false)
   })
 })
