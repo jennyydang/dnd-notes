@@ -32,6 +32,7 @@ import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
 import DownedPulse from './session/DownedPulse.jsx'
 import LevelUp from './session/LevelUp.jsx'
+import PartyLevelUp from './session/PartyLevelUp.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import DmPlayersTab from './DmPlayersTab.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
@@ -187,17 +188,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     allTabs.some((t) => t.id === activeTab) || (roleLoading && TAB_DEFS[activeTab]) ? activeTab : homeTab
   const activeArea =
     areas.find((area) => areaTabs(area).some((t) => t.id === knownTab)) || areas[0]
-
-  // Which way the page turns when you switch tabs: forward when moving
-  // to a later tab in the nav, back when moving to an earlier one.
-  // Set once per tab change (during render, React's "adjust state when a
-  // prop changes" pattern) so the class never flips mid-animation.
-  const tabIndex = allTabs.findIndex((t) => t.id === knownTab)
-  const [pageTurn, setPageTurn] = useState({ tab: knownTab, index: tabIndex, dir: 'forward' })
-  if (pageTurn.tab !== knownTab) {
-    setPageTurn({ tab: knownTab, index: tabIndex, dir: tabIndex < pageTurn.index ? 'back' : 'forward' })
-  }
-  const turn = pageTurn.dir
 
   // Cmd/Ctrl+K opens global search from anywhere in the campaign.
   useEffect(() => {
@@ -403,9 +393,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               )}
 
               {!roleReady && <p className="empty-state">Loading…</p>}
-              {/* Keyed per screen so each one fades in when you switch to it. */}
+              {/* Keyed per screen so each tab starts fresh. */}
               {roleReady && (
-              <div key={knownTab} className={`campaign-view__screen campaign-view__screen--${turn}`}>
+              <div key={knownTab} className="campaign-view__screen">
               {knownTab === 'home' && <HomeHub campaignName={campaignName} />}
               {knownTab === 'session' && <SessionMode campaignName={campaignName} />}
               {knownTab === 'prep' && <PrepTab />}
@@ -439,6 +429,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {isDm && knownTab === 'dm-combat' && (
                 <div className="campaign-view__combat">
                   <InitiativeTracker />
+                  <PartyLevelUp />
                 </div>
               )}
               {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}

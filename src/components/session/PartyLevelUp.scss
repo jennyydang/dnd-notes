@@ -1,0 +1,63 @@
+@use '../../styles/variables' as *;
+
+// PartyLevelUp.jsx — on the DM's Combat tab.
+.party-level-up {
+  &__list {
+    list-style: none;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: $radius;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    cursor: pointer;
+
+    input {
+      margin: 0;
+      accent-color: $gold;
+    }
+
+    &--maxed {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    color: $text-light;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__level {
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    color: $gold-light;
+  }
+
+  &__message {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    color: $green-text;
+
+    &--error {
+      color: $maroon-text;
+    }
+  }
+
+  &__go {
+    width: 100%;
+  }
+}
