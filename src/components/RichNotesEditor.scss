@@ -21,7 +21,7 @@
     width: 1px;
     align-self: stretch;
     margin: 0 0.2rem;
-    background: color-mix(in srgb, $gold-dim 50%, transparent);
+    background: rgba($gold-dim, 0.5);
   }
 
   &__tool {
@@ -40,7 +40,7 @@
 
     &--active {
       border-color: $gold;
-      background: color-mix(in srgb, $gold 15%, transparent);
+      background: rgba($gold, 0.15);
       color: $gold-light;
     }
   }
@@ -102,7 +102,7 @@
 
     kbd {
       font-family: inherit;
-      border: 1px solid color-mix(in srgb, $gold-dim 60%, transparent);
+      border: 1px solid rgba($gold-dim, 0.6);
       border-radius: 3px;
       padding: 0 0.25rem;
       color: $gold-light;
@@ -133,7 +133,7 @@
     font-size: 0.9rem;
 
     &--active {
-      background: color-mix(in srgb, $gold 15%, transparent);
+      background: rgba($gold, 0.15);
       color: $gold-light;
     }
 
@@ -162,9 +162,9 @@
   white-space: nowrap;
 
   &--person {
-    background: var(--crimson-soft);
-    border: 1px solid var(--crimson);
-    color: var(--crimson);
+    background: rgba($maroon-light, 0.35);
+    border: 1px solid rgba($maroon-light, 0.8);
+    color: $maroon-text;
 
     &::before {
       @include line-icon('user');
@@ -172,9 +172,9 @@
   }
 
   &--place {
-    background: var(--heal-soft);
-    border: 1px solid var(--heal);
-    color: var(--heal);
+    background: rgba($green-light, 0.25);
+    border: 1px solid rgba($green-light, 0.8);
+    color: $green-text;
 
     &::before {
       @include line-icon('pin');
@@ -182,9 +182,9 @@
   }
 
   &--lore {
-    background: var(--arcane-soft);
-    border: 1px solid var(--arcane);
-    color: var(--arcane);
+    background: rgba($gray-light, 0.3);
+    border: 1px solid rgba($gray-light, 0.9);
+    color: $gray-text;
 
     &::before {
       @include line-icon('scroll');
@@ -192,9 +192,9 @@
   }
 
   &--loot {
-    background: var(--gold-soft);
-    border: 1px solid var(--gold);
-    color: var(--gold);
+    background: rgba($gold, 0.18);
+    border: 1px solid rgba($gold, 0.8);
+    color: $gold-light;
 
     &::before {
       @include line-icon('coins');
@@ -206,9 +206,9 @@
   &--event {
     display: inline;
     white-space: normal;
-    background: var(--surface-sunken);
-    border: 1px dashed var(--gold);
-    color: var(--ink);
+    background: rgba($maroon, 0.25);
+    border: 1px dashed rgba($gold, 0.7);
+    color: $parchment;
     font-style: italic;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;

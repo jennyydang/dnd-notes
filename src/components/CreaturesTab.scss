@@ -68,14 +68,14 @@
     white-space: nowrap;
 
     &--monster {
-      background: color-mix(in srgb, $maroon-light 30%, transparent);
-      border: 1px solid color-mix(in srgb, $maroon-light 80%, transparent);
+      background: rgba($maroon-light, 0.3);
+      border: 1px solid rgba($maroon-light, 0.8);
       color: $maroon-text;
     }
 
     &--creature {
-      background: color-mix(in srgb, $green-light 25%, transparent);
-      border: 1px solid color-mix(in srgb, $green-light 80%, transparent);
+      background: rgba($green-light, 0.25);
+      border: 1px solid rgba($green-light, 0.8);
       color: $green-text;
     }
   }
@@ -110,8 +110,7 @@
 
     dd {
       margin: 0;
-      font-family: $font-body;
-      font-weight: 700;
+      font-family: $font-display;
       font-size: 1.1rem;
       color: $parchment;
     }
@@ -131,6 +130,6 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
   }
 }

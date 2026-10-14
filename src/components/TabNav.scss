@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .tab-nav {
@@ -16,7 +17,7 @@
 
   &__add {
     background: transparent;
-    border: 1px dashed color-mix(in srgb, $gold-dim 60%, transparent);
+    border: 1px dashed rgba($gold-dim, 0.6);
     border-radius: 50%;
     width: 1.8rem;
     height: 1.8rem;
@@ -68,24 +69,22 @@
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
-    color: var(--ink-muted);
-    font-family: $font-body;
-    font-weight: 600;
+    color: $text-muted;
+    font-family: $font-display;
     font-size: 1.05rem;
-    letter-spacing: 0;
+    letter-spacing: 0.04em;
     padding: 0.7rem 1.2rem;
     transition:
       color 0.15s ease,
       border-color 0.15s ease;
 
     &:hover {
-      color: var(--ink);
+      color: $gold-light;
     }
 
-    // Grimoire: the active tab is crimson (with an underline, not colour alone).
     &--active {
-      color: var(--crimson);
-      border-bottom-color: var(--crimson);
+      color: $gold-light;
+      border-bottom-color: $gold;
     }
   }
 
@@ -119,9 +118,8 @@
 
       &--active {
         border-bottom-color: transparent;
-        border-left-color: var(--crimson);
-        background: var(--crimson-soft);
-        color: var(--crimson);
+        border-left-color: $gold;
+        background: rgba($gold, 0.1);
       }
     }
 
@@ -150,9 +148,9 @@
     display: inline-flex;
     width: fit-content;
     border-bottom: none;
-    background: var(--surface-sunken);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-full);
+    background: $bg-deep;
+    border: 1px solid rgba($gold-dim, 0.5);
+    border-radius: 999px;
     padding: 0.3rem;
     margin-bottom: 1.25rem;
 
@@ -167,8 +165,8 @@
       font-size: 0.85rem;
 
       &--active {
-        color: var(--on-crimson);
-        background: var(--crimson);
+        color: $ink;
+        background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
       }
     }
   }

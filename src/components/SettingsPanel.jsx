@@ -5,15 +5,9 @@ import './SettingsPanel.scss'
 
 const BG_BUCKET = 'player-backgrounds'
 
-const THEMES = [
-  { value: 'parchment', label: 'Parchment (light)' },
-  { value: 'dungeon', label: 'Dungeon (dark)' },
-  { value: 'auto', label: 'Match my device' },
-]
-
 const BACKGROUNDS = [
-  { value: 'vista', label: 'Castle vista (Dungeon)' },
-  { value: 'plain', label: 'Plain' },
+  { value: 'vista', label: 'Parchment Vista' },
+  { value: 'plain', label: 'Plain Dark' },
 ]
 
 const FONTS = [
@@ -118,11 +112,6 @@ function SettingsPanel({ onDone }) {
   return (
     <div className="settings-panel">
       <h3>Settings</h3>
-
-      <div className="settings-panel__section">
-        <h4>Theme</h4>
-        {renderGroup('theme', THEMES)}
-      </div>
 
       <div className="settings-panel__section">
         <h4>Background</h4>

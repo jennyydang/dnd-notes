@@ -78,26 +78,26 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
   }
 }
 
 .status-badge {
   &--active {
-    background: color-mix(in srgb, $gold-light 15%, transparent);
+    background: rgba($gold-light, 0.15);
     color: $gold-light;
-    border: 1px solid color-mix(in srgb, $gold-light 40%, transparent);
+    border: 1px solid rgba($gold-light, 0.4);
   }
 
   &--completed {
-    background: color-mix(in srgb, $green-light 18%, transparent);
+    background: rgba($green-light, 0.18);
     color: $green-text;
-    border: 1px solid color-mix(in srgb, $green-light 40%, transparent);
+    border: 1px solid rgba($green-light, 0.4);
   }
 
   &--failed {
-    background: color-mix(in srgb, $maroon-light 18%, transparent);
+    background: rgba($maroon-light, 0.18);
     color: $maroon-text;
-    border: 1px solid color-mix(in srgb, $maroon-light 40%, transparent);
+    border: 1px solid rgba($maroon-light, 0.4);
   }
 }

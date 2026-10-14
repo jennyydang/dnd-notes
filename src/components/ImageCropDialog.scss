@@ -49,7 +49,7 @@
     inset: 0;
     border-radius: 50%;
     box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55);
-    border: 2px solid color-mix(in srgb, $gold-light 80%, transparent);
+    border: 2px solid rgba($gold-light, 0.8);
     pointer-events: none;
   }
 

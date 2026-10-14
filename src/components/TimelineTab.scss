@@ -49,7 +49,7 @@
     top: 0.55rem;
     left: 0;
     right: 0;
-    border-top: 2px solid color-mix(in srgb, $gold-dim 70%, transparent);
+    border-top: 2px solid rgba($gold-dim, 0.7);
   }
 
   &:first-child::before {
@@ -125,7 +125,7 @@
 
   &::before {
     @include line-icon('star');
-    color: var(--gold);
+    color: $gold-light;
   }
 }
 

@@ -62,7 +62,7 @@
 
       &:hover,
       &:focus-visible {
-        background: color-mix(in srgb, $gold 12%, transparent);
+        background: rgba($gold, 0.12);
         color: $gold-light;
       }
     }

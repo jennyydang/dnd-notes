@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .session-notes-tab {
@@ -71,8 +72,8 @@
     width: 2.4rem;
     height: 2.4rem;
     border-radius: $radius;
-    background: var(--crimson);
-    color: var(--on-crimson);
+    background: linear-gradient(180deg, $maroon-light, color.adjust($maroon, $lightness: -6%));
+    color: $parchment;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -100,8 +101,7 @@
     background: transparent;
     border: none;
     padding: 0;
-    font-family: $font-body;
-    font-weight: 700;
+    font-family: $font-display;
     font-size: 1.15rem;
     color: $parchment;
     text-align: left;
@@ -140,7 +140,7 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
   }
 }
 
@@ -167,8 +167,8 @@
     width: 3rem;
     height: 3rem;
     border-radius: $radius;
-    background: var(--crimson);
-    color: var(--on-crimson);
+    background: linear-gradient(180deg, $maroon-light, color.adjust($maroon, $lightness: -6%));
+    color: $parchment;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -200,7 +200,7 @@
       position: absolute;
       top: 50%;
       width: calc(50% - 1rem);
-      border-top: 1px solid color-mix(in srgb, $gold-dim 40%, transparent);
+      border-top: 1px solid rgba($gold-dim, 0.4);
     }
 
     &::before {
@@ -222,7 +222,7 @@
     gap: 0.5rem;
     margin-top: 1.25rem;
     padding-top: 0.75rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
   }
 
   &__side {
@@ -303,13 +303,12 @@
     height: 2rem;
     border-radius: 50%;
     background: $bg-panel-raised;
-    border: 1px solid color-mix(in srgb, $gold-dim 50%, transparent);
+    border: 1px solid rgba($gold-dim, 0.5);
     color: $gold-light;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: $font-body;
-    font-weight: 700;
+    font-family: $font-display;
     font-size: 0.85rem;
     flex-shrink: 0;
   }

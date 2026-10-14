@@ -1,28 +1,21 @@
+@use 'sass:color';
 @use 'variables' as *;
 
 .btn {
-  // Grimoire Button. Plain .btn is the secondary button; add --primary
-  // (the one crimson action a view is for), --text (ghost) or --danger.
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: var(--target-min);
-  font: 600 1rem/1.5 $font-body;
-  letter-spacing: 0;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
-  border: 2px solid var(--line-strong);
-  background: var(--surface-raised);
-  color: var(--ink);
-  text-decoration: none;
+  font-family: $font-display;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+  padding: 0.6rem 1.1rem;
+  border-radius: $radius;
+  border: $border-gold;
+  background: $bg-panel-raised;
+  color: $gold-light;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
+    background 0.15s ease,
     transform 0.1s ease;
 
   &:hover {
-    background: var(--surface-sunken);
+    background: color.adjust(#2e241d, $lightness: 4%);
   }
 
   &:active {
@@ -30,113 +23,94 @@
   }
 
   &--primary {
-    background: var(--crimson);
-    border-color: var(--crimson);
-    color: var(--on-crimson);
+    background: linear-gradient(
+      180deg,
+      $gold-dim,
+      color.adjust($gold-dim, $lightness: -8%)
+    );
+    color: $ink;
+    border-color: $gold;
 
     &:hover {
-      background: color-mix(in srgb, var(--crimson) 88%, var(--ink));
-      border-color: color-mix(in srgb, var(--crimson) 88%, var(--ink));
+      background: linear-gradient(
+        180deg,
+        $gold,
+        color.adjust($gold-dim, $lightness: -4%)
+      );
     }
   }
 
   &--danger {
-    background: transparent;
-    border-color: var(--crimson);
-    color: var(--crimson);
+    border-color: rgba($maroon-light, 0.6);
+    color: $maroon-text;
 
     &:hover {
-      background: var(--crimson-soft);
+      background: rgba($maroon, 0.2);
     }
   }
 
   &--text {
     background: transparent;
     border-color: transparent;
-    color: var(--ink);
+    color: $text-muted;
 
     &:hover {
-      background: var(--surface-sunken);
+      color: $gold-light;
+      background: transparent;
     }
-  }
-
-  // Unavailable reads as dashed, not just faded, so it isn't colour-only.
-  &:disabled,
-  &[aria-disabled='true'] {
-    background: var(--surface-sunken);
-    color: var(--ink-muted);
-    border-color: var(--line-strong);
-    border-style: dashed;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
   }
 }
 
 .empty-state {
-  // Opaque, not transparent: this can render directly on a background
-  // photo (_base.scss) rather than inside a .panel, so it carries its own
-  // surface to keep text contrast true whatever is behind it.
+  // Opaque, not transparent: this renders directly on the page background
+  // (the vista photo in _base.scss) rather than inside a .panel, and its
+  // AAA contrast was only ever verified against a flat color — an opaque
+  // backing keeps that true regardless of what's behind it.
   background: $bg-panel;
   color: $text-muted;
   font-style: italic;
   text-align: center;
   padding: 3rem 1rem;
-  border: 1px dashed color-mix(in srgb, $gold-dim 50%, transparent);
+  border: 1px dashed rgba($gold-dim, 0.5);
   border-radius: $radius-lg;
 
   &--error {
     color: $maroon-text;
-    border-color: color-mix(in srgb, $maroon-light 50%, transparent);
+    border-color: rgba($maroon-light, 0.5);
     font-style: normal;
   }
 }
 
 .panel {
-  // Grimoire Card ("scroll"): raised surface, hairline edge, soft shadow.
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  background: $bg-panel;
+  border: $border-gold;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-panel;
 }
 
 .field {
-  // Grimoire Field: visible label above, 44px well with a 3:1 border.
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 0.3rem;
 
   label {
-    font: 600 0.875rem/1.4 $font-body;
+    font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--ink);
+    letter-spacing: 0.05em;
+    color: $text-muted;
   }
 
   input,
   select,
   textarea {
-    min-height: var(--target-min);
-    background: var(--surface-sunken);
-    border: 2px solid var(--line-strong);
-    border-radius: var(--radius-sm);
-    color: var(--ink);
-    font: 400 1rem/1.5 $font-body;
-    padding: var(--space-2) var(--space-3);
-
-    &::placeholder {
-      color: var(--ink-muted);
-    }
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    color: $text-light;
+    padding: 0.55rem 0.7rem;
 
     &:focus {
-      border-color: var(--focus);
-    }
-
-    &[aria-invalid='true'] {
-      border-color: var(--crimson);
+      border-color: $gold;
     }
 
     // Read-only display mode (e.g. viewing a party member's card before
@@ -214,20 +188,20 @@
   white-space: nowrap;
 
   &--place {
-    background: color-mix(in srgb, $green-light 25%, transparent);
-    border: 1px solid color-mix(in srgb, $green-light 80%, transparent);
+    background: rgba($green-light, 0.25);
+    border: 1px solid rgba($green-light, 0.8);
     color: $green-text;
   }
 
   &--lore {
-    background: color-mix(in srgb, $gray-light 30%, transparent);
-    border: 1px solid color-mix(in srgb, $gray-light 90%, transparent);
+    background: rgba($gray-light, 0.3);
+    border: 1px solid rgba($gray-light, 0.9);
     color: $gray-text;
   }
 
   &--loot {
-    background: color-mix(in srgb, $gold 18%, transparent);
-    border: 1px solid color-mix(in srgb, $gold 80%, transparent);
+    background: rgba($gold, 0.18);
+    border: 1px solid rgba($gold, 0.8);
     color: $gold-light;
   }
 }
@@ -253,10 +227,8 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    // heading-3: Literata 700, card and section titles.
-    font: 700 1.2rem/1.4 $font-body;
-    letter-spacing: 0;
-    color: var(--ink);
+    font-size: 1.05rem;
+    color: $gold-light;
     margin: 0;
   }
 
@@ -294,20 +266,20 @@
   gap: 0.3rem;
   min-height: 2.5rem;
   padding: 0.35rem 0.85rem;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--line-strong);
-  background: var(--surface-sunken);
-  color: var(--ink);
+  border-radius: 999px;
+  border: 1px solid rgba($gold-dim, 0.6);
+  background: $bg-deep;
+  color: $text-light;
   font-size: 0.9rem;
 
   &:hover {
-    background: var(--surface);
+    border-color: $gold;
   }
 
   &--active {
-    background: var(--crimson);
-    border-color: var(--crimson);
-    color: var(--on-crimson);
+    background: rgba($gold, 0.2);
+    border-color: $gold;
+    color: $gold-light;
     font-weight: 600;
   }
 
@@ -339,7 +311,7 @@
 
     &:hover:not(:disabled) {
       border-color: $gold;
-      background: color-mix(in srgb, $gold 12%, transparent);
+      background: rgba($gold, 0.12);
     }
 
     &:disabled {
@@ -398,7 +370,7 @@
   align-items: center;
   gap: 0.25rem;
   max-width: 100%;
-  border: 1px solid color-mix(in srgb, $gold-dim 60%, transparent);
+  border: 1px solid rgba($gold-dim, 0.6);
   border-radius: $radius;
   background: $bg-deep;
 
@@ -455,7 +427,7 @@
 
   &:hover {
     color: $gold-light;
-    border-color: color-mix(in srgb, $gold-dim 60%, transparent);
+    border-color: rgba($gold-dim, 0.6);
   }
 }
 
@@ -507,7 +479,7 @@
     &:hover,
     &:focus-visible {
       border-color: $gold-dim;
-      background: color-mix(in srgb, $gold 8%, transparent);
+      background: rgba($gold, 0.08);
     }
   }
 }

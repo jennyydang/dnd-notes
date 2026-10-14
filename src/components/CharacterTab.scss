@@ -131,8 +131,7 @@
 
     dd {
       margin: 0;
-      font-family: $font-body;
-      font-weight: 700;
+      font-family: $font-display;
       font-size: 1.2rem;
       color: $parchment;
     }
@@ -181,7 +180,7 @@
       align-items: center;
       gap: 0.6rem;
       min-height: 2.5rem;
-      border-bottom: 1px dotted color-mix(in srgb, $gold-dim 30%, transparent);
+      border-bottom: 1px dotted rgba($gold-dim, 0.3);
     }
 
     label {
@@ -210,8 +209,7 @@
   &__bonus {
     min-width: 2.5rem;
     text-align: right;
-    font-family: $font-body;
-    font-weight: 700;
+    font-family: $font-display;
     color: $parchment;
   }
 
@@ -276,7 +274,7 @@
     padding: 0.5rem;
     border: 1px solid $ink-soft;
     border-radius: $radius;
-    background: color-mix(in srgb, $bg-deep 60%, transparent);
+    background: rgba($bg-deep, 0.6);
   }
 
   &__field {
@@ -345,7 +343,7 @@
   &__notice {
     margin: 0;
     padding: 0.75rem 0.9rem;
-    border: 1px dashed color-mix(in srgb, $gold-dim 80%, transparent);
+    border: 1px dashed rgba($gold-dim, 0.8);
     border-radius: $radius;
     color: $text-light;
   }
@@ -413,7 +411,7 @@
   }
 
   &__upload {
-    border-top: 1px solid color-mix(in srgb, $gold-dim 40%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.4);
     padding-top: 0.75rem;
     display: flex;
     flex-direction: column;

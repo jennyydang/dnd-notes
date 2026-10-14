@@ -9,9 +9,6 @@ const STORAGE_KEY = 'dnd-notes:settings'
 const CUSTOM_BG_BUCKET = 'player-backgrounds'
 
 const DEFAULTS = {
-  // Grimoire theme: 'parchment' (light, the default), 'dungeon' (dark) or
-  // 'auto' (follow the device). See src/styles/_tokens.scss.
-  theme: 'parchment',
   bg: 'vista',
   font: 'classic',
   fontSize: 'medium',
@@ -58,8 +55,6 @@ export function resetSettings() {
 export function applySettings(settings) {
   const root = document.documentElement
   const applied = { ...DEFAULTS, ...settings }
-
-  root.setAttribute('data-theme', applied.theme)
 
   // 'custom' with nothing uploaded (e.g. the upload was since removed) is
   // not a real state — fall back to the default rather than flip on a

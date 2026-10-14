@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .settings-panel {
@@ -25,7 +26,7 @@
     width: fit-content;
     flex-wrap: wrap;
     background: $bg-deep;
-    border: 1px solid color-mix(in srgb, $gold-dim 50%, transparent);
+    border: 1px solid rgba($gold-dim, 0.5);
     border-radius: 999px;
     padding: 0.3rem;
     gap: 0.25rem;
@@ -45,7 +46,7 @@
 
     &--active {
       color: $ink;
-      background: linear-gradient(180deg, $gold, $gold);
+      background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
 
       &:hover {
         color: $ink;
@@ -58,7 +59,7 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
   }
 
   &__custom-bg {
@@ -80,7 +81,7 @@
   }
 
   &__bg-upload {
-    border: 2px dashed color-mix(in srgb, $gold-dim 60%, transparent);
+    border: 2px dashed rgba($gold-dim, 0.6);
     color: $text-muted;
     font-size: 0.8rem;
 
@@ -94,14 +95,14 @@
       cursor: not-allowed;
 
       &:hover {
-        border-color: color-mix(in srgb, $gold-dim 60%, transparent);
+        border-color: rgba($gold-dim, 0.6);
         color: $text-muted;
       }
     }
   }
 
   &__bg-thumb {
-    border: 2px solid color-mix(in srgb, $gold-dim 60%, transparent);
+    border: 2px solid rgba($gold-dim, 0.6);
 
     img {
       width: 100%;
@@ -115,7 +116,7 @@
 
     &--active {
       border-color: $gold-light;
-      box-shadow: 0 0 0 2px color-mix(in srgb, $gold-light 35%, transparent);
+      box-shadow: 0 0 0 2px rgba($gold-light, 0.35);
     }
   }
 

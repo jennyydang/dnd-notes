@@ -39,7 +39,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
     padding-top: 1rem;
   }
 
@@ -58,8 +58,7 @@
       margin: 0;
       color: $text-light;
       font-size: 1.05rem;
-      font-family: $font-body;
-      font-weight: 700;
+      font-family: $font-display;
     }
 
     &--active {
@@ -135,7 +134,7 @@
     flex-direction: column;
     gap: 0.75rem;
     padding-top: 1rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
   }
 
   &__purchase-title {
@@ -211,7 +210,7 @@
 
     &:hover:not(:disabled) {
       border-color: $gold;
-      background: color-mix(in srgb, $gold 12%, transparent);
+      background: rgba($gold, 0.12);
     }
 
     &:disabled {
@@ -234,7 +233,7 @@
     align-items: flex-end;
     gap: 0.75rem;
     padding-top: 1rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
 
     .field {
       flex: 1;
@@ -326,7 +325,7 @@
     list-style: none;
     margin: 0;
     padding: 1rem 0 0;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 0.75rem;

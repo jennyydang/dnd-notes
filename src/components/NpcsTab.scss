@@ -36,7 +36,7 @@
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    border: 2px dashed color-mix(in srgb, $gold-dim 60%, transparent);
+    border: 2px dashed rgba($gold-dim, 0.6);
     background: $bg-deep;
     padding: 0;
     overflow: hidden;
@@ -108,13 +108,12 @@
     height: 44px;
     border-radius: 50%;
     background: $bg-deep;
-    border: 1px solid color-mix(in srgb, $gold-dim 50%, transparent);
+    border: 1px solid rgba($gold-dim, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    font-family: $font-body;
-    font-weight: 700;
+    font-family: $font-display;
     color: $gold-light;
 
     img {
@@ -161,27 +160,27 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
+    border-top: 1px solid rgba($gold-dim, 0.3);
   }
 }
 
 .status-badge {
   &--alive {
-    background: color-mix(in srgb, $green-light 18%, transparent);
+    background: rgba($green-light, 0.18);
     color: $green-text;
-    border: 1px solid color-mix(in srgb, $green-light 40%, transparent);
+    border: 1px solid rgba($green-light, 0.4);
   }
 
   &--deceased {
-    background: color-mix(in srgb, $maroon-light 18%, transparent);
+    background: rgba($maroon-light, 0.18);
     color: $maroon-text;
-    border: 1px solid color-mix(in srgb, $maroon-light 40%, transparent);
+    border: 1px solid rgba($maroon-light, 0.4);
   }
 
   &--unknown,
   &--missing {
-    background: color-mix(in srgb, $gold-light 15%, transparent);
+    background: rgba($gold-light, 0.15);
     color: $gold-light;
-    border: 1px solid color-mix(in srgb, $gold-light 40%, transparent);
+    border: 1px solid rgba($gold-light, 0.4);
   }
 }
