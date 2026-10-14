@@ -58,6 +58,23 @@ const partyFromRow = (r) => ({ id: r.id, name: r.name })
 const hasQuantity = (entry) => entry.quantity !== null && entry.quantity !== undefined
 // Used up: a counted item down to 0, or a single item marked used.
 const isUsedUp = (entry) => entry.usable && (hasQuantity(entry) ? entry.quantity <= 0 : entry.used)
+// Sparkle colour per tag: gold for magic items, purple for artifacts.
+const glowClass = (kind) =>
+  kind === 'Magic Item' ? ' loot-card--magic' : kind === 'Artifact' ? ' loot-card--artifact' : ''
+const SPARKS = 8
+const FX_MS = { new: 1600, dissolve: 1400 }
+
+// The burst on a card that's just arrived, or the dust off one used up.
+function LootSparkles({ dust = false }) {
+  return (
+    <span className={`loot-sparkles${dust ? ' loot-sparkles--dust' : ''}`} aria-hidden="true">
+      {Array.from({ length: SPARKS }, (_, i) => (
+        <span key={i} style={{ '--i': i }} />
+      ))}
+    </span>
+  )
+}
+
 const QUANTITY_MISSING = 'Run the latest supabase/schema.sql first (it adds loot quantities).'
 
 function LootTab({ campaignId }) {
@@ -80,12 +97,44 @@ function LootTab({ campaignId }) {
   const [usingEntry, setUsingEntry] = useState(null)
   const [useError, setUseError] = useState(null)
   const [useCount, setUseCount] = useState(1)
+  // One-off effects: 'new' when loot appears (here or from another
+  // device), 'dissolve' when something gets used up.
+  const [fx, setFx] = useState({})
+  const seenRef = useRef(null)
   const [viewingPhoto, setViewingPhoto] = useState(null)
   const [saving, setSaving] = useState(false)
   const photoInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 
   useEffect(() => () => objectUrlRef.current && URL.revokeObjectURL(objectUrlRef.current), [])
+
+  useEffect(() => {
+    if (loading) return undefined
+    const now = new Map(loot.map((e) => [e.id, isUsedUp(e)]))
+    const seen = seenRef.current
+    seenRef.current = now
+    if (!seen) return undefined
+    const changes = {}
+    for (const [id, usedUp] of now) {
+      if (!seen.has(id)) changes[id] = 'new'
+      else if (usedUp && !seen.get(id)) changes[id] = 'dissolve'
+    }
+    const ids = Object.keys(changes)
+    if (!ids.length) return undefined
+    setFx((f) => ({ ...f, ...changes }))
+    const timers = ids.map((id) =>
+      setTimeout(
+        () =>
+          setFx((f) => {
+            const next = { ...f }
+            delete next[id]
+            return next
+          }),
+        FX_MS[changes[id]],
+      ),
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [loot, loading])
 
   function revokePreview() {
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
@@ -528,9 +577,10 @@ function LootTab({ campaignId }) {
         <div className="loot-list loot-list--compact">
           {visibleLoot.map((entry) => (
             <article
-              className={`loot-card loot-card--compact panel${isUsedUp(entry) ? ' loot-card--used' : ''}`}
+              className={`loot-card loot-card--compact panel${isUsedUp(entry) ? ' loot-card--used' : ''}${glowClass(entry.kind)}${fx[entry.id] ? ` loot-card--${fx[entry.id]}` : ''}`}
               key={entry.id}
             >
+              {fx[entry.id] && <LootSparkles dust={fx[entry.id] === 'dissolve'} />}
               {entry.photo ? (
                 <button
                   type="button"
@@ -594,9 +644,10 @@ function LootTab({ campaignId }) {
         <div className="loot-list">
           {visibleLoot.map((entry) => (
             <article
-              className={`loot-card panel${entry.usable ? ' loot-card--usable' : ''}${isUsedUp(entry) ? ' loot-card--used' : ''}`}
+              className={`loot-card panel${entry.usable ? ' loot-card--usable' : ''}${isUsedUp(entry) ? ' loot-card--used' : ''}${glowClass(entry.kind)}${fx[entry.id] ? ` loot-card--${fx[entry.id]}` : ''}`}
               key={entry.id}
             >
+              {fx[entry.id] && <LootSparkles dust={fx[entry.id] === 'dissolve'} />}
               {entry.usable && !isUsedUp(entry) && (
                 <button
                   type="button"

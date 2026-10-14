@@ -10,6 +10,7 @@ import { isSupabaseConfigured } from './lib/supabaseClient.js'
 import { clearCache } from './lib/offline.js'
 import { applySettings, getSettings } from './lib/settings.js'
 import { installCardTilt } from './lib/cardTilt.js'
+import { installTapFeedback } from './lib/tapFeedback.js'
 import { getStored, setStored } from './lib/sessionMode.js'
 import './App.scss'
 
@@ -42,6 +43,7 @@ function App() {
   }, [])
 
   useEffect(() => installCardTilt(), [])
+  useEffect(() => installTapFeedback(), [])
 
   // Picks up a changed session (e.g. a new username from Account).
   useEffect(() => {

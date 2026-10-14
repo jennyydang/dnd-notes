@@ -18,8 +18,9 @@
     background: color.adjust(#2e241d, $lightness: 4%);
   }
 
-  &:active {
-    transform: translateY(1px);
+  // Presses in a touch, with the gold ripple (tapFeedback.js) on top.
+  &:active:not(:disabled) {
+    transform: scale(0.97);
   }
 
   &--primary {
