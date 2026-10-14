@@ -12,6 +12,7 @@ import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import { ViewToggle } from './ui.jsx'
 import { useViewMode } from '../hooks/useViewMode.js'
 import Icon from './Icon.jsx'
+import AnimatedNumber from './AnimatedNumber.jsx'
 
 const BUCKET = 'loot-photos'
 
@@ -555,7 +556,11 @@ function LootTab({ campaignId }) {
                 </button>
                 <span className="loot-card__meta">
                   <TagBadge group="loot" kind={entry.kind} />
-                  {hasQuantity(entry) && <span className="loot-card__qty">×{entry.quantity}</span>}
+                  {hasQuantity(entry) && (
+                    <span className="loot-card__qty">
+                      ×<AnimatedNumber value={entry.quantity} />
+                    </span>
+                  )}
                   {entry.holder && <span className="loot-card__meta-text">Held by {entry.holder}</span>}
                 </span>
               </div>
@@ -620,7 +625,15 @@ function LootTab({ campaignId }) {
                   <TagBadge group="loot" kind={entry.kind} />
                   {hasQuantity(entry) && (
                     <span className="loot-card__qty">
-                      {entry.usable ? `${entry.quantity} left` : `×${entry.quantity}`}
+                      {entry.usable ? (
+                        <>
+                          <AnimatedNumber value={entry.quantity} /> left
+                        </>
+                      ) : (
+                        <>
+                          ×<AnimatedNumber value={entry.quantity} />
+                        </>
+                      )}
                     </span>
                   )}
                   {entry.foundAt && (

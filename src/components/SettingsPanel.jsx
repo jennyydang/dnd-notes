@@ -10,6 +10,12 @@ const BACKGROUNDS = [
   { value: 'plain', label: 'Plain Dark' },
 ]
 
+const AMBIENCE = [
+  { value: 'embers', label: 'Embers & Fog' },
+  { value: 'fog', label: 'Fog Only' },
+  { value: 'off', label: 'Off' },
+]
+
 const FONTS = [
   { value: 'classic', label: 'Classic' },
   { value: 'modern', label: 'Modern' },
@@ -169,6 +175,11 @@ function SettingsPanel({ onDone }) {
           />
         </div>
         {bgError && <p className="empty-state empty-state--error">{bgError}</p>}
+      </div>
+
+      <div className="settings-panel__section">
+        <h4>Moving Background</h4>
+        {renderGroup('ambience', AMBIENCE)}
       </div>
 
       <div className="settings-panel__section">

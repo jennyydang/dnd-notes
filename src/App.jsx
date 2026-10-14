@@ -4,6 +4,7 @@ import PlayerLogin from './components/PlayerLogin.jsx'
 import PlayerDashboard from './components/PlayerDashboard.jsx'
 import CampaignView from './components/CampaignView.jsx'
 import ResetPassword from './components/ResetPassword.jsx'
+import Ambience from './components/Ambience.jsx'
 import { PLAYER_SESSION_CHANGED, clearPlayerSession, getAdminSession, getPlayerSession, resetFromUrl } from './lib/auth.js'
 import { isSupabaseConfigured } from './lib/supabaseClient.js'
 import { clearCache } from './lib/offline.js'
@@ -96,13 +97,16 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <h1 className="app__title">Adventurer&rsquo;s Log</h1>
-        <p className="app__subtitle">Dungeons &amp; Dragons campaign notes</p>
-      </header>
-      <main>{content}</main>
-    </div>
+    <>
+      <Ambience />
+      <div className="app">
+        <header className="app__header">
+          <h1 className="app__title">Adventurer&rsquo;s Log</h1>
+          <p className="app__subtitle">Dungeons &amp; Dragons campaign notes</p>
+        </header>
+        <main>{content}</main>
+      </div>
+    </>
   )
 }
 

@@ -12,15 +12,180 @@
   animation: fade-in 0.3s ease-out;
   overflow-y: auto;
 
-  &__card {
+  // ── The entrance: seal drops in and cracks (0–1s), sparks burst, then
+  // the scroll unrolls from the middle (0.85s–1.55s) and its contents
+  // rise in. Reduced motion skips straight to the open scroll.
+  &__glow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, rgba($gold, 0.22), transparent 55%);
+    opacity: 0;
+    animation: reveal-glow 1.8s ease-out 0.6s forwards;
+  }
+
+  &__seal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 7rem;
+    height: 7rem;
+    margin: -3.5rem 0 0 -3.5rem;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  &__seal-half {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 2.6rem;
+    color: rgba(#2a0a0a, 0.75);
+    background:
+      radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.25), transparent 40%),
+      radial-gradient(circle at 50% 50%, #b23a2e 0%, #8e2320 55%, #6b1615 100%);
+    box-shadow:
+      inset 0 0 0 0.35rem rgba(#5a1210, 0.6),
+      inset 0 -0.4rem 0.8rem rgba(0, 0, 0, 0.35),
+      0 0.4rem 1.2rem rgba(0, 0, 0, 0.6);
+    animation:
+      seal-drop 0.42s cubic-bezier(0.3, 1.4, 0.5, 1) both,
+      var(--crack) 0.5s cubic-bezier(0.5, 0, 0.75, 0) 0.75s forwards;
+
+    // A jagged crack down the middle splits it in two.
+    &--left {
+      clip-path: polygon(0 0, 52% 0, 46% 18%, 55% 34%, 45% 52%, 54% 70%, 47% 86%, 52% 100%, 0 100%);
+      --crack: seal-crack-left;
+    }
+
+    &--right {
+      clip-path: polygon(52% 0, 100% 0, 100% 100%, 52% 100%, 47% 86%, 54% 70%, 45% 52%, 55% 34%, 46% 18%);
+      --crack: seal-crack-right;
+    }
+  }
+
+  &--creature &__seal-half {
+    background:
+      radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.18), transparent 40%),
+      radial-gradient(circle at 50% 50%, #3a2a2a 0%, #241818 60%, #120c0c 100%);
+    color: rgba($maroon-light, 0.9);
+  }
+
+  &__sparks {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+    z-index: 1;
+
+    span {
+      position: absolute;
+      width: 0.35rem;
+      height: 0.35rem;
+      margin: -0.175rem;
+      border-radius: 50%;
+      background: $gold-light;
+      box-shadow: 0 0 0.6rem $gold;
+      opacity: 0;
+      transform: rotate(calc(var(--i) * 30deg)) translateY(0);
+      animation: reveal-spark 0.9s ease-out calc(0.78s + var(--i) * 0.012s) forwards;
+    }
+  }
+
+  &__scroll {
+    position: relative;
     width: min(40rem, 100%);
     max-height: 100%;
+    padding: 1.75rem 1.25rem 1.5rem;
+    border-radius: $radius-lg;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba($gold, 0.08), transparent 60%),
+      linear-gradient(180deg, rgba($bg-panel-raised, 0.95), rgba($bg-panel, 0.95));
+    border: 1px solid rgba($gold, 0.35);
+    box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.6);
+    clip-path: inset(50% 0 50% 0 round $radius-lg);
+    animation: scroll-unroll 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.85s forwards;
+  }
+
+  // Gold rods at the top and bottom edge, travelling out from the middle.
+  &__roller {
+    position: absolute;
+    left: -0.4rem;
+    right: -0.4rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, $gold-light, $gold 45%, $gold-dim);
+    box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.5);
+    z-index: 1;
+    opacity: 0;
+
+    &--top {
+      top: 50%;
+      animation: roller-top 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.85s forwards;
+    }
+
+    &--bottom {
+      bottom: 50%;
+      animation: roller-bottom 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.85s forwards;
+    }
+  }
+
+  &__card {
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
     text-align: center;
-    animation: reveal-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    > * {
+      animation: rise-in 0.45s ease-out calc(1.25s + var(--n, 0) * 0.06s) backwards;
+    }
+
+    > :nth-child(2) {
+      --n: 1;
+    }
+
+    > :nth-child(3) {
+      --n: 2;
+    }
+
+    > :nth-child(n + 4) {
+      --n: 3;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__seal,
+    &__sparks,
+    &__glow {
+      display: none;
+    }
+
+    &__scroll {
+      clip-path: none;
+      animation: none;
+    }
+
+    &__roller {
+      opacity: 1;
+      animation: none;
+
+      &--top {
+        top: -0.3rem;
+      }
+
+      &--bottom {
+        bottom: -0.3rem;
+      }
+    }
+
+    &__card > * {
+      animation: none;
+    }
   }
 
   &__eyebrow {
@@ -103,13 +268,90 @@
   }
 }
 
-@keyframes reveal-in {
+@keyframes reveal-glow {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes seal-drop {
   from {
     opacity: 0;
-    transform: scale(0.92) translateY(0.75rem);
+    transform: scale(1.8) rotate(-12deg);
   }
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes seal-crack-left {
+  0% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-0.15rem) rotate(-3deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-9rem, 3rem) rotate(-55deg);
+  }
+}
+
+@keyframes seal-crack-right {
+  0% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(0.15rem) rotate(3deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(9rem, 3rem) rotate(55deg);
+  }
+}
+
+@keyframes reveal-spark {
+  0% {
+    opacity: 1;
+    transform: rotate(calc(var(--i) * 30deg)) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(calc(var(--i) * 30deg)) translateY(-11rem) scale(0.3);
+  }
+}
+
+@keyframes scroll-unroll {
+  to {
+    clip-path: inset(0 0 0 0 round $radius-lg);
+  }
+}
+
+@keyframes roller-top {
+  from {
+    opacity: 1;
+    top: 50%;
+  }
+  to {
+    opacity: 1;
+    top: -0.3rem;
+  }
+}
+
+@keyframes roller-bottom {
+  from {
+    opacity: 1;
+    bottom: 50%;
+  }
+  to {
+    opacity: 1;
+    bottom: -0.3rem;
   }
 }

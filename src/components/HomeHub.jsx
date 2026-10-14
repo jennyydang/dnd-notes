@@ -15,6 +15,7 @@ import PreviouslyOn from './session/PreviouslyOn.jsx'
 import { SectionCard, StatusMessage } from './ui.jsx'
 import Icon from './Icon.jsx'
 import './HomeHub.scss'
+import AnimatedNumber from './AnimatedNumber.jsx'
 
 const QUICK_ACTIONS = [
   { type: 'npc', label: 'NPC', icon: 'user' },
@@ -78,7 +79,7 @@ function CharacterSummary({ campaignId, character }) {
             {hasHp && (
               <div className="home-hub__hp">
                 <span className="home-hub__hp-text mechanics">
-                  HP {hp.current} / {hp.max}
+                  HP <AnimatedNumber value={hp.current} /> / {hp.max}
                   {hp.temp ? ` (+${hp.temp})` : ''}
                 </span>
                 <span

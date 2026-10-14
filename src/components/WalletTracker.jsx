@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { listCampaignMembers } from '../lib/campaigns.js'
 import { CURRENCIES, formatAmount, toCopper } from '../lib/currency.js'
+import AnimatedNumber from './AnimatedNumber.jsx'
 
 const emptyCounts = { platinum: 0, gold: 0, silver: 0, shilling: 0, copper: 0 }
 
@@ -228,7 +229,8 @@ function WalletTracker({ campaignId, playerId }) {
             ))}
           </div>
           <p className="wallet-tracker__total">
-            Total value: {formatAmount(totalValue(counts) / 1000)} gold-equivalent
+            Total value: <AnimatedNumber value={totalValue(counts)} format={(n) => formatAmount(Math.round(n) / 1000)} />{' '}
+            gold-equivalent
           </p>
           <button type="button" className="btn btn--primary" onClick={saveWallet}>
             Save
