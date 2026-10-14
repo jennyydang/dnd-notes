@@ -59,7 +59,8 @@ function ArtGallery({ campaignId, manage = false }) {
   const usedCategories = ART_CATEGORIES.filter((c) => pieces.some((a) => a.category === c))
   const visible = pieces.filter((a) => category === 'all' || a.category === category)
   const sharedCount = pieces.filter((a) => a.shared).length
-  const { byKey } = useDmShares(campaignId)
+  const { byKey, revealedKeys } = useDmShares(campaignId)
+  const isRevealed = (piece) => revealedKeys.has(shareKey('art', piece.id))
   const [sharingId, setSharingId] = useState(null)
   // 'added' (in the players' Art tab), 'sent' (notification out), 'private'.
   const statusOf = (piece) =>
@@ -229,7 +230,7 @@ function ArtGallery({ campaignId, manage = false }) {
       {!loading && !error && visible.length > 0 && (
         <ul className="art-grid">
           {visible.map((piece) => (
-            <li key={piece.id} className="art-tile">
+            <li key={piece.id} className={`art-tile${manage && isRevealed(piece) ? ' dm-revealed' : ''}`}>
               <button type="button" className="art-tile__open" onClick={() => setViewingId(piece.id)}>
                 <img src={piece.url} alt={piece.title || 'Campaign art'} loading="lazy" />
                 <span className="art-tile__caption">
@@ -262,6 +263,7 @@ function ArtGallery({ campaignId, manage = false }) {
                   sharing={sharingId === viewing.id}
                   onShare={() => share(viewing)}
                   onReveal={() => share(viewing, true)}
+                  revealed={isRevealed(viewing)}
                 />
                 {viewing.shared && (
                   <button type="button" className="btn btn--text" onClick={() => unshare(viewing)}>

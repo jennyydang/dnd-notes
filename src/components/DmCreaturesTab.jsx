@@ -72,7 +72,7 @@ function DmCreaturesTab({ campaignId }) {
     fromRow: partyFromRow,
     filters: { campaign_id: campaignId },
   })
-  const { byKey } = useDmShares(campaignId)
+  const { byKey, revealedKeys } = useDmShares(campaignId)
   const addedIds = useMemo(() => new Set(party.map((c) => c.dmCreatureId).filter(Boolean)), [party])
   const statusOf = (c) =>
     addedIds.has(c.id) ? 'added' : byKey.has(shareKey('creature', c.id)) ? 'sent' : 'private'
@@ -250,8 +250,12 @@ function DmCreaturesTab({ campaignId }) {
         <div className="creature-list">
           {visible.map((c) => {
             const status = statusOf(c)
+            const revealed = revealedKeys.has(shareKey('creature', c.id))
             return (
-              <article className={`creature-card panel creature-card--${c.kind.toLowerCase()}`} key={c.id}>
+              <article
+                className={`creature-card panel creature-card--${c.kind.toLowerCase()}${revealed ? ' dm-revealed' : ''}`}
+                key={c.id}
+              >
                 <header className="creature-card__header">
                   <h3 className="creature-card__name">{c.name}</h3>
                   <span className={`creature-card__kind creature-card__kind--${c.kind.toLowerCase()}`}>
@@ -296,6 +300,7 @@ function DmCreaturesTab({ campaignId }) {
                     sharing={sharingId === c.id}
                     onShare={() => share(c)}
                     onReveal={() => share(c, true)}
+                    revealed={revealed}
                   />
                   <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
                     Edit

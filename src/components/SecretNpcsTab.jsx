@@ -56,7 +56,7 @@ const npcFromRow = (r) => ({ id: r.id, dmNpcId: r.dm_npc_id })
 // Players get a notification and can add a player-safe copy to their NPCs
 // tab (see DmSharesInbox).
 function SecretNpcsTab({ campaignId, addRequest }) {
-  const { byKey } = useDmShares(campaignId)
+  const { byKey, revealedKeys } = useDmShares(campaignId)
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_npcs', {
     fromRow,
     filters: { campaign_id: campaignId },
@@ -303,8 +303,12 @@ function SecretNpcsTab({ campaignId, addRequest }) {
         <div className="npc-list">
           {visible.map((npc) => {
             const status = statusOf(npc)
+            const revealed = revealedKeys.has(shareKey('npc', npc.id))
             return (
-              <article className={`npc-card secret-npc panel${status !== 'private' ? ' secret-npc--revealed' : ''}`} key={npc.id}>
+              <article
+                className={`npc-card secret-npc panel${status !== 'private' ? ' secret-npc--revealed' : ''}${revealed ? ' dm-revealed' : ''}`}
+                key={npc.id}
+              >
                 <div className="npc-card__main">
                   <div className="npc-card__identity">
                     <div className="npc-card__avatar">
@@ -336,6 +340,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                     sharing={sharingId === npc.id}
                     onShare={() => share(npc)}
                     onReveal={() => share(npc, true)}
+                    revealed={revealed}
                     className="secret-npc__share"
                   />
                   <button type="button" className="btn btn--text" onClick={() => openForm(npc)}>
