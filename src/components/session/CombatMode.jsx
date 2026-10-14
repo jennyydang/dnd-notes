@@ -9,6 +9,8 @@ import Icon from '../Icon.jsx'
 import './CombatMode.scss'
 
 const SEEN_LIMIT = 20
+// Reopens the roll prompt (players' combat badge, before they've rolled).
+const OPEN_ROLL_EVENT = 'dnd-notes-open-initiative-roll'
 const SHAKE_MS = 1200
 // Combat mode for everyone in the campaign, driven by the shared encounter:
 // - while the DM has combat on, the whole app takes on a red battle theme
@@ -32,22 +34,37 @@ export function CombatMode({ showAlert }) {
     }
   }, [state.combat])
 
+  const [reopened, setReopened] = useState(false)
+  useEffect(() => {
+    const open = () => setReopened(true)
+    window.addEventListener(OPEN_ROLL_EVENT, open)
+    return () => window.removeEventListener(OPEN_ROLL_EVENT, open)
+  }, [])
+
   const alert = state.combat ? state.alert : null
-  const showing = useMemo(() => showAlert && isFreshAlert(alert, seen, Date.now()), [showAlert, alert, seen])
+  const fresh = useMemo(() => showAlert && isFreshAlert(alert, seen, Date.now()), [showAlert, alert, seen])
+  const showing = fresh || (showAlert && reopened && Boolean(alert))
+  // Only a new call shakes the screen; reopening from the badge doesn't.
+  const shake = fresh
 
   useEffect(() => {
-    if (!showing) return undefined
+    if (!shake) return undefined
     navigator.vibrate?.([200, 80, 200, 80, 400])
     document.body.classList.add('combat-shake')
-    closeRef.current?.focus()
     const timer = setTimeout(() => document.body.classList.remove('combat-shake'), SHAKE_MS)
     return () => {
       clearTimeout(timer)
       document.body.classList.remove('combat-shake')
     }
+  }, [shake])
+
+  useEffect(() => {
+    if (showing) closeRef.current?.focus()
   }, [showing])
 
   function dismiss() {
+    setReopened(false)
+    if (seen.includes(alert.id)) return
     const next = [...seen, alert.id].slice(-SEEN_LIMIT)
     setSeen(next)
     setStored(seenKey, next)
@@ -90,17 +107,20 @@ export function CombatMode({ showAlert }) {
 // "⚔ Round 2" (or "⚔ Rolling") in the top bar while combat mode is on; opens the
 // tracker (`target` is its tab: Session Mode, or the DM's Combat tab).
 export function CombatBadge({ target }) {
-  const { campaignId } = useCampaignData()
+  const { campaignId, playerId } = useCampaignData()
   const nav = useCampaignNav()
   const { state } = useSharedEncounter(campaignId)
   if (!state.combat) return null
+  // A player who hasn't rolled yet gets the roll prompt back.
+  const needsRoll =
+    !nav.isDm && Boolean(playerId) && !state.started && !state.combatants.some((c) => c.playerId === playerId)
   return (
     <button
       type="button"
       className="combat-badge"
-      onClick={() => nav.goTo(target)}
-      title="Combat — open the initiative tracker"
-      aria-label={`Combat: ${state.started ? `round ${state.round}` : 'rolling for initiative'}. Open the initiative tracker`}
+      onClick={() => (needsRoll ? window.dispatchEvent(new Event(OPEN_ROLL_EVENT)) : nav.goTo(target))}
+      title={needsRoll ? 'Combat — roll for initiative' : 'Combat'}
+      aria-label={`Combat: ${state.started ? `round ${state.round}` : 'rolling for initiative'}.${needsRoll ? ' Roll for initiative' : ''}`}
     >
       <Icon name="quest" />
       <span aria-hidden="true">{state.started ? `Round ${state.round}` : 'Rolling'}</span>

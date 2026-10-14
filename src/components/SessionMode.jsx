@@ -24,6 +24,9 @@ const PANELS = [
   { id: 'initiative', label: 'Initiative' },
   { id: 'reference', label: 'Reference' },
 ]
+// Players follow combat through the turn banner and roll prompt; the
+// initiative tracker itself is the DM's (and the admin's).
+const PLAYER_PANELS = PANELS.filter((p) => p.id !== 'initiative')
 
 const QUICK_ADD = [
   { type: 'npc', label: 'NPC', icon: 'user' },
@@ -34,20 +37,22 @@ const QUICK_ADD = [
 
 // Needs the sheet, so it only renders once a character is chosen; keyed
 // by character so switching characters starts a fresh autosave.
-function CharacterPanels({ campaignId, character, nav, panelClass }) {
+function CharacterPanels({ campaignId, character, nav, panelClass, showInitiative }) {
   const sheetApi = useCharacterSheet(campaignId, character.id)
   return (
     <>
       <div className={panelClass('vitals')}>
         <VitalsPanel character={character} sheetApi={sheetApi} onEditSheet={() => nav.goTo('character')} />
       </div>
-      <div className={panelClass('initiative')}>
-        <InitiativeTracker
-          campaignId={campaignId}
-          characterName={character.name}
-          characterInitBonus={sheetApi.sheet ? initiativeBonus(sheetApi.sheet.mechanics) : null}
-        />
-      </div>
+      {showInitiative && (
+        <div className={panelClass('initiative')}>
+          <InitiativeTracker
+            campaignId={campaignId}
+            characterName={character.name}
+            characterInitBonus={sheetApi.sheet ? initiativeBonus(sheetApi.sheet.mechanics) : null}
+          />
+        </div>
+      )}
       <div className={panelClass('reference')}>
         {sheetApi.sheet && (
           <ReferencePanel
@@ -137,7 +142,7 @@ function SessionMode({ campaignName }) {
         ))}
       </div>
 
-      <TabNav tabs={PANELS} activeTab={panel} onSelect={setPanel} className="tab-nav--pill session-mode__switcher" label="Session panels" />
+      <TabNav tabs={nav.isDm ? PANELS : PLAYER_PANELS} activeTab={panel} onSelect={setPanel} className="tab-nav--pill session-mode__switcher" label="Session panels" />
 
       {isAdmin && (
         <CharacterPicker party={party} value={character?.id || ''} onChange={pick} />
@@ -145,7 +150,14 @@ function SessionMode({ campaignName }) {
 
       <div className="session-mode__grid">
         {character ? (
-          <CharacterPanels key={character.id} campaignId={campaignId} character={character} nav={nav} panelClass={panelClass} />
+          <CharacterPanels
+            key={character.id}
+            campaignId={campaignId}
+            character={character}
+            nav={nav}
+            panelClass={panelClass}
+            showInitiative={nav.isDm}
+          />
         ) : (
           <div className={panelClass('vitals')}>
             <SectionCard title="Character" icon="heart">
@@ -169,9 +181,11 @@ function SessionMode({ campaignName }) {
         </div>
         {!character && (
           <>
-            <div className={panelClass('initiative')}>
-              <InitiativeTracker campaignId={campaignId} />
-            </div>
+            {nav.isDm && (
+              <div className={panelClass('initiative')}>
+                <InitiativeTracker campaignId={campaignId} />
+              </div>
+            )}
             <div className={panelClass('reference')}>
               <SectionCard title="Reference" icon="library">
                 <p className="inline-state">Pick a character to see their spells, inventory and skills.</p>

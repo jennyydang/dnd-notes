@@ -92,9 +92,10 @@ only from the character's recorded notes, for use in any assistant.
 
 ### At the table
 
-- **Shared initiative.** The initiative tracker in Session Mode (and the
-  DM's new **Combat** tab) is one live encounter for the whole campaign:
-  the DM runs it and everyone's phone follows along. Party members added
+- **Shared initiative.** The DM's **Combat** tab (and the admin's Session
+  Mode) runs one live encounter for the whole campaign. Players don't
+  see the tracker; they follow along through the turn banners and the
+  roll prompt (the red combat badge reopens it until they've rolled). Party members added
   to the fight (type their name or tap their chip) are linked to their
   player, who gets a **"Your turn"** banner — and a buzz on phones that
   support it — on any screen, plus **"You're up next"** a turn ahead.
