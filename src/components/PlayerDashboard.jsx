@@ -7,6 +7,7 @@ import ManageMembers from './ManageMembers.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import AccountMenu from './AccountMenu.jsx'
+import { NotificationBell } from './DmSharesInbox.jsx'
 import Modal from './Modal.jsx'
 import './Dashboard.scss'
 import CampaignSearch from './CampaignSearch.jsx'
@@ -253,6 +254,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
             + Campaign
           </button>
         </div>
+        <NotificationBell playerId={playerId} />
         <AccountMenu
           playerId={playerId}
           username={username}
@@ -272,7 +274,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
 
       {showFeedback && (
         <Modal onClose={() => setShowFeedback(false)} label="Send Feedback">
-          <FeedbackForm onDone={() => setShowFeedback(false)} />
+          <FeedbackForm playerId={playerId} onDone={() => setShowFeedback(false)} />
         </Modal>
       )}
 

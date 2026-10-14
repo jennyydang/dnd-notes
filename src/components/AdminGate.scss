@@ -347,6 +347,24 @@
     &--issue {
       border-left-color: $maroon-light;
     }
+
+    &--solved {
+      border-left-color: $gold-dim;
+
+      .feedback-inbox__message {
+        color: $text-muted;
+      }
+    }
+  }
+
+  &__notice {
+    margin: 0;
+    font-size: 0.9rem;
+    color: $green-text;
+
+    &--error {
+      color: $maroon-text;
+    }
   }
 
   &__meta {
@@ -376,6 +394,11 @@
       border-color: rgba($green, 0.5);
       color: $green-text;
     }
+
+    &--solved {
+      border-color: rgba($gold, 0.6);
+      color: $gold-light;
+    }
   }
 
   &__date {
@@ -394,5 +417,7 @@
   &__actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
   }
 }

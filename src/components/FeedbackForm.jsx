@@ -7,12 +7,15 @@ const KINDS = [
   { value: 'suggestion', label: 'Suggestion' },
 ]
 
-// No player_id/campaign_id gets attached anywhere in this flow — the
-// submission really is anonymous, not just app-enforced-private like
-// session notes.
-function FeedbackForm({ onDone }) {
+// The admin screen never shows who sent feedback. If the player ticks
+// "Tell me when it's solved" (on by default), their player_id is saved
+// with it so the admin's Solved button can notify them; unticked, nothing
+// identifies the sender. The admin (no playerId) gets no checkbox.
+function FeedbackForm({ playerId, onDone }) {
   const [kind, setKind] = useState('issue')
   const [message, setMessage] = useState('')
+  const [notify, setNotify] = useState(true)
+  const [notifySaved, setNotifySaved] = useState(false)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -24,9 +27,18 @@ function FeedbackForm({ onDone }) {
     setSubmitting(true)
     setError(null)
     try {
-      const { error: insertError } = await supabase
+      const row = { kind, message: message.trim() }
+      const wantsReply = Boolean(playerId && notify)
+      let { error: insertError } = await supabase
         .from('feedback')
-        .insert({ kind, message: message.trim() })
+        .insert(wantsReply ? { ...row, player_id: playerId } : row)
+      // Database not updated for replies yet: still send the feedback.
+      if (insertError && wantsReply && /player_id/.test(insertError.message)) {
+        ;({ error: insertError } = await supabase.from('feedback').insert(row))
+        if (!insertError) setNotifySaved(false)
+      } else if (!insertError) {
+        setNotifySaved(wantsReply)
+      }
       if (insertError) throw new Error(insertError.message)
       setSubmitted(true)
     } catch (err) {
@@ -39,8 +51,11 @@ function FeedbackForm({ onDone }) {
   if (submitted) {
     return (
       <div className="feedback-form panel">
-        <h3>Sent anonymously</h3>
-        <p>Thanks — your {kind} has been sent to the admin.</p>
+        <h3>{notifySaved ? 'Sent' : 'Sent anonymously'}</h3>
+        <p>
+          Thanks — your {kind} has been sent to the admin.
+          {notifySaved && ' You’ll get a notification in the bell when it’s solved.'}
+        </p>
         <div className="feedback-form__actions">
           <button type="button" className="btn btn--primary" onClick={onDone}>
             Done
@@ -53,9 +68,7 @@ function FeedbackForm({ onDone }) {
   return (
     <form className="feedback-form panel" onSubmit={submit}>
       <h3>Send Feedback</h3>
-      <p className="feedback-form__note">
-        Anonymous — the admin sees your message, not who sent it.
-      </p>
+      <p className="feedback-form__note">The admin sees your message, not who sent it.</p>
       <div className="field">
         <label htmlFor="feedback-kind">Type</label>
         <select id="feedback-kind" value={kind} onChange={(e) => setKind(e.target.value)}>
@@ -82,6 +95,15 @@ function FeedbackForm({ onDone }) {
           required
         />
       </div>
+      {playerId && (
+        <label className="feedback-form__notify">
+          <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+          <span>
+            Tell me when it’s solved
+            <small>Saves your account with this message so we can let you know. Untick to stay fully anonymous.</small>
+          </span>
+        </label>
+      )}
       {error && <p className="empty-state empty-state--error">{error}</p>}
       <div className="feedback-form__actions">
         <button type="button" className="btn btn--text" onClick={onDone} disabled={submitting}>

@@ -211,3 +211,90 @@
     margin-left: auto;
   }
 }
+
+.dm-inbox__section {
+  margin: 0.25rem 0 -0.25rem;
+  font-family: $font-display;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $gold-light;
+}
+
+// A general notification (e.g. "Your suggestion was solved").
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.8rem 0.5rem 0.8rem 0.9rem;
+  background: $bg-deep;
+  border: 1px solid $ink-soft;
+  border-radius: $radius-lg;
+
+  &--unread {
+    border-color: rgba($gold, 0.6);
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba($green, 0.35);
+    color: $green-text;
+    font-size: 1.1rem;
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  &__title {
+    font-family: $font-display;
+    color: $parchment;
+    overflow-wrap: anywhere;
+  }
+
+  &__text {
+    font-size: 0.92rem;
+    color: $text-light;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+
+  &__time {
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+
+  &__dismiss {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      background: $bg-panel-raised;
+    }
+  }
+}

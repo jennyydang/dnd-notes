@@ -12,6 +12,7 @@ import {
 } from '../lib/auth.js'
 import { addPlayerToCampaign, listAllMemberships, setMembershipRole } from '../lib/campaigns.js'
 import { getStored, setStored } from '../lib/sessionMode.js'
+import { feedbackSolvedNotice, notifyPlayer } from '../lib/notifications.js'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
@@ -24,7 +25,16 @@ const SECTIONS = ['campaigns', 'players', 'feedback']
 const SECTION_TITLES = { campaigns: 'Campaigns', players: 'Players', feedback: 'Player feedback' }
 
 const campaignFromRow = (r) => ({ id: r.id, name: r.name, archived: r.archived })
-const feedbackFromRow = (r) => ({ id: r.id, kind: r.kind, message: r.message, createdAt: r.created_at })
+const feedbackFromRow = (r) => ({
+  id: r.id,
+  kind: r.kind,
+  message: r.message,
+  createdAt: r.created_at,
+  status: r.status || 'open',
+  solvedAt: r.solved_at || null,
+  // Only whether the sender asked to hear back — never shown as a name.
+  senderId: r.player_id || null,
+})
 
 function AdminGate({ onOpenCampaign }) {
   const [adminPassword, setAdminPassword] = useState(getAdminSession())
@@ -143,7 +153,7 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
   const archivedCampaigns = campaigns.length - activeCampaigns
   const playersWithCampaigns = new Set(playerData.memberships.map((m) => m.playerId))
   const unassigned = playerData.players.filter((p) => !playersWithCampaigns.has(p.id)).length
-  const issues = feedback.items.filter((f) => f.kind === 'issue').length
+  const issues = feedback.items.filter((f) => f.kind === 'issue' && f.status !== 'solved').length
 
   const stats = [
     {
@@ -541,13 +551,14 @@ function formatFeedbackDate(value) {
   return parsed.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
-// Genuinely anonymous — the feedback table has no player_id/campaign_id
-// column at all, so there's nothing here to attribute a submission to
-// even if the admin wanted to. Dismissing a submission just deletes it;
-// there's no separate "reviewed" state to track.
-function FeedbackInbox({ items: submissions, loading, error, removeItem }) {
+// Who sent each submission is never shown. Players who asked to hear back
+// are recorded on it (senderId), so "Solved" can notify them; for the
+// rest, Solved just marks it done. Dismissing deletes a submission.
+function FeedbackInbox({ items: submissions, loading, error, removeItem, updateItem }) {
   const [filter, setFilter] = useState('all')
   const [dismissError, setDismissError] = useState(null)
+  const [busyId, setBusyId] = useState(null)
+  const [notices, setNotices] = useState({}) // id → { ok, text }
   const counts = {
     all: submissions.length,
     issue: submissions.filter((s) => s.kind === 'issue').length,
@@ -563,6 +574,42 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem }) {
       await removeItem(item.id)
     } catch (err) {
       setDismissError(err.message)
+    }
+  }
+
+  async function solve(item) {
+    setBusyId(item.id)
+    setNotices((n) => ({ ...n, [item.id]: null }))
+    try {
+      await updateItem(item.id, { status: 'solved', solved_at: new Date().toISOString() })
+    } catch (err) {
+      const text = /status|solved_at/.test(err.message)
+        ? 'Run the latest supabase/schema.sql first (it adds solved feedback and notifications).'
+        : err.message
+      setNotices((n) => ({ ...n, [item.id]: { ok: false, text: `Couldn’t mark it solved: ${text}` } }))
+      setBusyId(null)
+      return
+    }
+    if (item.senderId) {
+      try {
+        await notifyPlayer(item.senderId, feedbackSolvedNotice(item))
+        setNotices((n) => ({ ...n, [item.id]: { ok: true, text: 'Solved. The sender has been notified.' } }))
+      } catch (err) {
+        setNotices((n) => ({ ...n, [item.id]: { ok: false, text: `Marked solved, but couldn’t notify the sender: ${err.message}` } }))
+      }
+    }
+    setBusyId(null)
+  }
+
+  async function reopen(item) {
+    setBusyId(item.id)
+    try {
+      await updateItem(item.id, { status: 'open', solved_at: null })
+      setNotices((n) => ({ ...n, [item.id]: null }))
+    } catch (err) {
+      setNotices((n) => ({ ...n, [item.id]: { ok: false, text: err.message } }))
+    } finally {
+      setBusyId(null)
     }
   }
 
@@ -592,17 +639,54 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem }) {
       {!loading && !error && visible.length > 0 && (
         <ul className="feedback-inbox__list">
           {visible.map((item) => (
-            <li key={item.id} className={`feedback-inbox__item panel feedback-inbox__item--${item.kind}`}>
+            <li
+              key={item.id}
+              className={`feedback-inbox__item panel feedback-inbox__item--${item.kind}${
+                item.status === 'solved' ? ' feedback-inbox__item--solved' : ''
+              }`}
+            >
               <div className="feedback-inbox__meta">
                 <span className={`feedback-inbox__badge feedback-inbox__badge--${item.kind}`}>
                   <Icon name={item.kind === 'issue' ? 'bug' : 'lightbulb'} /> {item.kind === 'issue' ? 'Issue' : 'Suggestion'}
                 </span>
+                {item.status === 'solved' && (
+                  <span className="feedback-inbox__badge feedback-inbox__badge--solved">
+                    <Icon name="check-square" /> Solved
+                    {item.solvedAt ? ` · ${formatFeedbackDate(item.solvedAt)}` : ''}
+                  </span>
+                )}
                 <span className="feedback-inbox__date">{formatFeedbackDate(item.createdAt)}</span>
+                {item.senderId && item.status !== 'solved' && (
+                  <span className="feedback-inbox__date">· Sender asked to hear back</span>
+                )}
               </div>
               <p className="feedback-inbox__message">{item.message}</p>
+              {notices[item.id] && (
+                <p
+                  className={`feedback-inbox__notice${notices[item.id].ok ? '' : ' feedback-inbox__notice--error'}`}
+                  role="status"
+                >
+                  {notices[item.id].text}
+                </p>
+              )}
               <div className="feedback-inbox__actions">
+                {item.status === 'solved' ? (
+                  <button type="button" className="btn btn--text" disabled={busyId === item.id} onClick={() => reopen(item)}>
+                    Reopen
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    disabled={busyId === item.id}
+                    onClick={() => solve(item)}
+                    title={item.senderId ? 'Marks it solved and notifies the sender' : 'Marks it solved'}
+                  >
+                    {busyId === item.id ? 'Saving…' : 'Solved'}
+                  </button>
+                )}
                 <button type="button" className="btn btn--text" onClick={() => dismiss(item)}>
-                  ✓ Dismiss
+                  Dismiss
                 </button>
               </div>
             </li>

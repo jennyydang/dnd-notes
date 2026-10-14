@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { OPEN_DM_INBOX, useDmInbox } from '../hooks/useDmInbox.js'
+import { useNotifications } from '../hooks/useNotifications.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { SHARE_KINDS, addShareToParty, shareLabel } from '../lib/dmShares.js'
@@ -8,25 +9,50 @@ import Modal from './Modal.jsx'
 import Icon from './Icon.jsx'
 import './DmSharesInbox.scss'
 
-// Topbar bell for players: what the DM has shared, with an unread count.
-export function DmSharesBell({ campaignId, playerId }) {
-  const [open, setOpen] = useState(false)
+// Topbar bell: the player's notifications (feedback marked solved, and
+// any other kind) and, inside a campaign for a non-DM player, what the DM
+// has shared. The count covers unread notifications plus unhandled shares.
+export function NotificationBell({ playerId, campaignId, dmShares = false }) {
+  if (!playerId) return null
+  return dmShares ? (
+    <BellWithDmShares playerId={playerId} campaignId={campaignId} />
+  ) : (
+    <Bell playerId={playerId} campaignId={campaignId} inbox={null} />
+  )
+}
+
+function BellWithDmShares({ playerId, campaignId }) {
   const inbox = useDmInbox(campaignId, playerId)
+  // DM-share tables not created yet (SQL not run): leave that part out.
+  return <Bell playerId={playerId} campaignId={campaignId} inbox={inbox.error ? null : inbox} />
+}
+
+function Bell({ playerId, campaignId, inbox }) {
+  const [open, setOpen] = useState(false)
+  const notes = useNotifications(playerId)
   useEffect(() => {
     const show = () => setOpen(true)
     window.addEventListener(OPEN_DM_INBOX, show)
     return () => window.removeEventListener(OPEN_DM_INBOX, show)
   }, [])
-  const count = inbox.inbox.length
-  // Tables not created yet (SQL not run): stay out of the way.
-  if (inbox.error) return null
+  // Notifications table not created yet and no DM shares: nothing to show.
+  if (notes.error && !inbox) return null
+  const unread = notes.error ? 0 : notes.unread.length
+  const count = unread + (inbox?.inbox.length || 0)
+
+  function close() {
+    setOpen(false)
+    // Seen now; the count drops but they stay listed until dismissed.
+    if (!notes.error) notes.markAllRead()
+  }
+
   return (
     <>
       <button
         type="button"
         className={`dm-bell${count ? ' dm-bell--unread' : ''}`}
         onClick={() => setOpen(true)}
-        aria-label={count ? `${count} new from your DM` : 'Shared by your DM'}
+        aria-label={count ? `${count} new notification${count === 1 ? '' : 's'}` : 'Notifications'}
       >
         <Icon name="bell" />
         {count > 0 && (
@@ -35,7 +61,14 @@ export function DmSharesBell({ campaignId, playerId }) {
           </span>
         )}
       </button>
-      {open && <DmSharesPanel campaignId={campaignId} inbox={inbox} onClose={() => setOpen(false)} />}
+      {open && (
+        <NotificationsPanel
+          campaignId={campaignId}
+          inbox={inbox}
+          notes={notes.error ? null : notes}
+          onClose={close}
+        />
+      )}
     </>
   )
 }
@@ -58,14 +91,18 @@ function shareDetail(share) {
   return ''
 }
 
-function DmSharesPanel({ campaignId, inbox, onClose }) {
+function NotificationsPanel({ campaignId, inbox, notes, onClose }) {
   const nav = useCampaignNav()
   const [busyId, setBusyId] = useState(null)
   const [results, setResults] = useState({}) // shareId → message
   // Adding clears an item from the bell count right away, but it stays in
   // this list (with its result and an Open link) until the panel closes.
-  const [kept] = useState(() => new Set(inbox.inbox.map((s) => s.id)))
-  const items = inbox.latest.filter((s) => !inbox.dismissed.has(s.id) || (kept.has(s.id) && results[s.id]))
+  const [kept] = useState(() => new Set((inbox?.inbox || []).map((s) => s.id)))
+  const items = inbox
+    ? inbox.latest.filter((s) => !inbox.dismissed.has(s.id) || (kept.has(s.id) && results[s.id]))
+    : []
+  const updates = notes?.items || []
+  const empty = items.length === 0 && updates.length === 0
 
   async function add(share) {
     setBusyId(share.id)
@@ -95,22 +132,52 @@ function DmSharesPanel({ campaignId, inbox, onClose }) {
   }
 
   return (
-    <Modal onClose={onClose} label="Shared by your DM" size={items.length === 0 ? 'narrow' : undefined}>
+    <Modal onClose={onClose} label="Notifications" size={empty ? 'narrow' : undefined}>
       <div className="dm-inbox">
         <div className="dm-inbox__header">
           <h3 className="section-card__title dm-inbox__title">
-            <Icon name="bell" /> From your DM
+            <Icon name="bell" /> Notifications
           </h3>
           <button type="button" className="dm-inbox__close" onClick={onClose} aria-label="Close">
             <Icon name="close" />
           </button>
         </div>
-        {items.length === 0 ? (
+        {empty && (
           <div className="dm-inbox__empty">
-            <p className="dm-inbox__empty-title">Nothing new</p>
-            <p>When your DM shares an NPC, art or a map, it’ll show up here.</p>
+            <p className="dm-inbox__empty-title">You’re all caught up</p>
+            <p>
+              {inbox
+                ? 'Shares from your DM and replies to your feedback will show up here.'
+                : 'Replies to your feedback will show up here.'}
+            </p>
           </div>
-        ) : (
+        )}
+        {updates.length > 0 && (
+          <ul className="dm-inbox__list" aria-label="Updates">
+            {updates.map((note) => (
+              <li key={note.id} className={`notice${note.readAt ? '' : ' notice--unread'}`}>
+                <span className="notice__icon" aria-hidden="true">
+                  <Icon name={note.kind === 'feedback_solved' ? 'check-square' : 'bell'} />
+                </span>
+                <div className="notice__body">
+                  <span className="notice__title">{note.title}</span>
+                  {note.body && <span className="notice__text">{note.body}</span>}
+                  <span className="notice__time">{formatDateTime(note.createdAt)}</span>
+                </div>
+                <button
+                  type="button"
+                  className="notice__dismiss"
+                  onClick={() => notes.dismiss(note.id).catch(() => {})}
+                  aria-label={`Dismiss “${note.title}”`}
+                >
+                  <Icon name="close" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {items.length > 0 && updates.length > 0 && <h4 className="dm-inbox__section">From your DM</h4>}
+        {items.length > 0 && (
           <ul className="dm-inbox__list">
             {items.map((share) => {
               const kind = SHARE_KINDS[share.kind]

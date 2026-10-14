@@ -9,7 +9,7 @@ import SecretNpcsTab from './SecretNpcsTab.jsx'
 import ArtGallery from './ArtGallery.jsx'
 import DmMapsTab from './DmMapsTab.jsx'
 import DmCreaturesTab from './DmCreaturesTab.jsx'
-import { DmSharesBell } from './DmSharesInbox.jsx'
+import { NotificationBell } from './DmSharesInbox.jsx'
 import LootTab from './LootTab.jsx'
 import QuestsTab from './QuestsTab.jsx'
 import SessionNotesTab from './SessionNotesTab.jsx'
@@ -273,7 +273,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               <SyncStatus />
               <PartyPresence campaignId={campaignId} playerId={playerId} username={username} />
 
-              {playerId && roleReady && !isDm && <DmSharesBell campaignId={campaignId} playerId={playerId} />}
+              {playerId && roleReady && (
+                <NotificationBell playerId={playerId} campaignId={campaignId} dmShares={!isDm} />
+              )}
 
               <AccountMenu
                 playerId={playerId}
@@ -287,7 +289,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
           {showFeedback && (
             <Modal onClose={() => setShowFeedback(false)} label="Send Feedback">
-              <FeedbackForm onDone={() => setShowFeedback(false)} />
+              <FeedbackForm playerId={playerId} onDone={() => setShowFeedback(false)} />
             </Modal>
           )}
 
