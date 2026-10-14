@@ -81,6 +81,87 @@ export async function deletePlayer(playerId, adminPassword) {
   if (error) throw new Error(error.message)
 }
 
+const SIGNUP_MISSING =
+  'Sign-up isn’t set up yet. Ask your admin to run the latest supabase/schema.sql.'
+const missingFn = (error) => /could not find the function|does not exist/i.test(error.message)
+
+// The link a new player opens to sign up.
+export function inviteLink(token) {
+  return `${window.location.origin}/?invite=${token}`
+}
+
+// Admin: a single-use invite link, optionally joining a campaign on sign-up.
+export async function createInvite({ campaignId = null, note = '' }, adminPassword) {
+  const { data, error } = await supabase.rpc('create_player_invite', {
+    p_admin_password: adminPassword,
+    p_campaign_id: campaignId || null,
+    p_note: note,
+  })
+  if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
+  return data[0]
+}
+
+export async function listInvites(adminPassword) {
+  const { data, error } = await supabase.rpc('list_player_invites', { p_admin_password: adminPassword })
+  if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
+  return data
+}
+
+export async function revokeInvite(inviteId, adminPassword) {
+  const { error } = await supabase.rpc('revoke_player_invite', {
+    p_admin_password: adminPassword,
+    p_invite_id: inviteId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+// DM: invite links for their own campaign (the database checks they're
+// its DM or creator).
+export async function createCampaignInvite(playerId, campaignId, note = '') {
+  const { data, error } = await supabase.rpc('create_campaign_invite', {
+    p_player_id: playerId,
+    p_campaign_id: campaignId,
+    p_note: note,
+  })
+  if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
+  return data[0]
+}
+
+export async function listCampaignInvites(playerId, campaignId) {
+  const { data, error } = await supabase.rpc('list_campaign_invites', {
+    p_player_id: playerId,
+    p_campaign_id: campaignId,
+  })
+  if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
+  return data
+}
+
+export async function revokeCampaignInvite(playerId, inviteId) {
+  const { error } = await supabase.rpc('revoke_campaign_invite', { p_player_id: playerId, p_invite_id: inviteId })
+  if (error) throw new Error(error.message)
+}
+
+// Sign-up page: { status: 'ok' | 'used' | 'expired' | 'revoked' | 'invalid', campaignName }.
+export async function checkInvite(token) {
+  const { data, error } = await supabase.rpc('check_player_invite', { p_token: token })
+  if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
+  return { status: data?.[0]?.status || 'invalid', campaignName: data?.[0]?.campaign_name || null }
+}
+
+// Sign-up with an invite link. Returns the new player's id; the database
+// checks every field and explains what's wrong.
+export async function registerPlayer({ token, username, displayName, password, email }) {
+  const { data, error } = await supabase.rpc('register_player', {
+    p_invite_token: token,
+    p_username: username.trim(),
+    p_display_name: displayName.trim(),
+    p_password: password,
+    p_email: email.trim(),
+  })
+  if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
+  return data
+}
+
 export async function verifyLogin(username, password) {
   const { data, error } = await supabase.rpc('verify_login', {
     p_username: username,

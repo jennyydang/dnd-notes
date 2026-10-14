@@ -1,0 +1,167 @@
+@use '../styles/variables' as *;
+
+.dm-players {
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  &__summary {
+    margin: 0;
+    color: $text-muted;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+
+  &__unclaimed {
+    margin-top: 1.75rem;
+  }
+
+  &__subtitle {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+    color: $gold-light;
+  }
+}
+
+.dm-player {
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__avatar {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid $gold-dim;
+    background: $bg-panel-raised;
+    color: $gold-light;
+    font-family: $font-display;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__who {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__name {
+    font-family: $font-display;
+    font-size: 1.1rem;
+    color: $parchment;
+    overflow-wrap: anywhere;
+  }
+
+  &__username {
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__role {
+    flex-shrink: 0;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba($gold-dim, 0.6);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: $text-muted;
+
+    &--dm,
+    &--creator {
+      border-color: $gold;
+      color: $gold-light;
+    }
+  }
+
+  &__characters {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  &__character {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: $radius;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+  }
+
+  &__character-photo {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $bg-panel-raised;
+    color: $gold-light;
+    font-family: $font-display;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__character-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__character-name {
+    color: $text-light;
+  }
+
+  &__character-detail {
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__none {
+    margin: 0;
+    font-style: italic;
+    color: $text-muted;
+  }
+}

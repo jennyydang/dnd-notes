@@ -1145,3 +1145,268 @@ begin
     alter publication supabase_realtime add table public.encounters;
   end if;
 end $$;
+
+-- ── Sign-up by invite link ───────────────────────────────────────────
+-- Only the admin invites. Each invite is a private, single-use link
+-- (…/?invite=<token>) that expires after 30 days and can be revoked. It
+-- can carry a campaign the new player joins on sign-up; without one they
+-- join later with a campaign's join code. The admin can still create
+-- accounts directly. Name and email live on `players`, and invites in
+-- `player_invites` — neither has anon access, so both are only reachable
+-- through the functions below.
+alter table players add column if not exists display_name text not null default '';
+alter table players add column if not exists email text;
+create unique index if not exists players_email_lower_idx on players (lower(email)) where email is not null;
+
+create table if not exists player_invites (
+  id uuid primary key default gen_random_uuid(),
+  token text not null unique,
+  campaign_id uuid references campaigns(id) on delete set null,
+  note text not null default '',
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null default now() + interval '30 days',
+  used_at timestamptz,
+  used_by uuid references players(id) on delete set null,
+  revoked_at timestamptz
+);
+-- RLS on, no policies: invite tokens are never readable directly.
+alter table player_invites enable row level security;
+
+-- Earlier drafts of open sign-up; make sure none linger.
+drop function if exists register_player(text, text, text, text);
+drop function if exists register_player(text, text, text, text, text);
+
+create or replace function create_player_invite(p_admin_password text, p_campaign_id uuid, p_note text default '')
+returns table(id uuid, token text)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+  if p_campaign_id is not null and not exists (select 1 from campaigns c where c.id = p_campaign_id) then
+    raise exception 'That campaign no longer exists';
+  end if;
+  return query
+    insert into player_invites (token, campaign_id, note)
+    values (encode(extensions.gen_random_bytes(18), 'hex'), p_campaign_id, left(trim(coalesce(p_note, '')), 120))
+    returning player_invites.id, player_invites.token;
+end;
+$$;
+grant execute on function create_player_invite(text, uuid, text) to anon;
+
+create or replace function list_player_invites(p_admin_password text)
+returns table(
+  id uuid, token text, campaign_id uuid, campaign_name text, note text,
+  created_at timestamptz, expires_at timestamptz, used_at timestamptz,
+  used_by_username text, revoked_at timestamptz
+)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+  return query
+    select i.id, i.token, i.campaign_id, c.name, i.note, i.created_at, i.expires_at, i.used_at, p.username, i.revoked_at
+    from player_invites i
+    left join campaigns c on c.id = i.campaign_id
+    left join players p on p.id = i.used_by
+    order by i.created_at desc;
+end;
+$$;
+grant execute on function list_player_invites(text) to anon;
+
+create or replace function revoke_player_invite(p_admin_password text, p_invite_id uuid)
+returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+  update player_invites set revoked_at = now() where id = p_invite_id and used_at is null and revoked_at is null;
+end;
+$$;
+grant execute on function revoke_player_invite(text, uuid) to anon;
+
+-- What the sign-up page shows before the form: whether the link still
+-- works, and the campaign it joins (nothing else about the invite).
+create or replace function check_player_invite(p_token text)
+returns table(status text, campaign_name text)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+declare
+  v_invite player_invites%rowtype;
+begin
+  select * into v_invite from player_invites where token = trim(coalesce(p_token, ''));
+  if v_invite.id is null then
+    return query select 'invalid'::text, null::text;
+  elsif v_invite.revoked_at is not null then
+    return query select 'revoked'::text, null::text;
+  elsif v_invite.used_at is not null then
+    return query select 'used'::text, null::text;
+  elsif v_invite.expires_at < now() then
+    return query select 'expired'::text, null::text;
+  else
+    return query select 'ok'::text, (select c.name from campaigns c where c.id = v_invite.campaign_id);
+  end if;
+end;
+$$;
+grant execute on function check_player_invite(text) to anon;
+
+create or replace function register_player(
+  p_invite_token text,
+  p_username text,
+  p_display_name text,
+  p_password text,
+  p_email text
+)
+returns uuid
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+declare
+  v_invite player_invites%rowtype;
+  v_id uuid;
+  v_username text := trim(coalesce(p_username, ''));
+  v_name text := trim(coalesce(p_display_name, ''));
+  v_email text := lower(trim(coalesce(p_email, '')));
+begin
+  -- Locked so the same link can't make two accounts at once.
+  select * into v_invite from player_invites where token = trim(coalesce(p_invite_token, '')) for update;
+  if v_invite.id is null or v_invite.revoked_at is not null or v_invite.used_at is not null or v_invite.expires_at < now() then
+    raise exception 'This invite link is no longer valid — ask whoever invited you for a new one';
+  end if;
+
+  if v_username !~ '^[A-Za-z0-9_.-]{3,30}$' then
+    raise exception 'Usernames are 3–30 letters, numbers, dots, dashes or underscores';
+  end if;
+  if v_name = '' or length(v_name) > 60 then
+    raise exception 'Enter your name (up to 60 characters)';
+  end if;
+  if v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(v_email) > 254 then
+    raise exception 'Enter a valid email address';
+  end if;
+  if length(coalesce(p_password, '')) < 8 then
+    raise exception 'Passwords need at least 8 characters';
+  end if;
+  if exists (select 1 from players where lower(username) = lower(v_username)) then
+    raise exception 'That username is already taken';
+  end if;
+  if exists (select 1 from players where lower(email) = v_email) then
+    raise exception 'An account with that email already exists';
+  end if;
+
+  begin
+    insert into players (username, display_name, email, password_hash)
+    values (v_username, v_name, v_email, extensions.crypt(p_password, extensions.gen_salt('bf', 8)))
+    returning id into v_id;
+  exception when unique_violation then
+    raise exception 'That username or email is already taken';
+  end;
+
+  update player_invites set used_at = now(), used_by = v_id where id = v_invite.id;
+
+  if v_invite.campaign_id is not null then
+    insert into campaign_members (campaign_id, player_id, role)
+    values (v_invite.campaign_id, v_id, 'player')
+    on conflict (campaign_id, player_id) do nothing;
+  end if;
+
+  return v_id;
+end;
+$$;
+grant execute on function register_player(text, text, text, text, text) to anon;
+
+-- The admin's player list also returns name and email (a changed return
+-- type needs the old function dropped first).
+drop function if exists list_players(text);
+create function list_players(p_admin_password text)
+returns table(id uuid, username text, display_name text, email text, created_at timestamptz)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+  return query
+    select p.id, p.username, p.display_name, p.email, p.created_at from players p order by p.created_at;
+end;
+$$;
+grant execute on function list_players(text) to anon;
+
+-- ── DM invites and the DM's Players tab ──────────────────────────────
+-- Needs the "Sign-up by invite link" block above. A campaign's DM (or its
+-- creator) can make sign-up links for that campaign only, see them and
+-- cancel them, and list who's in the campaign by name. Same trust model
+-- as the rest of the app: the caller passes their player id.
+alter table player_invites add column if not exists created_by uuid references players(id) on delete set null;
+
+create or replace function is_campaign_dm(p_player_id uuid, p_campaign_id uuid)
+returns boolean
+language sql stable security definer set search_path = public, pg_temp as $$
+  select exists (
+    select 1 from campaign_members
+    where campaign_id = p_campaign_id and player_id = p_player_id and role in ('dm', 'creator')
+  ) or exists (
+    select 1 from campaigns where id = p_campaign_id and created_by = p_player_id
+  );
+$$;
+
+create or replace function create_campaign_invite(p_player_id uuid, p_campaign_id uuid, p_note text default '')
+returns table(id uuid, token text)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if not is_campaign_dm(p_player_id, p_campaign_id) then
+    raise exception 'Only this campaign''s DM can invite players to it';
+  end if;
+  return query
+    insert into player_invites (token, campaign_id, note, created_by)
+    values (encode(extensions.gen_random_bytes(18), 'hex'), p_campaign_id, left(trim(coalesce(p_note, '')), 120), p_player_id)
+    returning player_invites.id, player_invites.token;
+end;
+$$;
+grant execute on function create_campaign_invite(uuid, uuid, text) to anon;
+
+create or replace function list_campaign_invites(p_player_id uuid, p_campaign_id uuid)
+returns table(
+  id uuid, token text, campaign_id uuid, campaign_name text, note text,
+  created_at timestamptz, expires_at timestamptz, used_at timestamptz,
+  used_by_username text, revoked_at timestamptz
+)
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if not is_campaign_dm(p_player_id, p_campaign_id) then
+    raise exception 'Only this campaign''s DM can see its invites';
+  end if;
+  return query
+    select i.id, i.token, i.campaign_id, c.name, i.note, i.created_at, i.expires_at, i.used_at, p.username, i.revoked_at
+    from player_invites i
+    join campaigns c on c.id = i.campaign_id
+    left join players p on p.id = i.used_by
+    where i.campaign_id = p_campaign_id
+    order by i.created_at desc;
+end;
+$$;
+grant execute on function list_campaign_invites(uuid, uuid) to anon;
+
+create or replace function revoke_campaign_invite(p_player_id uuid, p_invite_id uuid)
+returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+declare
+  v_campaign_id uuid;
+begin
+  select campaign_id into v_campaign_id from player_invites where id = p_invite_id;
+  if v_campaign_id is null or not is_campaign_dm(p_player_id, v_campaign_id) then
+    raise exception 'Only this campaign''s DM can cancel its invites';
+  end if;
+  update player_invites set revoked_at = now() where id = p_invite_id and used_at is null and revoked_at is null;
+end;
+$$;
+grant execute on function revoke_campaign_invite(uuid, uuid) to anon;
+
+-- Who's in a campaign, by name (no emails), for the DM's Players tab.
+create or replace function list_campaign_players(p_campaign_id uuid)
+returns table(player_id uuid, username text, display_name text, role text, joined_at timestamptz)
+language sql stable security definer set search_path = public, pg_temp as $$
+  select cm.player_id, p.username, p.display_name, cm.role, cm.created_at
+  from campaign_members cm
+  join players p on p.id = cm.player_id
+  where cm.campaign_id = p_campaign_id
+  order by cm.role = 'player', lower(coalesce(nullif(p.display_name, ''), p.username));
+$$;
+grant execute on function list_campaign_players(uuid) to anon;

@@ -5,7 +5,7 @@
   justify-content: center;
 
   &__form {
-    max-width: 320px;
+    max-width: 360px;
     width: 100%;
     margin-top: 3rem;
     padding: 2rem;
@@ -16,6 +16,60 @@
     h2 {
       color: $gold-light;
       text-align: center;
+    }
+  }
+
+  &__error {
+    margin: 0;
+    padding: 0.6rem 0.75rem;
+    border-radius: $radius;
+    border: 1px solid rgba($maroon-light, 0.6);
+    background: rgba($maroon, 0.25);
+    color: $maroon-text;
+  }
+
+  &__lead {
+    margin: -0.25rem 0 0;
+    text-align: center;
+    color: $text-muted;
+
+    strong {
+      color: $gold-light;
+    }
+  }
+
+  &__note {
+    margin: 0;
+    text-align: center;
+    font-size: 0.88rem;
+    color: $text-muted;
+  }
+
+  &__hint {
+    font-size: 0.82rem;
+    color: $text-muted;
+  }
+
+  &__switch {
+    margin: 0;
+    text-align: center;
+    color: $text-muted;
+  }
+
+  &__link {
+    min-height: 2.75rem;
+    padding: 0 0.25rem;
+    border: 0;
+    background: none;
+    color: $gold-light;
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $parchment;
     }
   }
 }
