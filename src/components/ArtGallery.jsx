@@ -94,23 +94,27 @@ function ArtGallery({ campaignId, manage = false }) {
     setActionError(null)
     try {
       await action()
+      return true
     } catch (err) {
       setActionError(err.message)
+      return false
     }
   }
 
-  async function share(piece) {
+  async function share(piece, reveal = false) {
     setSharingId(piece.id)
-    await run(() =>
+    const ok = await run(() =>
       shareWithPlayers({
         campaignId,
         kind: 'art',
         sourceId: piece.id,
         title: piece.title || 'Untitled',
         payload: { title: piece.title, category: piece.category, notes: piece.notes, image_path: piece.imagePath },
+        reveal,
       }),
     )
     setSharingId(null)
+    return ok
   }
 
   // Takes it back out of the players' Art tab; Share again to re-send.
@@ -257,6 +261,7 @@ function ArtGallery({ campaignId, manage = false }) {
                   status={statusOf(viewing)}
                   sharing={sharingId === viewing.id}
                   onShare={() => share(viewing)}
+                  onReveal={() => share(viewing, true)}
                 />
                 {viewing.shared && (
                   <button type="button" className="btn btn--text" onClick={() => unshare(viewing)}>

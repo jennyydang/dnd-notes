@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js'
 import { notifyTableChanged } from '../hooks/useSupabaseTable.js'
-import { copyImage } from './storage.js'
+import { copyImage, getPublicUrl } from './storage.js'
 
 // What the DM can share, and where each lands for the players.
 export const SHARE_KINDS = {
@@ -23,11 +23,13 @@ const UNIQUE_VIOLATION = '23505'
 const FOREIGN_KEY_VIOLATION = '23503'
 
 // Posts a notification for every player. `payload` is a snapshot of only
-// the player-safe fields — never the DM's secret notes.
-export async function shareWithPlayers({ campaignId, kind, sourceId, title, payload }) {
+// the player-safe fields — never the DM's secret notes. `reveal` also pops
+// it up full-screen on every player's device that's open right now.
+export async function shareWithPlayers({ campaignId, kind, sourceId, title, payload, reveal = false }) {
+  const body = reveal ? { ...payload, reveal: true } : payload
   const { error } = await supabase
     .from('dm_shares')
-    .insert({ campaign_id: campaignId, kind, source_id: sourceId, title, payload })
+    .insert({ campaign_id: campaignId, kind, source_id: sourceId, title, payload: body })
   if (error) throw new Error(error.message)
   notifyTableChanged('dm_shares')
 }
@@ -123,4 +125,24 @@ export async function addShareToParty(share, campaignId) {
   }
   notifyTableChanged(table)
   return 'added'
+}
+
+// The picture that goes with a share (portrait, art or map), if any.
+export function shareImage(share) {
+  const { bucket } = SHARE_KINDS[share.kind]
+  if (!bucket) return ''
+  const path = share.kind === 'npc' ? share.payload.photo_path : share.payload.image_path
+  return getPublicUrl(bucket, path)
+}
+
+// One line of detail under a share's title.
+export function shareDetail(share) {
+  const p = share.payload
+  if (share.kind === 'npc') return [p.race, p.location].filter(Boolean).join(' · ')
+  if (share.kind === 'art') return p.category || ''
+  if (share.kind === 'creature') {
+    const stats = [p.challenge && `CR ${p.challenge}`, p.armor_class != null && `AC ${p.armor_class}`, p.hit_points != null && `HP ${p.hit_points}`]
+    return [p.creature_type, ...stats].filter(Boolean).join(' · ')
+  }
+  return ''
 }

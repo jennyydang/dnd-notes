@@ -1,0 +1,115 @@
+@use '../styles/variables' as *;
+
+.reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(8, 6, 4, 0.92);
+  animation: fade-in 0.3s ease-out;
+  overflow-y: auto;
+
+  &__card {
+    width: min(40rem, 100%);
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+    animation: reveal-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  &__eyebrow {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: $font-display;
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: $gold-light;
+  }
+
+  &__image {
+    max-width: 100%;
+    max-height: 58vh;
+    object-fit: contain;
+    border-radius: $radius-lg;
+    border: 1px solid rgba($gold, 0.5);
+    box-shadow: 0 0 2.5rem rgba($gold, 0.18);
+    background: $bg-deep;
+  }
+
+  &__card--npc &__image {
+    width: min(18rem, 70vw);
+    height: min(18rem, 70vw);
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  &__placeholder {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba($gold, 0.5);
+    background: $bg-panel-raised;
+    color: $gold-light;
+    font-family: $font-display;
+    font-size: 3.5rem;
+  }
+
+  &__title {
+    margin: 0.25rem 0 0;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    color: $parchment;
+  }
+
+  &__detail {
+    margin: 0;
+    color: $text-muted;
+  }
+
+  &__description {
+    margin: 0;
+    max-width: 34rem;
+    color: $text-light;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__result {
+    margin: 0;
+    color: $green-text;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

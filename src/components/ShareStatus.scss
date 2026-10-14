@@ -15,7 +15,8 @@
     color: $green-text;
   }
 
-  &__button {
+  &__button,
+  &__reveal {
     white-space: nowrap;
   }
 }

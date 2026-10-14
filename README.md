@@ -90,6 +90,28 @@ only from the character's recorded notes, for use in any assistant.
   The read cache and write queue live in `src/lib/offline.js`, the service
   worker in `public/sw.js` (production builds only).
 
+### At the table
+
+- **Shared initiative.** The initiative tracker in Session Mode (and the
+  DM's new **Combat** tab) is one live encounter for the whole campaign:
+  the DM runs it and everyone's phone follows along. Party members added
+  to the fight (type their name or tap their chip) are linked to their
+  player, who gets a **"Your turn"** banner — and a buzz on phones that
+  support it — on any screen, plus **"You're up next"** a turn ahead.
+  Conditions can be added per combatant with an optional number of
+  rounds; they count down at the start of that combatant's turn and the
+  tracker says when one ends. Stored in the `encounters` table.
+- **Live reveals.** Next to **Share**, the DM has **Reveal now**: the NPC,
+  monster, art or map pops up full-screen on every player's open app (and
+  lands in their bell as usual), with **Add to …** right there.
+- **"Previously on…"** Starting a session opens a parchment recap card to
+  read out: the opening of last session's recap, the people and places it
+  tagged, and what's still unresolved — with **Read it aloud** on devices
+  with speech. Home's **Previously on…** link opens it any time.
+
+Run the "Shared initiative" block at the end of `supabase/schema.sql` for
+the shared tracker; until then it works on each device on its own.
+
 ### Profile pictures
 
 Players add, change or remove a profile picture from the account menu

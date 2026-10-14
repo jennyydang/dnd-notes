@@ -79,23 +79,27 @@ function DmMapsTab({ campaignId }) {
     setActionError(null)
     try {
       await action()
+      return true
     } catch (err) {
       setActionError(err.message)
+      return false
     }
   }
 
-  async function share(map) {
+  async function share(map, reveal = false) {
     setSharingId(map.id)
-    await run(() =>
+    const ok = await run(() =>
       shareWithPlayers({
         campaignId,
         kind: 'map',
         sourceId: map.id,
         title: map.title || 'Untitled map',
         payload: { caption: map.title, image_path: map.imagePath },
+        reveal,
       }),
     )
     setSharingId(null)
+    return ok
   }
 
   async function remove(map) {
@@ -212,7 +216,13 @@ function DmMapsTab({ campaignId }) {
           onClose={() => setViewingId(null)}
           actions={
             <>
-              <ShareStatus kind="map" status={statusOf(viewing)} sharing={sharingId === viewing.id} onShare={() => share(viewing)} />
+              <ShareStatus
+                kind="map"
+                status={statusOf(viewing)}
+                sharing={sharingId === viewing.id}
+                onShare={() => share(viewing)}
+                onReveal={() => share(viewing, true)}
+              />
               <button
                 type="button"
                 className="btn btn--text"

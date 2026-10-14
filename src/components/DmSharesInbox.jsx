@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { OPEN_DM_INBOX, useDmInbox } from '../hooks/useDmInbox.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
-import { getPublicUrl } from '../lib/storage.js'
-import { SHARE_KINDS, addShareToParty, shareLabel } from '../lib/dmShares.js'
+import { SHARE_KINDS, addShareToParty, shareDetail, shareImage, shareLabel } from '../lib/dmShares.js'
 import { formatDateTime } from '../lib/sessionMode.js'
 import Modal from './Modal.jsx'
 import Icon from './Icon.jsx'
@@ -71,24 +70,6 @@ function Bell({ playerId, campaignId, inbox }) {
       )}
     </>
   )
-}
-
-function shareImage(share) {
-  const { bucket } = SHARE_KINDS[share.kind]
-  if (!bucket) return ''
-  const path = share.kind === 'npc' ? share.payload.photo_path : share.payload.image_path
-  return getPublicUrl(bucket, path)
-}
-
-function shareDetail(share) {
-  const p = share.payload
-  if (share.kind === 'npc') return [p.race, p.location].filter(Boolean).join(' · ')
-  if (share.kind === 'art') return p.category || ''
-  if (share.kind === 'creature') {
-    const stats = [p.challenge && `CR ${p.challenge}`, p.armor_class != null && `AC ${p.armor_class}`, p.hit_points != null && `HP ${p.hit_points}`]
-    return [p.creature_type, ...stats].filter(Boolean).join(' · ')
-  }
-  return ''
 }
 
 function NotificationsPanel({ campaignId, inbox, notes, onClose }) {

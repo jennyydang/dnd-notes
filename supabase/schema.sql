@@ -1120,3 +1120,28 @@ begin
     alter publication supabase_realtime add table public.notifications;
   end if;
 end $$;
+
+-- ── Shared initiative ────────────────────────────────────────────────
+-- One live encounter per campaign (turn order, HP, conditions), shared by
+-- every device at the table so the DM can run it and players see whose
+-- turn it is. `state` is the tracker's JSON (see src/lib/initiative.js).
+create table if not exists encounters (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null unique references campaigns(id) on delete cascade,
+  state jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table encounters enable row level security;
+drop policy if exists "anon full access encounters" on encounters;
+create policy "anon full access encounters" on encounters for all to anon using (true) with check (true);
+
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') and not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'encounters'
+  ) then
+    alter publication supabase_realtime add table public.encounters;
+  end if;
+end $$;

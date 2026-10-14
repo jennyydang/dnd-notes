@@ -11,6 +11,7 @@ import { formatDateTime } from '../lib/sessionMode.js'
 import { useActiveSession } from '../hooks/useActiveSession.js'
 import { exportCampaign } from '../lib/exportCampaign.js'
 import QuickNoteInput from './QuickNoteInput.jsx'
+import PreviouslyOn from './session/PreviouslyOn.jsx'
 import { SectionCard, StatusMessage } from './ui.jsx'
 import Icon from './Icon.jsx'
 import './HomeHub.scss'
@@ -117,9 +118,19 @@ function HomeHub({ campaignName }) {
   const [exporting, setExporting] = useState(false)
   const [exportMessage, setExportMessage] = useState(null)
 
-  function startSession() {
+  const [previously, setPreviously] = useState(null) // null | 'start' | 'view'
+
+  function beginSession() {
     if (!active) setActive({ startedAt: new Date().toISOString(), paused: false })
+    setPreviously(null)
     nav.goTo('session')
+  }
+
+  // Starting a new session opens "Previously on…" first (once there's a
+  // story to recap); resuming goes straight in.
+  function startSession() {
+    if (!active && hasStory) setPreviously('start')
+    else beginSession()
   }
 
   const sessions = entities
@@ -130,6 +141,7 @@ function HomeHub({ campaignName }) {
         new Date(b.createdAt) - new Date(a.createdAt),
     )
   const [lastSession, ...olderSessions] = sessions
+  const hasStory = sessions.length > 0 || entities.some((e) => e.open)
   const earlierSessions = olderSessions.slice(0, EARLIER_LIMIT)
   const openThreads = entities.filter((e) => e.open)
   // Same inbox as the top-bar bell; the admin (no player) never has one.
@@ -176,6 +188,11 @@ function HomeHub({ campaignName }) {
               </button>
             ) : null}
           </p>
+          {lastSession && (
+            <button type="button" className="btn btn--text home-hub__inline-link" onClick={() => setPreviously('view')}>
+              <Icon name="scroll" /> Previously on…
+            </button>
+          )}
         </div>
         <button type="button" className="btn btn--primary home-hub__start" onClick={startSession}>
           <span>
@@ -188,6 +205,14 @@ function HomeHub({ campaignName }) {
           )}
         </button>
       </section>
+
+      {previously && (
+        <PreviouslyOn
+          campaignName={campaignName}
+          onClose={() => setPreviously(null)}
+          onBegin={previously === 'start' ? beginSession : undefined}
+        />
+      )}
 
       {dmNews.length > 0 && (
         <button

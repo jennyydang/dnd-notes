@@ -27,6 +27,9 @@ import QuickCreateModal from './QuickCreateModal.jsx'
 import AccountMenu from './AccountMenu.jsx'
 import { PartyPresence, SyncStatus } from './LiveStatus.jsx'
 import SessionDock from './session/SessionDock.jsx'
+import TurnAlert from './session/TurnAlert.jsx'
+import RevealOverlay from './RevealOverlay.jsx'
+import InitiativeTracker from './session/InitiativeTracker.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import Modal from './Modal.jsx'
@@ -61,6 +64,7 @@ const TAB_DEFS = {
   'dm-art': { label: 'Art', icon: 'image' },
   'dm-maps': { label: 'Maps', icon: 'map' },
   'dm-creatures': { label: 'Monsters', icon: 'monster' },
+  'dm-combat': { label: 'Combat', icon: 'quest' },
 }
 
 const AREAS = [
@@ -86,6 +90,8 @@ const DM_AREAS = [
   { id: 'dm-creatures', label: 'Monsters', icon: 'monster', tabs: ['dm-creatures'] },
   { id: 'dm-art', label: 'Art', icon: 'image', tabs: ['dm-art'] },
   { id: 'dm-maps', label: 'Maps', icon: 'map', tabs: ['dm-maps'] },
+  // The shared initiative tracker, so the DM can run turn order.
+  { id: 'dm-combat', label: 'Combat', icon: 'quest', tabs: ['dm-combat'] },
 ]
 
 const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
@@ -323,6 +329,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
           {/* Home and Session Mode have their own quick add and session controls. */}
           {!dmView && <SessionDock hidden={knownTab === 'home' || knownTab === 'session'} />}
+          {roleReady && <TurnAlert />}
+          {/* Players see the DM's live reveals; the DM is the one sending them. */}
+          {playerId && roleReady && !isDm && <RevealOverlay campaignId={campaignId} />}
 
           <div
             className={`campaign-view__body${sidebarOpen ? '' : ' campaign-view__body--sidebar-collapsed'}`}
@@ -373,7 +382,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {roleReady && (
               <div key={knownTab} className="campaign-view__screen">
               {knownTab === 'home' && <HomeHub campaignName={campaignName} />}
-              {knownTab === 'session' && <SessionMode />}
+              {knownTab === 'session' && <SessionMode campaignName={campaignName} />}
               {knownTab === 'prep' && <PrepTab />}
               {knownTab === 'character' && <CharacterTab />}
               {knownTab === 'sessions' && (
@@ -401,6 +410,11 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {isDm && knownTab === 'dm-art' && <ArtGallery campaignId={campaignId} manage />}
               {isDm && knownTab === 'dm-maps' && <DmMapsTab campaignId={campaignId} />}
               {isDm && knownTab === 'dm-creatures' && <DmCreaturesTab campaignId={campaignId} />}
+              {isDm && knownTab === 'dm-combat' && (
+                <div className="campaign-view__combat">
+                  <InitiativeTracker />
+                </div>
+              )}
               {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}
               {activeCustomTab && (
                 <CustomTab
