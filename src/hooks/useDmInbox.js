@@ -16,6 +16,7 @@ const npcLinkFromRow = (r) => ({ id: r.id, dmNpcId: r.dm_npc_id })
 const mapLinkFromRow = (r) => ({ id: r.id, dmMapId: r.dm_map_id })
 const creatureLinkFromRow = (r) => ({ id: r.id, dmCreatureId: r.dm_creature_id })
 const artFromRow = (r) => ({ id: r.id, shared: r.shared })
+const membershipFromRow = (r) => ({ id: r.id, joinedAt: r.created_at })
 
 export function useDmInbox(campaignId, playerId) {
   const { shares, byKey, error, refetch } = useDmShares(campaignId)
@@ -24,6 +25,13 @@ export function useDmInbox(campaignId, playerId) {
     filters: { player_id: playerId },
   })
   const campaignFilter = { campaign_id: campaignId }
+  // When this player joined, so shares from before then (meant for the
+  // table at the time) don't land in a new player's inbox.
+  const membership = useSupabaseTable('campaign_members', {
+    fromRow: membershipFromRow,
+    filters: { campaign_id: campaignId, player_id: playerId },
+  })
+  const joinedAt = membership.items[0]?.joinedAt ? new Date(membership.items[0].joinedAt).getTime() : null
   const npcs = useSupabaseTable('npcs', { fromRow: npcLinkFromRow, filters: campaignFilter })
   const maps = useSupabaseTable('maps', { fromRow: mapLinkFromRow, filters: campaignFilter })
   const art = useSupabaseTable('campaign_art', { fromRow: artFromRow, filters: campaignFilter })
@@ -61,9 +69,15 @@ export function useDmInbox(campaignId, playerId) {
     [npcs.items, maps.items, art.items, creatures.items],
   )
 
-  // Only the latest share of each item; `inbox` drops the ones this player
-  // has dealt with (added or dismissed).
-  const latest = shares.filter((s) => byKey.get(shareKey(s.kind, s.sourceId)) === s)
+  // Only the latest share of each item, sent since this player joined;
+  // `inbox` drops the ones they've dealt with (added or dismissed). While
+  // the join date is loading, nothing shows rather than old shares.
+  const latest = shares.filter(
+    (s) =>
+      byKey.get(shareKey(s.kind, s.sourceId)) === s &&
+      !membership.loading &&
+      (joinedAt === null || new Date(s.createdAt).getTime() >= joinedAt),
+  )
   const inbox = latest.filter((s) => !dismissed.has(s.id))
   const isAdded = (share) => added[share.kind]?.has(share.sourceId) || false
 
