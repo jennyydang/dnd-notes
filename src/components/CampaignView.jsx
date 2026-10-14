@@ -32,6 +32,7 @@ import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
 import DownedPulse from './session/DownedPulse.jsx'
 import LevelUp from './session/LevelUp.jsx'
+import PartyLevelUp from './session/PartyLevelUp.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import DmPlayersTab from './DmPlayersTab.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
@@ -428,6 +429,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {isDm && knownTab === 'dm-combat' && (
                 <div className="campaign-view__combat">
                   <InitiativeTracker />
+                  <PartyLevelUp />
                 </div>
               )}
               {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}

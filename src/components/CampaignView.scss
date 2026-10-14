@@ -304,3 +304,10 @@
     line-height: 1;
   }
 }
+
+// The DM's Combat tab: initiative, then levelling up the party.
+.campaign-view__combat {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
