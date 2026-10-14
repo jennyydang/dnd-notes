@@ -95,13 +95,21 @@ function DmSharesPanel({ campaignId, inbox, onClose }) {
   }
 
   return (
-    <Modal onClose={onClose} label="Shared by your DM">
+    <Modal onClose={onClose} label="Shared by your DM" size={items.length === 0 ? 'narrow' : undefined}>
       <div className="dm-inbox">
-        <h3 className="section-card__title">
-          <Icon name="bell" /> From your DM
-        </h3>
+        <div className="dm-inbox__header">
+          <h3 className="section-card__title dm-inbox__title">
+            <Icon name="bell" /> From your DM
+          </h3>
+          <button type="button" className="dm-inbox__close" onClick={onClose} aria-label="Close">
+            <Icon name="close" />
+          </button>
+        </div>
         {items.length === 0 ? (
-          <p className="empty-state">Nothing new. When your DM shares an NPC, art or a map, it’ll show up here.</p>
+          <div className="dm-inbox__empty">
+            <p className="dm-inbox__empty-title">Nothing new</p>
+            <p>When your DM shares an NPC, art or a map, it’ll show up here.</p>
+          </div>
         ) : (
           <ul className="dm-inbox__list">
             {items.map((share) => {
@@ -166,11 +174,6 @@ function DmSharesPanel({ campaignId, inbox, onClose }) {
             })}
           </ul>
         )}
-        <div className="form-actions">
-          <button type="button" className="btn btn--text" onClick={onClose}>
-            Close
-          </button>
-        </div>
       </div>
     </Modal>
   )
