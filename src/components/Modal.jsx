@@ -9,7 +9,9 @@ const openModals = []
 // Escape or by clicking outside the panel. Content (typically a form) is
 // passed as children — this component only owns the overlay/positioning,
 // same visual pattern as the existing spell flavor-text popup.
-function Modal({ onClose, label, children }) {
+// `size="narrow"` suits short dialogs (a notice, a confirm) that would
+// otherwise sit in a mostly empty panel.
+function Modal({ onClose, label, size, children }) {
   const idRef = useRef(null)
   if (!idRef.current) idRef.current = {}
 
@@ -46,7 +48,10 @@ function Modal({ onClose, label, children }) {
       aria-label={label}
       onClick={onClose}
     >
-      <div className="modal__panel panel" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`modal__panel panel${size ? ` modal__panel--${size}` : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
     </div>

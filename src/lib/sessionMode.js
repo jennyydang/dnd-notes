@@ -24,9 +24,24 @@ function write(key, value) {
 const activeKey = (campaignId, playerId) => `dnd-notes-active-session:${campaignId}:${playerId || 'admin'}`
 const encounterKey = (campaignId) => `dnd-notes-encounter:${campaignId}`
 
+// Fired on this page whenever the active session changes, so Home, Session
+// Mode and the floating session dock stay in step.
+export const ACTIVE_SESSION_EVENT = 'dnd-notes-active-session'
+
 // { startedAt: ISO string, paused: bool } or null.
 export const getActiveSession = (campaignId, playerId) => read(activeKey(campaignId, playerId), null)
-export const setActiveSession = (campaignId, playerId, value) => write(activeKey(campaignId, playerId), value)
+export function setActiveSession(campaignId, playerId, value) {
+  write(activeKey(campaignId, playerId), value)
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(ACTIVE_SESSION_EVENT))
+}
+// The stored JSON as-is (a stable snapshot for useSyncExternalStore).
+export function getActiveSessionRaw(campaignId, playerId) {
+  try {
+    return localStorage.getItem(activeKey(campaignId, playerId))
+  } catch {
+    return null
+  }
+}
 
 export const getEncounter = (campaignId) => read(encounterKey(campaignId), null)
 export const setEncounter = (campaignId, value) => write(encounterKey(campaignId), value)

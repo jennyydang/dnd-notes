@@ -1080,3 +1080,43 @@ drop policy if exists "anon full access player-avatars bucket" on storage.object
 create policy "anon full access player-avatars bucket"
   on storage.objects for all to anon
   using (bucket_id = 'player-avatars') with check (bucket_id = 'player-avatars');
+
+-- ── Notifications and solved feedback ────────────────────────────────
+-- Feedback can be marked solved by the admin. A player who ticked "Tell
+-- me when it's solved" is recorded on their submission (player_id; the
+-- admin screen never shows who) and gets a notification when it is.
+-- Unticked, nothing identifies the sender.
+alter table feedback add column if not exists player_id uuid references players(id) on delete set null;
+alter table feedback add column if not exists status text not null default 'open';
+alter table feedback add column if not exists solved_at timestamptz;
+alter table feedback drop constraint if exists feedback_status_check;
+alter table feedback add constraint feedback_status_check check (status in ('open', 'solved'));
+
+-- Per-player notifications shown in the bell (any kind, not just DM
+-- shares). read_at is set once the player has seen it.
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid not null references players(id) on delete cascade,
+  kind text not null default 'general',
+  title text not null,
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  read_at timestamptz
+);
+
+create index if not exists notifications_player_idx on notifications (player_id, created_at desc);
+
+alter table notifications enable row level security;
+drop policy if exists "anon full access notifications" on notifications;
+create policy "anon full access notifications" on notifications for all to anon using (true) with check (true);
+
+-- Live delivery: a new notification shows up in the bell without a reload.
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') and not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
+  end if;
+end $$;
