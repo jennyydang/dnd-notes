@@ -3,6 +3,7 @@ import { useCampaignData } from '../hooks/useCampaignData.js'
 import { searchEntities } from '../lib/search.js'
 import { RELATION_SUGGESTIONS } from '../lib/relations.js'
 import { EntityChip } from './ui.jsx'
+import Icon from './Icon.jsx'
 import './LinkPicker.scss'
 
 const MAX_OPTIONS = 8
@@ -66,7 +67,7 @@ function LinkPicker({ label = 'Link to', value, onChange, relation, onRelationCh
                       setOpen(false)
                     }}
                   >
-                    <span aria-hidden="true">{entity.icon}</span> {entity.title || 'Untitled'}
+                    <Icon name={entity.icon} /> {entity.title || 'Untitled'}
                     <span className="link-picker__type">{entity.label}</span>
                   </button>
                 </li>

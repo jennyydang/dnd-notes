@@ -13,6 +13,7 @@ import {
   sessionsToMarkdown,
   sortChronologically,
 } from '../lib/exportNotes.js'
+import Icon from './Icon.jsx'
 import './ExportNotesDialog.scss'
 
 const TAGS_KEY = 'dnd-notes-export-include-tags'
@@ -49,21 +50,21 @@ function ExportNotesDialog({ sessions, campaignName, onClose }) {
   const options = [
     {
       id: 'copy-text',
-      icon: '🤖',
+      icon: 'chat',
       label: 'Copy as text',
       detail: 'For ChatGPT, Claude, Discord, messages or notes apps.',
       action: () => run(() => copyText(markdown()), 'Copied! Paste it anywhere.'),
     },
     {
       id: 'copy-rich',
-      icon: '📋',
+      icon: 'clipboard',
       label: 'Copy formatted',
       detail: 'Keeps headings and bold when pasted into Word or Google Docs.',
       action: () => run(() => copyRich(html(), markdown()), 'Copied with formatting! Paste it into your doc.'),
     },
     {
       id: 'word',
-      icon: '📝',
+      icon: 'file-text',
       label: 'Download for Word',
       detail: 'A .doc file that opens in Word, Pages or Google Docs.',
       action: () =>
@@ -74,14 +75,14 @@ function ExportNotesDialog({ sessions, campaignName, onClose }) {
     },
     {
       id: 'pdf',
-      icon: '📄',
+      icon: 'file',
       label: 'Save as PDF',
       detail: 'Opens the print dialog — choose “Save as PDF”.',
       action: () => run(() => printDocument(htmlDocument(html(), title)), 'Opening the print dialog…'),
     },
     {
       id: 'markdown',
-      icon: '⬇️',
+      icon: 'download',
       label: 'Download text file',
       detail: 'A Markdown (.md) file — plain text that works in any app.',
       action: () =>
@@ -114,7 +115,7 @@ function ExportNotesDialog({ sessions, campaignName, onClose }) {
           {options.map((option) => (
             <button key={option.id} type="button" className="export-option" onClick={option.action}>
               <span className="export-option__icon" aria-hidden="true">
-                {option.icon}
+                <Icon name={option.icon} size="1.4rem" />
               </span>
               <span className="export-option__text">
                 <span className="export-option__label">{option.label}</span>

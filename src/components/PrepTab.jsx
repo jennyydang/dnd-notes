@@ -7,13 +7,14 @@ import { formatSessionDate, sessionDateTimestamp } from '../lib/sessionNotes.js'
 import LinkPicker from './LinkPicker.jsx'
 import { RichNotesView } from './RichNotesEditor.jsx'
 import { EntityChip, SaveStatus, SectionCard, StatusMessage } from './ui.jsx'
+import Icon from './Icon.jsx'
 import './PrepTab.scss'
 
 const LISTS = [
-  { key: 'objectives', title: 'Planned scenes & objectives', icon: '🎯', placeholder: 'Confront Elandra about the ledger' },
-  { key: 'questions', title: 'Questions for the DM', icon: '❓', placeholder: 'Can I cast Speak with Dead on the courier?' },
-  { key: 'prepare', title: 'Items & abilities to prepare', icon: '🎒', placeholder: 'Prepare Gentle Repose' },
-  { key: 'checklist', title: 'Before the session', icon: '✅', placeholder: 'Level up, reread last recap…' },
+  { key: 'objectives', title: 'Planned scenes & objectives', icon: 'target', placeholder: 'Confront Elandra about the ledger' },
+  { key: 'questions', title: 'Questions for the DM', icon: 'help', placeholder: 'Can I cast Speak with Dead on the courier?' },
+  { key: 'prepare', title: 'Items & abilities to prepare', icon: 'backpack', placeholder: 'Prepare Gentle Repose' },
+  { key: 'checklist', title: 'Before the session', icon: 'check-square', placeholder: 'Level up, reread last recap…' },
 ]
 
 function PrepItem({ item, onChange, onRemove, onOpen }) {
@@ -69,7 +70,7 @@ function PrepItem({ item, onChange, onRemove, onOpen }) {
       <div className="prep-item__actions">
         {!item.link && (
           <button type="button" className="icon-btn" onClick={() => setLinking((v) => !v)} aria-label="Link to an entry" aria-expanded={linking}>
-            🔗
+            <Icon name="link" />
           </button>
         )}
         <button type="button" className="icon-btn" onClick={onRemove} aria-label={`Remove “${item.text}”`}>
@@ -135,7 +136,7 @@ function PrepTab() {
 
   if (!playerId) {
     return (
-      <SectionCard title="Session prep" icon="🗒️">
+      <SectionCard title="Session prep" icon="prep">
         <p className="inline-state">Prep is personal to each player — log in as a player to use it.</p>
       </SectionCard>
     )
@@ -186,7 +187,7 @@ function PrepTab() {
       <div className="prep__grid">
         <SectionCard
           title="Last session"
-          icon="📖"
+          icon="book"
           className="prep__recap"
           action={
             last && (
@@ -212,7 +213,7 @@ function PrepTab() {
           )}
         </SectionCard>
 
-        <SectionCard title="Open threads" icon="🧵">
+        <SectionCard title="Open threads" icon="threads">
           <StatusMessage loading={loading && !entities.length} empty={!openThreads.length}>
             No active quests or party goals.
           </StatusMessage>
@@ -241,7 +242,7 @@ function PrepTab() {
           )}
         </SectionCard>
 
-        <SectionCard title="Came up recently" icon="👥">
+        <SectionCard title="Came up recently" icon="users">
           <StatusMessage loading={loading && !entities.length} empty={!recentlyMentioned.length}>
             NPCs and places tagged in your last two recaps show up here.
           </StatusMessage>

@@ -5,6 +5,7 @@ import { ABILITIES, SKILLS, formatModifier, saveBonus, skillBonus } from '../../
 import TabNav from '../TabNav.jsx'
 import RoleplayQuickRef from '../character/RoleplayQuickRef.jsx'
 import { SectionCard, StatusMessage } from '../ui.jsx'
+import Icon from '../Icon.jsx'
 
 const VIEWS = [
   { id: 'spells', label: 'Spells' },
@@ -81,7 +82,7 @@ function ReferencePanel({ character, sheet, onEditSheet, onEditRoleplay }) {
   )
 
   return (
-    <SectionCard title="Reference" icon="📚" className="reference">
+    <SectionCard title="Reference" icon="library" className="reference">
       <TabNav tabs={VIEWS} activeTab={view} onSelect={setView} className="tab-nav--pill" label="Reference" />
 
       {view === 'spells' && <SpellList campaignId={campaignId} playerId={playerId} />}
@@ -100,7 +101,7 @@ function ReferencePanel({ character, sheet, onEditSheet, onEditRoleplay }) {
               {m.inventory.map((item) => (
                 <li key={item.id}>
                   <span>
-                    {item.equipped && <span title="Equipped">⚔ </span>}
+                    {item.equipped && <span title="Equipped"><Icon name="quest" /> </span>}
                     {item.name || 'Unnamed item'}
                   </span>
                   <span className="field-hint">×{item.qty ?? 1}</span>
@@ -109,7 +110,7 @@ function ReferencePanel({ character, sheet, onEditSheet, onEditRoleplay }) {
               ))}
               {held.map((l) => (
                 <li key={l.id}>
-                  <span>💰 {l.item}</span>
+                  <span><Icon name="coins" /> {l.item}</span>
                   <span className="field-hint">{l.used ? 'Used' : 'Loot'}</span>
                 </li>
               ))}

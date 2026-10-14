@@ -17,7 +17,7 @@ function RoleplayGuide({ character, sheetApi }) {
   return (
     <div className="sheet narrative">
       {offerSeiya && (
-        <SectionCard title="Seiya’s established voice" icon="🕯️" className="sheet__template">
+        <SectionCard title="Seiya’s established voice" icon="flame" className="sheet__template">
           <p>
             Fill in Seiya&apos;s persona, voice lines and quirks from her character brief. Only empty
             fields are filled and nothing you&apos;ve written is changed — edit or delete anything
@@ -47,14 +47,14 @@ function RoleplayGuide({ character, sheetApi }) {
         </SectionCard>
       )}
 
-      <SectionCard title="Identity" icon="🪪">
+      <SectionCard title="Identity" icon="id">
         <div className="sheet__grid sheet__grid--wide">
           <TextArea label="Background" value={n.background} onChange={set('background')} rows={2} />
           <TextArea label="Alignment" value={n.alignment} onChange={set('alignment')} rows={1} />
         </div>
       </SectionCard>
 
-      <SectionCard title="Public persona vs. private thoughts" icon="🎭">
+      <SectionCard title="Public persona vs. private thoughts" icon="character">
         <div className="sheet__split">
           <TextArea
             label="How others see them"
@@ -71,7 +71,7 @@ function RoleplayGuide({ character, sheetApi }) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Voice" icon="🗣️">
+      <SectionCard title="Voice" icon="speech">
         <StringListEditor
           label="Voice examples"
           items={n.voiceExamples}
@@ -88,7 +88,7 @@ function RoleplayGuide({ character, sheetApi }) {
         />
       </SectionCard>
 
-      <SectionCard title="Personality & philosophy" icon="🧭">
+      <SectionCard title="Personality & philosophy" icon="compass">
         <div className="sheet__grid sheet__grid--wide">
           <TextArea label="Personality traits" value={n.personality} onChange={set('personality')} />
           <TextArea label="Ideals" value={n.ideals} onChange={set('ideals')} />
@@ -100,7 +100,7 @@ function RoleplayGuide({ character, sheetApi }) {
         <TextArea label="Personal history" value={n.history} onChange={set('history')} rows={5} />
       </SectionCard>
 
-      <SectionCard title="Relationships" icon="🤝">
+      <SectionCard title="Relationships" icon="handshake">
         <ListEditor
           label="People who matter"
           items={n.relationships}
@@ -116,7 +116,7 @@ function RoleplayGuide({ character, sheetApi }) {
         />
       </SectionCard>
 
-      <SectionCard title="Quirks & weaknesses" icon="🪶">
+      <SectionCard title="Quirks & weaknesses" icon="feather">
         <ListEditor
           label="Roleplay quirks"
           items={n.quirks}
@@ -132,7 +132,7 @@ function RoleplayGuide({ character, sheetApi }) {
         <TextArea label="Weaknesses & blind spots" value={n.weaknesses} onChange={set('weaknesses')} />
       </SectionCard>
 
-      <SectionCard title="Development over time" icon="📈">
+      <SectionCard title="Development over time" icon="trend">
         <ListEditor
           label="Moments that changed them"
           items={n.development}

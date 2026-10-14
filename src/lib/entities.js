@@ -17,7 +17,7 @@ export const ENTITY_TYPES = {
     table: 'npcs',
     label: 'NPC',
     plural: 'NPCs',
-    icon: '👤',
+    icon: 'user',
     tab: 'npcs',
     normalize: (r) => ({
       title: text(r.name),
@@ -30,7 +30,7 @@ export const ENTITY_TYPES = {
     table: 'places',
     label: 'Location',
     plural: 'Locations',
-    icon: '📍',
+    icon: 'pin',
     tab: 'maps',
     normalize: (r) => ({
       title: text(r.name),
@@ -43,7 +43,7 @@ export const ENTITY_TYPES = {
     table: 'quests',
     label: 'Quest',
     plural: 'Quests',
-    icon: '⚔️',
+    icon: 'quest',
     tab: 'quests',
     normalize: (r) => ({
       title: text(r.name),
@@ -57,7 +57,7 @@ export const ENTITY_TYPES = {
     table: 'lore_entries',
     label: 'Lore',
     plural: 'Lore & clues',
-    icon: '📜',
+    icon: 'scroll',
     tab: 'lore',
     normalize: (r) => ({
       title: text(r.title),
@@ -72,7 +72,7 @@ export const ENTITY_TYPES = {
     table: 'loot',
     label: 'Loot',
     plural: 'Loot',
-    icon: '💰',
+    icon: 'coins',
     tab: 'loot',
     normalize: (r) => ({
       title: text(r.item),
@@ -87,7 +87,7 @@ export const ENTITY_TYPES = {
     table: 'session_notes',
     label: 'Session',
     plural: 'Sessions',
-    icon: '📖',
+    icon: 'book',
     tab: 'sessions',
     scope: 'player',
     normalize: (r) => ({
@@ -101,7 +101,7 @@ export const ENTITY_TYPES = {
     table: 'quick_notes',
     label: 'Quick note',
     plural: 'Quick notes',
-    icon: '✏️',
+    icon: 'edit',
     tab: 'session',
     scope: 'player',
     normalize: (r) => ({
@@ -115,7 +115,7 @@ export const ENTITY_TYPES = {
     table: 'party_members',
     label: 'Character',
     plural: 'Party',
-    icon: '🎭',
+    icon: 'character',
     tab: 'party',
     normalize: (r) => ({
       title: text(r.name),
@@ -130,7 +130,7 @@ export const ENTITY_TYPES = {
     table: 'party_goals',
     label: 'Party goal',
     plural: 'Party goals',
-    icon: '🎯',
+    icon: 'target',
     tab: 'party',
     normalize: (r) => ({
       title: text(r.title),
@@ -147,7 +147,7 @@ ENTITY_TYPES.creature = {
   table: 'creatures',
   label: 'Creature',
   plural: 'Monsters & creatures',
-  icon: '🐉',
+  icon: 'monster',
   tab: 'creatures',
   normalize: (r) => ({
     title: text(r.name),
@@ -166,7 +166,7 @@ Object.assign(ENTITY_TYPES, {
     table: 'spells',
     label: 'Spell',
     plural: 'Spells',
-    icon: '✨',
+    icon: 'spell',
     tab: 'spells',
     scope: 'player',
     normalize: (r) => ({
@@ -180,7 +180,7 @@ Object.assign(ENTITY_TYPES, {
     table: 'maps',
     label: 'Map',
     plural: 'Maps',
-    icon: '🗺️',
+    icon: 'map',
     tab: 'maps',
     normalize: (r) => ({
       title: text(r.caption) || 'Untitled map',
@@ -193,7 +193,7 @@ Object.assign(ENTITY_TYPES, {
     table: 'map_markers',
     label: 'Map pin',
     plural: 'Map pins',
-    icon: '📌',
+    icon: 'pushpin',
     tab: 'maps',
     normalize: (r) => ({
       title: text(r.title) || 'Untitled pin',
@@ -206,7 +206,7 @@ Object.assign(ENTITY_TYPES, {
     table: 'custom_tab_entries',
     label: 'Note',
     plural: 'Custom tabs',
-    icon: '📄',
+    icon: 'file',
     normalize: (r) => ({
       title: text(r.title),
       subtitle: r.tabName ? `In ${r.tabName}` : '',
@@ -218,7 +218,7 @@ Object.assign(ENTITY_TYPES, {
   event: {
     label: 'Event',
     plural: 'Timeline events',
-    icon: '⭐',
+    icon: 'star',
     tab: 'timeline',
     normalize: (r) => ({
       title: text(r.label),

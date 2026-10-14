@@ -9,6 +9,7 @@ import { confirmDelete } from '../lib/confirm.js'
 import SessionNoteForm from './SessionNoteForm.jsx'
 import ExportNotesDialog from './ExportNotesDialog.jsx'
 import { RichNotesView } from './RichNotesEditor.jsx'
+import Icon from './Icon.jsx'
 import './SessionNotesTab.scss'
 
 const PARTY_BUCKET = 'party-portraits'
@@ -235,7 +236,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
         <div className="session-notes-tab__toolbar-right">
           {sortedSessions.length > 1 && !viewingSession && (
             <button type="button" className="btn" onClick={() => setExportTarget('all')}>
-              ⬇ Export all
+              <Icon name="download" /> Export all
             </button>
           )}
           <button type="button" className="btn btn--primary" onClick={startAdding}>
@@ -279,14 +280,14 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
           <article className="session-detail__card panel">
             <div className="session-detail__header">
               <span className="session-detail__badge" aria-hidden="true">
-                📜
+                <Icon name="scroll" />
               </span>
               <h3 className="session-detail__title">
                 {viewingSession.title || 'Untitled Session'}
               </h3>
               {viewingSession.sessionDate && (
                 <span className="session-detail__date">
-                  <span aria-hidden="true">📅</span> {formatSessionDate(viewingSession.sessionDate)}
+                  <Icon name="calendar" /> {formatSessionDate(viewingSession.sessionDate)}
                 </span>
               )}
             </div>
@@ -323,7 +324,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
           {sortedSessions.map((session) => (
             <article className="session-card panel" key={session.id}>
               <span className="session-card__badge" aria-hidden="true">
-                📜
+                <Icon name="scroll" />
               </span>
               <div className="session-card__body">
                 <div className="session-card__main">

@@ -230,7 +230,7 @@ function DdbImportModal({ character, sheetApi, onClose }) {
             {imported.warnings.length > 0 && (
               <ul className="ddb-import__warnings">
                 {imported.warnings.map((w) => (
-                  <li key={w}>⚠ {w}</li>
+                  <li key={w}>! {w}</li>
                 ))}
               </ul>
             )}

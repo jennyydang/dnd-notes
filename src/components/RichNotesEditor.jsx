@@ -9,6 +9,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { toEditorContent } from '../lib/richNotes.js'
 import { TAG_GROUPS, groupForChar, matchKind, tagSlug, tagText } from '../lib/tags.js'
+import Icon from './Icon.jsx'
 import './RichNotesEditor.scss'
 
 const GROUP_ORDER = ['person', 'place', 'lore', 'loot', 'event']
@@ -337,7 +338,9 @@ export function RichNotesEditor({
           const article = { person: 'a ', place: 'a ', event: 'an ' }[noun] ?? ''
           return toolbarButton(
             group,
-            `${icon} ${capitalize(noun)}`,
+            <>
+              <Icon name={icon} /> {capitalize(noun)}
+            </>,
             `Tag ${article}${noun} (or type ${char}${keyword ?? ''})`,
             false,
             () => insertTrigger(group),
@@ -378,13 +381,13 @@ export function RichNotesEditor({
                       {creating
                         ? 'Adding…'
                         : menu.group === 'event'
-                          ? '⭐ Add to timeline:'
+                          ? '★ Add to timeline:'
                           : `+ New ${item.kind ? tagText(menu.group, item.kind) : TAG_GROUPS[menu.group].noun}:`}{' '}
                       <strong>{item.label}</strong>
                     </>
                   ) : (
                     <>
-                      <span aria-hidden="true">{TAG_GROUPS[menu.group].icon}</span> {item.label}
+                      <Icon name={TAG_GROUPS[menu.group].icon} /> {item.label}
                       {item.kind && (
                         <span className="rich-notes__option-tag">{tagText(menu.group, item.kind)}</span>
                       )}

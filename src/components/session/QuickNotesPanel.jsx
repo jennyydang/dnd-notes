@@ -5,6 +5,7 @@ import { QUICK_TYPES } from '../../lib/quickTypes.js'
 import QuickNoteInput from '../QuickNoteInput.jsx'
 import QuickCreateModal from '../QuickCreateModal.jsx'
 import { SectionCard, StatusMessage } from '../ui.jsx'
+import Icon from '../Icon.jsx'
 
 function splitNote(content) {
   const [first, ...rest] = content.trim().split('\n')
@@ -107,7 +108,7 @@ function NoteRow({ note, onEdit, onDelete, onConvert, convertedEntity, onOpenCon
                         onConvert(type)
                       }}
                     >
-                      <span aria-hidden="true">{def.icon}</span> {def.label}
+                      <Icon name={def.icon} /> {def.label}
                     </button>
                   </li>
                 ))}
@@ -115,10 +116,10 @@ function NoteRow({ note, onEdit, onDelete, onConvert, convertedEntity, onOpenCon
             )}
           </div>
           <button type="button" className="icon-btn" onClick={() => setEditing(true)} aria-label="Edit note">
-            ✎
+            <Icon name="edit" />
           </button>
           <button type="button" className="icon-btn" onClick={() => onDelete(note)} aria-label="Delete note">
-            🗑
+            <Icon name="trash" />
           </button>
         </div>
       )}
@@ -137,7 +138,7 @@ function QuickNotesPanel({ quickNotes, since }) {
 
   if (!quickNotes.enabled) {
     return (
-      <SectionCard title="Quick notes" icon="✏️">
+      <SectionCard title="Quick notes" icon="edit">
         <p className="inline-state">Quick notes are personal — log in as a player to use them.</p>
       </SectionCard>
     )
@@ -147,7 +148,7 @@ function QuickNotesPanel({ quickNotes, since }) {
   const hiddenCount = quickNotes.notes.length - visible.length
 
   return (
-    <SectionCard title="Quick notes" icon="✏️" className="quick-notes">
+    <SectionCard title="Quick notes" icon="edit" className="quick-notes">
       <QuickNoteInput onAdd={quickNotes.add} placeholder="What just happened? (Enter to save)" />
 
       {quickNotes.pendingDelete && (

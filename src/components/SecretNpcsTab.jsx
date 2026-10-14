@@ -9,6 +9,7 @@ import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ShareStatus from './ShareStatus.jsx'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import Icon from './Icon.jsx'
 import './NpcsTab.scss'
 import './SecretNpcsTab.scss'
 
@@ -312,10 +313,10 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                     </div>
                   </div>
                   <span className={`secret-npc__badge${status !== 'private' ? ' secret-npc__badge--revealed' : ''}`}>
-                    {status === 'private' ? '🔒 Private' : '👁 Shared'}
+                    <Icon name={status === 'private' ? 'lock' : 'eye'} /> {status === 'private' ? 'Private' : 'Shared'}
                   </span>
                 </div>
-                {npc.location && <p className="secret-npc__meta">📍 {npc.location}</p>}
+                {npc.location && <p className="secret-npc__meta"><Icon name="pin" /> {npc.location}</p>}
                 {npc.description && <p className="npc-card__description">{npc.description}</p>}
                 {npc.secrets && (
                   <div className="secret-npc__secrets">
@@ -411,7 +412,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
               />
             </div>
             <div className="field">
-              <label htmlFor="dm-npc-secrets">🔒 Secret notes (never shared)</label>
+              <label htmlFor="dm-npc-secrets"><Icon name="lock" /> Secret notes (never shared)</label>
               <textarea
                 id="dm-npc-secrets"
                 value={form.secrets}

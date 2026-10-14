@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Icon from './Icon.jsx'
 
 // Small shared building blocks used across Home, Session Mode, Character
 // and Prep, so those screens share one look (styles in styles/_shared.scss).
@@ -34,7 +35,7 @@ export function SectionCard({ title, icon, action, className = '', children, hea
             <Heading className="section-card__title">
               {icon && (
                 <span aria-hidden="true" className="section-card__icon">
-                  {icon}
+                  <Icon name={icon} />
                 </span>
               )}
               {title}
@@ -116,7 +117,7 @@ export function SaveStatus({ status, error, onRetry }) {
   if (!status || status === 'idle') return null
   return (
     <p className={`save-status save-status--${status}`} role="status" aria-live="polite">
-      {status === 'error' ? '⚠ ' : status === 'saved' ? '✓ ' : ''}
+      {status === 'error' ? '! ' : status === 'saved' ? '✓ ' : ''}
       {SAVE_LABELS[status]}
       {status === 'error' && (
         <>
@@ -136,7 +137,7 @@ export function EntityChip({ entity, missingLabel = 'Deleted entry', onOpen, suf
   if (!entity) {
     return (
       <span className="entity-chip entity-chip--missing">
-        <span aria-hidden="true">⚠</span> {missingLabel}
+        <span aria-hidden="true">!</span> {missingLabel}
         {suffix}
       </span>
     )
@@ -144,7 +145,7 @@ export function EntityChip({ entity, missingLabel = 'Deleted entry', onOpen, suf
   return (
     <span className="entity-chip">
       <button type="button" className="entity-chip__open" onClick={() => onOpen?.(entity)}>
-        <span aria-hidden="true">{entity.icon}</span>
+        <Icon name={entity.icon} />
         <span className="entity-chip__title">{entity.title || 'Untitled'}</span>
         <span className="entity-chip__type">{entity.label}</span>
       </button>

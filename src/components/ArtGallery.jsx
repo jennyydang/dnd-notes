@@ -9,6 +9,7 @@ import ArtViewer from './ArtViewer.jsx'
 import ShareStatus from './ShareStatus.jsx'
 import { useDmShares } from '../hooks/useDmShares.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
+import Icon from './Icon.jsx'
 import './ArtGallery.scss'
 
 const BUCKET = 'campaign-art'
@@ -234,7 +235,7 @@ function ArtGallery({ campaignId, manage = false }) {
               </button>
               {manage && (
                 <span className={`art-tile__share art-tile__share--${statusOf(piece)}`}>
-                  {{ added: '👁 Players have it', sent: '📨 Sent', private: '🔒 Private' }[statusOf(piece)]}
+                  <Icon name={{ added: 'eye', sent: 'send', private: 'lock' }[statusOf(piece)]} /> {{ added: 'Players have it', sent: 'Sent', private: 'Private' }[statusOf(piece)]}
                 </span>
               )}
             </li>

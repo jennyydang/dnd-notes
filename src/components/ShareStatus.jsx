@@ -1,4 +1,5 @@
 import { SHARE_KINDS } from '../lib/dmShares.js'
+import Icon from './Icon.jsx'
 import './ShareStatus.scss'
 
 // The DM's share control on an NPC / art / map card:
@@ -11,13 +12,17 @@ function ShareStatus({ kind, status, onShare, sharing = false, className = '' })
   if (status === 'sent') {
     return (
       <span className={`share-status share-status--sent ${className}`} title="Players have been notified">
-        📨 Sent — waiting for a player to add
+        <Icon name="send" /> Sent — waiting for a player to add
       </span>
     )
   }
   return (
     <button type="button" className={`btn btn--primary share-status__button ${className}`} onClick={onShare} disabled={sharing}>
-      {sharing ? 'Sharing…' : '📨 Share'}
+      {sharing ? 'Sharing…' : (
+        <>
+          <Icon name="send" /> Share
+        </>
+      )}
     </button>
   )
 }

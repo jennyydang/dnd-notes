@@ -4,10 +4,10 @@ import { copyImage } from './storage.js'
 
 // What the DM can share, and where each lands for the players.
 export const SHARE_KINDS = {
-  npc: { label: 'NPC', icon: '👤', tab: 'npcs', tabLabel: 'NPCs', bucket: 'npc-portraits' },
-  art: { label: 'Art', icon: '🖼️', tab: 'art', tabLabel: 'Art', bucket: 'campaign-art' },
-  map: { label: 'Map', icon: '🗺️', tab: 'maps', tabLabel: 'Maps', bucket: 'maps' },
-  creature: { label: 'Monster', icon: '🐉', tab: 'creatures', tabLabel: 'Monsters & Creatures', bucket: null },
+  npc: { label: 'NPC', icon: 'user', tab: 'npcs', tabLabel: 'NPCs', bucket: 'npc-portraits' },
+  art: { label: 'Art', icon: 'image', tab: 'art', tabLabel: 'Art', bucket: 'campaign-art' },
+  map: { label: 'Map', icon: 'map', tab: 'maps', tabLabel: 'Maps', bucket: 'maps' },
+  creature: { label: 'Monster', icon: 'monster', tab: 'creatures', tabLabel: 'Monsters & Creatures', bucket: null },
 }
 
 // "Monster" or "Creature" for a creature share; the kind's label otherwise.

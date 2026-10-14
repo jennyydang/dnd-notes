@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import TabNav from './TabNav.jsx'
 import Modal from './Modal.jsx'
+import Icon from './Icon.jsx'
 import './SpellsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 
@@ -333,7 +334,7 @@ function SpellsTab({ campaignId, playerId }) {
                             aria-label={`View flavor text for ${spell.name}`}
                             title="Flavor text"
                           >
-                            🔥
+                            <Icon name="flame" />
                           </button>
                         </div>
                       </div>

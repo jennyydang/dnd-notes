@@ -3,20 +3,20 @@ import { TAG_GROUPS } from './tags.js'
 // The kinds of entry that can be created in one step. Each maps onto an
 // existing table/tab — a "clue" is a Lore entry with category Clue.
 export const QUICK_TYPES = {
-  npc: { label: 'NPC', icon: '👤', entity: 'npc', nameLabel: 'Name', placeholder: 'Elandra Voss' },
+  npc: { label: 'NPC', icon: 'user', entity: 'npc', nameLabel: 'Name', placeholder: 'Elandra Voss' },
   place: {
     label: 'Location',
-    icon: '📍',
+    icon: 'pin',
     entity: 'place',
     nameLabel: 'Name',
     placeholder: 'The Sunken Crypt',
     kinds: TAG_GROUPS.place.kinds,
   },
-  quest: { label: 'Quest', icon: '⚔️', entity: 'quest', nameLabel: 'Quest', placeholder: 'Find the missing caravan' },
-  clue: { label: 'Clue', icon: '🔎', entity: 'lore', nameLabel: 'Clue', placeholder: 'Black wax seal with a heron' },
+  quest: { label: 'Quest', icon: 'quest', entity: 'quest', nameLabel: 'Quest', placeholder: 'Find the missing caravan' },
+  clue: { label: 'Clue', icon: 'search', entity: 'lore', nameLabel: 'Clue', placeholder: 'Black wax seal with a heron' },
   lore: {
     label: 'Lore',
-    icon: '📜',
+    icon: 'scroll',
     entity: 'lore',
     nameLabel: 'Title',
     placeholder: 'The Sundering',
@@ -24,7 +24,7 @@ export const QUICK_TYPES = {
   },
   loot: {
     label: 'Loot',
-    icon: '💰',
+    icon: 'coins',
     entity: 'loot',
     nameLabel: 'Item',
     placeholder: 'Ring of Feather Falling',

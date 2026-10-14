@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { supabase } from '../lib/supabaseClient.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import Icon from './Icon.jsx'
 import './WorldMapViewer.scss'
 
 const MARKER_BUCKET = 'map-marker-photos'
@@ -564,7 +565,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
           )}
           {onRenameMap && (
             <button type="button" className="btn btn--text" onClick={renameThisMap}>
-              ✏️ Rename Map
+              <Icon name="edit" /> Rename Map
             </button>
           )}
           {onDeleteSelf && (
@@ -615,7 +616,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
                 onPointerCancel={endDrag}
                 title="Drag to update the party's location"
               >
-                📍
+                <Icon name="pin" />
               </div>
             </div>
           )}
@@ -638,7 +639,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
                   onPointerCancel={endDrag}
                   title={marker.title || (isZoom ? 'Zoom area' : 'Event marker')}
                 >
-                  {isZoom ? '🔍' : '📌'}
+                  {isZoom ? 'zoom' : 'pushpin'}
                 </div>
               </div>
             )

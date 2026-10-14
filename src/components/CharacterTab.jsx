@@ -11,6 +11,7 @@ import RoleplayQuickRef from './character/RoleplayQuickRef.jsx'
 import RoleplayAssistant from './character/RoleplayAssistant.jsx'
 import DdbImportModal from './character/DdbImportModal.jsx'
 import { SaveStatus, SectionCard } from './ui.jsx'
+import Icon from './Icon.jsx'
 import './CharacterTab.scss'
 
 const VIEWS = [
@@ -50,7 +51,7 @@ function CharacterSheetView({ campaignId, character }) {
         <div className="character-tab__header-actions">
           <SaveStatus status={sheetApi.status} error={sheetApi.saveError} onRetry={sheetApi.retry} />
           <button type="button" className="btn" onClick={() => setImporting(true)} disabled={!sheetApi.sheet}>
-            ⬇ Import from D&amp;D Beyond
+            <Icon name="download" /> Import from D&amp;D Beyond
           </button>
         </div>
       </header>
@@ -79,7 +80,7 @@ function CharacterSheetView({ campaignId, character }) {
           {view === 'mechanics' && <MechanicsSheet character={character} sheetApi={sheetApi} />}
           {view === 'roleplay' && <RoleplayGuide character={character} sheetApi={sheetApi} />}
           {view === 'quickref' && (
-            <SectionCard title={`Playing ${character.name}`} icon="🎭">
+            <SectionCard title={`Playing ${character.name}`} icon="character">
               <RoleplayQuickRef narrative={sheetApi.sheet.narrative} onEdit={() => setView('roleplay')} />
             </SectionCard>
           )}
@@ -108,7 +109,7 @@ function CharacterTab() {
       ) : character ? (
         <CharacterSheetView key={character.id} campaignId={campaignId} character={character} />
       ) : (
-        <SectionCard title="No character yet" icon="🎭">
+        <SectionCard title="No character yet" icon="character">
           <p>
             {isAdmin
               ? 'Choose a party member above to view or edit their sheet.'

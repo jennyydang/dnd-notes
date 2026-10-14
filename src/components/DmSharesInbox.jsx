@@ -5,6 +5,7 @@ import { getPublicUrl } from '../lib/storage.js'
 import { SHARE_KINDS, addShareToParty, shareLabel } from '../lib/dmShares.js'
 import { formatDateTime } from '../lib/sessionMode.js'
 import Modal from './Modal.jsx'
+import Icon from './Icon.jsx'
 import './DmSharesInbox.scss'
 
 // Topbar bell for players: what the DM has shared, with an unread count.
@@ -27,7 +28,7 @@ export function DmSharesBell({ campaignId, playerId }) {
         onClick={() => setOpen(true)}
         aria-label={count ? `${count} new from your DM` : 'Shared by your DM'}
       >
-        <span aria-hidden="true">🔔</span>
+        <Icon name="bell" />
         {count > 0 && (
           <span className="dm-bell__count" aria-hidden="true">
             {count > 9 ? '9+' : count}
@@ -97,7 +98,7 @@ function DmSharesPanel({ campaignId, inbox, onClose }) {
     <Modal onClose={onClose} label="Shared by your DM">
       <div className="dm-inbox">
         <h3 className="section-card__title">
-          <span aria-hidden="true">🔔</span> From your DM
+          <Icon name="bell" /> From your DM
         </h3>
         {items.length === 0 ? (
           <p className="empty-state">Nothing new. When your DM shares an NPC, art or a map, it’ll show up here.</p>
@@ -109,15 +110,15 @@ function DmSharesPanel({ campaignId, inbox, onClose }) {
               const result = results[share.id]
               const image = shareImage(share)
               const detail = shareDetail(share)
-              const icon = share.kind === 'creature' && share.payload.kind === 'Creature' ? '🦌' : kind.icon
+              const icon = share.kind === 'creature' && share.payload.kind === 'Creature' ? 'creature' : kind.icon
               return (
                 <li key={share.id} className={`dm-share dm-share--${share.kind}`}>
                   <div className="dm-share__thumb" aria-hidden="true">
-                    {image ? <img src={image} alt="" /> : <span>{icon}</span>}
+                    {image ? <img src={image} alt="" /> : <Icon name={icon} size="1.6rem" />}
                   </div>
                   <div className="dm-share__body">
                     <span className="dm-share__kind">
-                      {icon} New {share.kind === 'art' ? 'art' : shareLabel(share)}
+                      <Icon name={icon} /> New {share.kind === 'art' ? 'art' : shareLabel(share)}
                       <span className="dm-share__time"> · {formatDateTime(share.createdAt)}</span>
                     </span>
                     <span className="dm-share__title">{share.title || 'Untitled'}</span>

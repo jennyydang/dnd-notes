@@ -195,7 +195,7 @@ function CreaturesTab({ campaignId }) {
                   className={`chip${form.kind === kind ? ' chip--active' : ''}`}
                   onClick={() => setForm({ ...form, kind })}
                 >
-                  {kind === 'Monster' ? '🐉' : '🦌'} {kind}
+                  {kind === 'Monster' ? 'monster' : 'creature'} {kind}
                 </button>
               ))}
             </div>
@@ -323,7 +323,7 @@ function CreaturesTab({ campaignId }) {
               <header className="creature-card__header">
                 <h3 className="creature-card__name">{c.name}</h3>
                 <span className={`creature-card__kind creature-card__kind--${c.kind.toLowerCase()}`}>
-                  <span aria-hidden="true">{c.kind === 'Monster' ? '🐉' : '🦌'}</span> {c.kind}
+                  <span aria-hidden="true">{c.kind === 'Monster' ? 'monster' : 'creature'}</span> {c.kind}
                 </span>
               </header>
               {(c.creatureType || c.challenge) && (

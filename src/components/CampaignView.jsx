@@ -32,57 +32,58 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { CampaignNavContext } from '../hooks/useCampaignData.js'
 import CampaignDataProvider from './CampaignDataProvider.jsx'
 import { getStored, setStored } from '../lib/sessionMode.js'
+import Icon from './Icon.jsx'
 import './CampaignView.scss'
 
 // Every built-in screen, grouped into the five primary areas. The areas
 // are the bottom bar on phones and the sidebar groups on wider screens;
 // an area with more than one screen shows them as a row of pills.
 const TAB_DEFS = {
-  home: { label: 'Home', icon: '🏠' },
-  session: { label: 'Session Mode', icon: '🎲' },
-  tools: { label: 'Tools', icon: '🛠️' },
-  sessions: { label: 'Session Notes', icon: '📖' },
-  timeline: { label: 'Timeline', icon: '⏳' },
-  npcs: { label: 'NPCs', icon: '👥' },
-  creatures: { label: 'Monsters & Creatures', icon: '🐉' },
-  art: { label: 'Art', icon: '🖼️' },
-  maps: { label: 'Maps & Places', icon: '🗺️' },
-  quests: { label: 'Quests', icon: '⚔️' },
-  loot: { label: 'Loot', icon: '💰' },
-  lore: { label: 'Lore & Clues', icon: '📔' },
-  character: { label: 'Character Sheet', icon: '🎭' },
-  spells: { label: 'Spells', icon: '✨' },
-  party: { label: 'Party', icon: '🛡️' },
-  prep: { label: 'Session Prep', icon: '🗒️' },
-  'dm-npcs': { label: 'NPCs', icon: '👥' },
-  'dm-art': { label: 'Art', icon: '🖼️' },
-  'dm-maps': { label: 'Maps', icon: '🗺️' },
-  'dm-creatures': { label: 'Monsters', icon: '🐉' },
+  home: { label: 'Home', icon: 'home' },
+  session: { label: 'Session Mode', icon: 'dice' },
+  tools: { label: 'Tools', icon: 'tools' },
+  sessions: { label: 'Session Notes', icon: 'book' },
+  timeline: { label: 'Timeline', icon: 'hourglass' },
+  npcs: { label: 'NPCs', icon: 'users' },
+  creatures: { label: 'Monsters & Creatures', icon: 'monster' },
+  art: { label: 'Art', icon: 'image' },
+  maps: { label: 'Maps & Places', icon: 'map' },
+  quests: { label: 'Quests', icon: 'quest' },
+  loot: { label: 'Loot', icon: 'coins' },
+  lore: { label: 'Lore & Clues', icon: 'lore' },
+  character: { label: 'Character Sheet', icon: 'character' },
+  spells: { label: 'Spells', icon: 'spell' },
+  party: { label: 'Party', icon: 'shield' },
+  prep: { label: 'Session Prep', icon: 'prep' },
+  'dm-npcs': { label: 'NPCs', icon: 'users' },
+  'dm-art': { label: 'Art', icon: 'image' },
+  'dm-maps': { label: 'Maps', icon: 'map' },
+  'dm-creatures': { label: 'Monsters', icon: 'monster' },
 }
 
 const AREAS = [
-  { id: 'home', label: 'Home', icon: '🏠', tabs: ['home'] },
-  { id: 'session', label: 'Session', icon: '🎲', tabs: ['session', 'tools'] },
+  { id: 'home', label: 'Home', icon: 'home', tabs: ['home'] },
+  { id: 'session', label: 'Session', icon: 'dice', tabs: ['session', 'tools'] },
   {
     id: 'journal',
     label: 'Journal',
-    icon: '📖',
+    icon: 'book',
     tabs: ['sessions', 'timeline', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
     custom: true,
   },
-  { id: 'character', label: 'Character', icon: '🎭', tabs: ['character', 'spells', 'party'] },
-  { id: 'prep', label: 'Prep', icon: '🗒️', tabs: ['prep'] },
+  { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
+  { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep'] },
   // The admin's view of the DM tools (DMs themselves get DM_AREAS).
-  { id: 'dm', label: 'DM', icon: '👁️', tabs: ['dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
+  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
 
 // A DM's whole view of the campaign: just their private NPCs, monsters, art and maps,
 // each with a Share button that notifies the players.
 const DM_AREAS = [
-  { id: 'dm-npcs', label: 'NPCs', icon: '👥', tabs: ['dm-npcs'] },
-  { id: 'dm-creatures', label: 'Monsters', icon: '🐉', tabs: ['dm-creatures'] },
-  { id: 'dm-art', label: 'Art', icon: '🖼️', tabs: ['dm-art'] },
-  { id: 'dm-maps', label: 'Maps', icon: '🗺️', tabs: ['dm-maps'] },
+  { id: 'dm-npcs', label: 'NPCs', icon: 'users', tabs: ['dm-npcs'] },
+  { id: 'dm-creatures', label: 'Monsters', icon: 'monster', tabs: ['dm-creatures'] },
+  { id: 'dm-art', label: 'Art', icon: 'image', tabs: ['dm-art'] },
+  { id: 'dm-maps', label: 'Maps', icon: 'map', tabs: ['dm-maps'] },
 ]
 
 const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
@@ -130,7 +131,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   const customTabItems = visibleCustomTabs.map((tab) => ({
     id: `${customTabPrefix}${tab.id}`,
     label: tab.name,
-    icon: tab.isPrivate ? '🔒' : '📄',
+    icon: tab.isPrivate ? 'lock' : 'file',
   }))
 
   // Players marked DM in this campaign (creating it isn't enough) see only
@@ -236,7 +237,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
               aria-pressed={sidebarOpen}
             >
-              &#9776;
+              <Icon name="menu" />
             </button>
             <button
               type="button"
@@ -256,7 +257,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                 aria-label="Search the campaign"
               >
                 <span className="campaign-view__search-icon" aria-hidden="true">
-                  &#128269;
+                  <Icon name="search" />
                 </span>
                 <span className="campaign-view__search-placeholder">
                   Search NPCs, places, quests, notes…
@@ -412,7 +413,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                   onClick={() => setActiveTab(active ? knownTab : area.tabs[0])}
                 >
                   <span className="bottom-nav__icon" aria-hidden="true">
-                    {area.icon}
+                    <Icon name={area.icon} />
                   </span>
                   <span className="bottom-nav__label">{area.label}</span>
                 </button>

@@ -32,10 +32,10 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
   // Bumped on every damage/heal so the flash overlay re-mounts and replays.
   const [flash, setFlash] = useState(null)
 
-  if (loading) return <SectionCard title="Vitals" icon="❤️"><p className="inline-state">Loading sheet…</p></SectionCard>
+  if (loading) return <SectionCard title="Vitals" icon="heart"><p className="inline-state">Loading sheet…</p></SectionCard>
   if (!sheet) {
     return (
-      <SectionCard title="Vitals" icon="❤️">
+      <SectionCard title="Vitals" icon="heart">
         <p className="inline-state inline-state--error">{error || 'Couldn’t load the character sheet.'}</p>
       </SectionCard>
     )
@@ -127,7 +127,7 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
   return (
     <SectionCard
       title={character.name}
-      icon="❤️"
+      icon="heart"
       className="vitals mechanics"
       action={<SaveStatus status={status} error={saveError} onRetry={retry} />}
     >

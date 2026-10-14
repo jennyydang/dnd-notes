@@ -37,7 +37,7 @@ function MechanicsSheet({ character, sheetApi }) {
 
   return (
     <div className="sheet mechanics">
-      <SectionCard title="Combat" icon="🛡️">
+      <SectionCard title="Combat" icon="shield">
         <div className="sheet__grid">
           <NumberField label="Max HP" value={m.hp.max} max={999} onChange={(v) => updateMechanics({ hp: { ...m.hp, max: v, current: m.hp.current ?? v } })} />
           <NumberField label="Current HP" value={m.hp.current} max={999} onChange={(v) => updateMechanics({ hp: { ...m.hp, current: v } })} />
@@ -72,7 +72,7 @@ function MechanicsSheet({ character, sheetApi }) {
         </dl>
       </SectionCard>
 
-      <SectionCard title="Ability scores" icon="🎲">
+      <SectionCard title="Ability scores" icon="dice">
         {noAbilities && <p className="field-hint">Enter your scores from your character sheet — modifiers, saves and skills update automatically.</p>}
         <div className="sheet__abilities">
           {ABILITIES.map((a) => (
@@ -92,7 +92,7 @@ function MechanicsSheet({ character, sheetApi }) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Saving throws" icon="🧷">
+      <SectionCard title="Saving throws" icon="shield-check">
         <ul className="sheet__checks">
           {ABILITIES.map((a) => (
             <li key={a.id}>
@@ -111,7 +111,7 @@ function MechanicsSheet({ character, sheetApi }) {
         </ul>
       </SectionCard>
 
-      <SectionCard title="Skills" icon="🧠">
+      <SectionCard title="Skills" icon="brain">
         <ul className="sheet__skills">
           {SKILLS.map((s) => (
             <li key={s.id}>
@@ -135,7 +135,7 @@ function MechanicsSheet({ character, sheetApi }) {
         </ul>
       </SectionCard>
 
-      <SectionCard title="Spellcasting" icon="✨">
+      <SectionCard title="Spellcasting" icon="spell">
         <div className="field sheet__casting">
           <label htmlFor="spell-ability">Spellcasting ability</label>
           <select
@@ -192,7 +192,7 @@ function MechanicsSheet({ character, sheetApi }) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Resources & features" icon="🔋">
+      <SectionCard title="Resources & features" icon="zap">
         <ListEditor
           label="Limited-use resources"
           items={m.resources}
@@ -217,7 +217,7 @@ function MechanicsSheet({ character, sheetApi }) {
         />
       </SectionCard>
 
-      <SectionCard title="Inventory & equipment" icon="🎒">
+      <SectionCard title="Inventory & equipment" icon="backpack">
         <ListEditor
           label="Items"
           items={m.inventory}

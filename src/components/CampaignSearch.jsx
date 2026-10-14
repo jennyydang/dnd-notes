@@ -1,8 +1,10 @@
+import Icon from './Icon.jsx'
+
 // Search box above the campaign list on the dashboards.
 function CampaignSearch({ value, onChange }) {
   return (
     <div className="campaign-search" role="search">
-      <span aria-hidden="true">&#128269;</span>
+      <Icon name="search" />
       <input
         type="search"
         value={value}

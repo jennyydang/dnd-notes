@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Icon from './Icon.jsx'
 import './TabNav.scss'
 
 function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = false, label = 'Campaign sections' }) {
@@ -40,7 +41,7 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
           >
             {tab.icon && (
               <span className="tab-nav__icon" aria-hidden="true">
-                {tab.icon}
+                <Icon name={tab.icon} />
               </span>
             )}
             {tab.label}

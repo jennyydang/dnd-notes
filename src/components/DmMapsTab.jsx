@@ -8,6 +8,7 @@ import Modal from './Modal.jsx'
 import ArtViewer from './ArtViewer.jsx'
 import ShareStatus from './ShareStatus.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
+import Icon from './Icon.jsx'
 import './ArtGallery.scss'
 
 const BUCKET = 'maps'
@@ -195,7 +196,7 @@ function DmMapsTab({ campaignId }) {
                   </span>
                 </button>
                 <span className={`art-tile__share art-tile__share--${status}`}>
-                  {{ added: '👁 Players have it', sent: '📨 Sent', private: '🔒 Private' }[status]}
+                  <Icon name={{ added: 'eye', sent: 'send', private: 'lock' }[status]} /> {{ added: 'Players have it', sent: 'Sent', private: 'Private' }[status]}
                 </span>
               </li>
             )
@@ -242,7 +243,7 @@ function DmMapsTab({ campaignId }) {
               />
             </div>
             <div className="field">
-              <label htmlFor="dm-map-notes">🔒 DM notes (never shared)</label>
+              <label htmlFor="dm-map-notes"><Icon name="lock" /> DM notes (never shared)</label>
               <textarea
                 id="dm-map-notes"
                 rows={3}

@@ -3,6 +3,7 @@ import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
 import { EXTRA_LABELS, QUICK_TYPES, payloadFor } from '../lib/quickTypes.js'
 import Modal from './Modal.jsx'
 import LinkPicker from './LinkPicker.jsx'
+import Icon from './Icon.jsx'
 
 const MAX_NAME = 120
 
@@ -62,7 +63,7 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
       <Modal onClose={onClose} label="Entry created">
         <div className="form-stack">
           <h3 className="section-card__title">
-            {def.icon} {def.label} added
+            <Icon name={def.icon} /> {def.label} added
           </h3>
           <p>
             <strong>{created.title}</strong> is saved
@@ -119,7 +120,7 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
                 setKind('')
               }}
             >
-              <span aria-hidden="true">{t.icon}</span> {t.label}
+              <Icon name={t.icon} /> {t.label}
             </button>
           ))}
         </div>

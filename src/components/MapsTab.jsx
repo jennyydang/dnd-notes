@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import WorldMapViewer from './WorldMapViewer.jsx'
 import PlacesSection from './PlacesSection.jsx'
+import Icon from './Icon.jsx'
 import './MapsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 
@@ -181,7 +182,7 @@ function MapsTab({ campaignId }) {
                     onClick={() => startRename(map)}
                     aria-label={`Rename ${map.caption || 'this map'}`}
                   >
-                    ✏️ Rename
+                    <Icon name="edit" /> Rename
                   </button>
                 </div>
               )}

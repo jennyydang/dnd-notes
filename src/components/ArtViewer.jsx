@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import Icon from './Icon.jsx'
 
 // Full-screen viewer: arrow keys / buttons step through, Escape closes,
 // and "Full screen" hides everything but the art (for showing the table).
@@ -42,7 +43,7 @@ function ArtViewer({ piece, position, onStep, onClose, actions }) {
         <div className="art-viewer__bar-actions">
           {canFullscreen && (
             <button type="button" className="btn btn--text" onClick={() => stageRef.current?.requestFullscreen?.()}>
-              ⛶ Full screen
+              <Icon name="maximize" /> Full screen
             </button>
           )}
           <button ref={closeRef} type="button" className="btn btn--text" onClick={onClose} aria-label="Close viewer">

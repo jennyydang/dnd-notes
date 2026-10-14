@@ -1,4 +1,5 @@
 @use '../styles/variables' as *;
+@use '../styles/icons' as *;
 
 .rich-notes {
   display: flex;
@@ -161,42 +162,42 @@
   white-space: nowrap;
 
   &--person {
-    background: color-mix(in srgb, $maroon-light 35%, transparent);
-    border: 1px solid color-mix(in srgb, $maroon-light 80%, transparent);
-    color: $maroon-text;
+    background: var(--crimson-soft);
+    border: 1px solid var(--crimson);
+    color: var(--crimson);
 
     &::before {
-      content: '👤 ';
+      @include line-icon('user');
     }
   }
 
   &--place {
-    background: color-mix(in srgb, $green-light 25%, transparent);
-    border: 1px solid color-mix(in srgb, $green-light 80%, transparent);
-    color: $green-text;
+    background: var(--heal-soft);
+    border: 1px solid var(--heal);
+    color: var(--heal);
 
     &::before {
-      content: '📍 ';
+      @include line-icon('pin');
     }
   }
 
   &--lore {
-    background: color-mix(in srgb, $gray-light 30%, transparent);
-    border: 1px solid color-mix(in srgb, $gray-light 90%, transparent);
-    color: $gray-text;
+    background: var(--arcane-soft);
+    border: 1px solid var(--arcane);
+    color: var(--arcane);
 
     &::before {
-      content: '📜 ';
+      @include line-icon('scroll');
     }
   }
 
   &--loot {
-    background: color-mix(in srgb, $gold 18%, transparent);
-    border: 1px solid color-mix(in srgb, $gold 80%, transparent);
-    color: $gold-light;
+    background: var(--gold-soft);
+    border: 1px solid var(--gold);
+    color: var(--gold);
 
     &::before {
-      content: '💰 ';
+      @include line-icon('coins');
     }
   }
 
@@ -205,15 +206,15 @@
   &--event {
     display: inline;
     white-space: normal;
-    background: color-mix(in srgb, $maroon 25%, transparent);
-    border: 1px dashed color-mix(in srgb, $gold 70%, transparent);
-    color: $parchment;
+    background: var(--surface-sunken);
+    border: 1px dashed var(--gold);
+    color: var(--ink);
     font-style: italic;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
 
     &::before {
-      content: '⭐ ';
+      @include line-icon('star');
     }
   }
 }

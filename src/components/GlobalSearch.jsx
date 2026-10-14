@@ -4,6 +4,7 @@ import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
 import { ENTITY_TYPES, ENTITY_TYPE_ORDER } from '../lib/entities.js'
 import { normalizeText, searchEntities, snippet } from '../lib/search.js'
 import { Chip } from './ui.jsx'
+import Icon from './Icon.jsx'
 import './GlobalSearch.scss'
 
 const SORTS = [
@@ -106,7 +107,7 @@ function GlobalSearch({ onClose }) {
       <div className="global-search__backdrop" onClick={onClose} />
       <div className="global-search__panel panel">
         <div className="global-search__bar">
-          <span aria-hidden="true">&#128269;</span>
+          <Icon name="search" />
           <input
             ref={inputRef}
             type="search"
@@ -129,7 +130,7 @@ function GlobalSearch({ onClose }) {
           <div className="chip-row" role="group" aria-label="Filter by type">
             {ENTITY_TYPE_ORDER.map((type) => (
               <Chip key={type} active={types.includes(type)} onClick={() => toggleType(type)}>
-                <span aria-hidden="true">{ENTITY_TYPES[type].icon}</span> {ENTITY_TYPES[type].plural}
+                <Icon name={ENTITY_TYPES[type].icon} /> {ENTITY_TYPES[type].plural}
                 {hasQuery && <span className="global-search__count">{counts[type] || 0}</span>}
               </Chip>
             ))}
@@ -168,7 +169,7 @@ function GlobalSearch({ onClose }) {
               return (
                 <li key={`screen-${item.tab.id}`} {...common}>
                   <span className="global-search__icon" aria-hidden="true">
-                    {item.tab.icon}
+                    <Icon name={item.tab.icon} />
                   </span>
                   <span className="global-search__main">
                     <span className="global-search__title">Go to {item.tab.label}</span>
@@ -182,7 +183,7 @@ function GlobalSearch({ onClose }) {
             return (
               <li key={`${entry.type}-${entry.id}`} {...common}>
                 <span className="global-search__icon" aria-hidden="true">
-                  {entry.icon}
+                  <Icon name={entry.icon} />
                 </span>
                 <span className="global-search__main">
                   <span className="global-search__title">{entry.title || 'Untitled'}</span>

@@ -13,6 +13,7 @@ import ReferencePanel from './session/ReferencePanel.jsx'
 import EndSessionModal from './session/EndSessionModal.jsx'
 import CharacterPicker from './character/CharacterPicker.jsx'
 import { SectionCard } from './ui.jsx'
+import Icon from './Icon.jsx'
 import './SessionMode.scss'
 
 const PANELS = [
@@ -23,10 +24,10 @@ const PANELS = [
 ]
 
 const QUICK_ADD = [
-  { type: 'npc', label: 'NPC', icon: '👤' },
-  { type: 'place', label: 'Place', icon: '📍' },
-  { type: 'quest', label: 'Quest', icon: '⚔️' },
-  { type: 'clue', label: 'Clue', icon: '🔎' },
+  { type: 'npc', label: 'NPC', icon: 'user' },
+  { type: 'place', label: 'Place', icon: 'pin' },
+  { type: 'quest', label: 'Quest', icon: 'quest' },
+  { type: 'clue', label: 'Clue', icon: 'search' },
 ]
 
 // Needs the sheet, so it only renders once a character is chosen; keyed
@@ -94,7 +95,7 @@ function SessionMode() {
             </p>
             <div className="session-mode__status-actions">
               <button type="button" className="btn" onClick={() => save({ ...active, paused: !active.paused })}>
-                {active.paused ? '▶ Resume' : '⏸ Pause'}
+                <Icon name={active.paused ? 'play' : 'pause'} /> {active.paused ? 'Resume' : 'Pause'}
               </button>
               <button type="button" className="btn btn--danger" onClick={() => setEnding(true)}>
                 ■ End session
@@ -112,7 +113,7 @@ function SessionMode() {
                 save({ startedAt: new Date().toISOString(), paused: false })
               }}
             >
-              ▶ Start session
+              <Icon name="play" /> Start session
             </button>
           </>
         )}
@@ -126,7 +127,7 @@ function SessionMode() {
       <div className="session-mode__quick-add" role="group" aria-label="Quick add">
         {QUICK_ADD.map((a) => (
           <button key={a.type} type="button" className="btn" onClick={() => nav.openQuickCreate(a.type)}>
-            <span aria-hidden="true">{a.icon}</span> {a.label}
+            <Icon name={a.icon} /> {a.label}
           </button>
         ))}
       </div>
@@ -142,7 +143,7 @@ function SessionMode() {
           <CharacterPanels key={character.id} campaignId={campaignId} character={character} nav={nav} panelClass={panelClass} />
         ) : (
           <div className={panelClass('vitals')}>
-            <SectionCard title="Character" icon="❤️">
+            <SectionCard title="Character" icon="heart">
               <p className="inline-state">
                 {loading
                   ? 'Loading…'
@@ -167,7 +168,7 @@ function SessionMode() {
               <InitiativeTracker campaignId={campaignId} />
             </div>
             <div className={panelClass('reference')}>
-              <SectionCard title="Reference" icon="📚">
+              <SectionCard title="Reference" icon="library">
                 <p className="inline-state">Pick a character to see their spells, inventory and skills.</p>
               </SectionCard>
             </div>

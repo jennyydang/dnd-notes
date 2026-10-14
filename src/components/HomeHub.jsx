@@ -11,13 +11,14 @@ import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessi
 import { exportCampaign } from '../lib/exportCampaign.js'
 import QuickNoteInput from './QuickNoteInput.jsx'
 import { SectionCard, StatusMessage } from './ui.jsx'
+import Icon from './Icon.jsx'
 import './HomeHub.scss'
 
 const QUICK_ACTIONS = [
-  { type: 'npc', label: 'NPC', icon: '👤' },
-  { type: 'place', label: 'Location', icon: '📍' },
-  { type: 'quest', label: 'Quest', icon: '⚔️' },
-  { type: 'clue', label: 'Clue', icon: '🔎' },
+  { type: 'npc', label: 'NPC', icon: 'user' },
+  { type: 'place', label: 'Location', icon: 'pin' },
+  { type: 'quest', label: 'Quest', icon: 'quest' },
+  { type: 'clue', label: 'Clue', icon: 'search' },
 ]
 
 const RECENT_LIMIT = 5
@@ -41,7 +42,7 @@ function MiniCard({ icon, type, title, meta, onClick }) {
   return (
     <button type="button" className="mini-card" onClick={onClick}>
       <span className="mini-card__type">
-        <span aria-hidden="true">{icon}</span> {type}
+        <Icon name={icon} /> {type}
       </span>
       <span className="mini-card__title">{title || 'Untitled'}</span>
       {meta && <span className="mini-card__meta">{meta}</span>}
@@ -92,7 +93,7 @@ function CharacterSummary({ campaignId, character }) {
             )}
             {ac != null && (
               <span className="home-hub__ac mechanics" title="Armor Class">
-                🛡️ AC {ac}
+                <Icon name="shield" /> AC {ac}
               </span>
             )}
           </div>
@@ -180,7 +181,9 @@ function HomeHub({ campaignName }) {
           </p>
         </div>
         <button type="button" className="btn btn--primary home-hub__start" onClick={startSession}>
-          {active ? '▶ Resume Session' : '▶ Start Session'}
+          <span>
+            <Icon name="play" /> {active ? 'Resume Session' : 'Start Session'}
+          </span>
           {active && (
             <span className="home-hub__start-meta">
               {active.paused ? 'Paused' : 'In progress'} since {formatDateTime(active.startedAt)}
@@ -196,7 +199,7 @@ function HomeHub({ campaignName }) {
           onClick={() => window.dispatchEvent(new Event(OPEN_DM_INBOX))}
         >
           <span className="home-hub__dm-news-icon" aria-hidden="true">
-            🔔
+            <Icon name="bell" />
           </span>
           <span className="home-hub__dm-news-text">
             <strong>
@@ -209,7 +212,7 @@ function HomeHub({ campaignName }) {
       )}
 
       {isEmpty && (
-        <SectionCard title="Getting started" icon="🧭" className="home-hub__onboarding">
+        <SectionCard title="Getting started" icon="compass" className="home-hub__onboarding">
           <ol className="home-hub__steps">
             <li>
               {character ? (
@@ -233,7 +236,7 @@ function HomeHub({ campaignName }) {
       <div className="home-hub__layout">
         <SectionCard
           title={isAdmin ? 'Character' : 'Your character'}
-          icon="🎭"
+          icon="character"
           className="home-hub__area home-hub__area--character"
         >
           {character ? (
@@ -241,13 +244,13 @@ function HomeHub({ campaignName }) {
               <CharacterSummary key={character.id} campaignId={campaignId} character={character} />
               <div className="home-hub__links">
                 <button type="button" className="btn home-hub__link" onClick={() => nav.goTo('character')}>
-                  <span aria-hidden="true">📜</span> Sheet
+                  <Icon name="scroll" /> Sheet
                 </button>
                 <button type="button" className="btn home-hub__link" onClick={() => nav.goTo('spells')}>
-                  <span aria-hidden="true">✨</span> Spells
+                  <Icon name="spell" /> Spells
                 </button>
                 <button type="button" className="btn home-hub__link" onClick={() => nav.goTo('party')}>
-                  <span aria-hidden="true">🛡️</span> Party
+                  <Icon name="shield" /> Party
                 </button>
               </div>
             </>
@@ -263,7 +266,7 @@ function HomeHub({ campaignName }) {
           )}
         </SectionCard>
 
-        <SectionCard title="Quick add" icon="➕" className="home-hub__area home-hub__area--quick">
+        <SectionCard title="Quick add" icon="plus" className="home-hub__area home-hub__area--quick">
           {quickNotes.enabled && <QuickNoteInput onAdd={quickNotes.add} />}
           <div className="home-hub__actions">
             {QUICK_ACTIONS.map((action) => (
@@ -273,7 +276,7 @@ function HomeHub({ campaignName }) {
                 className="btn home-hub__action"
                 onClick={() => nav.openQuickCreate(action.type)}
               >
-                <span aria-hidden="true">{action.icon}</span> {action.label}
+                <Icon name={action.icon} /> {action.label}
               </button>
             ))}
             <button
@@ -281,14 +284,14 @@ function HomeHub({ campaignName }) {
               className="btn home-hub__action"
               onClick={() => nav.goTo('sessions', { add: true })}
             >
-              <span aria-hidden="true">📖</span> Session recap
+              <Icon name="book" /> Session recap
             </button>
           </div>
         </SectionCard>
 
         <SectionCard
           title="Last session"
-          icon="📖"
+          icon="book"
           className="home-hub__area home-hub__area--last"
           action={
             sessions.length > 0 && (
@@ -325,7 +328,7 @@ function HomeHub({ campaignName }) {
 
         <SectionCard
           title="Open threads"
-          icon="🧵"
+          icon="threads"
           className="home-hub__area home-hub__area--threads"
           action={
             <button type="button" className="btn btn--text" onClick={() => nav.goTo('quests')}>
@@ -355,7 +358,7 @@ function HomeHub({ campaignName }) {
           )}
         </SectionCard>
 
-        <SectionCard title="Recently added" icon="🕮" className="home-hub__area home-hub__area--recent">
+        <SectionCard title="Recently added" icon="library" className="home-hub__area home-hub__area--recent">
           <StatusMessage loading={loading && !entities.length} empty={!recentEntries.length && !quickNotes.notes.length}>
             Nothing yet — NPCs, places and quests you add will show up here.
           </StatusMessage>
@@ -365,7 +368,7 @@ function HomeHub({ campaignName }) {
                 ...quickNotes.notes.slice(0, 2).map((n) => (
                   <li key={`note-${n.id}`}>
                     <MiniCard
-                      icon="✏️"
+                      icon="edit"
                       type="Quick note"
                       title={n.content}
                       meta={formatDateTime(n.createdAt)}
@@ -392,7 +395,11 @@ function HomeHub({ campaignName }) {
 
       <footer className="home-hub__footer">
         <button type="button" className="btn btn--text" onClick={runExport} disabled={exporting}>
-          {exporting ? 'Preparing backup…' : '⬇ Export campaign backup (JSON)'}
+          {exporting ? 'Preparing backup…' : (
+            <>
+              <Icon name="download" /> Export campaign backup (JSON)
+            </>
+          )}
         </button>
         {exportMessage && (
           <p className="field-hint" role="status">

@@ -10,6 +10,7 @@ import {
 import { getEncounter, setEncounter } from '../../lib/sessionMode.js'
 import { newId } from '../../lib/character.js'
 import { SectionCard } from '../ui.jsx'
+import Icon from '../Icon.jsx'
 
 // Turn order for the current fight. Encounters are table-side scratch
 // state, so they live in this device's localStorage (surviving refresh)
@@ -71,7 +72,7 @@ function InitiativeTracker({ campaignId, characterName, characterInitBonus }) {
   return (
     <SectionCard
       title="Initiative"
-      icon="⚔️"
+      icon="quest"
       className="initiative mechanics"
       action={
         state.combatants.length > 0 && (
@@ -135,7 +136,9 @@ function InitiativeTracker({ campaignId, characterName, characterInitBonus }) {
               >
                 <span className="initiative__score">{c.initiative}</span>
                 <span className="initiative__name">
-                  {isCurrent && <span className="initiative__marker">▶ Now: </span>}
+                  {isCurrent && <span className="initiative__marker">
+                    <Icon name="play" /> Now:{' '}
+                  </span>}
                   {c.name}
                 </span>
                 {c.hp !== null && c.hp !== undefined && (
@@ -169,10 +172,10 @@ function InitiativeTracker({ campaignId, characterName, characterInitBonus }) {
       {state.combatants.length > 0 && (
         <div className="initiative__controls">
           <button type="button" className="btn" onClick={() => setState(previousTurn)} disabled={!state.started}>
-            ◀ Prev
+            <Icon name="prev" /> Prev
           </button>
           <button type="button" className="btn btn--primary initiative__next" onClick={() => setState(nextTurn)}>
-            {state.started ? 'Next turn ▶' : 'Start combat ▶'}
+            {state.started ? 'Next turn' : 'Start combat'} <Icon name="next" />
           </button>
           <button type="button" className="btn btn--text" onClick={endEncounter}>
             End encounter

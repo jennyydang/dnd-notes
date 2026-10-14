@@ -7,6 +7,7 @@ import Modal from './Modal.jsx'
 import LinkPicker from './LinkPicker.jsx'
 import { RichNotesView } from './RichNotesEditor.jsx'
 import { EntityChip } from './ui.jsx'
+import Icon from './Icon.jsx'
 import './EntityDetailModal.scss'
 
 // Read view of any campaign entry with everything related to it — links
@@ -110,7 +111,7 @@ function EntityDetailModal({ type, id, canGoBack, onBack, onClose }) {
         {header}
         <header className="entity-detail__header">
           <span className="entity-detail__type">
-            <span aria-hidden="true">{entity.icon}</span> {entity.label}
+            <Icon name={entity.icon} /> {entity.label}
           </span>
           <h3 className="entity-detail__title">{entity.title || 'Untitled'}</h3>
           {entity.subtitle && <p className="entity-detail__subtitle">{entity.subtitle}</p>}

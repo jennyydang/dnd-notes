@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { listCampaignMembers } from '../lib/campaigns.js'
+import Icon from './Icon.jsx'
 
 const fromRow = (r) => ({ id: r.id, playerId: r.player_id, shards: r.shards })
 
@@ -125,7 +126,7 @@ function ShardTracker({ campaignId, playerId }) {
             {rows.map((r) => (
               <li key={r.id} className="shard-tracker__admin-row">
                 <span>{usernames[r.playerId] || 'Unknown player'}</span>
-                <span className="shard-tracker__admin-count">💎 {r.shards}</span>
+                <span className="shard-tracker__admin-count"><Icon name="gem" /> {r.shards}</span>
               </li>
             ))}
           </ul>
@@ -155,7 +156,7 @@ function ShardTracker({ campaignId, playerId }) {
               −
             </button>
             <output className="shard-tracker__count" aria-live="polite">
-              <span aria-hidden="true">💎</span> {count}
+              <Icon name="gem" /> {count}
             </output>
             <button
               type="button"

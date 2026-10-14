@@ -7,6 +7,7 @@ import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ShareStatus from './ShareStatus.jsx'
+import Icon from './Icon.jsx'
 import './CreaturesTab.scss'
 import './SecretNpcsTab.scss'
 
@@ -57,7 +58,7 @@ function parseStat(value, max) {
   return { value: n }
 }
 
-const statIcon = (kind) => (kind === 'Creature' ? '🦌' : '🐉')
+const statIcon = (kind) => (kind === 'Creature' ? 'creature' : 'monster')
 
 // The DM's private bestiary: stat out monsters and creatures ahead of
 // time, then Share one when the party meets it. Players add a copy to
@@ -280,7 +281,7 @@ function DmCreaturesTab({ campaignId }) {
                   </div>
                 )}
                 <p className="creature-card__where">
-                  {c.shareStats ? '📊 Stats are shared with players' : '🔒 Stats stay hidden when shared'}
+                  <Icon name={c.shareStats ? 'chart' : 'lock'} /> {c.shareStats ? 'Stats are shared with players' : 'Stats stay hidden when shared'}
                 </p>
                 <div className="creature-card__actions">
                   <ShareStatus kind="creature" status={status} sharing={sharingId === c.id} onShare={() => share(c)} />
@@ -399,7 +400,7 @@ function DmCreaturesTab({ campaignId }) {
               />
             </div>
             <div className="field">
-              <label htmlFor="dm-creature-secrets">🔒 DM notes (never shared)</label>
+              <label htmlFor="dm-creature-secrets"><Icon name="lock" /> DM notes (never shared)</label>
               <textarea
                 id="dm-creature-secrets"
                 rows={3}

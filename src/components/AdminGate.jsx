@@ -16,6 +16,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import { PasswordInput } from './ui.jsx'
+import Icon from './Icon.jsx'
 import './AdminGate.scss'
 
 const SECTION_KEY = 'dnd-notes-admin-section'
@@ -69,7 +70,7 @@ function AdminLogin({ onLogin }) {
     <div className="admin-gate">
       <form className="admin-gate__form panel" onSubmit={submit}>
         <span className="admin-gate__crest" aria-hidden="true">
-          🛡️
+          <Icon name="shield" />
         </span>
         <h2>Admin</h2>
         <p className="admin-gate__hint">Manage campaigns, players and feedback.</p>
@@ -147,14 +148,14 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
   const stats = [
     {
       id: 'campaigns',
-      icon: '🗺️',
+      icon: 'map',
       label: 'Campaigns',
       value: activeCampaigns,
       detail: archivedCampaigns ? `${archivedCampaigns} archived` : 'All active',
     },
     {
       id: 'players',
-      icon: '🧙',
+      icon: 'users',
       label: 'Players',
       value: playerData.loading ? '–' : playerData.players.length,
       detail: unassigned ? `${unassigned} not in a campaign` : 'All in a campaign',
@@ -162,7 +163,7 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
     },
     {
       id: 'feedback',
-      icon: '📬',
+      icon: 'inbox',
       label: 'Feedback',
       value: feedback.loading ? '–' : feedback.items.length,
       detail: issues ? `${issues} issue${issues === 1 ? '' : 's'} reported` : 'No open issues',
@@ -194,7 +195,7 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
             onClick={() => setSection(stat.id)}
           >
             <span className="admin-stat__label">
-              <span aria-hidden="true">{stat.icon}</span> {stat.label}
+              <Icon name={stat.icon} /> {stat.label}
             </span>
             <span className="admin-stat__value">{stat.value}</span>
             <span className="admin-stat__detail">{stat.detail}</span>
@@ -594,7 +595,7 @@ function FeedbackInbox({ items: submissions, loading, error, removeItem }) {
             <li key={item.id} className={`feedback-inbox__item panel feedback-inbox__item--${item.kind}`}>
               <div className="feedback-inbox__meta">
                 <span className={`feedback-inbox__badge feedback-inbox__badge--${item.kind}`}>
-                  {item.kind === 'issue' ? '🐞 Issue' : '💡 Suggestion'}
+                  <Icon name={item.kind === 'issue' ? 'bug' : 'lightbulb'} /> {item.kind === 'issue' ? 'Issue' : 'Suggestion'}
                 </span>
                 <span className="feedback-inbox__date">{formatFeedbackDate(item.createdAt)}</span>
               </div>

@@ -125,7 +125,7 @@ function RoleplayAssistant({ character, narrative }) {
   const toggleTone = (id) => setTones((t) => (t.includes(id) ? t.filter((x) => x !== id) : [...t, id]))
 
   return (
-    <SectionCard title="Roleplay assistant" icon="💬" className="assistant narrative">
+    <SectionCard title="Roleplay assistant" icon="message" className="assistant narrative">
       {!configured && (
         <p className="assistant__notice" role="note">
           <strong>No AI model is connected</strong>, so this won&apos;t generate replies. You can
