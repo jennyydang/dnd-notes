@@ -1057,3 +1057,26 @@ begin
     end if;
   end loop;
 end $$;
+
+-- ── Profile pictures ─────────────────────────────────────────────────
+-- One optional picture per player (object key in "player-avatars"). Kept
+-- out of `players` on purpose: that table must stay without anon
+-- policies (see above), and a picture is no secret.
+create table if not exists player_profiles (
+  player_id uuid primary key references players(id) on delete cascade,
+  avatar_path text,
+  updated_at timestamptz not null default now()
+);
+
+alter table player_profiles enable row level security;
+drop policy if exists "anon full access player_profiles" on player_profiles;
+create policy "anon full access player_profiles" on player_profiles for all to anon using (true) with check (true);
+
+insert into storage.buckets (id, name, public)
+values ('player-avatars', 'player-avatars', true)
+on conflict (id) do nothing;
+
+drop policy if exists "anon full access player-avatars bucket" on storage.objects;
+create policy "anon full access player-avatars bucket"
+  on storage.objects for all to anon
+  using (bucket_id = 'player-avatars') with check (bucket_id = 'player-avatars');

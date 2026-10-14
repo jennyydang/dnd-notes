@@ -254,6 +254,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
           </button>
         </div>
         <AccountMenu
+          playerId={playerId}
           username={username}
           onOpenSettings={() => setShowSettings(true)}
           onSendFeedback={() => setShowFeedback(true)}

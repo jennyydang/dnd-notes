@@ -1,31 +1,94 @@
-import { useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Icon from './Icon.jsx'
 import { usePartyPresence } from '../hooks/usePartyPresence.js'
 import { dismissFailed, getSyncStatus, subscribeSyncStatus } from '../lib/offline.js'
+import { usePlayerAvatar } from '../lib/profiles.js'
 import './LiveStatus.scss'
 
 const MAX_FACES = 3
 
 const initial = (name) => (name.trim()[0] || '?').toUpperCase()
 
-// Who else is in the campaign right now, as a row of initials.
+// Who else is in the campaign right now, as a row of initials. Hovering
+// or focusing a face shows that player's name; clicking opens the full
+// list. Faces pop in as people arrive, no reload needed.
 export function PartyPresence({ campaignId, playerId, username }) {
-  const others = usePartyPresence(campaignId, playerId, username)
+  const myAvatar = usePlayerAvatar(playerId)
+  const others = usePartyPresence(campaignId, playerId, username, myAvatar)
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    function onPointer(event) {
+      if (!rootRef.current?.contains(event.target)) setOpen(false)
+    }
+    function onKey(event) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
   if (others.length === 0) return null
-  const names = others.map((o) => o.username).join(', ')
   const shown = others.slice(0, MAX_FACES)
   const extra = others.length - shown.length
+  const toggle = () => setOpen((v) => !v)
+
   return (
-    <div className="party-presence" role="img" aria-label={`Here now: ${names}`} title={`Here now: ${names}`}>
-      {shown.map((o) => (
-        <span key={o.playerId} className="party-presence__face" aria-hidden="true">
-          {initial(o.username)}
-        </span>
-      ))}
-      {extra > 0 && (
-        <span className="party-presence__face party-presence__face--more" aria-hidden="true">
-          +{extra}
-        </span>
+    <div className={`party-presence${open ? ' party-presence--open' : ''}`} ref={rootRef}>
+      <div className="party-presence__faces" role="group" aria-label={`${others.length} here now`}>
+        {shown.map((o) => (
+          <button
+            key={o.playerId}
+            type="button"
+            className="party-presence__face"
+            onClick={toggle}
+            aria-expanded={open}
+            aria-label={`${o.username} is here now`}
+          >
+            {o.avatarUrl ? (
+              <img className="party-presence__photo" src={o.avatarUrl} alt="" />
+            ) : (
+              <span aria-hidden="true">{initial(o.username)}</span>
+            )}
+            <span className="party-presence__tip" aria-hidden="true">
+              {o.username}
+            </span>
+          </button>
+        ))}
+        {extra > 0 && (
+          <button
+            type="button"
+            className="party-presence__face party-presence__face--more"
+            onClick={toggle}
+            aria-expanded={open}
+            aria-label={`${extra} more here now`}
+          >
+            +{extra}
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="party-presence__list" role="dialog" aria-label="Here now">
+          <div className="party-presence__list-title">Here now</div>
+          <ul>
+            {others.map((o) => (
+              <li key={o.playerId}>
+                {o.avatarUrl ? (
+                  <img className="party-presence__mini" src={o.avatarUrl} alt="" />
+                ) : (
+                  <span className="party-presence__dot" aria-hidden="true" />
+                )}
+                {o.username}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   )

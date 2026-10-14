@@ -231,22 +231,24 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
       <CampaignNavContext.Provider value={nav}>
         <div className="campaign-view">
           <div className="campaign-view__topbar">
-            <button
-              type="button"
-              className="campaign-view__hamburger"
-              onClick={() => setSidebarOpen((v) => !v)}
-              aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-              aria-pressed={sidebarOpen}
-            >
-              <Icon name="menu" />
-            </button>
-            <button
-              type="button"
-              className="btn btn--text campaign-view__mobile-back"
-              onClick={onBack}
-            >
-              &larr; Campaigns
-            </button>
+            <div className="campaign-view__topbar-start">
+              <button
+                type="button"
+                className="campaign-view__hamburger"
+                onClick={() => setSidebarOpen((v) => !v)}
+                aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+                aria-pressed={sidebarOpen}
+              >
+                <Icon name="menu" />
+              </button>
+              <button
+                type="button"
+                className="btn btn--text campaign-view__mobile-back"
+                onClick={onBack}
+              >
+                &larr; Campaigns
+              </button>
+            </div>
 
             {dmView ? (
               <span className="campaign-view__search-spacer" />
@@ -267,17 +269,20 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               </button>
             )}
 
-            <SyncStatus />
-            <PartyPresence campaignId={campaignId} playerId={playerId} username={username} />
+            <div className="campaign-view__topbar-end">
+              <SyncStatus />
+              <PartyPresence campaignId={campaignId} playerId={playerId} username={username} />
 
-            {playerId && roleReady && !isDm && <DmSharesBell campaignId={campaignId} playerId={playerId} />}
+              {playerId && roleReady && !isDm && <DmSharesBell campaignId={campaignId} playerId={playerId} />}
 
-            <AccountMenu
-              username={username}
-              onOpenSettings={() => setShowSettings(true)}
-              onSendFeedback={() => setShowFeedback(true)}
-              onLogOut={onLogOut}
-            />
+              <AccountMenu
+                playerId={playerId}
+                username={username}
+                onOpenSettings={() => setShowSettings(true)}
+                onSendFeedback={() => setShowFeedback(true)}
+                onLogOut={onLogOut}
+              />
+            </div>
           </div>
 
           {showFeedback && (
