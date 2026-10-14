@@ -24,15 +24,22 @@ async function copyText(text) {
 }
 
 // The finished link, ready to copy or send.
-function LinkBox({ link, onCopied }) {
+export function LinkBox({
+  link,
+  onCopied,
+  id = 'invite-link-url',
+  label = 'Invite link',
+  shareTitle = 'Join Adventurer’s Log',
+  shareText = 'Your invite to Adventurer’s Log',
+}) {
   const [copied, setCopied] = useState(false)
   const canShare = typeof navigator !== 'undefined' && Boolean(navigator.share)
   return (
     <div className="invite-link">
-      <label className="sr-only" htmlFor="invite-link-url">
-        Invite link
+      <label className="sr-only" htmlFor={id}>
+        {label}
       </label>
-      <input id="invite-link-url" className="invite-link__url" value={link} readOnly onFocus={(e) => e.target.select()} />
+      <input id={id} className="invite-link__url" value={link} readOnly onFocus={(e) => e.target.select()} />
       <div className="invite-link__actions">
         <button
           type="button"
@@ -50,7 +57,7 @@ function LinkBox({ link, onCopied }) {
           <button
             type="button"
             className="btn"
-            onClick={() => navigator.share({ title: 'Join Adventurer’s Log', text: 'Your invite to Adventurer’s Log', url: link }).catch(() => {})}
+            onClick={() => navigator.share({ title: shareTitle, text: shareText, url: link }).catch(() => {})}
           >
             <Icon name="send" /> Share
           </button>

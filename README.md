@@ -223,9 +223,15 @@ so your whole party can share one set of notes from any browser.
   who already has an account can open a campaign's invite link (or log in
   from it) and their dashboard offers **Join campaign**, or they can use
   **+ Campaign → Join Existing** with a join code. Run the "Sign-up by
-  invite link", "DM invites and the DM's Players tab" and "Existing
-  players can use invite links" blocks at the end of `supabase/schema.sql`
-  first.
+  invite link", "DM invites and the DM's Players tab", "Existing
+  players can use invite links" and "Account settings and password
+  resets" blocks at the end of `supabase/schema.sql` first. Players change
+  their own username, name, email and password under **Account** in the
+  avatar menu (confirmed with their current password). There's no email
+  sending, so **Forgot password?** on the login sends the admin a request;
+  the admin makes a single-use **reset link** (24 hours) from the Players
+  screen and sends it. Passwords are bcrypt-hashed, so nobody — the admin
+  included — can read them; the admin can only reset them.
   Emails are only visible to the admin; DMs see names. A
   player logs in at the normal app URL and sees a personal dashboard of
   just the campaigns they created or joined. Creating a campaign gives it
