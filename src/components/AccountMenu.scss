@@ -1,4 +1,3 @@
-@use 'sass:color';
 @use '../styles/variables' as *;
 
 .account-menu {
@@ -9,14 +8,15 @@
     width: 2.4rem;
     height: 2.4rem;
     border-radius: 50%;
-    background: linear-gradient(180deg, $gold-dim, color.adjust($gold-dim, $lightness: -8%));
+    background: linear-gradient(180deg, $gold-dim, $gold-dim);
     border: $border-gold;
     color: $ink;
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 1.05rem;
 
     &:hover {
-      background: linear-gradient(180deg, $gold, color.adjust($gold-dim, $lightness: -4%));
+      background: linear-gradient(180deg, $gold, $gold-dim);
     }
   }
 
@@ -36,6 +36,6 @@
     color: $gold-light;
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid color-mix(in srgb, $gold-dim 40%, transparent);
   }
 }

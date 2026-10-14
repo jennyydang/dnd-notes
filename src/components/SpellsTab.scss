@@ -47,7 +47,7 @@
     letter-spacing: 0.05em;
     margin-bottom: 0.85rem;
     padding-bottom: 0.4rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.3);
+    border-bottom: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
   }
 
   &__badge {
@@ -55,15 +55,15 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: $gold-light;
-    background: rgba($gold-light, 0.15);
-    border: 1px solid rgba($gold-light, 0.4);
+    background: color-mix(in srgb, $gold-light 15%, transparent);
+    border: 1px solid color-mix(in srgb, $gold-light 40%, transparent);
     border-radius: 999px;
     padding: 0.15rem 0.55rem;
   }
 
   &--current &__title {
     color: $gold-light;
-    border-bottom-color: rgba($gold-light, 0.5);
+    border-bottom-color: color-mix(in srgb, $gold-light 50%, transparent);
   }
 }
 
@@ -118,7 +118,7 @@
     height: 1.9rem;
     border-radius: 50%;
     background: $bg-deep;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid color-mix(in srgb, $gold-dim 60%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -136,8 +136,8 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: $text-muted;
-    background: rgba($gray-light, 0.18);
-    border: 1px solid rgba($gray-light, 0.4);
+    background: color-mix(in srgb, $gray-light 18%, transparent);
+    border: 1px solid color-mix(in srgb, $gray-light 40%, transparent);
     border-radius: 999px;
     padding: 0.15rem 0.55rem;
   }
@@ -174,7 +174,7 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
   }
 
   &--locked {
@@ -223,7 +223,7 @@
     height: 2rem;
     border-radius: 50%;
     background: $bg-deep;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid color-mix(in srgb, $gold-dim 60%, transparent);
     color: $gold-light;
     font-size: 1.3rem;
     line-height: 1;

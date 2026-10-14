@@ -7,13 +7,13 @@
     gap: 1rem;
     padding-bottom: 1.25rem;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid color-mix(in srgb, $gold-dim 40%, transparent);
   }
 
   &__hamburger {
     flex-shrink: 0;
     background: $bg-panel-raised;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid color-mix(in srgb, $gold-dim 50%, transparent);
     border-radius: $radius;
     color: $text-muted;
     font-size: 1.2rem;
@@ -78,7 +78,7 @@
     font-size: 0.7rem;
     color: $text-muted;
     background: $bg-panel-raised;
-    border: 1px solid rgba($gold-dim, 0.4);
+    border: 1px solid color-mix(in srgb, $gold-dim 40%, transparent);
     border-radius: $radius;
     padding: 0.1rem 0.4rem;
   }
@@ -119,7 +119,7 @@
     flex-direction: column;
     gap: 0.2rem;
     padding-bottom: 0.85rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid color-mix(in srgb, $gold-dim 40%, transparent);
   }
 
   &__name {
@@ -271,9 +271,9 @@
     padding: 0.35rem 0.2rem;
 
     &--active {
-      color: $gold-light;
-      border-top-color: $gold;
-      background: rgba($gold, 0.08);
+      color: var(--crimson);
+      border-top-color: var(--crimson);
+      background: var(--crimson-soft);
     }
   }
 

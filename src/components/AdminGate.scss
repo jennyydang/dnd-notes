@@ -42,7 +42,7 @@
     align-items: flex-end;
     gap: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid color-mix(in srgb, $gold-dim 40%, transparent);
   }
 
   &__subtitle {
@@ -115,7 +115,7 @@
   padding: 1rem 1.15rem;
   text-align: left;
   color: $text-light;
-  border: 1px solid rgba($gold-dim, 0.45);
+  border: 1px solid color-mix(in srgb, $gold-dim 45%, transparent);
   transition:
     border-color 0.18s ease,
     transform 0.18s ease,
@@ -129,7 +129,7 @@
 
   &.admin-stat--active {
     border-color: $gold;
-    background: linear-gradient(rgba($gold, 0.1), rgba($gold, 0.1)), $bg-panel;
+    background: linear-gradient(color-mix(in srgb, $gold 10%, transparent), color-mix(in srgb, $gold 10%, transparent)), $bg-panel;
     box-shadow: inset 0 -3px 0 $gold;
   }
 
@@ -215,7 +215,8 @@
     background: $bg-panel-raised;
     border: 1px solid $gold-dim;
     color: $gold-light;
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 1.15rem;
   }
 
@@ -276,7 +277,7 @@
 
     &--dm,
     &--creator {
-      border-color: rgba($gold, 0.6);
+      border-color: color-mix(in srgb, $gold 60%, transparent);
       color: $gold-light;
     }
   }
@@ -313,7 +314,7 @@
     justify-content: flex-end;
     gap: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
   }
 }
 
@@ -364,16 +365,16 @@
     padding: 0.25rem 0.6rem;
     border-radius: 999px;
     white-space: nowrap;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid color-mix(in srgb, $gold-dim 50%, transparent);
     color: $text-light;
 
     &--issue {
-      border-color: rgba($maroon-light, 0.6);
+      border-color: color-mix(in srgb, $maroon-light 60%, transparent);
       color: $maroon-text;
     }
 
     &--suggestion {
-      border-color: rgba($green, 0.5);
+      border-color: color-mix(in srgb, $green 50%, transparent);
       color: $green-text;
     }
   }

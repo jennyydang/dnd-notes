@@ -65,7 +65,7 @@
   &:hover,
   &:focus-visible {
     border-color: $gold;
-    background: rgba($gold, 0.08);
+    background: color-mix(in srgb, $gold 8%, transparent);
   }
 
   &__icon {
@@ -81,7 +81,8 @@
   }
 
   &__label {
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 0.98rem;
     color: $parchment;
   }

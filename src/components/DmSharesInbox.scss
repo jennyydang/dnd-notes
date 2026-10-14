@@ -19,7 +19,7 @@
 
   &--unread {
     border-color: $gold;
-    box-shadow: 0 0 0 3px rgba($gold, 0.18);
+    box-shadow: 0 0 0 3px color-mix(in srgb, $gold 18%, transparent);
   }
 
   &__count {
@@ -32,7 +32,7 @@
     border-radius: 999px;
     background: $maroon-light;
     border: 1px solid $bg-deep;
-    color: #fff;
+    color: var(--on-crimson);
     font-size: 0.72rem;
     font-weight: 700;
     line-height: 1.15rem;
@@ -111,7 +111,8 @@
   }
 
   &__title {
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 1.05rem;
     color: $parchment;
     overflow-wrap: anywhere;

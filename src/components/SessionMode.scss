@@ -1,4 +1,3 @@
-@use 'sass:color';
 @use '../styles/variables' as *;
 
 .session-mode {
@@ -28,7 +27,7 @@
     height: 0.7rem;
     border-radius: 50%;
     background: $green-light;
-    box-shadow: 0 0 0 3px rgba($green-light, 0.25);
+    box-shadow: 0 0 0 3px color-mix(in srgb, $green-light 25%, transparent);
 
     &--paused {
       background: $gray-light;
@@ -233,7 +232,7 @@
     font-size: 0.8rem;
     padding: 0.1rem 0.5rem;
     border-radius: 999px;
-    border: 1px solid rgba($maroon-light, 0.8);
+    border: 1px solid color-mix(in srgb, $maroon-light 80%, transparent);
     color: $maroon-text;
   }
 
@@ -246,18 +245,18 @@
     animation: vitals-flash 0.6s ease-out forwards;
 
     &--damage {
-      background: rgba($maroon-light, 0.45);
+      background: color-mix(in srgb, $maroon-light 45%, transparent);
     }
 
     &--heal {
-      background: rgba($green-light, 0.35);
+      background: color-mix(in srgb, $green-light 35%, transparent);
     }
   }
 
   &__hp-bar {
     height: 0.5rem;
     border-radius: 999px;
-    background: rgba($ink-soft, 0.8);
+    background: color-mix(in srgb, $ink-soft 80%, transparent);
     overflow: hidden;
 
     span {
@@ -329,7 +328,7 @@
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.75rem;
-    border: 1px dashed rgba($maroon-light, 0.8);
+    border: 1px dashed color-mix(in srgb, $maroon-light 80%, transparent);
     border-radius: $radius;
   }
 
@@ -351,7 +350,7 @@
     flex-direction: column;
     gap: 0.5rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
   }
 
   &__row-head {
@@ -415,7 +414,7 @@
     }
 
     border-radius: $radius;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid color-mix(in srgb, $gold-dim 60%, transparent);
     background: $bg-deep;
     color: $text-muted;
     font-size: 1.1rem;
@@ -423,7 +422,7 @@
     &--available {
       color: $gold-light;
       border-color: $gold;
-      background: rgba($gold, 0.12);
+      background: color-mix(in srgb, $gold 12%, transparent);
     }
   }
 
@@ -435,7 +434,7 @@
   &__rests {
     justify-content: flex-start;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
   }
 }
 
@@ -540,7 +539,7 @@
 
       &:hover,
       &:focus-visible {
-        background: rgba($gold, 0.12);
+        background: color-mix(in srgb, $gold 12%, transparent);
         color: $gold-light;
       }
     }
@@ -549,7 +548,8 @@
 
 .initiative {
   &__round {
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     color: $gold-light;
   }
 
@@ -606,15 +606,16 @@
 
     &--current {
       border-color: $gold;
-      background: rgba($gold, 0.14);
-      box-shadow: 0 0 0 1px rgba($gold, 0.4);
+      background: color-mix(in srgb, $gold 14%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, $gold 40%, transparent);
     }
   }
 
   &__score {
     min-width: 2rem;
     text-align: center;
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 1.1rem;
     color: $parchment;
   }
@@ -756,7 +757,7 @@
     li {
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px dotted rgba($gold-dim, 0.3);
+      border-bottom: 1px dotted color-mix(in srgb, $gold-dim 30%, transparent);
       padding: 0.15rem 0;
     }
   }

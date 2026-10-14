@@ -53,7 +53,7 @@
   position: relative;
   border-radius: $radius-lg;
   overflow: hidden;
-  border: 1px solid rgba($gold-dim, 0.5);
+  border: 1px solid color-mix(in srgb, $gold-dim 50%, transparent);
   background: $bg-deep;
   animation: rise-in 0.3s ease-out backwards;
 
@@ -91,7 +91,8 @@
   }
 
   &__title {
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 0.92rem;
     color: $parchment;
     overflow: hidden;
@@ -112,8 +113,8 @@
     padding: 0.2rem 0.6rem;
     font-size: 0.75rem;
     border-radius: 999px;
-    background: rgba($bg-deep, 0.85);
-    border: 1px solid rgba($gold-dim, 0.8);
+    background: color-mix(in srgb, $bg-deep 85%, transparent);
+    border: 1px solid color-mix(in srgb, $gold-dim 80%, transparent);
     color: $text-light;
     backdrop-filter: blur(2px);
 
@@ -177,7 +178,7 @@
     justify-content: space-between;
     gap: 1rem;
     padding: 0.6rem 1rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.35);
+    border-bottom: 1px solid color-mix(in srgb, $gold-dim 35%, transparent);
   }
 
   &__heading {
@@ -231,8 +232,8 @@
     width: 3rem;
     height: 3rem;
     border-radius: 50%;
-    border: 1px solid rgba($gold-dim, 0.8);
-    background: rgba($bg-deep, 0.7);
+    border: 1px solid color-mix(in srgb, $gold-dim 80%, transparent);
+    background: color-mix(in srgb, $bg-deep 70%, transparent);
     color: $gold-light;
     font-size: 1.8rem;
     line-height: 1;
@@ -240,7 +241,7 @@
     &:hover,
     &:focus-visible {
       border-color: $gold;
-      background: rgba($bg-deep, 0.9);
+      background: color-mix(in srgb, $bg-deep 90%, transparent);
     }
 
     &--prev {
@@ -259,7 +260,7 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-    border-top: 1px solid rgba($gold-dim, 0.35);
+    border-top: 1px solid color-mix(in srgb, $gold-dim 35%, transparent);
   }
 
   &__notes {

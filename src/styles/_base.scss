@@ -12,34 +12,62 @@ body,
 }
 
 body {
-  // A dark scrim sits between the gold glow and the photo — strong enough
-  // that even the photo's brightest spots (lantern flame, lit windows)
-  // stay close to $bg-deep, so text placed directly on body (e.g. the
-  // app header) keeps the AAA contrast already verified against a flat
-  // background. Fixed attachment on the photo only: a gradient with
-  // `fixed` repaints on every scroll frame for no visual benefit since it
-  // already fills the viewport.
-  background-color: $bg-deep;
-  background-image:
-    radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
-    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72)),
-    url('../assets/parchment-vista.webp');
+  // Parchment (default): flat parchment with a faint candle glow.
+  background-color: var(--surface);
+  background-image: radial-gradient(ellipse at top, color-mix(in srgb, var(--gold-fill) 10%, transparent), transparent 60%);
   background-repeat: no-repeat;
+  background-attachment: scroll;
+  color: var(--ink);
+  font-family: $font-body;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+// Dungeon theme keeps the torchlit castle photo (the "vista" background),
+// under a scrim of the dungeon surface strong enough that text set
+// straight on the page keeps its contrast. Fixed attachment on the photo
+// only: a gradient with `fixed` repaints every scroll frame for nothing.
+@mixin vista-background {
+  background-image:
+    radial-gradient(ellipse at top, color-mix(in srgb, var(--gold-fill) 6%, transparent), transparent 60%),
+    linear-gradient(color-mix(in srgb, var(--surface) 62%, transparent), color-mix(in srgb, var(--surface) 72%, transparent)),
+    url('../assets/parchment-vista.webp');
   background-position: center;
   background-size: auto, auto, cover;
   background-attachment: scroll, scroll, fixed;
-  color: $text-light;
-  font-family: $font-body;
-  font-size: 17px;
-  line-height: 1.5;
 }
 
+html[data-theme='dungeon']:not([data-bg]) body {
+  @include vista-background;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme='auto']:not([data-bg]) body {
+    @include vista-background;
+  }
+}
+
+// Cinzel (display) only for the big titles; smaller headings use
+// Literata bold, which stays readable at card sizes.
 h1,
-h2,
-h3 {
+h2 {
   font-family: $font-display;
-  letter-spacing: 0.03em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   margin: 0;
+}
+
+h3,
+h4 {
+  font-family: $font-body;
+  font-weight: 700;
+  margin: 0;
+}
+
+a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 button {
@@ -53,23 +81,21 @@ select {
   font-family: $font-body;
 }
 
-// A single, explicit, high-contrast focus indicator for every focusable
-// element in the app (buttons, links, form fields, tabs) rather than
-// relying on inconsistent browser defaults — $gold-light passes 7:1+
-// against every background used here, comfortably clearing the 3:1
-// non-text contrast a visible focus ring needs.
+// One explicit focus ring for everything focusable (Grimoire: 2px solid
+// --focus, 2px offset) — violet on parchment, torch-gold in the dungeon,
+// 6.6:1+ on every surface.
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid $gold-light;
+  outline: var(--focus-width) solid var(--focus);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: rgba($gold, 0.35);
+  background: color-mix(in srgb, $gold 35%, transparent);
 }
 
 ::-webkit-scrollbar {
@@ -81,7 +107,7 @@ textarea:focus-visible,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: $gold-dim;
+  background: var(--line-strong);
   border-radius: $radius;
 }
 
@@ -90,22 +116,21 @@ textarea:focus-visible,
 // change, so the default (no attribute present) stays exactly today's
 // look, and no new colors are introduced that would need their own AAA
 // contrast audit.
+// 'plain' = no photo in either theme (the default body rule above).
 html[data-bg='plain'] body {
-  background-image:
-    radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
-    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72));
+  background-image: radial-gradient(ellipse at top, color-mix(in srgb, var(--gold-fill) 8%, transparent), transparent 60%);
 }
 
-// --custom-bg-image is set inline on <html> by applySettings() (see
-// src/lib/settings.js) once a player has uploaded their own background —
-// same 3-layer shape as the default rule above, so it inherits the same
-// scrim (and the AAA text-contrast that scrim guarantees) plus the
-// existing background-size/position/repeat/attachment on body.
+// --custom-bg-image is set inline on <html> by applySettings() once a
+// player uploads their own background; the theme's surface scrim keeps
+// text readable over it in either theme.
 html[data-bg='custom'] body {
   background-image:
-    radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
-    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72)),
+    linear-gradient(color-mix(in srgb, var(--surface) 72%, transparent), color-mix(in srgb, var(--surface) 82%, transparent)),
     var(--custom-bg-image);
+  background-position: center;
+  background-size: auto, cover;
+  background-attachment: scroll, fixed;
 }
 
 html[data-font='modern'] {

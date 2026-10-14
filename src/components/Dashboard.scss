@@ -53,7 +53,7 @@
     width: 120px;
     height: 90px;
     border-radius: $radius-lg;
-    border: 2px dashed rgba($gold-dim, 0.6);
+    border: 2px dashed color-mix(in srgb, $gold-dim 60%, transparent);
     background: $bg-deep;
     padding: 0;
     overflow: hidden;
@@ -126,7 +126,7 @@
     font-family: $font-display;
     font-size: 2rem;
     color: $gold-light;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid color-mix(in srgb, $gold-dim 40%, transparent);
 
     img {
       width: 100%;
@@ -153,8 +153,8 @@
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     color: $gold-light;
-    background: rgba($gold, 0.12);
-    border: 1px solid rgba($gold-light, 0.4);
+    background: color-mix(in srgb, $gold 12%, transparent);
+    border: 1px solid color-mix(in srgb, $gold-light 40%, transparent);
     border-radius: $radius;
     padding: 0.1rem 0.45rem;
   }

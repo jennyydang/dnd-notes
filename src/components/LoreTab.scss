@@ -76,6 +76,6 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid color-mix(in srgb, $gold-dim 30%, transparent);
   }
 }

@@ -112,8 +112,8 @@
     cursor: pointer;
 
     &--active {
-      background: rgba($gold, 0.12);
-      border-color: rgba($gold, 0.5);
+      background: color-mix(in srgb, $gold 12%, transparent);
+      border-color: color-mix(in srgb, $gold 50%, transparent);
     }
   }
 

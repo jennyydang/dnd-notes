@@ -1,4 +1,5 @@
 @use './styles/variables' as *;
+@use './styles/tokens';
 @use './styles/base';
 @use './styles/shared';
 @use './styles/motion';
@@ -16,8 +17,8 @@
 
   &__title {
     font-size: 2.4rem;
-    color: $gold-light;
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    font-weight: 700;
+    color: var(--crimson);
   }
 
   &__subtitle {

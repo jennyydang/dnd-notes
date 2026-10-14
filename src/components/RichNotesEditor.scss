@@ -20,7 +20,7 @@
     width: 1px;
     align-self: stretch;
     margin: 0 0.2rem;
-    background: rgba($gold-dim, 0.5);
+    background: color-mix(in srgb, $gold-dim 50%, transparent);
   }
 
   &__tool {
@@ -39,7 +39,7 @@
 
     &--active {
       border-color: $gold;
-      background: rgba($gold, 0.15);
+      background: color-mix(in srgb, $gold 15%, transparent);
       color: $gold-light;
     }
   }
@@ -101,7 +101,7 @@
 
     kbd {
       font-family: inherit;
-      border: 1px solid rgba($gold-dim, 0.6);
+      border: 1px solid color-mix(in srgb, $gold-dim 60%, transparent);
       border-radius: 3px;
       padding: 0 0.25rem;
       color: $gold-light;
@@ -132,7 +132,7 @@
     font-size: 0.9rem;
 
     &--active {
-      background: rgba($gold, 0.15);
+      background: color-mix(in srgb, $gold 15%, transparent);
       color: $gold-light;
     }
 
@@ -161,8 +161,8 @@
   white-space: nowrap;
 
   &--person {
-    background: rgba($maroon-light, 0.35);
-    border: 1px solid rgba($maroon-light, 0.8);
+    background: color-mix(in srgb, $maroon-light 35%, transparent);
+    border: 1px solid color-mix(in srgb, $maroon-light 80%, transparent);
     color: $maroon-text;
 
     &::before {
@@ -171,8 +171,8 @@
   }
 
   &--place {
-    background: rgba($green-light, 0.25);
-    border: 1px solid rgba($green-light, 0.8);
+    background: color-mix(in srgb, $green-light 25%, transparent);
+    border: 1px solid color-mix(in srgb, $green-light 80%, transparent);
     color: $green-text;
 
     &::before {
@@ -181,8 +181,8 @@
   }
 
   &--lore {
-    background: rgba($gray-light, 0.3);
-    border: 1px solid rgba($gray-light, 0.9);
+    background: color-mix(in srgb, $gray-light 30%, transparent);
+    border: 1px solid color-mix(in srgb, $gray-light 90%, transparent);
     color: $gray-text;
 
     &::before {
@@ -191,8 +191,8 @@
   }
 
   &--loot {
-    background: rgba($gold, 0.18);
-    border: 1px solid rgba($gold, 0.8);
+    background: color-mix(in srgb, $gold 18%, transparent);
+    border: 1px solid color-mix(in srgb, $gold 80%, transparent);
     color: $gold-light;
 
     &::before {
@@ -205,8 +205,8 @@
   &--event {
     display: inline;
     white-space: normal;
-    background: rgba($maroon, 0.25);
-    border: 1px dashed rgba($gold, 0.7);
+    background: color-mix(in srgb, $maroon 25%, transparent);
+    border: 1px dashed color-mix(in srgb, $gold 70%, transparent);
     color: $parchment;
     font-style: italic;
     box-decoration-break: clone;

@@ -53,7 +53,7 @@ function QuickNoteInput({ onAdd, placeholder = 'Jot a quick note…', autoFocus 
         aria-describedby={error ? 'quick-note-error' : undefined}
         autoFocus={autoFocus}
       />
-      <button type="submit" className="btn btn--primary" disabled={saving}>
+      <button type="submit" className="btn" disabled={saving}>
         {saving ? 'Saving…' : 'Save'}
       </button>
       {error && (

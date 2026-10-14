@@ -50,7 +50,7 @@
 
 @keyframes flash-damage {
   0% {
-    background-color: rgba($maroon-light, 0.45);
+    background-color: color-mix(in srgb, $maroon-light 45%, transparent);
   }
   100% {
     background-color: $bg-deep;
@@ -59,7 +59,7 @@
 
 @keyframes flash-heal {
   0% {
-    background-color: rgba($green-light, 0.4);
+    background-color: color-mix(in srgb, $green-light 40%, transparent);
   }
   100% {
     background-color: $bg-deep;

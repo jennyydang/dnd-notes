@@ -108,7 +108,7 @@
 
     &:hover,
     &:focus-visible {
-      background: linear-gradient(rgba($gold, 0.08), rgba($gold, 0.08)), $bg-panel;
+      background: linear-gradient(color-mix(in srgb, $gold 8%, transparent), color-mix(in srgb, $gold 8%, transparent)), $bg-panel;
     }
   }
 
@@ -125,7 +125,7 @@
 
     strong {
       color: $gold-light;
-      font-family: $font-display;
+      font-family: $font-body;
       font-weight: normal;
     }
 
@@ -232,7 +232,8 @@
   }
 
   &__recap-title {
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 1.1rem;
     color: $parchment;
   }
@@ -316,7 +317,8 @@
 
   &__character-name {
     margin: 0;
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 1.15rem;
     color: $parchment;
   }
@@ -491,7 +493,8 @@
   }
 
   &__title {
-    font-family: $font-display;
+    font-family: $font-body;
+    font-weight: 700;
     font-size: 1rem;
     color: $parchment;
     overflow: hidden;
