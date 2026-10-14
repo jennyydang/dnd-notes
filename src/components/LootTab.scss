@@ -13,6 +13,22 @@
       margin-right: auto;
     }
   }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0 0.75rem;
+
+    .tab-nav--pill {
+      max-width: 100%;
+    }
+  }
+
+  // Stays on the right, even when it wraps under the sort on a phone.
+  &__holders {
+    margin-left: auto;
+  }
 }
 
 .loot-form {

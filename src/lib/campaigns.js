@@ -96,14 +96,24 @@ export async function listCampaignPlayers(campaignId) {
 // The DM taking a player out of their campaign. Only the membership goes
 // (the account and their other campaigns stay); any character they'd
 // claimed here stays in the party, unclaimed. They can come back with the
-// join code or a new invite link.
-export async function removeFromCampaign(campaignId, playerId) {
+// join code or a new invite link. Removing the campaign's creator hands
+// the creator spot to `newCreatorId` (the DM doing it) first, so the
+// campaign is never left without one.
+export async function removeFromCampaign(campaignId, playerId, { newCreatorId } = {}) {
+  if (newCreatorId) {
+    const { error: transferError } = await supabase
+      .from('campaigns')
+      .update({ created_by: newCreatorId })
+      .eq('id', campaignId)
+    if (transferError) throw new Error(transferError.message)
+    notifyTableChanged('campaigns')
+  }
   const { error } = await supabase
     .from('campaign_members')
     .delete()
     .eq('campaign_id', campaignId)
     .eq('player_id', playerId)
-    .eq('role', 'player')
+    .in('role', ['player', 'creator'])
   if (error) throw new Error(error.message)
   notifyTableChanged('campaign_members')
   const { error: unclaimError } = await supabase

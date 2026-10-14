@@ -107,6 +107,14 @@
     color: $maroon-text;
   }
 
+  &__roles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
   &__role {
     flex-shrink: 0;
     padding: 0.15rem 0.6rem;
