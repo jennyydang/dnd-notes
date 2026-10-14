@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   addCombatant,
   addCondition,
+  callForInitiative,
   emptyEncounter,
   nextTurn,
   previousTurn,
@@ -10,7 +11,7 @@ import {
   updateCombatant,
 } from '../../lib/initiative.js'
 import { CONDITIONS, newId } from '../../lib/character.js'
-import { useCampaignData } from '../../hooks/useCampaignData.js'
+import { useCampaignData, useCampaignNav } from '../../hooks/useCampaignData.js'
 import { useSharedEncounter } from '../../hooks/useSharedEncounter.js'
 import { SectionCard } from '../ui.jsx'
 import Icon from '../Icon.jsx'
@@ -81,6 +82,7 @@ function ConditionForm({ combatant, onAdd, onClose }) {
 // "your turn" alert anywhere in the app.
 function InitiativeTracker({ characterName, characterInitBonus }) {
   const { campaignId, playerId, tables } = useCampaignData()
+  const { isDm } = useCampaignNav()
   const { state, update, shared, error: saveError } = useSharedEncounter(campaignId)
   const [name, setName] = useState('')
   const [roll, setRoll] = useState('')
@@ -140,7 +142,21 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
   }
 
   function endEncounter() {
-    if (window.confirm('End this encounter and clear the initiative order for everyone?')) update(() => emptyEncounter())
+    const message = state.combat
+      ? 'End combat? This clears the initiative order and takes everyone out of combat mode.'
+      : 'End this encounter and clear the initiative order for everyone?'
+    if (window.confirm(message)) update(() => emptyEncounter())
+  }
+
+  // DM: alert every player (their screens shake) and switch the app into
+  // combat mode, starting a fresh initiative order.
+  function callInitiative() {
+    if (state.combatants.length && !window.confirm('Start a new encounter? This clears the current initiative order.')) return
+    update(() => callForInitiative({ id: newId(), at: new Date().toISOString() }))
+  }
+
+  function alertAgain() {
+    update((s) => ({ ...s, alert: { id: newId(), at: new Date().toISOString() } }))
   }
 
   const current = state.started ? state.combatants[state.turn] : null
@@ -156,6 +172,28 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
         )
       }
     >
+      {isDm && !state.combat && (
+        <button type="button" className="btn initiative__call" onClick={callInitiative}>
+          <Icon name="quest" /> Call for initiative!
+          <span className="initiative__call-sub">Shakes the players’ screens and starts combat mode</span>
+        </button>
+      )}
+      {state.combat && !state.started && (
+        <div className="initiative__rolling" role="status">
+          <p>
+            <strong>Rolling for initiative.</strong>{' '}
+            {isDm
+              ? 'Add each roll below as the players call them out, then start combat.'
+              : 'Tell your DM your roll — they’ll add it here.'}
+          </p>
+          {isDm && (
+            <button type="button" className="btn btn--text" onClick={alertAgain}>
+              Alert again
+            </button>
+          )}
+        </div>
+      )}
+
       <p className="initiative__shared">
         {shared ? (
           <>
@@ -304,7 +342,7 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
             {state.started ? 'Next turn' : 'Start combat'} <Icon name="next" />
           </button>
           <button type="button" className="btn btn--text" onClick={endEncounter}>
-            End encounter
+            {state.combat ? 'End combat' : 'End encounter'}
           </button>
         </div>
       )}
