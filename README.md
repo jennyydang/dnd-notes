@@ -217,7 +217,9 @@ so your whole party can share one set of notes from any browser.
   send invite links too, from the new **Players** tab in their view —
   always for their own campaign. That tab also lists who's in the
   campaign with the character(s) each has claimed, and characters nobody
-  has claimed yet. Players can be in **any number of campaigns**: someone
+  has claimed yet; **Remove from campaign** takes a player out of that
+  campaign only (their account and other campaigns stay, and their
+  character stays in the party, unclaimed). Players can be in **any number of campaigns**: someone
   who already has an account can open a campaign's invite link (or log in
   from it) and their dashboard offers **Join campaign**, or they can use
   **+ Campaign → Join Existing** with a join code. Run the "Sign-up by

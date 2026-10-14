@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useCampaignData } from '../hooks/useCampaignData.js'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { createCampaignInvite, listCampaignInvites, revokeCampaignInvite } from '../lib/auth.js'
-import { listCampaignPlayers } from '../lib/campaigns.js'
+import { listCampaignPlayers, removeFromCampaign } from '../lib/campaigns.js'
 import { usePlayerAvatar } from '../lib/profiles.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { InviteDialog, InviteList } from './InvitePlayers.jsx'
@@ -28,9 +28,23 @@ function CharacterChip({ member }) {
   )
 }
 
-function PlayerCard({ player, characters }) {
+function PlayerCard({ player, characters, onRemove }) {
   const avatar = usePlayerAvatar(player.playerId)
   const name = player.displayName || player.username
+  const [removing, setRemoving] = useState(false)
+  const [removeError, setRemoveError] = useState(null)
+
+  async function remove() {
+    setRemoving(true)
+    setRemoveError(null)
+    try {
+      if (!(await onRemove(player, name, characters))) setRemoving(false)
+    } catch (err) {
+      setRemoveError(`Couldn’t remove ${name}: ${err.message}`)
+      setRemoving(false)
+    }
+  }
+
   return (
     <li className="dm-player panel">
       <header className="dm-player__header">
@@ -51,6 +65,18 @@ function PlayerCard({ player, characters }) {
         </ul>
       ) : (
         player.role !== 'dm' && <p className="dm-player__none">No character claimed yet.</p>
+      )}
+      {removeError && (
+        <p className="dm-player__error" role="alert">
+          {removeError}
+        </p>
+      )}
+      {onRemove && (
+        <div className="dm-player__actions">
+          <button type="button" className="btn btn--text dm-player__remove" onClick={remove} disabled={removing}>
+            {removing ? 'Removing…' : 'Remove from campaign'}
+          </button>
+        </div>
       )}
     </li>
   )
@@ -94,6 +120,21 @@ function DmPlayersTab({ campaignName }) {
   const unclaimed = party.filter((m) => m.member_type !== 'NPC' && (!m.claimed_by || !memberIds.has(m.claimed_by)))
   const playerCount = players.filter((p) => p.role === 'player').length
 
+  // Takes them out of this campaign only — their account stays.
+  async function removePlayer(player, name, characters) {
+    const chars = characters.map((c) => c.name).filter(Boolean)
+    const ok = window.confirm(
+      `Remove ${name} from ${campaignName}?\n\n` +
+        'Their account stays, along with any other campaigns they’re in — they just lose access to this one.' +
+        (chars.length ? ` ${chars.join(' and ')} stays in the party, unclaimed.` : '') +
+        ' They can rejoin with the join code or a new invite link.',
+    )
+    if (!ok) return false
+    await removeFromCampaign(campaignId, player.playerId)
+    setPlayers((list) => list.filter((p) => p.playerId !== player.playerId))
+    return true
+  }
+
   return (
     <section className="dm-players">
       <div className="dm-players__toolbar">
@@ -132,7 +173,13 @@ function DmPlayersTab({ campaignName }) {
       {players.length > 0 && (
         <ul className="dm-players__list">
           {players.map((p) => (
-            <PlayerCard key={p.playerId} player={p} characters={byPlayer.get(p.playerId) || []} />
+            <PlayerCard
+              key={p.playerId}
+              player={p}
+              characters={byPlayer.get(p.playerId) || []}
+              // DMs and the campaign's creator can't be removed from here.
+              onRemove={p.role === 'player' && p.playerId !== playerId ? removePlayer : null}
+            />
           ))}
         </ul>
       )}

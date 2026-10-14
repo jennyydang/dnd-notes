@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js'
+import { notifyTableChanged } from '../hooks/useSupabaseTable.js'
 
 export async function createCampaign(playerId, { name, description, coverImagePath }) {
   const { data, error } = await supabase.rpc('create_campaign', {
@@ -90,4 +91,25 @@ export async function listCampaignPlayers(campaignId) {
   if (!/could not find the function|does not exist/i.test(error.message)) throw new Error(error.message)
   const members = await listCampaignMembers(campaignId)
   return members.map((m) => ({ playerId: m.playerId, username: m.username, displayName: '', role: m.role }))
+}
+
+// The DM taking a player out of their campaign. Only the membership goes
+// (the account and their other campaigns stay); any character they'd
+// claimed here stays in the party, unclaimed. They can come back with the
+// join code or a new invite link.
+export async function removeFromCampaign(campaignId, playerId) {
+  const { error } = await supabase
+    .from('campaign_members')
+    .delete()
+    .eq('campaign_id', campaignId)
+    .eq('player_id', playerId)
+    .eq('role', 'player')
+  if (error) throw new Error(error.message)
+  notifyTableChanged('campaign_members')
+  const { error: unclaimError } = await supabase
+    .from('party_members')
+    .update({ claimed_by: null })
+    .eq('campaign_id', campaignId)
+    .eq('claimed_by', playerId)
+  if (!unclaimError) notifyTableChanged('party_members')
 }
