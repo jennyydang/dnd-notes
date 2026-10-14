@@ -16,6 +16,14 @@
     gap: 0.75rem;
   }
 
+  // Bell and account menu sit together on the right, as in a campaign.
+  &__toolbar-account {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+  }
+
   &__filter {
     margin-bottom: 0;
   }
