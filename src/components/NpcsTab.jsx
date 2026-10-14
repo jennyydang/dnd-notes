@@ -368,14 +368,6 @@ function NpcsTab({ campaignId }) {
                 <button
                   type="button"
                   className="btn btn--text"
-                  onClick={() => openEntity('npc', npc.id)}
-                  aria-label={`Links and related entries for ${npc.name}`}
-                >
-                  Links
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--text"
                   onClick={() => startEditing(npc)}
                 >
                   Edit

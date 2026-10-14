@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
-import { useCampaignNav } from '../hooks/useCampaignData.js'
 import { confirmDelete } from '../lib/confirm.js'
 import TabNav from './TabNav.jsx'
 import Modal from './Modal.jsx'
@@ -56,7 +55,6 @@ function parseStat(value, max) {
 // any player can add, edit or remove one. A filter switches between all
 // of them, just monsters, or just creatures.
 function CreaturesTab({ campaignId }) {
-  const { openEntity } = useCampaignNav()
   const { items: creatures, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('creatures', {
     fromRow,
     filters: { campaign_id: campaignId },
@@ -350,14 +348,6 @@ function CreaturesTab({ campaignId }) {
               {c.encounteredAt && <p className="creature-card__where">Met: {c.encounteredAt}</p>}
               {c.notes && <p className="creature-card__notes">{c.notes}</p>}
               <div className="creature-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => openEntity('creature', c.id)}
-                  aria-label={`Links and related entries for ${c.name}`}
-                >
-                  Links
-                </button>
                 <button type="button" className="btn btn--text" onClick={() => startEditing(c)}>
                   Edit
                 </button>

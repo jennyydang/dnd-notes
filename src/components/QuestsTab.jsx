@@ -3,7 +3,6 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import './QuestsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
-import { useCampaignNav } from '../hooks/useCampaignData.js'
 
 const QUEST_STATUSES = ['Active', 'Completed', 'Failed']
 
@@ -18,7 +17,6 @@ const fromRow = (r) => ({
 })
 
 function QuestsTab({ campaignId }) {
-  const { openEntity } = useCampaignNav()
   const { items: quests, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('quests', { fromRow, filters: { campaign_id: campaignId } })
   const [isAdding, setIsAdding] = useState(false)
@@ -186,14 +184,6 @@ function QuestsTab({ campaignId }) {
               )}
               {quest.notes && <p className="quest-card__notes">{quest.notes}</p>}
               <div className="quest-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => openEntity('quest', quest.id)}
-                  aria-label={`Links and related entries for ${quest.name}`}
-                >
-                  Links
-                </button>
                 <button
                   type="button"
                   className="btn btn--text"
