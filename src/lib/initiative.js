@@ -4,7 +4,10 @@
 //   turn: index into the sorted list, round: 1-based, started: bool,
 //   expired: [{ combatant, condition }] — conditions that just ran out,
 //   combat: bool — the app is in combat mode for everyone,
-//   alert: { id, at } — the DM's latest "roll for initiative" call }
+//   alert: { id, at, dice } — the DM's latest "roll for initiative" call,
+//   dice: { sides, mode: 'normal' | 'advantage' | 'disadvantage' } }
+// The list's order is the turn order. New combatants slot in by their
+// initiative, but the DM can drag anyone anywhere and that order sticks.
 // `playerId` links a combatant to the player who plays it (for "your
 // turn" alerts); `rounds` counts down at the start of that combatant's
 // turn, and null means "until removed".
@@ -106,12 +109,67 @@ export function sortCombatants(combatants) {
     .map(({ c }) => c)
 }
 
-export function addCombatant(state, combatant) {
+// Keeps the same creature "up" after the list changes around it.
+function keepTurn(state, combatants) {
   const current = state.combatants[state.turn]
-  const combatants = sortCombatants([...state.combatants, combatant])
-  // Keep the same creature "up" when someone joins mid-fight.
   const turn = state.started && current ? combatants.findIndex((c) => c.id === current.id) : 0
   return { ...state, combatants, turn: Math.max(0, turn) }
+}
+
+// Inserts by initiative — right after the last combatant with the same or
+// a higher score — without re-sorting the rest, so the DM's manual order
+// survives new arrivals. On an unsorted-by-hand list this is plain
+// "highest first, ties in the order they came".
+export function addCombatant(state, combatant) {
+  const at = state.combatants.findLastIndex((c) => c.initiative >= combatant.initiative) + 1
+  const combatants = [...state.combatants]
+  combatants.splice(at, 0, combatant)
+  return keepTurn(state, combatants)
+}
+
+// The DM dragging a combatant to a new position.
+export function moveCombatant(state, id, toIndex) {
+  const from = state.combatants.findIndex((c) => c.id === id)
+  if (from === -1) return state
+  const to = Math.max(0, Math.min(state.combatants.length - 1, toIndex))
+  if (to === from) return state
+  const combatants = [...state.combatants]
+  const [moved] = combatants.splice(from, 1)
+  combatants.splice(to, 0, moved)
+  return keepTurn(state, combatants)
+}
+
+// A player's own roll from the app: replaces any earlier entry of theirs
+// and slots them into the order by the new total.
+export function addPlayerRoll(state, combatant) {
+  const without = state.combatants.filter((c) => !(combatant.playerId && c.playerId === combatant.playerId))
+  const kept = state.combatants.find((c) => combatant.playerId && c.playerId === combatant.playerId)
+  const base = keepTurn(state, without)
+  return addCombatant(base, kept ? { ...kept, ...combatant, id: kept.id, conditions: kept.conditions || [] } : combatant)
+}
+
+export const DICE_MODES = {
+  normal: 'Normal',
+  advantage: 'Advantage',
+  disadvantage: 'Disadvantage',
+}
+export const INITIATIVE_DICE = [20, 12, 10, 8, 6, 4]
+export const defaultDice = () => ({ sides: 20, mode: 'normal' })
+
+// "d20", "d20 with advantage", "d12 with disadvantage".
+export function describeDice(dice) {
+  const { sides, mode } = { ...defaultDice(), ...dice }
+  return `d${sides}${mode === 'normal' ? '' : ` with ${mode}`}`
+}
+
+// Rolls the DM's dice; `random` returns [0, 1) (Math.random by default).
+// { rolls: [n] or [n, n], die: the one that counts, total }.
+export function rollInitiative(dice, bonus = 0, random = Math.random) {
+  const { sides, mode } = { ...defaultDice(), ...dice }
+  const roll = () => 1 + Math.floor(random() * sides)
+  const rolls = mode === 'normal' ? [roll()] : [roll(), roll()]
+  const die = mode === 'advantage' ? Math.max(...rolls) : mode === 'disadvantage' ? Math.min(...rolls) : rolls[0]
+  return { rolls, die, total: die + (Number(bonus) || 0) }
 }
 
 export function removeCombatant(state, id) {

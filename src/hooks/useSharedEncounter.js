@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSupabaseTable } from './useSupabaseTable.js'
+import { notifyTableChanged, useSupabaseTable } from './useSupabaseTable.js'
 import { supabase } from '../lib/supabaseClient.js'
 import { emptyEncounter, normalizeEncounter } from '../lib/initiative.js'
 import { getEncounter, setEncounter } from '../lib/sessionMode.js'
+import { isNetworkError } from '../lib/offline.js'
+
+const MAX_ATTEMPTS = 6
 
 const identity = (row) => row
 
 // The campaign's live encounter, shared by every device through the
 // `encounters` table (one row per campaign; Realtime brings other devices'
-// changes in). `update(change)` applies a change — a function of the
-// current state — on this screen at once and saves it; saves go out one
-// at a time, in order. Until the database has the table, it falls back to
+// changes in). `update(change)` applies a change — a pure function of the
+// state — on this screen at once, then saves it by re-applying it to the
+// latest saved state; saves go out one at a time, in order. Until the database has the table, it falls back to
 // this device's storage (`shared` is then false).
 export function useSharedEncounter(campaignId) {
   const table = useSupabaseTable('encounters', {
@@ -18,7 +21,7 @@ export function useSharedEncounter(campaignId) {
     orderBy: 'updated_at',
     filters: { campaign_id: campaignId },
   })
-  const { items, error, loading, addItem, updateItem } = table
+  const { items, error, loading, addItem, updateItem, refetch } = table
   const shared = !error
   const row = items[0] || null
 
@@ -39,26 +42,51 @@ export function useSharedEncounter(campaignId) {
     if (!shared) setEncounter(campaignId, local.combatants.length ? local : null)
   }, [shared, campaignId, local])
 
-  const write = useCallback(
+  // Read-modify-write against the latest saved encounter, saved only if
+  // nobody else saved in between (matched on updated_at), retrying
+  // otherwise. So two players' rolls landing together can't overwrite
+  // each other.
+  const writeChange = useCallback(
+    async (change) => {
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        const { data, error: readError } = await supabase
+          .from('encounters')
+          .select('id, state, updated_at')
+          .eq('campaign_id', campaignId)
+        if (readError) throw readError
+        const current = data[0] || null
+        const base = current ? normalizeEncounter(current.state) : emptyEncounter()
+        const next = change(base)
+        if (next === base) return
+        const payload = { state: next, updated_at: new Date().toISOString() }
+        if (!current) {
+          const { error: insertError } = await supabase.from('encounters').insert({ campaign_id: campaignId, ...payload })
+          if (!insertError) return
+          if (!/duplicate|unique/i.test(insertError.message)) throw insertError
+          continue // someone else created it first: go again on theirs
+        }
+        const { data: saved, error: updateError } = await supabase
+          .from('encounters')
+          .update(payload)
+          .eq('id', current.id)
+          .eq('updated_at', current.updated_at)
+          .select('id')
+        if (updateError) throw updateError
+        if (saved?.length) return
+      }
+      throw new Error('The encounter kept changing under us — try again.')
+    },
+    [campaignId],
+  )
+
+  // Offline: queue the whole new state (lib/offline.js sends it later).
+  const writeQueued = useCallback(
     async (next) => {
       const payload = { state: next, updated_at: new Date().toISOString() }
-      if (rowIdRef.current) {
-        await updateItem(rowIdRef.current, payload)
-        return
-      }
-      try {
-        const created = await addItem(payload)
-        rowIdRef.current = created.id
-      } catch (err) {
-        // Another device created the campaign's row first: save over it.
-        if (!/duplicate|unique/i.test(err.message)) throw err
-        const { data, error: readError } = await supabase.from('encounters').select('id').eq('campaign_id', campaignId)
-        if (readError || !data?.length) throw err
-        rowIdRef.current = data[0].id
-        await updateItem(rowIdRef.current, payload)
-      }
+      if (rowIdRef.current) await updateItem(rowIdRef.current, payload)
+      else rowIdRef.current = (await addItem(payload)).id
     },
-    [addItem, updateItem, campaignId],
+    [addItem, updateItem],
   )
 
   const update = useCallback(
@@ -72,13 +100,22 @@ export function useSharedEncounter(campaignId) {
       }
       setPending(next)
       queueRef.current = queueRef.current
-        .then(() => write(next))
+        .then(async () => {
+          try {
+            await writeChange(change)
+          } catch (err) {
+            if (!isNetworkError(err)) throw err
+            await writeQueued(next)
+          }
+          await refetch({ silent: true })
+          notifyTableChanged('encounters')
+        })
         .then(() => setSaveError(null))
         .catch((err) => setSaveError(err.message))
         // Show the saved row again once nothing newer is waiting.
         .finally(() => setPending((p) => (p === next ? null : p)))
     },
-    [shared, write],
+    [shared, writeChange, writeQueued, refetch],
   )
 
   return { state, update, shared, loading: shared && loading, error: saveError }

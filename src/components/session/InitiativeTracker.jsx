@@ -2,8 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import {
   addCombatant,
   addCondition,
+  DICE_MODES,
+  INITIATIVE_DICE,
   callForInitiative,
+  defaultDice,
+  describeDice,
   emptyEncounter,
+  moveCombatant,
   nextTurn,
   previousTurn,
   removeCombatant,
@@ -13,6 +18,9 @@ import {
 import { CONDITIONS, newId } from '../../lib/character.js'
 import { useCampaignData, useCampaignNav } from '../../hooks/useCampaignData.js'
 import { useSharedEncounter } from '../../hooks/useSharedEncounter.js'
+import { useActiveCharacter } from '../../hooks/useActiveCharacter.js'
+import { useDragReorder } from '../../hooks/useDragReorder.js'
+import RollForMe from './RollForMe.jsx'
 import { SectionCard } from '../ui.jsx'
 import Icon from '../Icon.jsx'
 
@@ -89,6 +97,9 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
   const [hp, setHp] = useState('')
   const [error, setError] = useState(null)
   const [conditionFor, setConditionFor] = useState(null)
+  const [dice, setDice] = useState(defaultDice)
+  const { character } = useActiveCharacter()
+  const drag = useDragReorder((id, to) => update((st) => moveCombatant(st, id, to)))
 
   const party = tables.character.items
   const playerFor = (combatantName) =>
@@ -152,11 +163,11 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
   // combat mode, starting a fresh initiative order.
   function callInitiative() {
     if (state.combatants.length && !window.confirm('Start a new encounter? This clears the current initiative order.')) return
-    update(() => callForInitiative({ id: newId(), at: new Date().toISOString() }))
+    update(() => callForInitiative({ id: newId(), at: new Date().toISOString(), dice }))
   }
 
   function alertAgain() {
-    update((s) => ({ ...s, alert: { id: newId(), at: new Date().toISOString() } }))
+    update((s) => ({ ...s, alert: { id: newId(), at: new Date().toISOString(), dice: s.alert?.dice || dice } }))
   }
 
   const current = state.started ? state.combatants[state.turn] : null
@@ -173,23 +184,56 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
       }
     >
       {isDm && !state.combat && (
-        <button type="button" className="btn initiative__call" onClick={callInitiative}>
-          <Icon name="quest" /> Call for initiative!
-          <span className="initiative__call-sub">Shakes the players’ screens and starts combat mode</span>
-        </button>
+        <div className="initiative__call-box">
+          <div className="initiative__dice" role="group" aria-label="Initiative dice">
+            <label className="initiative__dice-size">
+              <span>Roll</span>
+              <select value={dice.sides} onChange={(e) => setDice((d) => ({ ...d, sides: Number(e.target.value) }))}>
+                {INITIATIVE_DICE.map((sides) => (
+                  <option key={sides} value={sides}>
+                    d{sides}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="initiative__modes" role="radiogroup" aria-label="Advantage">
+              {Object.entries(DICE_MODES).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="radio"
+                  aria-checked={dice.mode === mode}
+                  className={`initiative__mode${dice.mode === mode ? ' initiative__mode--on' : ''}`}
+                  onClick={() => setDice((d) => ({ ...d, mode }))}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button type="button" className="btn initiative__call" onClick={callInitiative}>
+            <Icon name="quest" /> Call for initiative!
+            <span className="initiative__call-sub">
+              Players roll {describeDice(dice)} · shakes their screens and starts combat mode
+            </span>
+          </button>
+        </div>
       )}
       {state.combat && !state.started && (
         <div className="initiative__rolling" role="status">
           <p>
-            <strong>Rolling for initiative.</strong>{' '}
+            <strong>Rolling {describeDice(state.alert?.dice)} for initiative.</strong>{' '}
             {isDm
-              ? 'Add each roll below as the players call them out, then start combat.'
-              : 'Tell your DM your roll — they’ll add it here.'}
+              ? 'Rolls from the app land in the order by themselves; add anyone else’s as they call them out, then start combat.'
+              : 'Roll in the app, or tell your DM your roll.'}
           </p>
           {isDm && (
             <button type="button" className="btn btn--text" onClick={alertAgain}>
               Alert again
             </button>
+          )}
+          {!isDm && character && (
+            <RollForMe key={character.id} character={character} dice={state.alert?.dice} compact />
           )}
         </div>
       )}
@@ -253,10 +297,21 @@ function InitiativeTracker({ characterName, characterInitBonus }) {
             return (
               <li
                 key={c.id}
-                className={`initiative__row${isCurrent ? ' initiative__row--current' : ''}${c.isPlayer ? ' initiative__row--player' : ''}${mine ? ' initiative__row--mine' : ''}`}
+                className={`initiative__row${isCurrent ? ' initiative__row--current' : ''}${c.isPlayer ? ' initiative__row--player' : ''}${mine ? ' initiative__row--mine' : ''}${drag.draggingId === c.id ? ' initiative__row--dragging' : ''}`}
                 aria-current={isCurrent ? 'true' : undefined}
+                style={isDm ? drag.rowStyle(index) : undefined}
               >
                 <div className="initiative__line">
+                  {isDm && state.combatants.length > 1 && (
+                    <button
+                      type="button"
+                      className="initiative__grip"
+                      aria-label={`Move ${c.name} — drag, or use the up and down arrow keys`}
+                      {...drag.handleProps(c.id, index, listRef)}
+                    >
+                      <Icon name="grip" />
+                    </button>
+                  )}
                   <span className="initiative__score">{c.initiative}</span>
                   <span className="initiative__name">
                     {isCurrent && (
