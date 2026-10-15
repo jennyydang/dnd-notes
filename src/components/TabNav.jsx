@@ -131,15 +131,30 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
           ))}
         </div>
         {/* Chevrons over the faded ends: there's more this way (tap to scroll). */}
-        {more.left && (
-          <button type="button" className="tab-nav__more tab-nav__more--left" onClick={() => scrollBy(-1)} aria-label="Show earlier tabs" tabIndex={-1}>
-            <Icon name="prev" />
-          </button>
-        )}
-        {more.right && (
-          <button type="button" className="tab-nav__more tab-nav__more--right" onClick={() => scrollBy(1)} aria-label="Show more tabs" tabIndex={-1}>
-            <Icon name="next" />
-          </button>
+        {/* Always rendered on a sideways row so they can fade in and out. */}
+        {!vertical && (
+          <>
+            <button
+              type="button"
+              className={`tab-nav__more tab-nav__more--left${more.left ? ' tab-nav__more--shown' : ''}`}
+              onClick={() => scrollBy(-1)}
+              aria-label="Show earlier tabs"
+              aria-hidden={!more.left}
+              tabIndex={-1}
+            >
+              <Icon name="prev" />
+            </button>
+            <button
+              type="button"
+              className={`tab-nav__more tab-nav__more--right${more.right ? ' tab-nav__more--shown' : ''}`}
+              onClick={() => scrollBy(1)}
+              aria-label="Show more tabs"
+              aria-hidden={!more.right}
+              tabIndex={-1}
+            >
+              <Icon name="next" />
+            </button>
+          </>
         )}
       </div>
 
