@@ -9,7 +9,6 @@ import { PLAYER_SESSION_CHANGED, clearPlayerSession, getAdminSession, getPlayerS
 import { isSupabaseConfigured } from './lib/supabaseClient.js'
 import { clearCache } from './lib/offline.js'
 import { applySettings, getSettings } from './lib/settings.js'
-import { installCardTilt } from './lib/cardTilt.js'
 import { installTapFeedback } from './lib/tapFeedback.js'
 import { installKeyboardAvoidance } from './lib/keyboard.js'
 import { installSwipeActions } from './lib/swipeActions.js'
@@ -46,7 +45,6 @@ function App() {
     applySettings(getSettings())
   }, [])
 
-  useEffect(() => installCardTilt(), [])
   useEffect(() => installTapFeedback(), [])
   useEffect(() => installKeyboardAvoidance(), [])
   useEffect(() => installSwipeActions(), [])

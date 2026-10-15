@@ -202,56 +202,6 @@ $cards: '.npc-card', '.loot-card', '.quest-card', '.lore-card', '.party-card', '
   animation: shake 0.25s ease-in-out;
 }
 
-// ── Card tilt and glint (src/lib/cardTilt.js) ──
-.npc-card,
-.loot-card,
-.creature-card {
-  position: relative;
-  // Only transformed while tilting, so a resting card creates no extra
-  // stacking context for anything inside it.
-  transition:
-    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 0.3s ease;
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    background:
-      radial-gradient(
-        circle at var(--glint-x, 50%) var(--glint-y, 50%),
-        rgba($gold-light, 0.22),
-        rgba($gold, 0.08) 28%,
-        transparent 55%
-      ),
-      linear-gradient(
-        115deg,
-        transparent 30%,
-        rgba(255, 245, 210, 0.07) calc(var(--glint-x, 50%) - 8%),
-        transparent calc(var(--glint-x, 50%) + 12%)
-      );
-    mix-blend-mode: screen;
-  }
-
-  &.is-tilting {
-    transform: perspective(700px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
-    transition:
-      transform 0.08s linear,
-      box-shadow 0.3s ease;
-    box-shadow:
-      $shadow-panel,
-      0 0 1.5rem rgba($gold, 0.12);
-
-    &::after {
-      opacity: 1;
-    }
-  }
-}
-
 // ── Tap feedback (src/lib/tapFeedback.js) ──
 .tap-ripple {
   position: absolute;
