@@ -12,7 +12,11 @@ const fromRow = (r) => ({
   createdAt: r.created_at,
 })
 
-// Oldest first, so the timeline reads left (session zero) → right
+// A session already this close to the top counts as "here", so the
+// Earlier / Later buttons always move by a real step.
+const NUDGE = 48
+
+// Oldest first, so the timeline reads top (session zero) → bottom
 // (latest). Sessions sharing a date — or with no date — fall back to
 // the order they were written in.
 function sortOldestFirst(sessions) {
@@ -46,20 +50,29 @@ function TimelineTab({ campaignId, playerId }) {
   )
   const eventCount = columns.reduce((total, column) => total + column.events.length, 0)
 
-  // Open scrolled to the latest session (far right), since that's
+  // Open scrolled to the latest session (the bottom), since that's
   // usually what the player wants to look at.
   const scrollerRef = useRef(null)
   useEffect(() => {
     const scroller = scrollerRef.current
-    if (scroller) scroller.scrollLeft = scroller.scrollWidth
+    if (scroller) scroller.scrollTop = scroller.scrollHeight
   }, [columns.length])
 
-  function scrollColumns(direction) {
+  // Jumps to the previous / next session's header.
+  function scrollSessions(direction) {
     const scroller = scrollerRef.current
-    const column = scroller?.querySelector('.timeline__session')
-    if (!scroller || !column) return
+    if (!scroller) return
+    const top = scroller.getBoundingClientRect().top
+    const offsets = [...scroller.querySelectorAll('.timeline__session')].map(
+      (el) => el.getBoundingClientRect().top - top + scroller.scrollTop,
+    )
+    const current = scroller.scrollTop
+    const target =
+      direction < 0
+        ? [...offsets].reverse().find((o) => o < current - NUDGE)
+        : offsets.find((o) => o > current + NUDGE)
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    scroller.scrollBy({ left: direction * column.getBoundingClientRect().width, behavior: reduce ? 'auto' : 'smooth' })
+    scroller.scrollTo({ top: target ?? (direction < 0 ? 0 : scroller.scrollHeight), behavior: reduce ? 'auto' : 'smooth' })
   }
 
   return (
@@ -84,15 +97,15 @@ function TimelineTab({ campaignId, playerId }) {
           )}
           {columns.length > 1 && (
             <div className="timeline__nav">
-              <button type="button" className="btn btn--text" onClick={() => scrollColumns(-1)} aria-label="Earlier sessions">
-                ‹ Earlier
+              <button type="button" className="btn btn--text" onClick={() => scrollSessions(-1)} aria-label="Earlier sessions">
+                ↑ Earlier
               </button>
-              <button type="button" className="btn btn--text" onClick={() => scrollColumns(1)} aria-label="Later sessions">
-                Later ›
+              <button type="button" className="btn btn--text" onClick={() => scrollSessions(1)} aria-label="Later sessions">
+                Later ↓
               </button>
             </div>
           )}
-          <div className="timeline" ref={scrollerRef}>
+          <div className="timeline" ref={scrollerRef} tabIndex={0} aria-label="Timeline of sessions">
             <ol className="timeline__track">
               {columns.map((session, index) => (
                 <li
