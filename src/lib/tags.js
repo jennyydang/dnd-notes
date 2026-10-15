@@ -9,7 +9,7 @@ export const TAG_GROUPS = {
     tab: 'maps',
     noun: 'place',
     icon: 'pin',
-    kinds: ['Location', 'City', 'Dungeon', 'Region'],
+    kinds: ['Location', 'City', 'Dungeon', 'Region', 'Campsite'],
   },
   lore: {
     char: '~',

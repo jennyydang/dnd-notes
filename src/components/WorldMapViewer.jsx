@@ -8,6 +8,7 @@ import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import { createPortal } from 'react-dom'
 import Icon from './Icon.jsx'
+import MapLegend from './MapLegend.jsx'
 import './WorldMapViewer.scss'
 
 const MARKER_BUCKET = 'map-marker-photos'
@@ -340,6 +341,22 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   // The pin list beside the map: hovering a card (or a pin) highlights
   // its partner. Under it sit the new pin / zoom area to drag in.
   const [showList, setShowList] = useState(true)
+  // The map key; whether it's open is remembered on this device.
+  const [showLegend, setShowLegend] = useState(() => {
+    try {
+      return localStorage.getItem('dnd-notes-map-legend') === '1'
+    } catch {
+      return false
+    }
+  })
+  function toggleLegend(next = !showLegend) {
+    setShowLegend(next)
+    try {
+      localStorage.setItem('dnd-notes-map-legend', next ? '1' : '0')
+    } catch {
+      // private mode: just don't remember
+    }
+  }
   const [hoverId, setHoverId] = useState(null) // 'party' or a marker id
   const listRef = useRef(null)
   useEffect(() => {
@@ -927,6 +944,14 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           >
             <Icon name="rows" /> Pins
           </button>
+          <button
+            type="button"
+            className={`btn btn--text${showLegend ? ' is-on' : ''}`}
+            onClick={() => toggleLegend()}
+            aria-pressed={showLegend}
+          >
+            <Icon name="map" /> Legend
+          </button>
           {trail.length > 0 && (
             <>
               <button
@@ -1166,6 +1191,8 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             />
           </button>
         )}
+
+        {showLegend && <MapLegend onClose={() => toggleLegend(false)} />}
 
         {pings.length === 0 && zoom <= 1.05 && (
           <p className="world-map-viewer__hint">Hold anywhere to ping · double-tap to zoom</p>
