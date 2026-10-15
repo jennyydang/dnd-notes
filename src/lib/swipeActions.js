@@ -5,7 +5,7 @@
 // (confirmations included). On touch screens those buttons are hidden on
 // the card itself (they're tagged .swipe-hidden here; see _mobile.scss)
 // — the swipe is the way in. Cards without both buttons don't swipe.
-const CARDS = '.npc-card, .loot-card, .creature-card, .place-card, .quest-card, .lore-card, .custom-entry-card'
+const CARDS = '.npc-card, .loot-card, .creature-card, .place-card, .quest-card, .lore-card, .custom-entry-card, .goal-card'
 const WIDTH = 152 // tray width
 const GAP = 6 // space between the slid card and the tray — same as between the buttons
 const SLIDE = WIDTH + GAP // how far an open card slides

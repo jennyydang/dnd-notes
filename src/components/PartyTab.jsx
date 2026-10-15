@@ -7,6 +7,7 @@ import Modal from './Modal.jsx'
 import './PartyTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import { useEdgeFades } from '../hooks/useEdgeFades.js'
 import { RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'party-portraits'
@@ -61,6 +62,8 @@ function PartyTab({ campaignId, playerId }) {
     fromRow: fromNoteRow,
     filters: { author_player_id: playerId || ZERO_UUID },
   })
+  // The party row scrolls sideways on phones; it fades at the ends.
+  const [partyRowRef, partyRowFade] = useEdgeFades()
   const [isAdding, setIsAdding] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
@@ -552,7 +555,7 @@ function PartyTab({ campaignId, playerId }) {
         </p>
       )}
       {!loading && !error && party.length > 0 && (
-        <div className="party-list">
+        <div ref={partyRowRef} className={`party-list ${partyRowFade}`}>
           {party.map((member) => (
             <article className="party-card panel" key={member.id}>
               <div className="party-card__main">
