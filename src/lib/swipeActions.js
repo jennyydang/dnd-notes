@@ -50,7 +50,9 @@ export function installSwipeActions() {
     const shift = new DOMMatrixReadOnly(getComputedStyle(card).transform).m41 || 0
     const tray = document.createElement('div')
     tray.className = 'swipe-tray'
-    tray.style.top = `${rect.top}px`
+    // Page coordinates (not the viewport), so if the page does move the
+    // tray moves with the card instead of being left behind.
+    tray.style.top = `${rect.top + window.scrollY}px`
     tray.style.height = `${rect.height}px`
     tray.style.left = `${rect.right - shift - WIDTH}px`
     tray.style.width = `${WIDTH}px`
@@ -106,6 +108,8 @@ export function installSwipeActions() {
 
   function onMove(event) {
     if (!gesture) return
+    // Once it's a sideways swipe, hold the page still under the finger.
+    if (gesture.swiping && event.cancelable) event.preventDefault()
     const t = event.touches[0]
     const dx = t.clientX - gesture.x
     const dy = t.clientY - gesture.y
@@ -116,6 +120,7 @@ export function installSwipeActions() {
       }
       if (Math.abs(dx) < START_PX) return
       gesture.swiping = true
+      if (event.cancelable) event.preventDefault()
       if (!gesture.tray) gesture.tray = makeTray(gesture.card)
     }
     gesture.offset = Math.min(0, Math.max(-SLIDE * 1.2, gesture.start + dx))
@@ -148,9 +153,13 @@ export function installSwipeActions() {
   observer.observe(document.body, { childList: true, subtree: true })
   tagButtons()
 
-  const onScroll = () => close()
+  // Scrolling closes an open card — but not mid-swipe, when it's only the
+  // page settling (the tray rides along with it).
+  const onScroll = () => {
+    if (!gesture?.swiping) close()
+  }
   document.addEventListener('touchstart', onStart, { passive: true })
-  document.addEventListener('touchmove', onMove, { passive: true })
+  document.addEventListener('touchmove', onMove, { passive: false })
   document.addEventListener('touchend', onEnd, { passive: true })
   document.addEventListener('touchcancel', onEnd, { passive: true })
   window.addEventListener('scroll', onScroll, { passive: true, capture: true })

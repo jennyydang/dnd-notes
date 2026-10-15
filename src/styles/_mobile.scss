@@ -205,7 +205,7 @@
 }
 
 .swipe-tray {
-  position: fixed;
+  position: absolute;
   z-index: 50;
   display: flex;
   // Matches GAP in swipeActions.js, so card · Edit · Delete are evenly spaced.
