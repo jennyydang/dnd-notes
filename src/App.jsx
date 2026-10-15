@@ -12,6 +12,8 @@ import { applySettings, getSettings } from './lib/settings.js'
 import { installCardTilt } from './lib/cardTilt.js'
 import { installTapFeedback } from './lib/tapFeedback.js'
 import { installKeyboardAvoidance } from './lib/keyboard.js'
+import { installSwipeActions } from './lib/swipeActions.js'
+import { installPullToRefresh } from './lib/pullToRefresh.js'
 import { getStored, setStored } from './lib/sessionMode.js'
 import './App.scss'
 
@@ -46,6 +48,8 @@ function App() {
   useEffect(() => installCardTilt(), [])
   useEffect(() => installTapFeedback(), [])
   useEffect(() => installKeyboardAvoidance(), [])
+  useEffect(() => installSwipeActions(), [])
+  useEffect(() => installPullToRefresh(), [])
 
   // Picks up a changed session (e.g. a new username from Account).
   useEffect(() => {

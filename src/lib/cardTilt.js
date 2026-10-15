@@ -1,4 +1,4 @@
-// Cards that lean toward the pointer (or a finger dragged across them)
+// Cards that lean toward the mouse or pen
 // with a gold glint where it touches — like a holo trading card. One set
 // of document listeners covers every card, so components don't need to
 // know about it. Off when the device asks for reduced motion.
@@ -25,7 +25,8 @@ export function installCardTilt() {
   }
 
   function onMove(event) {
-    if (reduced?.matches) return
+    // Fingers swipe cards (swipeActions.js); the tilt follows a mouse or pen.
+    if (reduced?.matches || event.pointerType === 'touch') return
     const card = event.target instanceof Element ? event.target.closest(SELECTOR) : null
     if (card !== active) release()
     if (!card) return
