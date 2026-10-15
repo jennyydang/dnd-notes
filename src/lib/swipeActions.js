@@ -6,7 +6,9 @@
 // the card itself (they're tagged .swipe-hidden here; see _mobile.scss)
 // — the swipe is the way in. Cards without both buttons don't swipe.
 const CARDS = '.npc-card, .loot-card, .creature-card, .place-card, .quest-card, .lore-card, .custom-entry-card'
-const WIDTH = 152 // tray width, and how far the card slides
+const WIDTH = 152 // tray width
+const GAP = 10 // space between the slid card and the tray
+const SLIDE = WIDTH + GAP // how far an open card slides
 const START_PX = 12 // how far a finger moves before we decide it's a swipe
 const SNAP_PX = 60 // how far past the halfway-ish point a swipe must go
 
@@ -70,13 +72,14 @@ export function installSwipeActions() {
     return tray
   }
 
-  // Slides the card to `offset` (0 = closed, -WIDTH = open); the tray
-  // rides along at the card's right edge, fading in as it's uncovered.
+  // Slides the card to `offset` (0 = closed, -SLIDE = open); the tray
+  // rides along just past the card's right edge, fading in as it's
+  // uncovered.
   function place(card, tray, offset, animate) {
     for (const el of [card, tray]) el.classList.toggle('swipe-moving', !animate)
     card.style.transform = offset ? `translateX(${offset}px)` : ''
-    tray.style.transform = `translateX(${offset + WIDTH}px)`
-    tray.style.opacity = String(Math.min(1, -offset / (WIDTH * 0.6)))
+    tray.style.transform = `translateX(${offset + SLIDE}px)`
+    tray.style.opacity = String(Math.min(1, -offset / (SLIDE * 0.6)))
   }
 
   function close() {
@@ -97,7 +100,7 @@ export function installSwipeActions() {
     if (!card || (!inTray && target.closest('input, textarea, select, [contenteditable="true"]'))) return
     if (!actionsOf(card)) return
     const t = event.touches[0]
-    const start = open?.card === card ? -WIDTH : 0
+    const start = open?.card === card ? -SLIDE : 0
     gesture = { card, tray: open?.card === card ? open.tray : null, x: t.clientX, y: t.clientY, start, offset: start, swiping: false }
   }
 
@@ -115,7 +118,7 @@ export function installSwipeActions() {
       gesture.swiping = true
       if (!gesture.tray) gesture.tray = makeTray(gesture.card)
     }
-    gesture.offset = Math.min(0, Math.max(-WIDTH * 1.2, gesture.start + dx))
+    gesture.offset = Math.min(0, Math.max(-SLIDE * 1.2, gesture.start + dx))
     place(gesture.card, gesture.tray, gesture.offset, false)
   }
 
@@ -126,9 +129,9 @@ export function installSwipeActions() {
     if (!swiping) return
     // From closed, a pull past SNAP_PX opens it; from open, a push back
     // past SNAP_PX closes it.
-    const shouldOpen = start === 0 ? offset < -SNAP_PX : offset < -WIDTH + SNAP_PX
+    const shouldOpen = start === 0 ? offset < -SNAP_PX : offset < -SLIDE + SNAP_PX
     if (shouldOpen) {
-      place(card, tray, -WIDTH, true)
+      place(card, tray, -SLIDE, true)
       card.classList.add('is-swiped')
       open = { card, tray }
     } else {
