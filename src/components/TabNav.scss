@@ -1,19 +1,6 @@
 @use 'sass:color';
 @use '../styles/variables' as *;
 
-// Registered so the edge fades on a scrolling tab row can transition.
-@property --fade-left {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
-
-@property --fade-right {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
-
 .tab-nav {
   display: flex;
   align-items: center;

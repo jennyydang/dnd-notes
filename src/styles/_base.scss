@@ -4,6 +4,20 @@
   box-sizing: border-box;
 }
 
+// Registered so the edge fades on sideways-scrolling rows (tab bars, the
+// party carousel) can transition rather than snap.
+@property --fade-left {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-right {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
 html,
 body,
 #root {

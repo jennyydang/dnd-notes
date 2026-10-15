@@ -108,7 +108,10 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     overscroll-behavior-x: contain;
-    padding-bottom: 0.5rem;
+    // Room for the cards' drop shadow, so it isn't sliced off flat by the
+    // scrolling row's bottom edge.
+    padding-bottom: 1.25rem;
+    margin-bottom: -0.75rem;
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
