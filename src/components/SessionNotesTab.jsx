@@ -215,6 +215,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
         onSubmit={submitForm}
         formError={formError}
         onCancel={cancelForm}
+        onDelete={editingId ? () => removeSession(editingId) : undefined}
         submitting={submitting}
         submitLabel={submitting ? 'Saving…' : editingId ? 'Save Changes' : 'Add Session Notes'}
       />
@@ -302,13 +303,6 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
               <button type="button" className="btn btn--text" onClick={() => startEditing(viewingSession)}>
                 Edit
               </button>
-              <button
-                type="button"
-                className="btn btn--danger"
-                onClick={() => removeSession(viewingSession.id)}
-              >
-                Delete
-              </button>
             </div>
           </article>
 
@@ -355,13 +349,6 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
                     onClick={() => startEditing(session)}
                   >
                     Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeSession(session.id)}
-                  >
-                    Delete
                   </button>
                 </div>
               </div>
