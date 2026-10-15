@@ -160,6 +160,34 @@ const VIEW_MODES = [
 ]
 
 // Cards / Compact switch for a list's toolbar.
+// A compact dropdown for sorting or filtering a list: "⇅ Sort  Last added ▾".
+// A native <select> underneath, so phones get their own picker. When
+// `onClear` is given and the filter is narrowing the list (`active`), it
+// lights up and shows a × that resets it.
+export function FilterSelect({ icon, label, value, options, onChange, active = false, onClear }) {
+  return (
+    <span className={`filter-select${active ? ' filter-select--active' : ''}`}>
+      <label className="filter-select__field">
+        {icon && <Icon name={icon} />}
+        <span className="filter-select__label">{label}</span>
+        <select value={value} onChange={(e) => onChange(e.target.value)}>
+          {options.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <span className="filter-select__chevron" aria-hidden="true">▾</span>
+      </label>
+      {active && onClear && (
+        <button type="button" className="filter-select__clear" onClick={onClear} aria-label={`Clear ${label.toLowerCase()} filter`}>
+          <Icon name="close" />
+        </button>
+      )}
+    </span>
+  )
+}
+
 export function ViewToggle({ value, onChange, label = 'Card size' }) {
   return (
     <div className="view-toggle" role="group" aria-label={label}>

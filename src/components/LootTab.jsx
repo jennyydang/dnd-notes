@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
-import TabNav from './TabNav.jsx'
 import Modal from './Modal.jsx'
 import TagBadge from './TagBadge.jsx'
 import { TAG_GROUPS, tagText } from '../lib/tags.js'
@@ -9,7 +8,7 @@ import { confirmDelete } from '../lib/confirm.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
-import { ViewToggle } from './ui.jsx'
+import { FilterSelect, ViewToggle } from './ui.jsx'
 import { useViewMode } from '../hooks/useViewMode.js'
 import Icon from './Icon.jsx'
 import AnimatedNumber from './AnimatedNumber.jsx'
@@ -21,7 +20,7 @@ const ALL_HOLDERS = 'all'
 const UNCLAIMED = '__unclaimed__'
 
 const SORT_MODES = [
-  { id: 'recent', label: 'Last Added' },
+  { id: 'recent', label: 'Newest' },
   { id: 'alpha', label: 'A → Z' },
 ]
 
@@ -177,7 +176,7 @@ function LootTab({ campaignId }) {
   const hasUnclaimed = loot.some((entry) => !entry.holder.trim())
 
   const holderTabs = [
-    { id: ALL_HOLDERS, label: 'All' },
+    { id: ALL_HOLDERS, label: 'Everyone' },
     ...holders.map((holder) => ({ id: holder, label: holder })),
     ...(hasUnclaimed ? [{ id: UNCLAIMED, label: 'Unclaimed' }] : []),
   ]
@@ -440,11 +439,30 @@ function LootTab({ campaignId }) {
 
   return (
     <section className="loot-tab">
+      {/* One row: sort and filter on the left, view and add on the right. */}
       <div className="loot-tab__toolbar">
-        {loot.length > 0 && <ViewToggle value={view} onChange={setView} label="Loot card size" />}
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add Loot
-        </button>
+        {loot.length > 1 && (
+          <div className="loot-tab__filters">
+            <FilterSelect icon="trend" label="Sort" value={sortMode} options={SORT_MODES} onChange={setSortMode} />
+            {holderTabs.length > 1 && (
+              <FilterSelect
+                icon="user"
+                label="Held by"
+                value={effectiveHolderView}
+                options={holderTabs}
+                onChange={setHolderView}
+                active={effectiveHolderView !== ALL_HOLDERS}
+                onClear={() => setHolderView(ALL_HOLDERS)}
+              />
+            )}
+          </div>
+        )}
+        <div className="loot-tab__actions-bar">
+          {loot.length > 0 && <ViewToggle value={view} onChange={setView} label="Loot card size" />}
+          <button type="button" className="btn btn--primary" onClick={startAdding}>
+            + Add Loot
+          </button>
+        </div>
       </div>
 
       {isAdding && (
@@ -544,30 +562,6 @@ function LootTab({ campaignId }) {
             </div>
           )}
         </Modal>
-      )}
-
-      {/* Sort on the left, who-has-it filter on the right. */}
-      {!loading && !error && (loot.length > 1 || holderTabs.length > 1) && (
-        <div className="loot-tab__filters">
-          {loot.length > 1 && (
-            <TabNav
-              tabs={SORT_MODES}
-              activeTab={sortMode}
-              onSelect={setSortMode}
-              className="tab-nav--pill"
-              label="Sort loot"
-            />
-          )}
-          {holderTabs.length > 1 && (
-            <TabNav
-              tabs={holderTabs}
-              activeTab={effectiveHolderView}
-              onSelect={setHolderView}
-              className="tab-nav--pill loot-tab__holders"
-              label="Filter loot by holder"
-            />
-          )}
-        </div>
       )}
 
       {loading && <p className="empty-state">Loading…</p>}
