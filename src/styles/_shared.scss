@@ -881,3 +881,14 @@ input[type='checkbox'] {
     transform: translateY(4px);
   }
 }
+
+// Delete lives in each card's Edit dialog (.form-delete, pushed to the
+// left, away from Save). The card keeps its Delete button only for the
+// phone swipe tray to press (swipeActions.js) — it's never shown.
+.card-delete {
+  display: none !important;
+}
+
+.form-delete {
+  margin-right: auto;
+}

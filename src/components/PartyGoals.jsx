@@ -116,6 +116,12 @@ function PartyGoals({ campaignId }) {
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="goal-form__actions">
+            {/* Delete lives here, away from Save — not on the card. */}
+            {editingId && (
+              <button type="button" className="btn btn--danger form-delete" onClick={() => removeGoal(editingId)}>
+                Delete
+              </button>
+            )}
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
             </button>
@@ -183,7 +189,7 @@ function PartyGoals({ campaignId }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="btn btn--danger card-delete"
                   onClick={() => removeGoal(goal.id)}
                 >
                   Delete

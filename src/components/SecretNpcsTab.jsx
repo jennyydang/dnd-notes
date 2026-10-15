@@ -232,8 +232,8 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       const ok = window.confirm(
         `Delete your secret notes on “${npc.name}”? The players’ copy in their NPCs tab stays. This can't be undone.`,
       )
-      if (!ok) return
-    } else if (!confirmDelete(`the NPC “${npc.name}”`)) return
+      if (!ok) return false
+    } else if (!confirmDelete(`the NPC “${npc.name}”`)) return false
     setActionError(null)
     try {
       await removeItem(npc.id)
@@ -241,9 +241,16 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       // The players' copy (and an unadded notification) may still point at
       // the portrait, so only clean it up for an NPC that was never shared.
       if (npc.photoPath && status === 'private') removeImage(BUCKET, npc.photoPath)
+      return true
     } catch (err) {
       setActionError(`Couldn’t delete: ${err.message}`)
     }
+  }
+
+  // Delete from inside the edit dialog, then close it.
+  async function deleteEditing() {
+    const target = items.find((x) => x.id === editingId)
+    if (target && (await remove(target))) closeForm()
   }
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
@@ -348,7 +355,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                   <button type="button" className="btn btn--text" onClick={() => openForm(npc)}>
                     Edit
                   </button>
-                  <button type="button" className="btn btn--danger" onClick={() => remove(npc)}>
+                  <button type="button" className="btn btn--danger card-delete" onClick={() => remove(npc)}>
                     Delete
                   </button>
                 </div>
@@ -444,6 +451,12 @@ function SecretNpcsTab({ campaignId, addRequest }) {
               </p>
             )}
             <div className="npc-form__actions">
+              {/* Delete lives here, away from Save — not on the card. */}
+              {editingId && (
+                <button type="button" className="btn btn--danger form-delete" onClick={() => deleteEditing()}>
+                  Delete
+                </button>
+              )}
               <button type="button" className="btn btn--text" onClick={closeForm} disabled={saving}>
                 Cancel
               </button>

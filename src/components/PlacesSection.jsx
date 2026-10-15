@@ -121,6 +121,12 @@ function PlacesSection({ campaignId }) {
             </div>
             {formError && <p className="empty-state empty-state--error">{formError}</p>}
             <div className="place-form__actions">
+              {/* Delete lives here, away from Save — not on the card. */}
+              {editingId && (
+                <button type="button" className="btn btn--danger form-delete" onClick={() => removePlace(editingId)}>
+                  Delete
+                </button>
+              )}
               <button type="button" className="btn btn--text" onClick={closeForm}>
                 Cancel
               </button>
@@ -158,7 +164,7 @@ function PlacesSection({ campaignId }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="btn btn--danger card-delete"
                   onClick={() => removePlace(place.id)}
                 >
                   Delete

@@ -4,13 +4,31 @@
 const SELECTOR = '.btn, .icon-btn, .tab-nav__item, .bottom-nav__item'
 const HAPTIC_SELECTOR = '.btn--primary, .btn--danger'
 const RIPPLE_MS = 600
+// Touch-only tablets: a card lifts while a finger presses it (the hover
+// lift everywhere else; see _motion.scss). Phones swipe cards instead.
+const CARDS =
+  '.npc-card, .loot-card, .quest-card, .lore-card, .party-card, .place-card, .goal-card, ' +
+  '.custom-entry-card, .campaign-card, .session-card, .spell-card, .map-card, .creature-card'
+const TABLET_TOUCH = '(any-hover: none) and (min-width: 721px)'
 
 export function installTapFeedback() {
   if (typeof window === 'undefined') return () => {}
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+  const tablet = window.matchMedia?.(TABLET_TOUCH)
+  let pressed = null
+
+  function release() {
+    pressed?.classList.remove('is-pressed')
+    pressed = null
+  }
 
   function onDown(event) {
     if (event.button !== 0 && event.pointerType === 'mouse') return
+    if (event.pointerType === 'touch' && tablet?.matches && event.target instanceof Element) {
+      release()
+      pressed = event.target.closest(CARDS)
+      pressed?.classList.add('is-pressed')
+    }
     const target = event.target instanceof Element ? event.target.closest(SELECTOR) : null
     if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return
 
@@ -34,6 +52,14 @@ export function installTapFeedback() {
     setTimeout(() => clip.remove(), RIPPLE_MS)
   }
 
+  // The press ends when the finger lifts — or turns into a scroll.
   document.addEventListener('pointerdown', onDown, { passive: true })
-  return () => document.removeEventListener('pointerdown', onDown)
+  for (const type of ['pointerup', 'pointercancel']) document.addEventListener(type, release, { passive: true })
+  window.addEventListener('scroll', release, { passive: true, capture: true })
+  return () => {
+    release()
+    document.removeEventListener('pointerdown', onDown)
+    for (const type of ['pointerup', 'pointercancel']) document.removeEventListener(type, release)
+    window.removeEventListener('scroll', release, { capture: true })
+  }
 }

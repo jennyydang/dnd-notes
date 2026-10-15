@@ -153,12 +153,19 @@ function CreaturesTab({ campaignId }) {
   }
 
   async function removeCreature(creature) {
-    if (!confirmDelete(`“${creature.name}”`)) return
+    if (!confirmDelete(`“${creature.name}”`)) return false
     try {
       await removeItem(creature.id)
+      return true
     } catch (err) {
       window.alert(`Couldn’t delete: ${err.message}`)
     }
+  }
+
+  // Delete from inside the edit dialog, then close it.
+  async function deleteEditing() {
+    const target = creatures.find((x) => x.id === editingId)
+    if (target && (await removeCreature(target))) closeForm()
   }
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
@@ -287,6 +294,12 @@ function CreaturesTab({ campaignId }) {
               </p>
             )}
             <div className="form-actions">
+              {/* Delete lives here, away from Save — not on the card. */}
+              {editingId && (
+                <button type="button" className="btn btn--danger form-delete" onClick={() => deleteEditing()}>
+                  Delete
+                </button>
+              )}
               <button type="button" className="btn btn--text" onClick={closeForm}>
                 Cancel
               </button>
@@ -351,7 +364,7 @@ function CreaturesTab({ campaignId }) {
                 <button type="button" className="btn btn--text" onClick={() => startEditing(c)}>
                   Edit
                 </button>
-                <button type="button" className="btn btn--danger" onClick={() => removeCreature(c)}>
+                <button type="button" className="btn btn--danger card-delete" onClick={() => removeCreature(c)}>
                   Delete
                 </button>
               </div>

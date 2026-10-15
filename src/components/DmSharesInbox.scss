@@ -6,15 +6,25 @@
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid $gold-dim;
   background: $bg-panel;
+  // Its own colour, not the browser's button default (black on a Mac,
+  // blue on iOS), so the bell stands out on the dark button.
+  color: $gold-light;
   font-size: 1.15rem;
   line-height: 1;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover,
   &:focus-visible {
     border-color: $gold;
+    color: $parchment;
   }
 
   &--unread {

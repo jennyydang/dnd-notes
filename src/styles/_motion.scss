@@ -131,14 +131,29 @@ $cards: '.npc-card', '.loot-card', '.quest-card', '.lore-card', '.party-card', '
   }
 }
 
-// Lift only where there's a real hover (not on touch screens, where a
-// lifted card would stay stuck after a tap).
-@media (hover: hover) {
+@mixin card-lift {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+  border-color: $gold;
+}
+
+// Lift on hover wherever a mouse, trackpad or pen can hover — including
+// a tablet with one attached.
+@media (any-hover: hover) {
   @each $card in $cards {
     #{$card}:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
-      border-color: $gold;
+      @include card-lift;
+    }
+  }
+}
+
+// Touch-only tablets: the card lifts while a finger presses it
+// (tapFeedback.js sets .is-pressed; not :hover, which would leave a
+// tapped card stuck lifted). Phones skip it; their cards swipe instead.
+@media (any-hover: none) and (min-width: 721px) {
+  @each $card in $cards {
+    #{$card}.is-pressed {
+      @include card-lift;
     }
   }
 }

@@ -252,6 +252,12 @@ function NpcsTab({ campaignId }) {
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="npc-form__actions">
+            {/* Delete lives here, away from Save — not on the card. */}
+            {editingId && (
+              <button type="button" className="btn btn--danger form-delete" onClick={() => removeNpc(editingId)}>
+                Delete
+              </button>
+            )}
             <button type="button" className="btn btn--text" onClick={cancelForm} disabled={submitting}>
               Cancel
             </button>
@@ -333,7 +339,7 @@ function NpcsTab({ campaignId }) {
                 </button>
                 <button
                   type="button"
-                  className="icon-btn icon-btn--danger"
+                  className="icon-btn icon-btn--danger card-delete"
                   onClick={() => removeNpc(npc.id)}
                   aria-label={`Delete ${npc.name}`}
                 >
@@ -358,13 +364,15 @@ function NpcsTab({ campaignId }) {
                       <span>{npc.name.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  <h3 className="npc-card__name">{npc.name}</h3>
+                  {/* Status sits under the name, so the name gets the
+                      card's full width instead of sharing it with the pill. */}
+                  <div className="npc-card__who">
+                    <h3 className="npc-card__name">{npc.name}</h3>
+                    <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>
+                      {npc.status}
+                    </span>
+                  </div>
                 </div>
-                <span
-                  className={`status-badge status-badge--${npc.status.toLowerCase()}`}
-                >
-                  {npc.status}
-                </span>
               </div>
               <dl className="npc-card__details">
                 <div>
@@ -387,7 +395,7 @@ function NpcsTab({ campaignId }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="btn btn--danger card-delete"
                   onClick={() => removeNpc(npc.id)}
                 >
                   Delete

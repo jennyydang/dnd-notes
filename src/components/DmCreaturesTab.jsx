@@ -197,14 +197,21 @@ function DmCreaturesTab({ campaignId }) {
       status === 'added'
         ? window.confirm(`Delete your notes on “${c.name}”? The players’ copy stays. This can't be undone.`)
         : confirmDelete(`“${c.name}”`)
-    if (!ok) return
+    if (!ok) return false
     setActionError(null)
     try {
       await removeItem(c.id)
       await removeSharesFor(c.id)
+      return true
     } catch (err) {
       setActionError(`Couldn’t delete: ${err.message}`)
     }
+  }
+
+  // Delete from inside the edit dialog, then close it.
+  async function deleteEditing() {
+    const target = items.find((x) => x.id === editingId)
+    if (target && (await remove(target))) closeForm()
   }
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
@@ -306,7 +313,7 @@ function DmCreaturesTab({ campaignId }) {
                   <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
                     Edit
                   </button>
-                  <button type="button" className="btn btn--danger" onClick={() => remove(c)}>
+                  <button type="button" className="btn btn--danger card-delete" onClick={() => remove(c)}>
                     Delete
                   </button>
                 </div>
@@ -436,6 +443,12 @@ function DmCreaturesTab({ campaignId }) {
               </p>
             )}
             <div className="form-actions">
+              {/* Delete lives here, away from Save — not on the card. */}
+              {editingId && (
+                <button type="button" className="btn btn--danger form-delete" onClick={() => deleteEditing()}>
+                  Delete
+                </button>
+              )}
               <button type="button" className="btn btn--text" onClick={closeForm}>
                 Cancel
               </button>
