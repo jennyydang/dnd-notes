@@ -149,22 +149,16 @@
   max-height: min(80vh, calc(100dvh - var(--keyboard-inset) - 3rem - var(--safe-top)));
 }
 
-// Phones: the dialog is a bottom sheet (Modal.scss) — flush with the
-// bottom edge (or the keyboard), clear of the notch, with room for the
-// home bar inside it.
+// Phones: the dialog sits in the middle of whatever's visible — clear
+// of the notch and home bar, and above the keyboard when it's open.
 @media (max-width: 720px) {
   :root .modal__backdrop {
-    padding: calc(1rem + var(--safe-top)) var(--safe-right) var(--keyboard-inset) var(--safe-left);
+    padding: calc(1rem + var(--safe-top)) calc(0.75rem + var(--safe-right))
+      calc(1rem + max(var(--safe-bottom), var(--keyboard-inset))) calc(0.75rem + var(--safe-left));
   }
 
   :root .modal__panel {
-    max-height: calc(100dvh - var(--keyboard-inset) - 1rem - var(--safe-top));
-    padding-bottom: calc(1.1rem + var(--safe-bottom));
-    animation: sheet-up 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-  }
-
-  :root.keyboard-open .modal__panel {
-    padding-bottom: 1.1rem;
+    max-height: calc(100dvh - var(--keyboard-inset) - 2rem - var(--safe-top) - var(--safe-bottom));
   }
 }
 
@@ -311,5 +305,51 @@ body {
 @keyframes pull-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+// ── Forms fit the screen ──
+// Text fields have a built-in minimum width; inside flex and grid
+// layouts that pushed them past the edge of narrow dialogs. Let every
+// field shrink to its container.
+.field,
+.field > * {
+  min-width: 0;
+}
+
+.field input,
+.field select,
+.field textarea,
+.field .password-input,
+.field .rich-text {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+// Photo-beside-fields layouts stack on phones: photo on top, fields
+// full width below.
+@media (max-width: 560px) {
+  :root {
+    .npc-form__layout,
+    .party-form__layout,
+    .campaign-form__layout,
+    .new-or-join__layout {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .npc-form__photo,
+    .party-form__photo,
+    .campaign-form__photo,
+    .new-or-join__photo {
+      align-self: center;
+    }
+
+    .npc-form__grid,
+    .party-form__grid {
+      grid-template-columns: 1fr;
+      width: 100%;
+    }
   }
 }

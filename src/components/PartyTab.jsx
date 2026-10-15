@@ -517,7 +517,15 @@ function PartyTab({ campaignId, playerId }) {
 
       {claimError && <p className="empty-state empty-state--error">{claimError}</p>}
 
-      {isAdding && renderPartyForm('add')}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Party Member">
+
+          {renderPartyForm('add')}
+
+        </Modal>
+
+      )}
 
       {viewingMember && (
         <Modal onClose={closeViewing} label={`${viewingMember.name} — Party Member`}>

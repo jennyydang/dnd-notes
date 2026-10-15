@@ -447,7 +447,15 @@ function LootTab({ campaignId }) {
         </button>
       </div>
 
-      {isAdding && renderLootForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Loot">
+
+          {renderLootForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Loot">

@@ -136,7 +136,15 @@ function PartyGoals({ campaignId }) {
         </button>
       </div>
 
-      {isAdding && renderGoalForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Party Goal">
+
+          {renderGoalForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Party Goal">

@@ -270,11 +270,13 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
       <InviteBanner playerId={playerId} onJoined={onOpenCampaign} />
 
       {showChooser && (
-        <NewOrJoinCampaign
-          playerId={playerId}
-          onDone={handleCampaignReady}
-          onCancel={() => setShowChooser(false)}
-        />
+        <Modal onClose={() => setShowChooser(false)} label="Add a Campaign">
+          <NewOrJoinCampaign
+            playerId={playerId}
+            onDone={handleCampaignReady}
+            onCancel={() => setShowChooser(false)}
+          />
+        </Modal>
       )}
 
       {showFeedback && (

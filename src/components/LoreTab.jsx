@@ -145,7 +145,15 @@ function LoreTab({ campaignId }) {
         </button>
       </div>
 
-      {isAdding && renderLoreForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Lore">
+
+          {renderLoreForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Lore">
