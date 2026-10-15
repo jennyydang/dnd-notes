@@ -4,6 +4,7 @@ import { SHARE_KINDS, addShareToParty, shareDetail, shareImage, shareLabel } fro
 import { getStored, setStored } from '../lib/sessionMode.js'
 import Icon from './Icon.jsx'
 import './RevealOverlay.scss'
+import { RichText } from './RichText.jsx'
 
 // Only reveals from the last few minutes pop up, so opening the app later
 // doesn't replay old ones (they're still in the bell).
@@ -128,7 +129,7 @@ function RevealOverlay({ campaignId }) {
             {reveal.title || 'Untitled'}
           </h2>
           {detail && <p className="reveal__detail">{detail}</p>}
-          {description && <p className="reveal__description">{description}</p>}
+          {description && <RichText className="reveal__description" value={description} />}
           {result && (
             <p className="reveal__result" role="status">
               {result}

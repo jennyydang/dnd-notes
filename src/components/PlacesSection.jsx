@@ -5,6 +5,7 @@ import Modal from './Modal.jsx'
 import TagBadge from './TagBadge.jsx'
 import './PlacesSection.scss'
 import { confirmDelete } from '../lib/confirm.js'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const PLACE_KINDS = TAG_GROUPS.place.kinds
 
@@ -110,10 +111,11 @@ function PlacesSection({ campaignId }) {
             </div>
             <div className="field">
               <label htmlFor="place-notes">Notes</label>
-              <textarea
+              <RichTextEditor
                 id="place-notes"
                 value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+                ariaLabel="Notes"
                 placeholder="Walled port city, the harbour district smells of fish and trouble..."
               />
             </div>
@@ -149,7 +151,7 @@ function PlacesSection({ campaignId }) {
                 <h3 className="place-card__name">{place.name}</h3>
                 <TagBadge group="place" kind={place.kind} />
               </div>
-              {place.notes && <p className="place-card__notes">{place.notes}</p>}
+              {place.notes && <RichText className="place-card__notes" value={place.notes} />}
               <div className="place-card__actions">
                 <button type="button" className="btn btn--text" onClick={() => startEditing(place)}>
                   Edit

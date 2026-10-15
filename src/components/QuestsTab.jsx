@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import './QuestsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const QUEST_STATUSES = ['Active', 'Completed', 'Failed']
 
@@ -122,10 +123,11 @@ function QuestsTab({ campaignId }) {
           </div>
           <div className="field">
             <label htmlFor="quest-notes">Notes</label>
-            <textarea
+            <RichTextEditor
               id="quest-notes"
               value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+              ariaLabel="Notes"
               placeholder="Rumored to be guarded by an undead knight..."
             />
           </div>
@@ -182,7 +184,7 @@ function QuestsTab({ campaignId }) {
               {quest.givenBy && (
                 <p className="quest-card__given-by">Given by {quest.givenBy}</p>
               )}
-              {quest.notes && <p className="quest-card__notes">{quest.notes}</p>}
+              {quest.notes && <RichText className="quest-card__notes" value={quest.notes} />}
               <div className="quest-card__actions">
                 <button
                   type="button"

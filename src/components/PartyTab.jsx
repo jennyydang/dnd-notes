@@ -7,6 +7,7 @@ import Modal from './Modal.jsx'
 import './PartyTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import { RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'party-portraits'
 const MEMBER_TYPES = ['Player', 'NPC']
@@ -404,10 +405,11 @@ function PartyTab({ campaignId, playerId }) {
           </div>
           <div className="field">
             <label htmlFor="party-notes">Notes</label>
-            <textarea
+            <RichTextEditor
               id="party-notes"
               value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+              ariaLabel="Notes"
               placeholder="Joined the party after the battle at Redstone Bridge..."
               disabled={readOnly}
             />

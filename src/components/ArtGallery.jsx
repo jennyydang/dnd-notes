@@ -11,6 +11,7 @@ import { useDmShares } from '../hooks/useDmShares.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import Icon from './Icon.jsx'
 import './ArtGallery.scss'
+import { RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'campaign-art'
 const ART_CATEGORIES = ['NPC', 'Location', 'Map', 'Creature', 'Item', 'Scene', 'Handout', 'Other']
@@ -316,11 +317,11 @@ function ArtGallery({ campaignId, manage = false }) {
             </div>
             <div className="field">
               <label htmlFor="art-notes">Notes</label>
-              <textarea
+              <RichTextEditor
                 id="art-notes"
-                rows={3}
                 value={editing.notes}
-                onChange={(e) => setEditing({ ...editing, notes: e.target.value })}
+                onChange={(html) => setEditing((prev) => ({ ...prev, notes: html }))}
+                ariaLabel="Notes"
                 placeholder="Which session, who it shows, where it came from…"
               />
             </div>

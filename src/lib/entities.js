@@ -11,6 +11,9 @@ import { notesToPlainText } from './richNotes.js'
 // full editor lives in CampaignView.
 
 const text = (value) => (value == null ? '' : String(value))
+// Notes and descriptions can be formatted (RichText.jsx); search and the
+// detail view read them as plain text.
+const plain = (value) => notesToPlainText(text(value))
 
 export const ENTITY_TYPES = {
   npc: {
@@ -22,7 +25,7 @@ export const ENTITY_TYPES = {
     normalize: (r) => ({
       title: text(r.name),
       subtitle: [r.race, r.status, r.met_at && `Met: ${r.met_at}`].filter(Boolean).join(' · '),
-      body: text(r.description),
+      body: plain(r.description),
       tags: [r.status].filter(Boolean),
     }),
   },
@@ -35,7 +38,7 @@ export const ENTITY_TYPES = {
     normalize: (r) => ({
       title: text(r.name),
       subtitle: text(r.kind),
-      body: text(r.notes),
+      body: plain(r.notes),
       tags: [r.kind].filter(Boolean),
     }),
   },
@@ -48,7 +51,7 @@ export const ENTITY_TYPES = {
     normalize: (r) => ({
       title: text(r.name),
       subtitle: [r.status, r.given_by && `Given by ${r.given_by}`].filter(Boolean).join(' · '),
-      body: text(r.notes),
+      body: plain(r.notes),
       tags: [r.status].filter(Boolean),
       open: r.status === 'Active',
     }),
@@ -62,7 +65,7 @@ export const ENTITY_TYPES = {
     normalize: (r) => ({
       title: text(r.title),
       subtitle: text(r.category),
-      body: text(r.notes),
+      body: plain(r.notes),
       tags: [r.category].filter(Boolean),
       // Clues are lore entries with category "Clue" — see TAG_GROUPS.lore.
       label: /^clue$/i.test(text(r.category).trim()) ? 'Clue' : undefined,
@@ -79,7 +82,7 @@ export const ENTITY_TYPES = {
       subtitle: [r.kind, r.holder && `Held by ${r.holder}`, r.used && 'Used']
         .filter(Boolean)
         .join(' · '),
-      body: [r.found_at && `Found: ${r.found_at}`, r.notes].filter(Boolean).join('\n'),
+      body: [r.found_at && `Found: ${r.found_at}`, plain(r.notes)].filter(Boolean).join('\n'),
       tags: [r.kind].filter(Boolean),
     }),
   },
@@ -107,7 +110,7 @@ export const ENTITY_TYPES = {
     normalize: (r) => ({
       title: firstLine(r.content),
       subtitle: '',
-      body: text(r.content),
+      body: plain(r.content),
       tags: r.converted_to ? ['converted'] : [],
     }),
   },
@@ -122,7 +125,7 @@ export const ENTITY_TYPES = {
       subtitle: [r.race_class, r.level && `Level ${r.level}`, r.member_type]
         .filter(Boolean)
         .join(' · '),
-      body: text(r.notes),
+      body: plain(r.notes),
       tags: [r.member_type].filter(Boolean),
     }),
   },
@@ -135,7 +138,7 @@ export const ENTITY_TYPES = {
     normalize: (r) => ({
       title: text(r.title),
       subtitle: text(r.status),
-      body: text(r.notes),
+      body: plain(r.notes),
       tags: [r.status].filter(Boolean),
       open: r.status === 'Active',
     }),
@@ -152,7 +155,7 @@ ENTITY_TYPES.creature = {
   normalize: (r) => ({
     title: text(r.name),
     subtitle: [r.creature_type, r.challenge && `CR ${r.challenge}`].filter(Boolean).join(' · '),
-    body: [r.encountered_at && `Met: ${r.encountered_at}`, r.notes].filter(Boolean).join('\n'),
+    body: [r.encountered_at && `Met: ${r.encountered_at}`, plain(r.notes)].filter(Boolean).join('\n'),
     tags: [r.kind, r.creature_type].filter(Boolean),
     label: r.kind === 'Monster' ? 'Monster' : 'Creature',
   }),
@@ -198,7 +201,7 @@ Object.assign(ENTITY_TYPES, {
     normalize: (r) => ({
       title: text(r.title) || 'Untitled pin',
       subtitle: r.mapCaption ? `On ${r.mapCaption}` : '',
-      body: text(r.notes),
+      body: plain(r.notes),
       tags: [r.kind].filter(Boolean),
     }),
   },
@@ -210,7 +213,7 @@ Object.assign(ENTITY_TYPES, {
     normalize: (r) => ({
       title: text(r.title),
       subtitle: r.tabName ? `In ${r.tabName}` : '',
-      body: text(r.notes),
+      body: plain(r.notes),
       tags: [],
       tab: `custom:${r.custom_tab_id}`,
     }),

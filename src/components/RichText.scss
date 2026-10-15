@@ -1,0 +1,96 @@
+@use '../styles/variables' as *;
+
+// RichText.jsx — the small notes editor and how formatted notes read.
+.rich-text {
+  &--plain {
+    white-space: pre-wrap;
+  }
+
+  &--view,
+  &__content {
+    > :first-child {
+      margin-top: 0;
+    }
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+
+    p {
+      margin: 0 0 0.45em;
+    }
+
+    ul,
+    ol {
+      margin: 0.2em 0 0.45em;
+      padding-left: 1.3em;
+    }
+
+    li > p {
+      margin: 0;
+    }
+
+    strong {
+      color: $parchment;
+    }
+  }
+
+  &--editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  &__tool {
+    min-width: 2rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: $radius;
+    border: 1px solid $ink-soft;
+    background: $bg-deep;
+    color: $text-light;
+    font-size: 0.85rem;
+    line-height: 1.3;
+
+    &:hover:not(:disabled) {
+      border-color: $gold;
+      color: $gold-light;
+    }
+
+    &--active {
+      border-color: $gold;
+      background: rgba($gold, 0.15);
+      color: $gold-light;
+    }
+  }
+
+  &__content {
+    min-height: var(--rich-text-min-height, 6rem);
+    padding: 0.55rem 0.7rem;
+    border-radius: $radius;
+    border: 1px solid $ink-soft;
+    background: $bg-deep;
+    color: $text-light;
+    line-height: 1.5;
+    outline: none;
+    overflow-wrap: anywhere;
+
+    &:focus {
+      border-color: $gold;
+    }
+
+    p.is-editor-empty:first-child::before {
+      content: attr(data-placeholder);
+      float: left;
+      height: 0;
+      color: $text-muted;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+  }
+}

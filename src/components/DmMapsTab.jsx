@@ -10,6 +10,7 @@ import ShareStatus from './ShareStatus.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import Icon from './Icon.jsx'
 import './ArtGallery.scss'
+import { RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'maps'
 
@@ -256,11 +257,11 @@ function DmMapsTab({ campaignId }) {
             </div>
             <div className="field">
               <label htmlFor="dm-map-notes"><Icon name="lock" /> DM notes (never shared)</label>
-              <textarea
+              <RichTextEditor
                 id="dm-map-notes"
-                rows={3}
                 value={editing.notes}
-                onChange={(e) => setEditing({ ...editing, notes: e.target.value })}
+                onChange={(html) => setEditing((prev) => ({ ...prev, notes: html }))}
+                ariaLabel="notes"
                 placeholder="Traps, secret doors, what's really in the cellar…"
               />
             </div>

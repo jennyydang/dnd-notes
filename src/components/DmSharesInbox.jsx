@@ -7,6 +7,7 @@ import { formatDateTime } from '../lib/sessionMode.js'
 import Modal from './Modal.jsx'
 import Icon from './Icon.jsx'
 import './DmSharesInbox.scss'
+import { notesToPlainText } from '../lib/richNotes.js'
 
 // Topbar bell: the player's notifications (feedback marked solved, and
 // any other kind) and, inside a campaign for a non-DM player, what the DM
@@ -180,7 +181,7 @@ function NotificationsPanel({ campaignId, inbox, notes, onClose }) {
                     <span className="dm-share__title">{share.title || 'Untitled'}</span>
                     {detail && <span className="dm-share__detail">{detail}</span>}
                     {['npc', 'creature'].includes(share.kind) && share.payload.description && (
-                      <span className="dm-share__description">{share.payload.description}</span>
+                      <span className="dm-share__description">{notesToPlainText(share.payload.description)}</span>
                     )}
                     {result && (
                       <span className={`dm-share__result${result.ok ? '' : ' dm-share__result--error'}`} role="status">
