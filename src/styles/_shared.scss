@@ -688,3 +688,103 @@ input[type='checkbox'] {
     --fade-right: 2rem;
   }
 }
+
+// Sort / filter dropdown (FilterSelect in ui.jsx): a quiet pill that turns
+// gold while it's narrowing the list.
+.filter-select {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 2.6rem;
+  border: 1px solid rgba($gold-dim, 0.5);
+  border-radius: 999px;
+  background: $bg-deep;
+  color: $text-muted;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+
+  &:hover,
+  &:focus-within {
+    border-color: $gold;
+  }
+
+  &__field {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    padding: 0 0.95rem;
+    cursor: pointer;
+  }
+
+  &__label {
+    font-family: $font-display;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  // The select itself shows only the chosen value; its own arrow is
+  // replaced by the chevron below.
+  select {
+    appearance: none;
+    min-width: 0;
+    max-width: 11rem;
+    padding: 0.5rem 1.1rem 0.5rem 0;
+    border: 0;
+    background: transparent;
+    color: $text-light;
+    font-family: $font-display;
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+    }
+
+    option {
+      background: $bg-panel;
+      color: $text-light;
+    }
+  }
+
+  &__chevron {
+    position: absolute;
+    right: 0.95rem;
+    pointer-events: none;
+    font-size: 0.75rem;
+    color: $gold-light;
+  }
+
+  &__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    margin-right: 0.3rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba($gold, 0.15);
+    color: $gold-light;
+    font-size: 0.8rem;
+
+    &:hover {
+      background: rgba($gold, 0.3);
+    }
+  }
+
+  &--active {
+    border-color: rgba($gold, 0.8);
+    background: rgba($gold, 0.1);
+
+    select {
+      color: $gold-light;
+    }
+  }
+}
