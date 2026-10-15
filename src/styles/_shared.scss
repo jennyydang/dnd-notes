@@ -201,9 +201,29 @@
   }
 
   // Buttons sit on the card's bottom edge, so a row of cards of different
-  // lengths keeps them level.
+  // lengths keeps them level — in a slim footer: a compact Edit, tucked
+  // into the card's bottom padding, its text lined up with the content.
   > [class*='-card__actions'] {
     margin-top: auto;
+    margin-bottom: -0.55rem;
+    padding-top: 0.2rem;
+
+    .btn--text {
+      min-height: 2.4rem;
+      padding: 0.3rem 0.55rem;
+    }
+
+    > .btn--text:last-child {
+      margin-right: -0.55rem;
+    }
+  }
+}
+
+// Touch screens keep a comfortable 40px tap height for those buttons
+// (beating the general 44px rule in _mobile.scss only here).
+@media (hover: none) and (pointer: coarse) {
+  :root [class*='-card__actions'] .btn--text {
+    min-height: 2.5rem;
   }
 }
 
