@@ -7,13 +7,23 @@
   }
 }
 
-// Scrolls sideways once there are more sessions than fit.
+// A vertical timeline in a box of its own that scrolls up and down once
+// it's taller than the max height. Sessions run oldest at the top to
+// latest at the bottom along a line on the left.
 .timeline {
-  overflow-x: auto;
-  padding-bottom: 1rem;
-  // Swipes settle on a session column rather than mid-way between two.
-  scroll-snap-type: x proximity;
-  overscroll-behavior-x: contain;
+  max-height: min(70vh, 40rem);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  border-radius: $radius-lg;
+  border: 1px solid rgba($gold-dim, 0.4);
+  background: rgba($bg-deep, 0.55);
+  scroll-snap-type: y proximity;
+
+  &:focus-visible {
+    outline: 2px solid $gold;
+    outline-offset: 2px;
+  }
 }
 
 .timeline__nav {
@@ -27,37 +37,35 @@
   margin: 0;
   padding: 0;
   display: flex;
-  width: max-content;
-  min-width: 100%;
+  flex-direction: column;
 }
 
 .timeline__session {
   position: relative;
   scroll-snap-align: start;
-  flex: 0 0 16rem;
-  padding: 0 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  column-gap: 0.25rem;
+  row-gap: 0.6rem;
+  padding: 0.75rem 0.5rem 1rem 0;
 
-  // The line joining each session's marker to the next. Drawn per
-  // session (rather than once across the track) so it starts at the
-  // first marker and stops at the last one.
+  // The line joining each session's marker to the next, drawn per
+  // session so it starts at the first marker and stops at the last.
   &::before {
     content: '';
     position: absolute;
-    top: 0.55rem;
-    left: 0;
-    right: 0;
-    border-top: 2px solid rgba($gold-dim, 0.7);
+    left: calc(1.375rem - 1px);
+    top: 0;
+    bottom: 0;
+    border-left: 2px solid rgba($gold-dim, 0.7);
   }
 
   &:first-child::before {
-    left: 50%;
+    top: 1.45rem;
   }
 
   &:last-child::before {
-    right: 50%;
+    bottom: calc(100% - 1.45rem);
   }
 
   &:only-child::before {
@@ -67,11 +75,18 @@
   &--empty .timeline__header {
     opacity: 0.65;
   }
+
+  > :not(.timeline__marker) {
+    grid-column: 2;
+  }
 }
 
 .timeline__marker {
   position: relative;
-  align-self: center;
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: center;
+  margin-top: 0.15rem;
   width: 1.1rem;
   height: 1.1rem;
   border-radius: 50%;
@@ -81,7 +96,7 @@
 }
 
 .timeline__header {
-  text-align: center;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -131,7 +146,6 @@
 
 .timeline__none {
   margin: 0;
-  text-align: center;
   font-size: 0.85rem;
   color: $text-muted;
   font-style: italic;
