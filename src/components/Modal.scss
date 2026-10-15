@@ -11,6 +11,9 @@
     justify-content: center;
     padding: 2rem;
     overflow-y: auto;
+    // Scrolling that reaches a dialog's end stops there, never passing on
+    // to the page behind.
+    overscroll-behavior: contain;
   }
 
   &__panel {
@@ -19,6 +22,7 @@
     max-width: 42rem;
     max-height: 80vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 1.5rem;
 
     // Forms rendered here (via the shared renderXForm(false) pattern) no

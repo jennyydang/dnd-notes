@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import './Modal.scss'
+import { lockScroll } from '../lib/scrollLock.js'
 
 // Open modals, innermost last — so Escape closes only the top one when a
 // dialog opens another (e.g. the image cropper over an edit form).
@@ -30,16 +31,8 @@ function Modal({ onClose, label, size, children }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
-  // Lock the page underneath from scrolling while the modal is open —
-  // restore whatever overflow value was already there (rather than
-  // assuming it was blank) so this can't clobber a style set elsewhere.
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previousOverflow
-    }
-  }, [])
+  // The page underneath stays put while the modal is open (scrollLock.js).
+  useEffect(() => lockScroll(), [])
 
   return (
     <div

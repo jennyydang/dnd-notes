@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import Icon from './Icon.jsx'
 import { RichText } from './RichText.jsx'
+import { lockScroll } from '../lib/scrollLock.js'
 
 // Full-screen viewer: arrow keys / buttons step through, Escape closes,
 // and "Full screen" hides everything but the art (for showing the table).
@@ -11,10 +12,9 @@ function ArtViewer({ piece, position, onStep, onClose, actions }) {
   useEffect(() => {
     const previous = document.activeElement
     closeRef.current?.focus()
-    const { overflow } = document.body.style
-    document.body.style.overflow = 'hidden'
+    const unlock = lockScroll()
     return () => {
-      document.body.style.overflow = overflow
+      unlock()
       previous?.focus?.()
     }
   }, [])

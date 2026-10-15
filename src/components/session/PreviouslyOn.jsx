@@ -6,6 +6,7 @@ import { buildPreviously, sortedSessions } from '../../lib/previously.js'
 import { getPublicUrl } from '../../lib/storage.js'
 import Icon from '../Icon.jsx'
 import './PreviouslyOn.scss'
+import { lockScroll } from '../../lib/scrollLock.js'
 
 const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in window
 
@@ -34,15 +35,14 @@ function PreviouslyOn({ campaignName, onClose, onBegin }) {
   onCloseRef.current = onClose
   useEffect(() => {
     beginRef.current?.focus()
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const unlock = lockScroll()
     function onKey(event) {
       if (event.key === 'Escape') onCloseRef.current()
     }
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = previousOverflow
+      unlock()
       if (canSpeak()) window.speechSynthesis.cancel()
     }
   }, [])
