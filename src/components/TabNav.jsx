@@ -6,13 +6,14 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
   const [isAdding, setIsAdding] = useState(false)
   const [name, setName] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
-  // When the bar is wider than the screen (it scrolls sideways on
-  // phones), which ends still have tabs hidden past them.
+  // When the tabs don't fit, the list scrolls sideways; `more` says which
+  // ends still have tabs hidden past them (they fade out there).
   const navRef = useRef(null)
+  const listRef = useRef(null)
   const [more, setMore] = useState({ left: false, right: false })
 
   const measure = useCallback(() => {
-    const nav = navRef.current
+    const nav = listRef.current
     if (!nav || vertical) return
     const left = nav.scrollLeft > 4
     const right = nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 4
@@ -21,10 +22,10 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
 
   // Keep the selected tab in view. `center` (after picking a tab) glides
   // it to the middle of the bar; otherwise it's only nudged in from
-  // behind an end, clear of the ‹ › buttons.
+  // behind an end, clear of the fade.
   const showActive = useCallback(
     (center = false) => {
-      const nav = navRef.current
+      const nav = listRef.current
       const active = nav?.querySelector('.tab-nav__item--active')
       if (!nav || !active || vertical || nav.scrollWidth <= nav.clientWidth) return
       const navBox = nav.getBoundingClientRect()
@@ -42,10 +43,17 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
   )
 
   useEffect(() => {
-    const nav = navRef.current
+    const nav = listRef.current
     if (!nav || vertical) return undefined
     measure()
     nav.addEventListener('scroll', measure, { passive: true })
+    // A mouse wheel scrolls the row sideways when it overflows.
+    function onWheel(event) {
+      if (nav.scrollWidth <= nav.clientWidth || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return
+      event.preventDefault()
+      nav.scrollLeft += event.deltaY
+    }
+    nav.addEventListener('wheel', onWheel, { passive: false })
     // The tabs change width when the fonts finish loading or the screen
     // turns — re-check then too.
     const observer = new ResizeObserver(() => {
@@ -53,10 +61,10 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
       measure()
     })
     observer.observe(nav)
-    const list = nav.querySelector('.tab-nav__list')
-    if (list) observer.observe(list)
+    for (const item of nav.children) observer.observe(item)
     return () => {
       nav.removeEventListener('scroll', measure)
+      nav.removeEventListener('wheel', onWheel)
       observer.disconnect()
     }
   }, [measure, showActive, vertical, tabs.length])
@@ -69,10 +77,10 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
   }, [activeTab, showActive, tabs.length])
 
   function scrollBy(direction) {
-    const nav = navRef.current
-    if (!nav) return
+    const list = listRef.current
+    if (!list) return
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    nav.scrollBy({ left: direction * nav.clientWidth * 0.6, behavior: reduce ? 'auto' : 'smooth' })
+    list.scrollBy({ left: direction * list.clientWidth * 0.6, behavior: reduce ? 'auto' : 'smooth' })
   }
 
   function startAdding() {
@@ -95,40 +103,45 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
       ref={navRef}
       className={`tab-nav${className ? ` ${className}` : ''}${more.left ? ' tab-nav--more-left' : ''}${more.right ? ' tab-nav--more-right' : ''}`}
     >
-      {more.left && (
-        <button type="button" className="tab-nav__more tab-nav__more--left" onClick={() => scrollBy(-1)} aria-label="Show earlier tabs">
-          <Icon name="prev" />
-        </button>
-      )}
-      <div
-        className="tab-nav__list"
-        role="tablist"
-        aria-label={label}
-        aria-orientation={vertical ? 'vertical' : 'horizontal'}
-      >
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`tab-nav__item${activeTab === tab.id ? ' tab-nav__item--active' : ''}`}
-            onClick={() => onSelect(tab.id)}
-          >
-            {tab.icon && (
-              <span className="tab-nav__icon" aria-hidden="true">
-                <Icon name={tab.icon} />
-              </span>
-            )}
-            {tab.label}
+      {/* Wraps the row so the chevrons sit at its ends, clear of the + button. */}
+      <div className="tab-nav__scroll">
+        <div
+          ref={listRef}
+          className="tab-nav__list"
+          role="tablist"
+          aria-label={label}
+          aria-orientation={vertical ? 'vertical' : 'horizontal'}
+        >
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              className={`tab-nav__item${activeTab === tab.id ? ' tab-nav__item--active' : ''}`}
+              onClick={() => onSelect(tab.id)}
+            >
+              {tab.icon && (
+                <span className="tab-nav__icon" aria-hidden="true">
+                  <Icon name={tab.icon} />
+                </span>
+              )}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {/* Chevrons over the faded ends: there's more this way (tap to scroll). */}
+        {more.left && (
+          <button type="button" className="tab-nav__more tab-nav__more--left" onClick={() => scrollBy(-1)} aria-label="Show earlier tabs" tabIndex={-1}>
+            <Icon name="prev" />
           </button>
-        ))}
+        )}
+        {more.right && (
+          <button type="button" className="tab-nav__more tab-nav__more--right" onClick={() => scrollBy(1)} aria-label="Show more tabs" tabIndex={-1}>
+            <Icon name="next" />
+          </button>
+        )}
       </div>
-      {more.right && (
-        <button type="button" className="tab-nav__more tab-nav__more--right" onClick={() => scrollBy(1)} aria-label="Show more tabs">
-          <Icon name="next" />
-        </button>
-      )}
 
       {onAddTab &&
         (isAdding ? (

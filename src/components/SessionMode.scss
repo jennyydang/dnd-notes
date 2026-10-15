@@ -105,6 +105,7 @@
       margin-bottom: 0;
       width: 100%;
 
+      .tab-nav__scroll,
       .tab-nav__list {
         width: 100%;
         flex-wrap: nowrap;
@@ -959,15 +960,6 @@
 }
 
 .reference {
-  .tab-nav--pill {
-    max-width: 100%;
-    overflow-x: auto;
-
-    .tab-nav__list {
-      flex-wrap: nowrap;
-    }
-  }
-
   &__spells,
   &__inventory {
     list-style: none;
