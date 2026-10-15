@@ -7,7 +7,7 @@
 // — the swipe is the way in. Cards without both buttons don't swipe.
 const CARDS = '.npc-card, .loot-card, .creature-card, .place-card, .quest-card, .lore-card, .custom-entry-card'
 const WIDTH = 152 // tray width
-const GAP = 10 // space between the slid card and the tray
+const GAP = 6 // space between the slid card and the tray — same as between the buttons
 const SLIDE = WIDTH + GAP // how far an open card slides
 const START_PX = 12 // how far a finger moves before we decide it's a swipe
 const SNAP_PX = 60 // how far past the halfway-ish point a swipe must go

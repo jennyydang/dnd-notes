@@ -214,8 +214,9 @@
   position: fixed;
   z-index: 50;
   display: flex;
-  gap: 0.4rem;
-  padding: 0 0.1rem;
+  // Matches GAP in swipeActions.js, so card · Edit · Delete are evenly spaced.
+  gap: 6px;
+  padding: 0;
   align-items: stretch;
   opacity: 0;
   transition:
