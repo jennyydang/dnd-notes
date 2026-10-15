@@ -234,6 +234,12 @@ function SpellsTab({ campaignId, playerId }) {
       </div>
       {formError && <p className="empty-state empty-state--error">{formError}</p>}
       <div className="spell-form__actions">
+        {/* Delete lives here, away from Save — not on the card. */}
+        {editingId && (
+          <button type="button" className="btn btn--danger form-delete" onClick={() => removeSpell(editingId)}>
+            Delete
+          </button>
+        )}
         <button type="button" className="btn btn--text" onClick={cancelForm}>
           Cancel
         </button>
@@ -367,7 +373,7 @@ function SpellsTab({ campaignId, playerId }) {
                         </button>
                         <button
                           type="button"
-                          className="btn btn--danger"
+                          className="btn btn--danger card-delete"
                           onClick={() => removeSpell(spell.id)}
                         >
                           Delete

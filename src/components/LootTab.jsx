@@ -426,6 +426,12 @@ function LootTab({ campaignId }) {
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="loot-form__actions">
+            {/* Delete lives here, away from Save — not on the card. */}
+            {editingId && (
+              <button type="button" className="btn btn--danger form-delete" onClick={() => removeLoot(editingId)}>
+                Delete
+              </button>
+            )}
             <button type="button" className="btn btn--text" onClick={cancelForm}>
               Cancel
             </button>
@@ -632,7 +638,7 @@ function LootTab({ campaignId }) {
                 </button>
                 <button
                   type="button"
-                  className="icon-btn icon-btn--danger"
+                  className="icon-btn icon-btn--danger card-delete"
                   onClick={() => removeLoot(entry.id)}
                   aria-label={`Delete ${entry.item}`}
                 >
@@ -712,7 +718,7 @@ function LootTab({ campaignId }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="btn btn--danger card-delete"
                   onClick={() => removeLoot(entry.id)}
                 >
                   Delete

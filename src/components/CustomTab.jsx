@@ -117,6 +117,12 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
       </div>
       {formError && <p className="empty-state empty-state--error">{formError}</p>}
       <div className="custom-entry-form__actions">
+        {/* Delete lives here, away from Save — not on the card. */}
+        {editingId && (
+          <button type="button" className="btn btn--danger form-delete" onClick={() => removeEntry(editingId)}>
+            Delete
+          </button>
+        )}
         <button type="button" className="btn btn--text" onClick={cancelForm}>
           Cancel
         </button>
@@ -207,7 +213,7 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="btn btn--danger card-delete"
                   onClick={() => removeEntry(entry.id)}
                 >
                   Delete
