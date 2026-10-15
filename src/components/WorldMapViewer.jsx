@@ -1,7 +1,8 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { CampaignDataContext, useCampaignNav } from '../hooks/useCampaignData.js'
-import { supabase } from '../lib/supabaseClient.js'
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient.js'
+import { getPlayerSession } from '../lib/auth.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import Icon from './Icon.jsx'
@@ -12,6 +13,8 @@ const MAP_BUCKET = 'maps'
 const ZOOM_MIN = 1
 const ZOOM_MAX = 6
 const DRAG_THRESHOLD_PX = 5
+const LONG_PRESS_MS = 550 // hold this long (without moving) to ping
+const DOUBLE_TAP_MS = 320
 
 const emptyMarkerForm = {
   title: '',
@@ -139,6 +142,8 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   const dragStartRef = useRef(null)
   const activePointersRef = useRef(new Map())
   const pinchRef = useRef(null)
+  const longPressRef = useRef(null)
+  const lastTapRef = useRef(null)
 
   useEffect(() => {
     return () => {
@@ -258,13 +263,29 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     })
   }
 
+  // Briefly animate the next view change (buttons, double-tap, overview).
+  function glide(ms = 350) {
+    setFlying(true)
+    clearTimeout(glideTimer.current)
+    glideTimer.current = setTimeout(() => setFlying(false), ms)
+  }
+
   function zoomByFactor(factor) {
     const rect = viewportRef.current.getBoundingClientRect()
+    glide()
     zoomAt(rect.width / 2, rect.height / 2, factor)
   }
 
   function resetView() {
+    glide()
     setView(settle({ zoom: 1, x: 0, y: 0 }))
+  }
+
+  // Centre the view on a map fraction (the overview map's tap).
+  function centreOn(fx, fy) {
+    if (!base || !box) return
+    glide()
+    setView((prev) => settleRef.current({ zoom: prev.zoom, x: box.w / 2 - fx * base.w * prev.zoom, y: box.h / 2 - fy * base.h * prev.zoom }))
   }
 
   // Track the viewport's size (window resizes, rotating a tablet).
@@ -288,6 +309,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   const [flashId, setFlashId] = useState(null)
   const flownTo = useRef(null)
   const flyTimers = useRef([])
+  const glideTimer = useRef(null)
   useEffect(() => {
     if (!focusMarkerId || flownTo.current === focusMarkerId || !base || !box) return
     const target = markers.find((m) => m.id === focusMarkerId)
@@ -305,7 +327,43 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     flyTimers.current.push(setTimeout(() => setFlying(false), 750))
     flyTimers.current.push(setTimeout(() => setFlashId(null), 3200))
   }, [focusMarkerId, markers, base?.w, base?.h, box?.w, box?.h]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => flyTimers.current.forEach(clearTimeout), [])
+  useEffect(
+    () => () => {
+      flyTimers.current.forEach(clearTimeout)
+      clearTimeout(glideTimer.current)
+    },
+    [],
+  )
+
+  // Ping: hold a spot to send a pulsing ripple to everyone on this map
+  // (a Realtime broadcast — nothing is saved).
+  const [pings, setPings] = useState([])
+  const pingChannel = useRef(null)
+  function showPing(ping) {
+    const id = `${Date.now()}-${Math.random()}`
+    setPings((current) => [...current, { ...ping, id }])
+    setTimeout(() => setPings((current) => current.filter((p) => p.id !== id)), 2800)
+  }
+  useEffect(() => {
+    if (!isSupabaseConfigured) return undefined
+    const channel = supabase
+      .channel(`map-ping:${map.id}`, { config: { broadcast: { self: false } } })
+      .on('broadcast', { event: 'ping' }, ({ payload }) => {
+        if (payload && typeof payload.x === 'number') showPing(payload)
+      })
+      .subscribe()
+    pingChannel.current = channel
+    return () => {
+      pingChannel.current = null
+      supabase.removeChannel(channel)
+    }
+  }, [map.id])
+  function sendPing(x, y) {
+    const ping = { x, y, name: getPlayerSession()?.username || 'The DM' }
+    showPing(ping)
+    navigator.vibrate?.(15)
+    pingChannel.current?.send({ type: 'broadcast', event: 'ping', payload: ping })
+  }
 
 
   // Native (non-passive) listener: React's onWheel is passive and can't
@@ -344,6 +402,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     e.currentTarget.setPointerCapture(e.pointerId)
 
     if (activePointersRef.current.size === 2) {
+      clearTimeout(longPressRef.current)
       panStartRef.current = null
       const pts = [...activePointersRef.current.values()]
       pinchRef.current = {
@@ -355,12 +414,25 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       return
     }
 
-    panStartRef.current = {
+    const start = {
       startClientX: e.clientX,
       startClientY: e.clientY,
       startPanX: pan.x,
       startPanY: pan.y,
       moved: false,
+      pinged: false,
+    }
+    panStartRef.current = start
+    // Hold still to ping that spot (not while placing a pin or marker).
+    clearTimeout(longPressRef.current)
+    if (!placementMode) {
+      const { clientX, clientY } = e
+      longPressRef.current = setTimeout(() => {
+        if (panStartRef.current !== start || start.moved || activePointersRef.current.size !== 1) return
+        start.pinged = true
+        const { x, y } = computeFractionalPosition(clientX, clientY)
+        sendPing(x, y)
+      }, LONG_PRESS_MS)
     }
   }
 
@@ -395,9 +467,24 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     activePointersRef.current.delete(e.pointerId)
     if (activePointersRef.current.size < 2) pinchRef.current = null
 
+    clearTimeout(longPressRef.current)
     const start = panStartRef.current
     panStartRef.current = null
-    if (!start || start.moved || !placementMode) return
+    if (!start || start.moved || start.pinged) return
+    if (!placementMode) {
+      // Double-tap (or double-click) zooms in on that spot.
+      const now = Date.now()
+      const last = lastTapRef.current
+      if (last && now - last.at < DOUBLE_TAP_MS && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 30) {
+        lastTapRef.current = null
+        const rect = viewportRef.current.getBoundingClientRect()
+        glide()
+        zoomAt(e.clientX - rect.left, e.clientY - rect.top, 2)
+      } else {
+        lastTapRef.current = { at: now, x: e.clientX, y: e.clientY }
+      }
+      return
+    }
 
     const { x, y } = computeFractionalPosition(e.clientX, e.clientY)
     if (placementMode === 'pin') {
@@ -849,6 +936,21 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             </>
           )}
 
+          {pings.map((ping) => (
+            <div
+              key={ping.id}
+              className="world-map-viewer__anchor"
+              style={{ left: `${ping.x * 100}%`, top: `${ping.y * 100}%` }}
+            >
+              <div className="world-map-viewer__ping" style={{ transform: `scale(${1 / zoom})` }} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <em>{ping.name}</em>
+              </div>
+            </div>
+          ))}
+
           {pin.x != null && (
             <div
               className={`world-map-viewer__anchor world-map-viewer__anchor--glide${drag?.kind === 'pin' ? ' is-dragging' : ''}`}
@@ -903,6 +1005,36 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             )
           })}
         </div>
+
+        {/* Where you are on the whole map, while zoomed in. Tap to jump. */}
+        {zoom > 1.05 && base && box && (
+          <button
+            type="button"
+            className="world-map-viewer__overview"
+            style={{ aspectRatio: `${base.w} / ${base.h}` }}
+            aria-label="Overview — tap to jump there"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect()
+              centreOn((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height)
+            }}
+          >
+            <img src={map.src} alt="" draggable={false} />
+            <span
+              className="world-map-viewer__overview-view"
+              style={{
+                left: `${clamp(-pan.x / (base.w * zoom), 0, 1) * 100}%`,
+                top: `${clamp(-pan.y / (base.h * zoom), 0, 1) * 100}%`,
+                width: `${Math.min(1, box.w / (base.w * zoom)) * 100}%`,
+                height: `${Math.min(1, box.h / (base.h * zoom)) * 100}%`,
+              }}
+            />
+          </button>
+        )}
+
+        {pings.length === 0 && zoom <= 1.05 && (
+          <p className="world-map-viewer__hint">Hold anywhere to ping · double-tap to zoom</p>
+        )}
       </div>
 
       {markerForm && (
