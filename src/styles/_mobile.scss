@@ -195,10 +195,17 @@
       // Sideways drags belong to the swipe; up and down still scroll.
       touch-action: pan-y;
       transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
 
-      &.is-swiping {
-        transition: none;
-      }
+    // On phones a card's Edit and Delete live behind the swipe.
+    .swipe-hidden {
+      display: none;
+    }
+
+    // …and an actions row with nothing else left in it goes too.
+    .swipeable [class*='__actions']:not(:has(> :not(.swipe-hidden))),
+    .swipeable .compact-actions:not(:has(> :not(.swipe-hidden))) {
+      display: none;
     }
   }
 }
@@ -207,15 +214,14 @@
   position: fixed;
   z-index: 50;
   display: flex;
-  gap: 0.4rem;
-  padding: 0 0.1rem;
+  // Matches GAP in swipeActions.js, so card · Edit · Delete are evenly spaced.
+  gap: 6px;
+  padding: 0;
   align-items: stretch;
-  animation: fade-in 0.15s ease-out both;
-
-  &--closing {
-    opacity: 0;
-    transition: opacity 0.18s ease;
-  }
+  opacity: 0;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.22s ease;
 
   &__btn {
     flex: 1;
@@ -233,6 +239,11 @@
       color: $maroon-text;
     }
   }
+}
+
+// While a finger is dragging, the card and tray follow it exactly.
+:root .swipe-moving {
+  transition: none;
 }
 
 // ── Pull to refresh (src/lib/pullToRefresh.js) ──
