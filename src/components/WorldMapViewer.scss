@@ -257,11 +257,78 @@
     }
   }
 
+  // The pins, which the creator / DM can drag into order.
+  &__sortable {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+
+    @media (max-width: 720px) {
+      flex-direction: row;
+    }
+  }
+
+  &__card-row {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+
+    &.is-dragging {
+      z-index: 2;
+
+      .world-map-viewer__card {
+        border-color: $gold;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    @media (max-width: 720px) {
+      flex: 0 0 13.5rem;
+
+      .world-map-viewer__card {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+    }
+  }
+
+  &__grip {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 1.4rem;
+    margin-right: 0.2rem;
+    padding: 0;
+    border: none;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-muted;
+    cursor: grab;
+    touch-action: none;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      background: rgba($gold, 0.08);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
   &__card {
     display: flex;
     align-items: center;
     gap: 0.65rem;
     width: 100%;
+    min-width: 0;
     padding: 0.55rem 0.7rem;
     border: 1px solid rgba($gold-dim, 0.4);
     border-left: 3px solid var(--pin-colour, #{$parchment});

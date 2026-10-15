@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { useDragReorder } from '../hooks/useDragReorder.js'
 import { CampaignDataContext, useCampaignNav } from '../hooks/useCampaignData.js'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient.js'
 import { getPlayerSession } from '../lib/auth.js'
@@ -52,6 +53,7 @@ const markerFromRow = (r) => ({
   notes: r.notes,
   kind: r.kind,
   category: r.category || 'event',
+  sortOrder: r.sort_order ?? null,
   entityType: r.entity_type || null,
   entityId: r.entity_id || null,
   photoPath: r.photo_path,
@@ -344,6 +346,42 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     if (!hoverId || !listRef.current) return
     listRef.current.querySelector(`[data-pin="${hoverId}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }, [hoverId])
+  // Pins in list order: the creator / DM's arrangement, then the rest
+  // oldest first. A just-dropped order shows at once (optimistic).
+  const [localOrder, setLocalOrder] = useState(null)
+  const orderedMarkers = useMemo(() => {
+    const saved = [...markers].sort((a, b) => (a.sortOrder ?? Infinity) - (b.sortOrder ?? Infinity))
+    if (!localOrder) return saved
+    const rank = new Map(localOrder.map((id, i) => [id, i]))
+    return [...saved].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity))
+  }, [markers, localOrder])
+  const listedMarkers = orderedMarkers.filter((marker) => !hidden.has(typeOf(marker)))
+  const sortRef = useRef(null)
+  const [orderError, setOrderError] = useState(null)
+  const pinDrag = useDragReorder(async (id, toIndex) => {
+    // Move within the cards shown (filters may hide some), then slot that
+    // back into the full order and save each pin's new position.
+    const shown = listedMarkers.map((m) => m.id)
+    const from = shown.indexOf(id)
+    const to = Math.max(0, Math.min(shown.length - 1, toIndex))
+    if (from < 0 || from === to) return
+    shown.splice(to, 0, shown.splice(from, 1)[0])
+    const shownSet = new Set(shown)
+    let next = 0
+    const full = orderedMarkers.map((m) => (shownSet.has(m.id) ? shown[next++] : m.id))
+    setLocalOrder(full)
+    setOrderError(null)
+    try {
+      await Promise.all(
+        full.map((markerId, index) => {
+          const current = markers.find((m) => m.id === markerId)
+          return current && current.sortOrder === index ? null : updateItem(markerId, { sort_order: index })
+        }),
+      )
+    } catch (err) {
+      setOrderError(`Couldn’t save the order: ${err.message}`)
+    }
+  })
   const hoverProps = (key) => ({
     onMouseEnter: () => setHoverId(key),
     onMouseLeave: () => setHoverId((current) => (current === key ? null : current)),
@@ -1092,36 +1130,53 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
               </span>
             </button>
           )}
-          {markers
-            .filter((marker) => !hidden.has(typeOf(marker)))
-            .map((marker) => {
+          {/* The creator / DM drags a card's grip to reorder the list. */}
+          <div className="world-map-viewer__sortable" ref={sortRef}>
+            {listedMarkers.map((marker, index) => {
               const isZoom = marker.kind === 'zoom'
               const type = isZoom ? { label: 'Area', icon: 'zoom' } : categoryOf(marker.category)
               const entity = linkedEntity(marker)
               return (
-                <button
+                <div
                   key={marker.id}
-                  type="button"
-                  data-pin={marker.id}
-                  className={`world-map-viewer__card world-map-viewer__card--${isZoom ? 'zoom' : marker.category}${hoverId === marker.id ? ' is-hovered' : ''}`}
-                  {...hoverProps(marker.id)}
-                  onFocus={() => setHoverId(marker.id)}
-                  onBlur={() => setHoverId(null)}
-                  onClick={() => {
-                    flyTo(marker, marker.id)
-                    if (!isZoom) setDetailsMarker(marker)
-                  }}
+                  className={`world-map-viewer__card-row${pinDrag.draggingId === marker.id ? ' is-dragging' : ''}`}
+                  style={pinDrag.rowStyle(index)}
                 >
-                  <span className="world-map-viewer__card-icon">
-                    <Icon name={type.icon} />
-                  </span>
-                  <span className="world-map-viewer__card-text">
-                    <strong>{marker.title || type.label}</strong>
-                    <small>{[type.label, entity && entity.title].filter(Boolean).join(' · ')}</small>
-                  </span>
-                </button>
+                  {nav.canArrange && (
+                    <button
+                      type="button"
+                      className="world-map-viewer__grip"
+                      aria-label={`Move ${marker.title || type.label} (drag, or use the arrow keys)`}
+                      {...pinDrag.handleProps(marker.id, index, sortRef)}
+                    >
+                      <Icon name="grip" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    data-pin={marker.id}
+                    className={`world-map-viewer__card world-map-viewer__card--${isZoom ? 'zoom' : marker.category}${hoverId === marker.id ? ' is-hovered' : ''}`}
+                    {...hoverProps(marker.id)}
+                    onFocus={() => setHoverId(marker.id)}
+                    onBlur={() => setHoverId(null)}
+                    onClick={() => {
+                      flyTo(marker, marker.id)
+                      if (!isZoom) setDetailsMarker(marker)
+                    }}
+                  >
+                    <span className="world-map-viewer__card-icon">
+                      <Icon name={type.icon} />
+                    </span>
+                    <span className="world-map-viewer__card-text">
+                      <strong>{marker.title || type.label}</strong>
+                      <small>{[type.label, entity && entity.title].filter(Boolean).join(' · ')}</small>
+                    </span>
+                  </button>
+                </div>
               )
             })}
+          </div>
+          {orderError && <p className="world-map-viewer__list-empty">{orderError}</p>}
           {markers.length === 0 && pin.x == null && (
             <p className="world-map-viewer__list-empty">No pins yet — use “+ Drop Pin”.</p>
           )}

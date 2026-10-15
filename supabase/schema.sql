@@ -1711,3 +1711,7 @@ begin
     alter publication supabase_realtime add table public.map_pin_moves;
   end if;
 end $$;
+
+-- The order of a map's pins in its Pins list, set by the campaign's
+-- creator or DM by dragging. Unset pins sort after, oldest first.
+alter table map_markers add column if not exists sort_order double precision;
