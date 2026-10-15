@@ -1,0 +1,164 @@
+@use 'variables' as *;
+
+// ── Phones ────────────────────────────────────────────────────────────
+// Kept together so the mobile rules are easy to find. `:root` in front
+// gives these a little extra weight over the component styles they
+// adjust, whatever order the CSS loads in.
+
+// The notch, rounded corners and home bar. index.html asks for the page
+// to run edge to edge (viewport-fit=cover); these keep content clear of
+// them. They're 0 on devices without one.
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+@mixin safe-padding($y, $x: $y) {
+  padding: calc(#{$y} + var(--safe-top)) calc(#{$x} + var(--safe-right)) calc(#{$y} + var(--safe-bottom))
+    calc(#{$x} + var(--safe-left));
+}
+
+:root .app {
+  padding-top: calc(2rem + var(--safe-top));
+  padding-left: calc(1.5rem + var(--safe-left));
+  padding-right: calc(1.5rem + var(--safe-right));
+  padding-bottom: calc(4rem + var(--safe-bottom));
+}
+
+// Banners pinned to the top of the screen.
+:root .turn-alert,
+:root .level-up-banner,
+:root .downed-pulse__label {
+  top: calc(0.75rem + var(--safe-top));
+}
+
+// Full-screen overlays and dialog backdrops.
+:root .modal__backdrop,
+:root .lightbox,
+:root .spell-flavor-modal__backdrop,
+:root .world-map-viewer__form-backdrop,
+:root .world-map-viewer__details-backdrop {
+  @include safe-padding(2rem);
+}
+
+:root .reveal,
+:root .level-up {
+  @include safe-padding(1.5rem);
+}
+
+:root .previously {
+  @include safe-padding(1.5rem, 1rem);
+}
+
+:root .global-search {
+  padding-top: calc(4vh + var(--safe-top));
+  padding-left: calc(1rem + var(--safe-left));
+  padding-right: calc(1rem + var(--safe-right));
+}
+
+:root .lightbox__close {
+  top: calc(1.5rem + var(--safe-top));
+  right: calc(1.5rem + var(--safe-right));
+}
+
+// Full-screen viewers with a toolbar along the top.
+:root .art-viewer__bar {
+  padding-top: calc(0.6rem + var(--safe-top));
+  padding-left: calc(1rem + var(--safe-left));
+  padding-right: calc(1rem + var(--safe-right));
+}
+
+:root .world-map-viewer__toolbar {
+  padding-top: calc(0.85rem + var(--safe-top));
+  padding-left: calc(1.25rem + var(--safe-left));
+  padding-right: calc(1.25rem + var(--safe-right));
+}
+
+:root .world-map-viewer__viewport {
+  margin-bottom: var(--safe-bottom);
+}
+
+// Phones zoom the page in when you tap a text field set smaller than
+// 16px, and don't zoom back out. On touch screens every field is at least
+// 16px. (!important: it has to beat each form's own smaller sizes, and
+// it only applies to touch screens.)
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+  select,
+  textarea,
+  [contenteditable='true'] {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+// Fingers need about 44×44px to hit something reliably (Apple and
+// Google both recommend it). On touch screens the small controls grow to
+// that, without changing how they look on a desktop.
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    .btn,
+    .view-toggle__btn,
+    .tab-nav__item,
+    .chip,
+    .entity-chip__open,
+    .account-menu__dropdown .btn {
+      min-height: 44px;
+    }
+
+    .icon-btn,
+    .stepper__btn,
+    .password-input__toggle,
+    .account-menu__avatar {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .rich-text__tool,
+    .rich-notes__tool {
+      min-width: 40px;
+      min-height: 40px;
+    }
+
+    // Text-only links in sentences ("Log in", "Forgot password?") get a
+    // taller hit area without moving the text.
+    .player-login__link {
+      padding-block: 0.6rem;
+    }
+
+    input[type='checkbox'] {
+      width: 1.35em;
+      height: 1.35em;
+    }
+  }
+}
+
+// ── On-screen keyboard (src/lib/keyboard.js) ──
+:root {
+  --keyboard-inset: 0px;
+}
+
+// Dialogs stop where the keyboard starts, so a form's fields and its
+// Save button can be scrolled into the part you can see.
+:root .modal__backdrop {
+  padding-bottom: calc(2rem + max(var(--safe-bottom), var(--keyboard-inset)));
+}
+
+:root .modal__panel {
+  max-height: min(80vh, calc(100dvh - var(--keyboard-inset) - 3rem - var(--safe-top)));
+}
+
+// The page itself gets room to scroll the last field above the keyboard.
+:root.keyboard-open .app {
+  padding-bottom: calc(4rem + var(--keyboard-inset));
+}
+
+// The bottom bar and floating buttons would sit on top of the keyboard
+// and hide the field — they step aside while you type.
+:root.keyboard-open {
+  .bottom-nav,
+  .session-dock {
+    display: none;
+  }
+}
