@@ -316,17 +316,38 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     if (!target) return
     flownTo.current = focusMarkerId
     setHidden((current) => (current.has(typeOf(target)) ? new Set() : current))
+    flyTo(target, focusMarkerId)
+  }, [focusMarkerId, markers, base?.w, base?.h, box?.w, box?.h]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Glide in on a map point (a pin), and pulse the pin with that key.
+  function flyTo(point, flashKey) {
+    if (!base || !box) return
     setFlying(true)
     setView((prev) => {
       const z = Math.max(prev.zoom, 2.5)
-      return settleRef.current({ zoom: z, x: box.w / 2 - target.x * base.w * z, y: box.h / 2 - target.y * base.h * z })
+      return settleRef.current({ zoom: z, x: box.w / 2 - point.x * base.w * z, y: box.h / 2 - point.y * base.h * z })
     })
-    setFlashId(focusMarkerId)
-    // Not tied to this effect's cleanup: a live refresh mid-flight must
-    // not cancel them (that would leave the pin pulsing for good).
+    if (flashKey) setFlashId(flashKey)
+    // Not tied to an effect's cleanup: a live refresh mid-flight must not
+    // cancel them (that would leave the pin pulsing for good).
     flyTimers.current.push(setTimeout(() => setFlying(false), 750))
     flyTimers.current.push(setTimeout(() => setFlashId(null), 3200))
-  }, [focusMarkerId, markers, base?.w, base?.h, box?.w, box?.h]) // eslint-disable-line react-hooks/exhaustive-deps
+  }
+
+  // The pin list beside the map: hovering a card (or a pin) highlights
+  // its partner. Open by default where there's room for it.
+  const [showList, setShowList] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 900)
+  const [hoverId, setHoverId] = useState(null) // 'party' or a marker id
+  const listRef = useRef(null)
+  useEffect(() => {
+    // Hovering a pin scrolls its card into view.
+    if (!hoverId || !listRef.current) return
+    listRef.current.querySelector(`[data-pin="${hoverId}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [hoverId])
+  const hoverProps = (key) => ({
+    onMouseEnter: () => setHoverId(key),
+    onMouseLeave: () => setHoverId((current) => (current === key ? null : current)),
+  })
   useEffect(
     () => () => {
       flyTimers.current.forEach(clearTimeout)
@@ -798,6 +819,14 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           <button type="button" className="btn btn--text" onClick={resetView}>
             Reset
           </button>
+          <button
+            type="button"
+            className={`btn btn--text${showList ? ' is-on' : ''}`}
+            onClick={() => setShowList((v) => !v)}
+            aria-pressed={showList}
+          >
+            <Icon name="rows" /> Pins
+          </button>
           {trail.length > 0 && (
             <>
               <button
@@ -875,8 +904,9 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
         </div>
       )}
 
+      <div className={`world-map-viewer__body${showList ? ' world-map-viewer__body--list' : ''}`}>
       <div
-        className={`world-map-viewer__viewport${placementMode ? ' world-map-viewer__viewport--placing' : ''}`}
+        className={`world-map-viewer__viewport${placementMode ? ' world-map-viewer__viewport--placing' : ''}${hoverId ? ' world-map-viewer__viewport--hovering' : ''}`}
         ref={viewportRef}
       >
         <div
@@ -957,7 +987,8 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
               style={{ left: `${pinPos.x * 100}%`, top: `${pinPos.y * 100}%` }}
             >
               <div
-                className="world-map-viewer__pin"
+                className={`world-map-viewer__pin${hoverId === 'party' ? ' is-hovered' : ''}${flashId === 'party' ? ' is-focused' : ''}`}
+                {...hoverProps('party')}
                 style={{ transform: `translate(-50%, -100%) scale(${1 / zoom})` }}
                 onPointerDown={(e) => startDrag(e, 'pin', null, pin.x, pin.y)}
                 onPointerMove={moveDrag}
@@ -981,17 +1012,19 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
               !isZoom && `world-map-viewer__event-marker--${marker.category}`,
               activeQuest && 'is-active-quest',
               flashId === marker.id && 'is-focused',
+              hoverId === marker.id && 'is-hovered',
             ]
               .filter(Boolean)
               .join(' ')
             return (
               <div
                 key={marker.id}
-                className={`world-map-viewer__anchor world-map-viewer__anchor--glide${drag?.id === marker.id ? ' is-dragging' : ''}`}
+                className={`world-map-viewer__anchor world-map-viewer__anchor--glide${drag?.id === marker.id ? ' is-dragging' : ''}${hoverId === marker.id ? ' is-raised' : ''}`}
                 style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%` }}
               >
                 <div
                   className={classes}
+                  {...hoverProps(marker.id)}
                   style={{ transform: `translate(-50%, -100%) scale(${1 / zoom})` }}
                   onPointerDown={(e) => startDrag(e, 'marker', marker.id, marker.x, marker.y)}
                   onPointerMove={moveDrag}
@@ -1035,6 +1068,65 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
         {pings.length === 0 && zoom <= 1.05 && (
           <p className="world-map-viewer__hint">Hold anywhere to ping · double-tap to zoom</p>
         )}
+      </div>
+
+      {/* Mini cards for every pin: hover to find it, tap to go there. */}
+      {showList && (
+        <aside className="world-map-viewer__list" aria-label="Pins on this map" ref={listRef}>
+          {pin.x != null && (
+            <button
+              type="button"
+              data-pin="party"
+              className={`world-map-viewer__card world-map-viewer__card--party${hoverId === 'party' ? ' is-hovered' : ''}`}
+              {...hoverProps('party')}
+              onFocus={() => setHoverId('party')}
+              onBlur={() => setHoverId(null)}
+              onClick={() => flyTo(pin, 'party')}
+            >
+              <span className="world-map-viewer__card-icon">
+                <Icon name="pin" />
+              </span>
+              <span className="world-map-viewer__card-text">
+                <strong>The party</strong>
+                <small>{trail.length ? `Last moved · ${trail[trail.length - 1].label}` : 'Current location'}</small>
+              </span>
+            </button>
+          )}
+          {markers
+            .filter((marker) => !hidden.has(typeOf(marker)))
+            .map((marker) => {
+              const isZoom = marker.kind === 'zoom'
+              const type = isZoom ? { label: 'Area', icon: 'zoom' } : categoryOf(marker.category)
+              const entity = linkedEntity(marker)
+              return (
+                <button
+                  key={marker.id}
+                  type="button"
+                  data-pin={marker.id}
+                  className={`world-map-viewer__card world-map-viewer__card--${isZoom ? 'zoom' : marker.category}${hoverId === marker.id ? ' is-hovered' : ''}`}
+                  {...hoverProps(marker.id)}
+                  onFocus={() => setHoverId(marker.id)}
+                  onBlur={() => setHoverId(null)}
+                  onClick={() => {
+                    flyTo(marker, marker.id)
+                    if (!isZoom) setDetailsMarker(marker)
+                  }}
+                >
+                  <span className="world-map-viewer__card-icon">
+                    <Icon name={type.icon} />
+                  </span>
+                  <span className="world-map-viewer__card-text">
+                    <strong>{marker.title || type.label}</strong>
+                    <small>{[type.label, entity && entity.title].filter(Boolean).join(' · ')}</small>
+                  </span>
+                </button>
+              )
+            })}
+          {markers.length === 0 && pin.x == null && (
+            <p className="world-map-viewer__list-empty">No pins yet — use “+ Drop Pin”.</p>
+          )}
+        </aside>
+      )}
       </div>
 
       {markerForm && (
