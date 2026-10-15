@@ -358,13 +358,15 @@ function NpcsTab({ campaignId }) {
                       <span>{npc.name.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  <h3 className="npc-card__name">{npc.name}</h3>
+                  {/* Status sits under the name, so the name gets the
+                      card's full width instead of sharing it with the pill. */}
+                  <div className="npc-card__who">
+                    <h3 className="npc-card__name">{npc.name}</h3>
+                    <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>
+                      {npc.status}
+                    </span>
+                  </div>
                 </div>
-                <span
-                  className={`status-badge status-badge--${npc.status.toLowerCase()}`}
-                >
-                  {npc.status}
-                </span>
               </div>
               <dl className="npc-card__details">
                 <div>

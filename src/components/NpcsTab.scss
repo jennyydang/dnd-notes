@@ -156,12 +156,21 @@
     }
   }
 
-  // A long single word breaks rather than running under the status pill.
+  &__who {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  // Wraps between words; only a word too long for the whole card breaks.
   &__name {
     min-width: 0;
     font-size: 1.15rem;
+    line-height: 1.25;
     color: $parchment;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   &--compact {
