@@ -2,6 +2,7 @@
 @use './styles/base';
 @use './styles/shared';
 @use './styles/motion';
+@use './styles/mobile';
 
 .app {
   // Above the ambient embers and fog (Ambience.jsx).

@@ -11,9 +11,46 @@ const openModals = []
 // same visual pattern as the existing spell flavor-text popup.
 // `size="narrow"` suits short dialogs (a notice, a confirm) that would
 // otherwise sit in a mostly empty panel.
+//
+// On phones it becomes a bottom sheet (Modal.scss): it slides up from the
+// bottom, and dragging its handle down past a point closes it.
+const DISMISS_PX = 90
+const DISMISS_SPEED = 0.6 // px per ms — a quick flick closes it too
+
 function Modal({ onClose, label, size, children }) {
   const idRef = useRef(null)
   if (!idRef.current) idRef.current = {}
+  const panelRef = useRef(null)
+  const dragRef = useRef(null)
+
+  function onHandleDown(event) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    dragRef.current = { y: event.clientY, t: performance.now(), dy: 0 }
+    panelRef.current?.classList.add('modal__panel--dragging')
+  }
+
+  function onHandleMove(event) {
+    const drag = dragRef.current
+    if (!drag) return
+    drag.dy = Math.max(0, event.clientY - drag.y)
+    if (panelRef.current) panelRef.current.style.transform = `translateY(${drag.dy}px)`
+  }
+
+  function onHandleUp() {
+    const drag = dragRef.current
+    dragRef.current = null
+    const panel = panelRef.current
+    if (!drag || !panel) return
+    panel.classList.remove('modal__panel--dragging')
+    const speed = drag.dy / Math.max(1, performance.now() - drag.t)
+    if (drag.dy > DISMISS_PX || (drag.dy > 24 && speed > DISMISS_SPEED)) {
+      panel.style.transform = 'translateY(110%)'
+      setTimeout(onClose, 160)
+    } else {
+      panel.style.transform = ''
+    }
+  }
 
   useEffect(() => {
     const id = idRef.current
@@ -49,9 +86,21 @@ function Modal({ onClose, label, size, children }) {
       onClick={onClose}
     >
       <div
+        ref={panelRef}
         className={`modal__panel panel${size ? ` modal__panel--${size}` : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Shown on phones only: drag down to close. */}
+        <div
+          className="modal__handle"
+          aria-hidden="true"
+          onPointerDown={onHandleDown}
+          onPointerMove={onHandleMove}
+          onPointerUp={onHandleUp}
+          onPointerCancel={onHandleUp}
+        >
+          <span />
+        </div>
         {children}
       </div>
     </div>
