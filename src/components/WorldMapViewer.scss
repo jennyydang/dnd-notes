@@ -4,17 +4,20 @@
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.9);
+  // Solid, so the page behind (title, back link) doesn't show through.
+  background: $bg-deep;
   display: flex;
   flex-direction: column;
 
   &__toolbar {
+    background: $bg-panel;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.85rem 1.25rem;
+    // Clear of the notch / status bar on phones and tablets.
+    padding: calc(0.85rem + env(safe-area-inset-top)) 1.25rem 0.85rem;
     border-bottom: 1px solid rgba($gold-dim, 0.4);
   }
 
@@ -78,10 +81,29 @@
     touch-action: none;
     user-select: none;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+    // Readable on light and dark maps alike: a coloured icon with a dark
+    // outline (the drop-shadow above adds depth).
+    color: $parchment;
+    paint-order: stroke;
+
+    svg {
+      display: block;
+      stroke-width: 2.2;
+      filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9));
+    }
 
     &:active {
       cursor: grabbing;
     }
+  }
+
+  // The party's location stands out in gold.
+  &__pin {
+    color: $gold-light;
+  }
+
+  &__zoom-marker {
+    color: #9fd3e6;
   }
 }
 
