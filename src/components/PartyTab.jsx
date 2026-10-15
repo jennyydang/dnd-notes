@@ -162,7 +162,7 @@ function PartyTab({ campaignId, playerId }) {
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto })
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto, onRemove: removePhoto })
 
   function applyPhoto(file) {
 
@@ -316,14 +316,9 @@ function PartyTab({ campaignId, playerId }) {
                 onChange={photoCrop.fromInput}
               />
               {!readOnly && form.photoPreview && (
-                <>
-                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
-                    Adjust
-                  </button>
-                  <button type="button" className="btn btn--text" onClick={removePhoto}>
-                    Remove photo
-                  </button>
-                </>
+                <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                  Edit photo
+                </button>
               )}
               {photoCrop.dialog}
             </div>
@@ -421,22 +416,23 @@ function PartyTab({ campaignId, playerId }) {
           <div className="party-form__actions">
             {mode === 'view' ? (
               canManageMember(member) && (
-                <>
+                <button key="edit" type="button" className="btn btn--primary" onClick={startEditingDetails}>
+                  Edit
+                </button>
+              )
+            ) : (
+              <>
+                {/* Delete lives in edit mode, on the left, away from Save. */}
+                {mode === 'edit' && canManageMember(member) && (
                   <button
                     key="delete"
                     type="button"
-                    className="btn btn--danger"
+                    className="btn btn--danger form-delete"
                     onClick={() => removeMember(member.id)}
                   >
                     Delete
                   </button>
-                  <button key="edit" type="button" className="btn btn--primary" onClick={startEditingDetails}>
-                    Edit
-                  </button>
-                </>
-              )
-            ) : (
-              <>
+                )}
                 {/* Distinct keys so React never reuses the view-mode Edit
                     button as this submit button mid-click. */}
                 <button

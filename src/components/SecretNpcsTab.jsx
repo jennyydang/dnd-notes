@@ -156,7 +156,12 @@ function SecretNpcsTab({ campaignId, addRequest }) {
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto })
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto, onRemove: removePhoto })
+
+  function removePhoto() {
+    revokePreview()
+    setForm((prev) => ({ ...prev, photoFile: null, photoPreview: '', photoRemoved: true }))
+  }
 
   function applyPhoto(file) {
     revokePreview()
@@ -385,21 +390,9 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                 </button>
                 <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={photoCrop.fromInput} />
                 {form.photoPreview && (
-                  <>
-                    <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
-                      Adjust
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--text"
-                      onClick={() => {
-                        revokePreview()
-                        setForm((prev) => ({ ...prev, photoFile: null, photoPreview: '', photoRemoved: true }))
-                      }}
-                    >
-                      Remove photo
-                    </button>
-                  </>
+                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                    Edit photo
+                  </button>
                 )}
                 {photoCrop.dialog}
               </div>

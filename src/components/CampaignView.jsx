@@ -235,6 +235,11 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     <CampaignDataProvider campaignId={campaignId} playerId={playerId}>
       <CampaignNavContext.Provider value={nav}>
         <div className="campaign-view">
+          {/* Back to the campaign list, in the page's top-left corner (phones
+              have theirs in the top bar instead). */}
+          <button type="button" className="btn btn--text campaign-view__back" onClick={onBack}>
+            &larr; <span className="campaign-view__back-all">All </span>Campaigns
+          </button>
           <div className="campaign-view__topbar">
             <div className="campaign-view__topbar-start">
               <button
@@ -343,10 +348,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           >
             {sidebarOpen && (
               <aside className="campaign-view__sidebar" aria-label="Campaign navigation">
-                <button type="button" className="btn btn--text campaign-view__back" onClick={onBack}>
-                  &larr; All Campaigns
-                </button>
-
                 <div className="campaign-view__title-block">
                   <h2 className="campaign-view__name">{campaignName}</h2>
                 </div>

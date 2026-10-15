@@ -91,7 +91,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 16 / 9, shape: 'rect', onCropped: applyPhoto })
+  const photoCrop = useImageCrop({ aspect: 16 / 9, shape: 'rect', onCropped: applyPhoto, onRemove: removePhoto })
 
   function applyPhoto(file) {
 
@@ -186,14 +186,9 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
               onChange={photoCrop.fromInput}
             />
             {form.photoPreview && (
-              <>
-                <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
-                  Adjust
-                </button>
-                <button type="button" className="btn btn--text" onClick={removePhoto}>
-                  Remove cover
-                </button>
-              </>
+              <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                Edit cover
+              </button>
             )}
             {photoCrop.dialog}
           </div>

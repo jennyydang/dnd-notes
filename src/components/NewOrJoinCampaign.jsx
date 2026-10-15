@@ -125,7 +125,7 @@ function NewCampaignForm({ playerId, onDone, onBack }) {
           />
           {photoPreview && (
             <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(photoFile, photoPreview)}>
-              Adjust
+              Edit cover
             </button>
           )}
           {photoCrop.dialog}
