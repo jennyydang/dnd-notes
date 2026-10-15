@@ -64,9 +64,13 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
   const { items: markers, addItem, updateItem, removeItem } =
     useSupabaseTable('map_markers', { fromRow: markerFromRow, filters: { map_id: map.id } })
 
-  const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
+  // Zoom and pan as one value, so they always change together.
+  const [view, setView] = useState({ zoom: 1, x: 0, y: 0 })
+  const zoom = view.zoom
+  const pan = { x: view.x, y: view.y }
   const [imgSize, setImgSize] = useState(null)
+  // The viewport's size, so the map can be fitted and kept in view.
+  const [box, setBox] = useState(null)
   // The shared pin's position lives in local state, seeded once from the
   // map row and updated only by our own drags/placements — there's no
   // realtime subscription in this app, so nothing else changes it out from
@@ -117,21 +121,37 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
     if (error) throw new Error(error.message)
   }
 
-  // Zooms so that the world-space point currently under (pointX, pointY)
-  // — coordinates relative to the viewport's top-left — stays under that
-  // same screen point after the zoom changes. Uses functional state
-  // updates throughout so it never closes over stale zoom/pan, which lets
-  // the wheel listener below bind once on mount instead of re-binding on
-  // every zoom/pan change.
+  // The map's size at zoom 1: as large as fits inside the viewport
+  // (whole map visible), keeping the image's shape.
+  const aspect = imgSize ? imgSize.w / imgSize.h : 4 / 3
+  const base = box
+    ? box.w / box.h > aspect
+      ? { w: box.h * aspect, h: box.h }
+      : { w: box.w, h: box.w / aspect }
+    : null
+
+  // Keeps the map on screen: while it's smaller than the viewport it sits
+  // centred; once bigger, its edges can't be dragged past the viewport's.
+  function settle(next) {
+    if (!box || !base) return next
+    const fit = (offset, size, room) => (size <= room ? (room - size) / 2 : clamp(offset, room - size, 0))
+    return {
+      zoom: next.zoom,
+      x: fit(next.x, base.w * next.zoom, box.w),
+      y: fit(next.y, base.h * next.zoom, box.h),
+    }
+  }
+  const settleRef = useRef(settle)
+  settleRef.current = settle
+
+  // Zooms so the map point under (pointX, pointY) — viewport coordinates —
+  // stays under that same spot.
   function zoomAt(pointX, pointY, factor) {
-    setZoom((prevZoom) => {
-      const newZoom = clamp(prevZoom * factor, ZOOM_MIN, ZOOM_MAX)
-      setPan((prevPan) => {
-        const stageX = (pointX - prevPan.x) / prevZoom
-        const stageY = (pointY - prevPan.y) / prevZoom
-        return { x: pointX - stageX * newZoom, y: pointY - stageY * newZoom }
-      })
-      return newZoom
+    setView((prev) => {
+      const newZoom = clamp(prev.zoom * factor, ZOOM_MIN, ZOOM_MAX)
+      const stageX = (pointX - prev.x) / prev.zoom
+      const stageY = (pointY - prev.y) / prev.zoom
+      return settleRef.current({ zoom: newZoom, x: pointX - stageX * newZoom, y: pointY - stageY * newZoom })
     })
   }
 
@@ -141,9 +161,24 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
   }
 
   function resetView() {
-    setZoom(1)
-    setPan({ x: 0, y: 0 })
+    setView(settle({ zoom: 1, x: 0, y: 0 }))
   }
+
+  // Track the viewport's size (window resizes, rotating a tablet).
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return undefined
+    const measure = () => setBox({ w: el.clientWidth, h: el.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Re-fit when the map first measures (or the screen changes size).
+  useEffect(() => {
+    setView((prev) => settleRef.current(prev))
+  }, [box?.w, box?.h, imgSize?.w, imgSize?.h])
 
   // Native (non-passive) listener: React's onWheel is passive and can't
   // preventDefault, which we need to stop the page itself from scrolling.
@@ -216,8 +251,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
       const pointY = pinchRef.current.mid.y - viewportRect.top
       const stageX = (pointX - pinchRef.current.initialPan.x) / pinchRef.current.initialZoom
       const stageY = (pointY - pinchRef.current.initialPan.y) / pinchRef.current.initialZoom
-      setZoom(newZoom)
-      setPan({ x: pointX - stageX * newZoom, y: pointY - stageY * newZoom })
+      setView(settle({ zoom: newZoom, x: pointX - stageX * newZoom, y: pointY - stageY * newZoom }))
       return
     }
 
@@ -226,7 +260,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
     const dx = e.clientX - start.startClientX
     const dy = e.clientY - start.startClientY
     if (Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) start.moved = true
-    setPan({ x: start.startPanX + dx, y: start.startPanY + dy })
+    setView((prev) => settle({ zoom: prev.zoom, x: start.startPanX + dx, y: start.startPanY + dy }))
   }
 
   function handleStagePointerUp(e) {
@@ -588,7 +622,9 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
           ref={stageRef}
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-            aspectRatio: imgSize ? `${imgSize.w} / ${imgSize.h}` : '4 / 3',
+            width: base ? base.w : '100%',
+            height: base ? base.h : undefined,
+            aspectRatio: base ? undefined : `${aspect}`,
           }}
           onPointerDown={handleStagePointerDown}
           onPointerMove={handleStagePointerMove}
@@ -639,7 +675,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
                   onPointerCancel={endDrag}
                   title={marker.title || (isZoom ? 'Zoom area' : 'Event marker')}
                 >
-                  {isZoom ? 'zoom' : 'pushpin'}
+                  <Icon name={isZoom ? 'zoom' : 'pushpin'} />
                 </div>
               </div>
             )
