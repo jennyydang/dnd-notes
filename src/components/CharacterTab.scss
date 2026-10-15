@@ -75,16 +75,6 @@
 
   &__views {
     margin-bottom: 0;
-    max-width: 100%;
-    overflow-x: auto;
-
-    .tab-nav__list {
-      flex-wrap: nowrap;
-    }
-
-    .tab-nav__item {
-      white-space: nowrap;
-    }
   }
 }
 

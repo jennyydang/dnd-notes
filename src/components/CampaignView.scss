@@ -243,20 +243,6 @@
       display: flex;
     }
 
-    &__subnav {
-      max-width: 100%;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
-
-      .tab-nav__list {
-        flex-wrap: nowrap;
-      }
-
-      .tab-nav__item {
-        white-space: nowrap;
-      }
-    }
   }
 }
 
