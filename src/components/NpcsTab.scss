@@ -38,6 +38,11 @@
     align-items: flex-start;
   }
 
+  // The description sits below the photo + fields block.
+  &__layout + .field {
+    margin-top: 1rem;
+  }
+
   &__photo {
     flex-shrink: 0;
     display: flex;
