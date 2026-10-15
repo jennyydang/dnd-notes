@@ -23,16 +23,15 @@
     transform: scale(0.97);
   }
 
-  // Bright gold with near-black text: at least 7.5:1 contrast (AAA).
-  // The old dim gold under $ink was only ~3.3:1.
+  // The same gold as an active tab pill (TabNav.scss), with near-black
+  // text for contrast (4.8:1 at the darkest edge, 7.5:1 at the top).
   &--primary {
-    background: linear-gradient(180deg, #d4ad35, $gold);
+    background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
     color: #1c140e;
-    border-color: $gold-light;
-    font-weight: 600;
+    border-color: $gold;
 
     &:hover {
-      background: linear-gradient(180deg, $gold-light, #d4ad35);
+      background: linear-gradient(180deg, color.adjust($gold, $lightness: 6%), color.adjust($gold, $lightness: -4%));
     }
   }
 
