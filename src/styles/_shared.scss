@@ -140,10 +140,10 @@
   white-space: nowrap;
 }
 
-// Every list card caps out at the same height and scrolls past it, so one
-// long entry can't stretch its whole grid row. Spell cards keep their own
-// setup (SpellsTab.scss) — only their body scrolls, with the name and
-// actions pinned.
+// Every list card caps out at the same height, so one long entry can't
+// stretch its whole grid row. Spell cards keep their own setup
+// (SpellsTab.scss) — only their body scrolls, with the name and actions
+// pinned.
 .party-card,
 .loot-card,
 .place-card,
@@ -158,6 +158,29 @@
 .goal-card {
   max-height: $card-max-height;
   overflow-y: auto;
+}
+
+// Cards with a notes / description block: the card itself doesn't scroll
+// — its header and Edit / Delete stay put and only the notes scroll.
+.loot-card,
+.place-card,
+.creature-card,
+.npc-card,
+.custom-entry-card,
+.lore-card,
+.quest-card,
+.goal-card {
+  &:has([class$='-card__notes'], [class$='-card__description']) {
+    overflow: hidden;
+  }
+
+  [class$='-card__notes'],
+  [class$='-card__description'] {
+    flex: 0 1 auto;
+    min-height: 3em;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 // These cards are flex columns — without this, hitting the max height
@@ -786,5 +809,75 @@ input[type='checkbox'] {
     select {
       color: $gold-light;
     }
+  }
+}
+
+// The open list of a <select> on mouse/trackpad devices (selectMenu.js):
+// the app's dark panel and gold highlight instead of the OS menu.
+.select-menu {
+  position: fixed;
+  z-index: 1000;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.3rem;
+  border: $border-gold;
+  border-radius: $radius-lg;
+  background: $bg-panel-raised;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+  font-family: $font-body;
+  color: $text-light;
+  animation: select-menu-in 0.12s ease-out;
+
+  &--up {
+    animation-name: select-menu-up;
+  }
+
+  &__group {
+    padding: 0.5rem 0.75rem 0.2rem;
+    font-family: $font-display;
+    font-size: 0.7em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
+  &__option {
+    position: relative;
+    padding: 0.45rem 0.75rem 0.45rem 1.8rem;
+    border-radius: $radius;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &--active {
+      background: rgba($gold, 0.16);
+      color: $gold-light;
+    }
+
+    // A gold tick beside the current choice.
+    &--selected::before {
+      content: '✓';
+      position: absolute;
+      left: 0.65rem;
+      color: $gold-light;
+    }
+
+    &--disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+  }
+}
+
+@keyframes select-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes select-menu-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
 }

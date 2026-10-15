@@ -6,13 +6,16 @@ import { useCallback, useEffect, useState } from 'react'
 // the scrolling element and the class names to put on it.
 export function useEdgeFades() {
   const [node, setNode] = useState(null)
-  const [more, setMore] = useState({ left: false, right: false })
+  const [more, setMore] = useState({ overflow: false, left: false, right: false })
 
   const measure = useCallback(() => {
     if (!node) return
+    const overflow = node.scrollWidth > node.clientWidth + 1
     const left = node.scrollLeft > 4
     const right = node.scrollLeft + node.clientWidth < node.scrollWidth - 4
-    setMore((m) => (m.left === left && m.right === right ? m : { left, right }))
+    setMore((m) =>
+      m.overflow === overflow && m.left === left && m.right === right ? m : { overflow, left, right },
+    )
   }, [node])
 
   useEffect(() => {
@@ -28,6 +31,10 @@ export function useEdgeFades() {
     }
   }, [node, measure])
 
-  const className = `edge-fade${more.left ? ' edge-fade--left' : ''}${more.right ? ' edge-fade--right' : ''}`
+  // Only a row that actually scrolls gets the fade: a mask clips anything
+  // past the row's box, like a card lifting on hover in a desktop grid.
+  const className = more.overflow
+    ? `edge-fade${more.left ? ' edge-fade--left' : ''}${more.right ? ' edge-fade--right' : ''}`
+    : ''
   return [setNode, className]
 }
