@@ -341,12 +341,12 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   // The pin list beside the map: hovering a card (or a pin) highlights
   // its partner. Under it sit the new pin / zoom area to drag in.
   const [showList, setShowList] = useState(true)
-  // The map key; whether it's open is remembered on this device.
+  // The map key: open unless it's been closed on this device.
   const [showLegend, setShowLegend] = useState(() => {
     try {
-      return localStorage.getItem('dnd-notes-map-legend') === '1'
+      return localStorage.getItem('dnd-notes-map-legend') !== '0'
     } catch {
-      return false
+      return true
     }
   })
   function toggleLegend(next = !showLegend) {
@@ -509,13 +509,60 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   useEffect(() => {
     const el = viewportRef.current
     if (!el) return
+    // Trackpads work like an iPad: pinch to zoom, two-finger slide to
+    // pan. Browsers report a pinch as a wheel with ctrlKey (Safari also
+    // as gesture events, below); a mouse wheel still zooms.
     function onWheel(e) {
       e.preventDefault()
       const rect = el.getBoundingClientRect()
-      zoomAt(e.clientX - rect.left, e.clientY - rect.top, Math.exp(-e.deltaY * 0.001))
+      const px = e.clientX - rect.left
+      const py = e.clientY - rect.top
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? rect.height : 1
+      const dx = e.deltaX * unit
+      const dy = e.deltaY * unit
+      if (e.ctrlKey) {
+        zoomAt(px, py, Math.exp(-dy * 0.01))
+        return
+      }
+      // A trackpad scrolls in fine pixel steps (and sideways); a mouse
+      // wheel in whole notches (wheelDelta a multiple of 120, or lines).
+      const trackpad =
+        e.deltaMode === 0 &&
+        (dx !== 0 || (e.wheelDeltaY ? Math.abs(e.wheelDeltaY) === Math.abs(e.deltaY * 3) : true))
+      if (trackpad) {
+        setView((prev) => settleRef.current({ zoom: prev.zoom, x: prev.x - dx, y: prev.y - dy }))
+      } else {
+        zoomAt(px, py, Math.exp(-dy * 0.0015))
+      }
+    }
+    // Safari's trackpad pinch. Ignored while fingers are on the screen,
+    // where the pointer handlers already pinch-zoom.
+    let lastScale = null
+    function onGestureStart(e) {
+      if (activePointersRef.current.size > 0) return
+      e.preventDefault()
+      lastScale = 1
+    }
+    function onGestureChange(e) {
+      if (lastScale == null) return
+      e.preventDefault()
+      const rect = el.getBoundingClientRect()
+      zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.scale / lastScale)
+      lastScale = e.scale
+    }
+    function onGestureEnd() {
+      lastScale = null
     }
     el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
+    el.addEventListener('gesturestart', onGestureStart)
+    el.addEventListener('gesturechange', onGestureChange)
+    el.addEventListener('gestureend', onGestureEnd)
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('gesturestart', onGestureStart)
+      el.removeEventListener('gesturechange', onGestureChange)
+      el.removeEventListener('gestureend', onGestureEnd)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -927,15 +974,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       <div className="world-map-viewer__toolbar">
         <span className="world-map-viewer__title">{map.caption || 'Interactive Map'}</span>
         <div className="world-map-viewer__controls">
-          <button type="button" className="btn btn--text" onClick={() => zoomByFactor(1.25)} aria-label="Zoom in">
-            +
-          </button>
-          <button type="button" className="btn btn--text" onClick={() => zoomByFactor(0.8)} aria-label="Zoom out">
-            &minus;
-          </button>
-          <button type="button" className="btn btn--text" onClick={resetView}>
-            Reset
-          </button>
           <button
             type="button"
             className={`btn btn--text${showList ? ' is-on' : ''}`}
@@ -943,14 +981,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             aria-pressed={showList}
           >
             <Icon name="rows" /> Pins
-          </button>
-          <button
-            type="button"
-            className={`btn btn--text${showLegend ? ' is-on' : ''}`}
-            onClick={() => toggleLegend()}
-            aria-pressed={showLegend}
-          >
-            <Icon name="map" /> Legend
           </button>
           {trail.length > 0 && (
             <>
@@ -1192,7 +1222,30 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           </button>
         )}
 
-        {showLegend && <MapLegend onClose={() => toggleLegend(false)} />}
+        {/* Floating over the map: the legend toggle (top-left) and zoom. */}
+        <button
+          type="button"
+          className={`world-map-viewer__fab world-map-viewer__legend-toggle${showLegend ? ' is-on' : ''}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => toggleLegend()}
+          aria-pressed={showLegend}
+          aria-label={showLegend ? 'Hide legend' : 'Show legend'}
+          title={showLegend ? 'Hide legend' : 'Show legend'}
+        >
+          <Icon name="map" />
+        </button>
+        {showLegend && <MapLegend />}
+        <div className="world-map-viewer__zoom-controls" role="group" aria-label="Zoom" onPointerDown={(e) => e.stopPropagation()}>
+          <button type="button" className="world-map-viewer__fab" onClick={() => zoomByFactor(1.25)} aria-label="Zoom in" title="Zoom in">
+            <Icon name="plus" />
+          </button>
+          <button type="button" className="world-map-viewer__fab" onClick={() => zoomByFactor(0.8)} aria-label="Zoom out" title="Zoom out">
+            <Icon name="minus" />
+          </button>
+          <button type="button" className="world-map-viewer__fab" onClick={resetView} aria-label="Fit the whole map" title="Fit the whole map">
+            <Icon name="maximize" />
+          </button>
+        </div>
 
         {pings.length === 0 && zoom <= 1.05 && (
           <p className="world-map-viewer__hint">Hold anywhere to ping · double-tap to zoom</p>

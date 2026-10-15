@@ -1,7 +1,7 @@
 import {
   Backpack, Bell, ChevronLeft, ChevronRight, BookOpen, Brain, Bug, Calendar, ChartBar, CircleHelp, Clipboard, ClipboardList, Coins, Compass,
   Crown, Dices, Download, Eye, Feather, File, FileText, Flame, Gem, GripVertical, Handshake, Heart, Hourglass, House, IdCard,
-  Image, Inbox, LayoutGrid, Library, Lightbulb, Link, ListTodo, Lock, Map, MapPin, Menu, Maximize, MessageCircle, MessageSquare,
+  Image, Inbox, LayoutGrid, Library, Lightbulb, Link, ListTodo, Lock, Map, MapPin, Menu, Maximize, MessageCircle, MessageSquare, Minus,
   NotebookPen, Pause, PawPrint, Pencil, Pin, Play, Plus, RefreshCw, Rows3, ScrollText, Search, Send, Shield, ShieldCheck, Skull,
   Sparkles, Speech, SquareCheck, Star, Swords, Target, Trash2, TrendingUp, TriangleAlert, User, Users, VenetianMask, WifiOff, Wrench, X, Zap,
   ZoomIn,
@@ -57,6 +57,7 @@ const ICONS = {
   maximize: Maximize,
   menu: Menu,
   message: MessageCircle,
+  minus: Minus,
   monster: Skull,
   next: ChevronRight,
   pause: Pause,
