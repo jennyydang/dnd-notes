@@ -233,16 +233,32 @@
     }
   }
 
-  &__list {
+  // Beside the map (under it on phones): the pin cards, then the new
+  // pin / zoom area to drag onto the map.
+  &__side {
     flex: 0 0 17rem;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: $bg-panel;
+    border-left: 1px solid rgba($gold-dim, 0.35);
+
+    @media (max-width: 720px) {
+      flex: 0 0 auto;
+      border-left: none;
+      border-top: 1px solid rgba($gold-dim, 0.35);
+    }
+  }
+
+  &__list {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 0.45rem;
     padding: 0.75rem;
     overflow-y: auto;
     overscroll-behavior: contain;
-    background: $bg-panel;
-    border-left: 1px solid rgba($gold-dim, 0.35);
 
     // Phones: a swipeable strip of cards under the map.
     @media (max-width: 720px) {
@@ -250,10 +266,172 @@
       flex-direction: row;
       overflow-x: auto;
       overflow-y: hidden;
-      padding: 0.6rem 0.75rem calc(0.6rem + env(safe-area-inset-bottom));
-      border-left: none;
-      border-top: 1px solid rgba($gold-dim, 0.35);
+      padding: 0.6rem 0.75rem;
       scrollbar-width: none;
+    }
+  }
+
+  &__palette {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.65rem 0.75rem 0.75rem;
+    border-top: 1px solid rgba($gold-dim, 0.25);
+
+    @media (max-width: 720px) {
+      flex-direction: row;
+      align-items: center;
+      padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom));
+    }
+  }
+
+  &__palette-label {
+    color: $text-muted;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    @media (max-width: 720px) {
+      flex: 1;
+    }
+  }
+
+  &__palette-items {
+    display: flex;
+    gap: 0.45rem;
+  }
+
+  &__palette-item {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.6rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px dashed rgba($gold, 0.55);
+    border-radius: $radius;
+    background: rgba($gold, 0.06);
+    color: $gold-light;
+    font: inherit;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      border-style: solid;
+      background: rgba($gold, 0.14);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &--zoom {
+      color: #9fd3e6;
+      border-color: rgba(#9fd3e6, 0.5);
+      background: rgba(#9fd3e6, 0.06);
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(#9fd3e6, 0.14);
+      }
+    }
+
+    svg {
+      width: 1.05rem;
+      height: 1.05rem;
+    }
+  }
+
+  // The map lights up while a new marker is dragged over it.
+  &__viewport--drop {
+    box-shadow: inset 0 0 0 2px rgba($gold, 0.75);
+  }
+
+  // The spot being confirmed / filled in.
+  &__new-marker {
+    color: $gold-light;
+    pointer-events: none;
+
+    svg {
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 8px rgba($gold-light, 0.95));
+      animation: new-pin-bob 0.9s ease-in-out infinite;
+    }
+  }
+
+  // The pins, which the creator / DM can drag into order.
+  &__sortable {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+
+    @media (max-width: 720px) {
+      flex-direction: row;
+    }
+  }
+
+  &__card-row {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+
+    &.is-dragging {
+      z-index: 2;
+
+      .world-map-viewer__card {
+        border-color: $gold;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    @media (max-width: 720px) {
+      flex: 0 0 13.5rem;
+
+      .world-map-viewer__card {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+    }
+  }
+
+  &__grip {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 1.4rem;
+    margin-right: 0.2rem;
+    padding: 0;
+    border: none;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-muted;
+    cursor: grab;
+    touch-action: none;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      background: rgba($gold, 0.08);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
     }
   }
 
@@ -262,6 +440,7 @@
     align-items: center;
     gap: 0.65rem;
     width: 100%;
+    min-width: 0;
     padding: 0.55rem 0.7rem;
     border: 1px solid rgba($gold-dim, 0.4);
     border-left: 3px solid var(--pin-colour, #{$parchment});
@@ -576,6 +755,44 @@
   padding: 2rem;
 }
 
+// "Add a pin here?" sits low with a light veil, so the spot stays visible.
+.world-map-viewer__form-backdrop--clear {
+  align-items: flex-end;
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.world-map-viewer__confirm p {
+  color: $text-muted;
+  margin: 0;
+}
+
+// The marker under the finger / cursor while dragging one in.
+.world-map-viewer__ghost {
+  position: fixed;
+  z-index: 120;
+  pointer-events: none;
+  color: $gold-light;
+  transform: translate(-50%, -100%) scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+  opacity: 0.75;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+
+  &.is-over {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1.35);
+  }
+
+  &--zoom {
+    color: #9fd3e6;
+  }
+
+  svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
 .world-map-viewer__form {
   width: 100%;
   max-width: 28rem;
@@ -725,5 +942,15 @@
   }
   50% {
     transform: scale(1.6) translateY(-5px);
+  }
+}
+
+@keyframes new-pin-bob {
+  0%,
+  100% {
+    transform: scale(1.3) translateY(0);
+  }
+  50% {
+    transform: scale(1.3) translateY(-5px);
   }
 }

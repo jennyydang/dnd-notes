@@ -103,7 +103,7 @@ const DM_AREAS = [
 ]
 
 const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
-const membershipFromRow = (r) => ({ id: r.id, role: r.role })
+const membershipFromRow = (r) => ({ id: r.id, role: r.role, createdBy: r.created_by })
 
 const customTabPrefix = 'custom:'
 
@@ -158,6 +158,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     filters: { id: campaignId, player_id: playerId || NO_PLAYER },
   })
   const isDm = !playerId || memberships.some((m) => m.role === 'dm')
+  // The campaign's creator and its DMs (and the admin) arrange shared
+  // things, like the order of a map's pins.
+  const canArrange = isDm || memberships.some((m) => m.role === 'creator' || m.createdBy === playerId)
   const dmView = Boolean(playerId) && isDm
   // Hold the screen until the role is known, so a DM doesn't see the
   // player layout flash first.
@@ -226,6 +229,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     openQuickCreate: (type = 'npc', initial = {}) => setQuickCreate({ type, initial }),
     tabs: allTabs,
     isDm,
+    canArrange,
   }
   const addRequestFor = (tab) => (addRequest?.tab === tab ? addRequest.at : null)
 

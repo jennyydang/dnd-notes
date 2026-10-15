@@ -1,10 +1,12 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { useDragReorder } from '../hooks/useDragReorder.js'
 import { CampaignDataContext, useCampaignNav } from '../hooks/useCampaignData.js'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient.js'
 import { getPlayerSession } from '../lib/auth.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import { createPortal } from 'react-dom'
 import Icon from './Icon.jsx'
 import './WorldMapViewer.scss'
 
@@ -52,6 +54,7 @@ const markerFromRow = (r) => ({
   notes: r.notes,
   kind: r.kind,
   category: r.category || 'event',
+  sortOrder: r.sort_order ?? null,
   entityType: r.entity_type || null,
   entityId: r.entity_id || null,
   photoPath: r.photo_path,
@@ -118,7 +121,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   // already updates the canonical row, this just avoids waiting on that
   // round trip to show the new position).
   const [pin, setPin] = useState({ x: map.pinX, y: map.pinY })
-  const [placementMode, setPlacementMode] = useState(null) // null | 'pin' | 'event' | 'zoom'
+  const [placementMode, setPlacementMode] = useState(null) // null | 'pin' (the party's first spot)
   const [pendingMarkerPos, setPendingMarkerPos] = useState(null)
   const [markerForm, setMarkerForm] = useState(null)
   const [editingMarkerId, setEditingMarkerId] = useState(null)
@@ -335,8 +338,8 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   }
 
   // The pin list beside the map: hovering a card (or a pin) highlights
-  // its partner. Open by default where there's room for it.
-  const [showList, setShowList] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 900)
+  // its partner. Under it sit the new pin / zoom area to drag in.
+  const [showList, setShowList] = useState(true)
   const [hoverId, setHoverId] = useState(null) // 'party' or a marker id
   const listRef = useRef(null)
   useEffect(() => {
@@ -344,6 +347,103 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     if (!hoverId || !listRef.current) return
     listRef.current.querySelector(`[data-pin="${hoverId}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }, [hoverId])
+  // Pins in list order: the creator / DM's arrangement, then the rest
+  // newest first. A just-dropped order shows at once (optimistic).
+  const [localOrder, setLocalOrder] = useState(null)
+  const orderedMarkers = useMemo(() => {
+    const age = new Map(markers.map((m, i) => [m.id, i])) // oldest first
+    const saved = [...markers].sort((a, b) =>
+      a.sortOrder != null || b.sortOrder != null
+        ? (a.sortOrder ?? Infinity) - (b.sortOrder ?? Infinity)
+        : age.get(b.id) - age.get(a.id),
+    )
+    if (!localOrder) return saved
+    const rank = new Map(localOrder.map((id, i) => [id, i]))
+    return [...saved].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity))
+  }, [markers, localOrder])
+  const listedMarkers = orderedMarkers.filter((marker) => !hidden.has(typeOf(marker)))
+  const sortRef = useRef(null)
+  const [orderError, setOrderError] = useState(null)
+  const pinDrag = useDragReorder(async (id, toIndex) => {
+    // Move within the cards shown (filters may hide some), then slot that
+    // back into the full order and save each pin's new position.
+    const shown = listedMarkers.map((m) => m.id)
+    const from = shown.indexOf(id)
+    const to = Math.max(0, Math.min(shown.length - 1, toIndex))
+    if (from < 0 || from === to) return
+    shown.splice(to, 0, shown.splice(from, 1)[0])
+    const shownSet = new Set(shown)
+    let next = 0
+    const full = orderedMarkers.map((m) => (shownSet.has(m.id) ? shown[next++] : m.id))
+    setLocalOrder(full)
+    setOrderError(null)
+    try {
+      await Promise.all(
+        full.map((markerId, index) => {
+          const current = markers.find((m) => m.id === markerId)
+          return current && current.sortOrder === index ? null : updateItem(markerId, { sort_order: index })
+        }),
+      )
+    } catch (err) {
+      setOrderError(`Couldn’t save the order: ${err.message}`)
+    }
+    setLocalOrder(null) // the saved order (or, on failure, the old one)
+  })
+  // A new pin goes to the top of the list (under the party): ahead of
+  // any arranged pins, or — with none arranged — simply as the newest.
+  function topOfList() {
+    const ranked = markers.map((m) => m.sortOrder).filter((v) => v != null)
+    return ranked.length ? { sort_order: Math.min(...ranked) - 1 } : {}
+  }
+
+  // Dragging a new pin or zoom area from under the list onto the map,
+  // then confirming the spot, opens its form. A tap (or Enter) offers
+  // the middle of what's on screen instead.
+  const [newDrag, setNewDrag] = useState(null) // { kind, cx, cy, moved, over }
+  const [confirmDrop, setConfirmDrop] = useState(null) // { kind, x, y }
+  const paletteDragged = useRef(false)
+  function overMap(cx, cy) {
+    const r = viewportRef.current?.getBoundingClientRect()
+    return Boolean(r) && cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom
+  }
+  function paletteProps(kind) {
+    return {
+      onPointerDown(e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return
+        e.preventDefault()
+        e.currentTarget.setPointerCapture?.(e.pointerId)
+        paletteDragged.current = false
+        setNewDrag({ kind, sx: e.clientX, sy: e.clientY, cx: e.clientX, cy: e.clientY, moved: false, over: false })
+      },
+      onPointerMove(e) {
+        const { clientX: cx, clientY: cy } = e
+        setNewDrag((d) => {
+          if (!d) return d
+          const moved = d.moved || Math.hypot(cx - d.sx, cy - d.sy) > DRAG_THRESHOLD_PX
+          if (moved) paletteDragged.current = true
+          return { ...d, cx, cy, moved, over: moved && overMap(cx, cy) }
+        })
+      },
+      onPointerUp(e) {
+        setNewDrag(null)
+        if (paletteDragged.current && overMap(e.clientX, e.clientY)) {
+          setConfirmDrop({ kind, ...computeFractionalPosition(e.clientX, e.clientY) })
+        }
+      },
+      onPointerCancel: () => setNewDrag(null),
+      onClick() {
+        if (paletteDragged.current) return
+        const r = viewportRef.current?.getBoundingClientRect()
+        if (r) setConfirmDrop({ kind, ...computeFractionalPosition(r.left + r.width / 2, r.top + r.height / 2) })
+      },
+    }
+  }
+  function acceptDrop() {
+    const { kind, x, y } = confirmDrop
+    setConfirmDrop(null)
+    beginNewMarker(kind, x, y)
+  }
+
   const hoverProps = (key) => ({
     onMouseEnter: () => setHoverId(key),
     onMouseLeave: () => setHoverId((current) => (current === key ? null : current)),
@@ -512,19 +612,19 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       setPin({ x, y })
       setPlacementMode(null)
       movePin(x, y).catch((err) => setFormError(err.message))
-    } else if (placementMode === 'event') {
-      setPendingMarkerPos({ x, y })
-      setPlacementMode(null)
-      revokeTrackedObjectUrl()
+    }
+  }
+
+  // Open the form for a new pin ('event') or zoom area at a map point.
+  function beginNewMarker(kind, x, y) {
+    setPendingMarkerPos({ x, y })
+    revokeTrackedObjectUrl()
+    setFormError(null)
+    if (kind === 'zoom') {
+      setZoomForm(emptyZoomForm)
+    } else {
       setMarkerForm(emptyMarkerForm)
       setEditingMarkerId(null)
-      setFormError(null)
-    } else if (placementMode === 'zoom') {
-      setPendingMarkerPos({ x, y })
-      setPlacementMode(null)
-      revokeTrackedObjectUrl()
-      setZoomForm(emptyZoomForm)
-      setFormError(null)
     }
   }
 
@@ -684,7 +784,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       if (editingMarkerId) {
         await updateItem(editingMarkerId, payload)
       } else {
-        await addItem({ ...payload, x: pendingMarkerPos.x, y: pendingMarkerPos.y, kind: 'event' })
+        await addItem({ ...payload, ...topOfList(), x: pendingMarkerPos.x, y: pendingMarkerPos.y, kind: 'event' })
       }
       cancelMarkerForm()
     } catch (err) {
@@ -774,7 +874,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     let marker = null
     try {
       imagePath = await uploadImage(MAP_BUCKET, zoomForm.imageFile)
-      marker = await addItem({ title: zoomForm.title, x: pendingMarkerPos.x, y: pendingMarkerPos.y, kind: 'zoom' })
+      marker = await addItem({ title: zoomForm.title, ...topOfList(), x: pendingMarkerPos.x, y: pendingMarkerPos.y, kind: 'zoom' })
       const { error: childMapError } = await supabase
         .from('maps')
         .insert({ campaign_id: campaignId, image_path: imagePath, caption: zoomForm.title, source_marker_id: marker.id })
@@ -853,20 +953,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
               {placementMode === 'pin' ? 'Click the map to drop your pin' : 'Drop "I am here" pin'}
             </button>
           )}
-          <button
-            type="button"
-            className="btn btn--text"
-            onClick={() => setPlacementMode((m) => (m === 'event' ? null : 'event'))}
-          >
-            {placementMode === 'event' ? 'Click the map to place it' : '+ Drop Pin'}
-          </button>
-          <button
-            type="button"
-            className="btn btn--text"
-            onClick={() => setPlacementMode((m) => (m === 'zoom' ? null : 'zoom'))}
-          >
-            {placementMode === 'zoom' ? 'Click the map to place it' : '+ Add Zoom Area'}
-          </button>
           {onRenameSelf && (
             <button type="button" className="btn btn--text" onClick={startEditingZoomArea}>
               Edit This Area
@@ -906,7 +992,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
 
       <div className={`world-map-viewer__body${showList ? ' world-map-viewer__body--list' : ''}`}>
       <div
-        className={`world-map-viewer__viewport${placementMode ? ' world-map-viewer__viewport--placing' : ''}${hoverId ? ' world-map-viewer__viewport--hovering' : ''}`}
+        className={`world-map-viewer__viewport${placementMode ? ' world-map-viewer__viewport--placing' : ''}${hoverId ? ' world-map-viewer__viewport--hovering' : ''}${newDrag?.over ? ' world-map-viewer__viewport--drop' : ''}`}
         ref={viewportRef}
       >
         <div
@@ -1001,6 +1087,22 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             </div>
           )}
 
+          {(() => {
+            const at = confirmDrop || ((markerForm && !editingMarkerId) || (zoomForm && !zoomForm.editing) ? pendingMarkerPos : null)
+            if (!at) return null
+            const isZoom = confirmDrop ? confirmDrop.kind === 'zoom' : Boolean(zoomForm)
+            return (
+              <div className="world-map-viewer__anchor" style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}>
+                <div
+                  className={`${isZoom ? 'world-map-viewer__zoom-marker' : 'world-map-viewer__event-marker'} world-map-viewer__new-marker`}
+                  style={{ transform: `translate(-50%, -100%) scale(${1 / zoom})` }}
+                >
+                  <Icon name={isZoom ? 'zoom' : 'pushpin'} />
+                </div>
+              </div>
+            )
+          })()}
+
           {markers.filter((marker) => !hidden.has(typeOf(marker))).map((marker) => {
             const pos = drag?.kind === 'marker' && drag.id === marker.id ? drag : marker
             const isZoom = marker.kind === 'zoom'
@@ -1072,6 +1174,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
 
       {/* Mini cards for every pin: hover to find it, tap to go there. */}
       {showList && (
+        <div className="world-map-viewer__side">
         <aside className="world-map-viewer__list" aria-label="Pins on this map" ref={listRef}>
           {pin.x != null && (
             <button
@@ -1092,40 +1195,114 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
               </span>
             </button>
           )}
-          {markers
-            .filter((marker) => !hidden.has(typeOf(marker)))
-            .map((marker) => {
+          {/* The creator / DM drags a card's grip to reorder the list. */}
+          <div className="world-map-viewer__sortable" ref={sortRef}>
+            {listedMarkers.map((marker, index) => {
               const isZoom = marker.kind === 'zoom'
               const type = isZoom ? { label: 'Area', icon: 'zoom' } : categoryOf(marker.category)
               const entity = linkedEntity(marker)
               return (
-                <button
+                <div
                   key={marker.id}
-                  type="button"
-                  data-pin={marker.id}
-                  className={`world-map-viewer__card world-map-viewer__card--${isZoom ? 'zoom' : marker.category}${hoverId === marker.id ? ' is-hovered' : ''}`}
-                  {...hoverProps(marker.id)}
-                  onFocus={() => setHoverId(marker.id)}
-                  onBlur={() => setHoverId(null)}
-                  onClick={() => {
-                    flyTo(marker, marker.id)
-                    if (!isZoom) setDetailsMarker(marker)
-                  }}
+                  className={`world-map-viewer__card-row${pinDrag.draggingId === marker.id ? ' is-dragging' : ''}`}
+                  style={pinDrag.rowStyle(index)}
                 >
-                  <span className="world-map-viewer__card-icon">
-                    <Icon name={type.icon} />
-                  </span>
-                  <span className="world-map-viewer__card-text">
-                    <strong>{marker.title || type.label}</strong>
-                    <small>{[type.label, entity && entity.title].filter(Boolean).join(' · ')}</small>
-                  </span>
-                </button>
+                  {nav.canArrange && (
+                    <button
+                      type="button"
+                      className="world-map-viewer__grip"
+                      aria-label={`Move ${marker.title || type.label} (drag, or use the arrow keys)`}
+                      {...pinDrag.handleProps(marker.id, index, sortRef)}
+                    >
+                      <Icon name="grip" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    data-pin={marker.id}
+                    className={`world-map-viewer__card world-map-viewer__card--${isZoom ? 'zoom' : marker.category}${hoverId === marker.id ? ' is-hovered' : ''}`}
+                    {...hoverProps(marker.id)}
+                    onFocus={() => setHoverId(marker.id)}
+                    onBlur={() => setHoverId(null)}
+                    onClick={() => {
+                      flyTo(marker, marker.id)
+                      if (!isZoom) setDetailsMarker(marker)
+                    }}
+                  >
+                    <span className="world-map-viewer__card-icon">
+                      <Icon name={type.icon} />
+                    </span>
+                    <span className="world-map-viewer__card-text">
+                      <strong>{marker.title || type.label}</strong>
+                      <small>{[type.label, entity && entity.title].filter(Boolean).join(' · ')}</small>
+                    </span>
+                  </button>
+                </div>
               )
             })}
+          </div>
+          {orderError && <p className="world-map-viewer__list-empty">{orderError}</p>}
           {markers.length === 0 && pin.x == null && (
-            <p className="world-map-viewer__list-empty">No pins yet — use “+ Drop Pin”.</p>
+            <p className="world-map-viewer__list-empty">No pins yet — drag one from below onto the map.</p>
           )}
         </aside>
+        <div className="world-map-viewer__palette" role="group" aria-label="Add to the map">
+          <span className="world-map-viewer__palette-label">Drag onto the map</span>
+          <div className="world-map-viewer__palette-items">
+            <button type="button" className="world-map-viewer__palette-item" {...paletteProps('event')}>
+              <Icon name="pushpin" /> Pin
+            </button>
+            <button
+              type="button"
+              className="world-map-viewer__palette-item world-map-viewer__palette-item--zoom"
+              {...paletteProps('zoom')}
+            >
+              <Icon name="zoom" /> Zoom area
+            </button>
+          </div>
+        </div>
+        </div>
+      )}
+
+      {/* The marker being dragged in, under the finger / cursor. */}
+      {newDrag?.moved &&
+        createPortal(
+          <div
+            className={`world-map-viewer__ghost${newDrag.over ? ' is-over' : ''}${newDrag.kind === 'zoom' ? ' world-map-viewer__ghost--zoom' : ''}`}
+            style={{ left: newDrag.cx, top: newDrag.cy }}
+            aria-hidden="true"
+          >
+            <Icon name={newDrag.kind === 'zoom' ? 'zoom' : 'pushpin'} />
+          </div>,
+          document.body,
+        )}
+
+      {confirmDrop && (
+        <div
+          className="world-map-viewer__form-backdrop world-map-viewer__form-backdrop--clear"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="drop-confirm-title"
+          onPointerDown={() => setConfirmDrop(null)}
+          onKeyDown={(e) => e.key === 'Escape' && setConfirmDrop(null)}
+        >
+          <div className="world-map-viewer__form world-map-viewer__confirm panel" onPointerDown={(e) => e.stopPropagation()}>
+            <h3 id="drop-confirm-title">{confirmDrop.kind === 'zoom' ? 'Add a zoom area here?' : 'Add a pin here?'}</h3>
+            <p>
+              {confirmDrop.kind === 'zoom'
+                ? 'It opens a closer map of this spot. Next you’ll name it and pick its image.'
+                : 'Next you’ll give it a title, a type and any notes.'}
+            </p>
+            <div className="world-map-viewer__form-actions">
+              <button type="button" className="btn btn--text" onClick={() => setConfirmDrop(null)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn--primary" onClick={acceptDrop} autoFocus>
+                Yes, add it
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       </div>
 

@@ -19,6 +19,7 @@ export const CampaignNavContext = createContext({
   openQuickCreate: () => {},
   tabs: [],
   isDm: false,
+  canArrange: false,
 })
 
 export const useCampaignNav = () => useContext(CampaignNavContext)
