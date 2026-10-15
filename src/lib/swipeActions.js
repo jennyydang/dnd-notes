@@ -5,6 +5,9 @@
 // (confirmations included). On touch screens those buttons are hidden on
 // the card itself (they're tagged .swipe-hidden here; see _mobile.scss)
 // — the swipe is the way in. Cards without both buttons don't swipe.
+// Phones only: on a tablet or desktop the buttons stay on the card and
+// nothing swipes (same query as the swipe block in _mobile.scss).
+const PHONE_TOUCH = '(max-width: 720px) and (hover: none) and (pointer: coarse)'
 const CARDS = '.npc-card, .loot-card, .creature-card, .place-card, .quest-card, .lore-card, .custom-entry-card, .goal-card'
 const WIDTH = 152 // tray width
 const GAP = 6 // space between the slid card and the tray — same as between the buttons
@@ -41,6 +44,7 @@ function tagButtons(root = document) {
 
 export function installSwipeActions() {
   if (typeof window === 'undefined') return () => {}
+  const phone = window.matchMedia(PHONE_TOUCH)
   let open = null // { card, tray, base } — the card that's slid open
   let gesture = null // { card, tray, x, y, start, offset, swiping }
 
@@ -94,7 +98,7 @@ export function installSwipeActions() {
   }
 
   function onStart(event) {
-    if (event.touches.length !== 1) return
+    if (event.touches.length !== 1 || !phone.matches) return
     const target = event.target instanceof Element ? event.target : null
     const inTray = open && target && open.tray.contains(target)
     const card = inTray ? open.card : target?.closest(CARDS)

@@ -177,7 +177,9 @@
 }
 
 // ── Swipe a card left for Edit / Delete (src/lib/swipeActions.js) ──
-@media (hover: none) and (pointer: coarse) {
+// Phones only: tablets and desktops keep the buttons on the card. Keep
+// in step with PHONE_TOUCH in swipeActions.js.
+@media (max-width: 720px) and (hover: none) and (pointer: coarse) {
   :root {
     .npc-card,
     .loot-card,
@@ -185,7 +187,8 @@
     .place-card,
     .quest-card,
     .lore-card,
-    .custom-entry-card {
+    .custom-entry-card,
+    .goal-card {
       // Sideways drags belong to the swipe; up and down still scroll.
       touch-action: pan-y;
       transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
