@@ -66,6 +66,10 @@
   }
 
   &__item {
+    // Icon and label side by side, with room between them.
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
@@ -85,6 +89,56 @@
     &--active {
       color: $gold-light;
       border-bottom-color: $gold;
+    }
+  }
+
+  &__icon {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  // ‹ › buttons at an end of a bar that scrolls sideways with tabs hidden
+  // past it (TabNav.jsx). They stick to that edge over a fade, so it's
+  // clear there's more and a tap scrolls to it.
+  &__more {
+    position: sticky;
+    z-index: 2;
+    flex-shrink: 0;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    margin: -0.3rem 0;
+    padding: 0;
+    border: none;
+    color: $gold-light;
+    font-size: 1.1rem;
+    cursor: pointer;
+
+    &--left {
+      left: -0.3rem;
+      margin-left: -0.3rem;
+      margin-right: -2rem;
+      border-radius: 999px 0 0 999px;
+      background: linear-gradient(90deg, $bg-deep 55%, rgba($bg-deep, 0));
+      justify-content: flex-start;
+      padding-left: 0.45rem;
+    }
+
+    &--right {
+      right: -0.3rem;
+      margin-right: -0.3rem;
+      margin-left: -2rem;
+      border-radius: 0 999px 999px 0;
+      background: linear-gradient(270deg, $bg-deep 55%, rgba($bg-deep, 0));
+      justify-content: flex-end;
+      padding-right: 0.45rem;
+    }
+
+    // A gentle nudge so the eye catches it.
+    &--right svg {
+      animation: more-nudge 1.6s ease-in-out 2;
     }
   }
 
@@ -169,5 +223,15 @@
         background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
       }
     }
+  }
+}
+
+@keyframes more-nudge {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translateX(3px);
   }
 }
