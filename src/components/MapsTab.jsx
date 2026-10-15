@@ -118,12 +118,8 @@ function MapsTab({ campaignId }) {
     }
   }
 
-  // Only one map per campaign may be the interactive World Map — clear
-  // the old flag before setting the new one, since the DB's partial
-  // unique index rejects two true rows at once.
+  // Any number of maps can be interactive (pins, markers, zoom areas).
   async function setWorldMap(map) {
-    const current = maps.find((m) => m.isWorldMap && m.id !== map.id)
-    if (current) await updateItem(current.id, { is_world_map: false })
     await updateItem(map.id, { is_world_map: true })
   }
 
@@ -174,7 +170,7 @@ function MapsTab({ campaignId }) {
               >
                 <img src={map.src} alt={map.caption || 'Campaign map'} />
               </button>
-              {map.isWorldMap && <span className="map-card__world-badge">Interactive Map</span>}
+              {map.isWorldMap && <span className="map-card__world-badge">Interactive</span>}
               {renaming?.id === map.id ? (
                 <form className="map-card__rename" onSubmit={saveRename}>
                   <input

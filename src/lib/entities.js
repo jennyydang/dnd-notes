@@ -187,9 +187,9 @@ Object.assign(ENTITY_TYPES, {
     tab: 'maps',
     normalize: (r) => ({
       title: text(r.caption) || 'Untitled map',
-      subtitle: r.is_world_map ? 'World Map' : '',
+      subtitle: r.is_world_map ? 'Interactive map' : '',
       body: '',
-      tags: r.is_world_map ? ['World Map'] : [],
+      tags: r.is_world_map ? ['Interactive'] : [],
     }),
   },
   marker: {

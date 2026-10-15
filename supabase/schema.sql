@@ -112,10 +112,9 @@ alter table maps drop constraint if exists maps_pin_y_range_check;
 alter table maps add constraint maps_pin_y_range_check
   check (pin_y is null or (pin_y >= 0 and pin_y <= 1));
 
--- DB-level backstop for "at most one World Map per campaign" (the app
--- also enforces this by clearing the old flag before setting a new one).
-create unique index if not exists maps_one_world_map_per_campaign_idx
-  on maps (campaign_id) where is_world_map;
+-- A campaign can have any number of interactive maps (is_world_map), so
+-- the old one-per-campaign unique index is gone.
+drop index if exists maps_one_world_map_per_campaign_idx;
 
 -- Event markers on the World Map — "what happened here" notes with an
 -- optional photo. x/y are fractions (0..1) of the image's own
