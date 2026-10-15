@@ -176,6 +176,12 @@
   > * {
     flex-shrink: 0;
   }
+
+  // Buttons sit on the card's bottom edge, so a row of cards of different
+  // lengths keeps them level.
+  > [class*='-card__actions'] {
+    margin-top: auto;
+  }
 }
 
 // "#city" / "~faction" / "$magic-item" pill on a card, colour-matched to

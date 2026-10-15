@@ -129,7 +129,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
   const {
     items: customTabs,
-    addItem: addCustomTab,
     updateItem: updateCustomTab,
     removeItem: removeCustomTab,
   } = useSupabaseTable('custom_tabs', {
@@ -200,15 +199,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
-
-  async function handleAddTab(name, isPrivate) {
-    const created = await addCustomTab({
-      name,
-      is_private: isPrivate,
-      created_by: playerId || null,
-    })
-    setActiveTab(`${customTabPrefix}${created.id}`)
-  }
 
   async function handleRenameTab(tabId, name) {
     await updateCustomTab(tabId, { name })
@@ -386,7 +376,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                   tabs={areaTabs(activeArea)}
                   activeTab={knownTab}
                   onSelect={setActiveTab}
-                  onAddTab={activeArea.custom ? handleAddTab : undefined}
                   className="tab-nav--pill campaign-view__subnav"
                   label={`${activeArea.label} sections`}
                 />

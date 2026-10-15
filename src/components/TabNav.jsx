@@ -2,10 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import './TabNav.scss'
 
-function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = false, label = 'Campaign sections' }) {
-  const [isAdding, setIsAdding] = useState(false)
-  const [name, setName] = useState('')
-  const [isPrivate, setIsPrivate] = useState(false)
+function TabNav({ tabs, activeTab, onSelect, className, vertical = false, label = 'Campaign sections' }) {
   // When the tabs don't fit, the list scrolls sideways; `more` says which
   // ends still have tabs hidden past them (they fade out there).
   const navRef = useRef(null)
@@ -83,27 +80,12 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
     list.scrollBy({ left: direction * list.clientWidth * 0.6, behavior: reduce ? 'auto' : 'smooth' })
   }
 
-  function startAdding() {
-    setName('')
-    setIsPrivate(false)
-    setIsAdding(true)
-  }
-
-  function submitAdd(event) {
-    event.preventDefault()
-    if (!name.trim()) return
-    onAddTab(name, isPrivate)
-    setIsAdding(false)
-    setName('')
-    setIsPrivate(false)
-  }
-
   return (
     <nav
       ref={navRef}
       className={`tab-nav${className ? ` ${className}` : ''}${more.left ? ' tab-nav--more-left' : ''}${more.right ? ' tab-nav--more-right' : ''}`}
     >
-      {/* Wraps the row so the chevrons sit at its ends, clear of the + button. */}
+      {/* Wraps the row so the chevrons can sit at its ends. */}
       <div className="tab-nav__scroll">
         <div
           ref={listRef}
@@ -157,47 +139,6 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
           </>
         )}
       </div>
-
-      {onAddTab &&
-        (isAdding ? (
-          <form className="tab-nav__add-form" onSubmit={submitAdd}>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Tab name"
-              aria-label="New tab name"
-              autoFocus
-            />
-            <label className="tab-nav__add-private">
-              <input
-                type="checkbox"
-                checked={isPrivate}
-                onChange={(e) => setIsPrivate(e.target.checked)}
-              />
-              Private
-            </label>
-            <button type="submit" className="btn btn--primary">
-              Add
-            </button>
-            <button
-              type="button"
-              className="btn btn--text"
-              onClick={() => setIsAdding(false)}
-            >
-              Cancel
-            </button>
-          </form>
-        ) : (
-          <button
-            type="button"
-            className="tab-nav__add"
-            onClick={startAdding}
-            aria-label="Add a new tab"
-          >
-            +
-          </button>
-        ))}
     </nav>
   )
 }

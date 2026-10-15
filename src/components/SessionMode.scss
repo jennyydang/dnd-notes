@@ -111,8 +111,10 @@
         flex-wrap: nowrap;
       }
 
+      // Equal-width segments, labels centred like every other tab pill.
       .tab-nav__item {
         flex: 1;
+        justify-content: center;
         padding-left: 0.4rem;
         padding-right: 0.4rem;
         min-height: 2.75rem;

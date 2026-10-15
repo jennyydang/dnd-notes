@@ -32,6 +32,19 @@
     &--narrow {
       max-width: 30rem;
     }
+
+    // A form's Cancel / Save row stays pinned to the bottom of the dialog
+    // while a long form scrolls under it.
+    --pad: 1.5rem;
+
+    [class*='form__actions'] {
+      position: sticky;
+      bottom: calc(-1 * var(--pad));
+      z-index: 3;
+      margin: 0 calc(-1 * var(--pad)) calc(-1 * var(--pad));
+      padding: 1.25rem var(--pad) var(--pad);
+      background: linear-gradient(rgba($bg-panel, 0), $bg-panel 1.1rem);
+    }
   }
 }
 
@@ -42,6 +55,7 @@
   .modal__panel {
     max-width: none;
     padding: 1.1rem;
+    --pad: 1.1rem;
 
     &--narrow {
       max-width: none;
