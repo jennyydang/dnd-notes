@@ -40,21 +40,35 @@ async function rotated(img) {
   return loadImage(URL.createObjectURL(blob))
 }
 
-function frameSize(aspect, maxWidth) {
+// The frame fits the dialog's width and the screen's height (leaving
+// room for the controls), so the whole dialog stays on screen.
+function frameSize(aspect, maxWidth, maxHeight) {
   const w = Math.min(FRAME_MAX * Math.max(1, aspect), maxWidth)
   let width = w
   let height = w / aspect
-  if (height > FRAME_MAX * 1.25) {
-    height = FRAME_MAX * 1.25
+  const tallest = Math.min(FRAME_MAX * 1.25, maxHeight)
+  if (height > tallest) {
+    height = tallest
     width = height * aspect
   }
   return { width: Math.round(width), height: Math.round(height) }
 }
 
+// Height the title, slider, tools and buttons need around the frame.
+const CONTROLS_HEIGHT = 330
+
 // Crop / zoom / move / rotate an image before it's uploaded. Drag (or
 // arrow keys) to move, pinch / scroll / the slider to zoom. Calls
 // onDone(File) with the framed result, or onDone(original) for "Use as is".
-function ImageCropDialog({ source, fileName = 'image.jpg', aspect: initialAspect = 1, shape = 'rect', onCancel, onDone }) {
+function ImageCropDialog({
+  source,
+  fileName = 'image.jpg',
+  aspect: initialAspect = 1,
+  shape = 'rect',
+  onCancel,
+  onDone,
+  onRemove, // optional: shows "Remove image" at the bottom left
+}) {
   const [img, setImg] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const [aspectId, setAspectId] = useState(
@@ -64,6 +78,7 @@ function ImageCropDialog({ source, fileName = 'image.jpg', aspect: initialAspect
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [saving, setSaving] = useState(false)
   const [maxWidth, setMaxWidth] = useState(FRAME_MAX)
+  const [maxHeight, setMaxHeight] = useState(FRAME_MAX * 1.25)
   const wrapRef = useRef(null)
   const pointers = useRef(new Map())
   const gesture = useRef(null)
@@ -82,15 +97,33 @@ function ImageCropDialog({ source, fileName = 'image.jpg', aspect: initialAspect
     }
   }, [source])
 
+  // Size the frame to what's left of the screen once the title, slider,
+  // tools and buttons (however they wrap) have taken their room, so the
+  // whole dialog fits without scrolling.
   useEffect(() => {
-    const measure = () => wrapRef.current && setMaxWidth(Math.min(wrapRef.current.clientWidth, 560))
+    const measure = () => {
+      const wrap = wrapRef.current
+      if (!wrap) return
+      setMaxWidth(Math.min(wrap.clientWidth, 560))
+      const stage = wrap.querySelector('.image-crop__stage')
+      const panel = wrap.closest('.modal__panel')
+      const controls = stage ? wrap.offsetHeight - stage.offsetHeight : CONTROLS_HEIGHT
+      const panelPadding = panel ? panel.offsetHeight - panel.clientHeight + 2 * parseFloat(getComputedStyle(panel).paddingTop) : 48
+      const viewport = window.visualViewport?.height || window.innerHeight
+      const room = Math.max(140, Math.floor(viewport - controls - panelPadding - 48))
+      setMaxHeight((h) => (Math.abs(h - room) > 4 ? room : h))
+    }
     measure()
     window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [img])
+    window.visualViewport?.addEventListener('resize', measure)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.visualViewport?.removeEventListener('resize', measure)
+    }
+  }, [img, shape, aspectId])
 
   const aspectValue = ASPECTS.find((a) => a.id === aspectId)?.value || (img ? img.naturalWidth / img.naturalHeight : 1)
-  const frame = frameSize(aspectValue, maxWidth)
+  const frame = frameSize(aspectValue, maxWidth, maxHeight)
   // Zoom 1 = the image just covers the frame.
   const baseScale = img ? Math.max(frame.width / img.naturalWidth, frame.height / img.naturalHeight) : 1
   const scale = baseScale * zoom
@@ -319,6 +352,11 @@ function ImageCropDialog({ source, fileName = 'image.jpg', aspect: initialAspect
         )}
 
         <div className="form-actions image-crop__actions">
+          {onRemove && (
+            <button type="button" className="btn btn--danger form-delete" onClick={onRemove} disabled={saving}>
+              Remove image
+            </button>
+          )}
           <button type="button" className="btn btn--text" onClick={onCancel}>
             Cancel
           </button>

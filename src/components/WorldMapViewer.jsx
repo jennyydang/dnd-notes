@@ -369,7 +369,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 4 / 3, shape: 'rect', onCropped: applyMarkerPhoto })
+  const photoCrop = useImageCrop({ aspect: 4 / 3, shape: 'rect', onCropped: applyMarkerPhoto, onRemove: removeMarkerPhoto })
 
   function applyMarkerPhoto(file) {
 
@@ -703,14 +703,9 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
                   onChange={photoCrop.fromInput}
                 />
                 {markerForm.photoPreview && (
-                  <>
-                    <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(markerForm.photoFile, markerForm.photoPreview)}>
-                      Adjust
-                    </button>
-                    <button type="button" className="btn btn--text" onClick={removeMarkerPhoto}>
-                      Remove photo
-                    </button>
-                  </>
+                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(markerForm.photoFile, markerForm.photoPreview)}>
+                    Edit photo
+                  </button>
                 )}
                 {photoCrop.dialog}
               </div>

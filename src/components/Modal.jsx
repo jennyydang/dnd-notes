@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import './Modal.scss'
 import { lockScroll } from '../lib/scrollLock.js'
 
@@ -34,7 +35,10 @@ function Modal({ onClose, label, size, children }) {
   // The page underneath stays put while the modal is open (scrollLock.js).
   useEffect(() => lockScroll(), [])
 
-  return (
+  // Rendered at the top of the page, not where it's used: a dialog opened
+  // from inside another (the photo cropper from an edit form) would
+  // otherwise be trapped — and clipped — inside the outer dialog's box.
+  return createPortal(
     <div
       className="modal__backdrop"
       role="dialog"
@@ -48,7 +52,8 @@ function Modal({ onClose, label, size, children }) {
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

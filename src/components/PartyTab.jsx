@@ -162,7 +162,7 @@ function PartyTab({ campaignId, playerId }) {
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto })
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto, onRemove: removePhoto })
 
   function applyPhoto(file) {
 
@@ -316,14 +316,9 @@ function PartyTab({ campaignId, playerId }) {
                 onChange={photoCrop.fromInput}
               />
               {!readOnly && form.photoPreview && (
-                <>
-                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
-                    Adjust
-                  </button>
-                  <button type="button" className="btn btn--text" onClick={removePhoto}>
-                    Remove photo
-                  </button>
-                </>
+                <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                  Edit photo
+                </button>
               )}
               {photoCrop.dialog}
             </div>

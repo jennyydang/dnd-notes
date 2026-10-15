@@ -5,11 +5,12 @@ import ImageCropDialog from '../components/ImageCropDialog.jsx'
 //   const crop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: (file) => … })
 //   <input type="file" onChange={crop.fromInput} />   // pick → adjust
 //   crop.adjust(form.photoFile, form.photoPreview)     // re-adjust later
+// Pass `onRemove` and the dialog offers "Remove image" too.
 //   {crop.dialog}
 // Re-adjusting a cropped file starts from the photo originally picked (so
 // zooming back out never loses the edges); an already-saved photo is
 // adjusted from its URL.
-export function useImageCrop({ aspect = 1, shape = 'rect', onCropped }) {
+export function useImageCrop({ aspect = 1, shape = 'rect', onCropped, onRemove }) {
   const [pending, setPending] = useState(null) // { source, original }
   const originals = useRef(new WeakMap()) // cropped File → picked File
 
@@ -34,6 +35,13 @@ export function useImageCrop({ aspect = 1, shape = 'rect', onCropped }) {
       aspect={aspect}
       shape={shape}
       onCancel={() => setPending(null)}
+      onRemove={
+        onRemove &&
+        (() => {
+          setPending(null)
+          onRemove()
+        })
+      }
       onDone={(file) => {
         if (original && file !== original) originals.current.set(file, original)
         setPending(null)

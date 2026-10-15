@@ -142,7 +142,7 @@ function LootTab({ campaignId }) {
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 1, shape: 'rect', onCropped: applyPhoto })
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'rect', onCropped: applyPhoto, onRemove: removePhoto })
 
   function applyPhoto(file) {
     revokePreview()
@@ -323,10 +323,7 @@ function LootTab({ campaignId }) {
             {form.photoPreview && (
               <div className="loot-form__photo-actions">
                 <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
-                  Adjust
-                </button>
-                <button type="button" className="btn btn--text" onClick={removePhoto}>
-                  Remove
+                  Edit photo
                 </button>
               </div>
             )}
