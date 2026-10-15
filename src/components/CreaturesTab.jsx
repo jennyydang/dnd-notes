@@ -4,6 +4,7 @@ import { confirmDelete } from '../lib/confirm.js'
 import TabNav from './TabNav.jsx'
 import Modal from './Modal.jsx'
 import './CreaturesTab.scss'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const KINDS = ['Monster', 'Creature']
 
@@ -271,12 +272,11 @@ function CreaturesTab({ campaignId }) {
             </div>
             <div className="field">
               <label htmlFor="creature-notes">Notes</label>
-              <textarea
+              <RichTextEditor
                 id="creature-notes"
-                className="field--wide"
-                rows={4}
                 value={form.notes}
-                onChange={set('notes')}
+                onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+                ariaLabel="Notes"
                 placeholder="Weak to radiant damage, flees below half HP…"
               />
             </div>
@@ -346,7 +346,7 @@ function CreaturesTab({ campaignId }) {
                 </dl>
               )}
               {c.encounteredAt && <p className="creature-card__where">Met: {c.encounteredAt}</p>}
-              {c.notes && <p className="creature-card__notes">{c.notes}</p>}
+              {c.notes && <RichText className="creature-card__notes" value={c.notes} />}
               <div className="creature-card__actions">
                 <button type="button" className="btn btn--text" onClick={() => startEditing(c)}>
                   Edit

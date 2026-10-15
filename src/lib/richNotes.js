@@ -62,3 +62,12 @@ export function extractMentions(notes) {
   }
   return Object.fromEntries(Object.entries(groups).map(([group, map]) => [group, [...map.values()]]))
 }
+
+// Joins several notes into one (e.g. an NPC's occupation and description
+// when shared with players). Stays plain text unless one of them is
+// already formatted, in which case every part becomes HTML.
+export function joinNotes(parts) {
+  const kept = parts.filter((part) => part?.trim())
+  if (!kept.some(isHtml)) return kept.join('\n\n')
+  return kept.map(toEditorContent).join('')
+}

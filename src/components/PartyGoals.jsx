@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import './PartyGoals.scss'
 import { confirmDelete } from '../lib/confirm.js'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const GOAL_STATUSES = ['Active', 'Completed']
 
@@ -105,10 +106,11 @@ function PartyGoals({ campaignId }) {
           </div>
           <div className="field">
             <label htmlFor="goal-notes">Notes</label>
-            <textarea
+            <RichTextEditor
               id="goal-notes"
               value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+              ariaLabel="Notes"
               placeholder="Why we want this, and how close we are..."
             />
           </div>
@@ -162,7 +164,7 @@ function PartyGoals({ campaignId }) {
                   {goal.status}
                 </span>
               </div>
-              {goal.notes && <p className="goal-card__notes">{goal.notes}</p>}
+              {goal.notes && <RichText className="goal-card__notes" value={goal.notes} />}
               <div className="goal-card__actions">
                 <button
                   type="button"

@@ -13,6 +13,7 @@ import { ViewToggle } from './ui.jsx'
 import { useViewMode } from '../hooks/useViewMode.js'
 import Icon from './Icon.jsx'
 import AnimatedNumber from './AnimatedNumber.jsx'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'loot-photos'
 
@@ -396,10 +397,11 @@ function LootTab({ campaignId }) {
           </div>
           <div className="field">
             <label htmlFor="loot-notes">Notes</label>
-            <textarea
+            <RichTextEditor
               id="loot-notes"
               value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+              ariaLabel="Notes"
               placeholder="Unidentified, seems to hum faintly near water..."
             />
           </div>
@@ -697,7 +699,7 @@ function LootTab({ campaignId }) {
                   <span>Held by</span> {entry.holder}
                 </p>
               )}
-              {entry.notes && <p className="loot-card__notes">{entry.notes}</p>}
+              {entry.notes && <RichText className="loot-card__notes" value={entry.notes} />}
               <div className="loot-card__actions">
                 <button
                   type="button"

@@ -10,6 +10,7 @@ import ShareStatus from './ShareStatus.jsx'
 import Icon from './Icon.jsx'
 import './CreaturesTab.scss'
 import './SecretNpcsTab.scss'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const KINDS = ['Monster', 'Creature']
 const FILTERS = [
@@ -283,11 +284,11 @@ function DmCreaturesTab({ campaignId }) {
                     )}
                   </dl>
                 )}
-                {c.description && <p className="creature-card__notes">{c.description}</p>}
+                {c.description && <RichText className="creature-card__notes" value={c.description} />}
                 {c.secrets && (
                   <div className="secret-npc__secrets">
                     <span className="secret-npc__secrets-label">DM only</span>
-                    <p>{c.secrets}</p>
+                    <RichText value={c.secrets} />
                   </div>
                 )}
                 <p className="creature-card__where">
@@ -408,21 +409,21 @@ function DmCreaturesTab({ campaignId }) {
             </label>
             <div className="field">
               <label htmlFor="dm-creature-description">Description (players see this)</label>
-              <textarea
+              <RichTextEditor
                 id="dm-creature-description"
-                rows={3}
                 value={form.description}
-                onChange={set('description')}
+                onChange={(html) => setForm((prev) => ({ ...prev, description: html }))}
+                ariaLabel="Description (players see this)"
                 placeholder="What the party sees: size, smell, sounds…"
               />
             </div>
             <div className="field">
               <label htmlFor="dm-creature-secrets"><Icon name="lock" /> DM notes (never shared)</label>
-              <textarea
+              <RichTextEditor
                 id="dm-creature-secrets"
-                rows={3}
                 value={form.secrets}
-                onChange={set('secrets')}
+                onChange={(html) => setForm((prev) => ({ ...prev, secrets: html }))}
+                ariaLabel="secrets"
                 placeholder="Tactics, weaknesses, legendary actions, loot…"
               />
             </div>

@@ -5,6 +5,7 @@ import TagBadge from './TagBadge.jsx'
 import { TAG_GROUPS, matchKind } from '../lib/tags.js'
 import './LoreTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const emptyForm = { title: '', category: '', notes: '' }
 
@@ -115,10 +116,11 @@ function LoreTab({ campaignId }) {
           </div>
           <div className="field">
             <label htmlFor="lore-notes">Notes</label>
-            <textarea
+            <RichTextEditor
               id="lore-notes"
               value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+              ariaLabel="Notes"
               placeholder="Centuries ago, the kingdom of Elarion split in two after..."
             />
           </div>
@@ -175,7 +177,7 @@ function LoreTab({ campaignId }) {
                   entry.category && <span className="lore-card__category">{entry.category}</span>
                 )}
               </div>
-              {entry.notes && <p className="lore-card__notes">{entry.notes}</p>}
+              {entry.notes && <RichText className="lore-card__notes" value={entry.notes} />}
               <div className="lore-card__actions">
                 <button
                   type="button"

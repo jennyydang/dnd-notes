@@ -9,6 +9,7 @@ import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import { ViewToggle } from './ui.jsx'
 import { useViewMode } from '../hooks/useViewMode.js'
 import Icon from './Icon.jsx'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'npc-portraits'
 const LIFE_STATUSES = ['Alive', 'Deceased', 'Unknown', 'Missing']
@@ -241,10 +242,11 @@ function NpcsTab({ campaignId }) {
           </div>
           <div className="field">
             <label htmlFor="npc-description">Description</label>
-            <textarea
+            <RichTextEditor
               id="npc-description"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(html) => setForm((prev) => ({ ...prev, description: html }))}
+              ariaLabel="Description"
               placeholder="What they look like, how they talk, anything worth remembering..."
             />
           </div>
@@ -366,7 +368,7 @@ function NpcsTab({ campaignId }) {
                   <dd>{npc.metAt || '—'}</dd>
                 </div>
               </dl>
-              {npc.description && <p className="npc-card__description">{npc.description}</p>}
+              {npc.description && <RichText className="npc-card__description" value={npc.description} />}
               <div className="npc-card__actions">
                 <button
                   type="button"

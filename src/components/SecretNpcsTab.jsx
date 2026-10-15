@@ -12,6 +12,8 @@ import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import Icon from './Icon.jsx'
 import './NpcsTab.scss'
 import './SecretNpcsTab.scss'
+import { RichText, RichTextEditor } from './RichText.jsx'
+import { joinNotes, notesToPlainText } from '../lib/richNotes.js'
 
 // Same bucket as the players' NPC portraits; adding a shared NPC copies
 // the photo, so each side owns its own file.
@@ -112,8 +114,8 @@ function SecretNpcsTab({ campaignId, addRequest }) {
     .filter(
       (n) =>
         !needle ||
-        [n.name, n.race, n.occupation, n.location, n.description, n.secrets].some((v) =>
-          v?.toLowerCase().includes(needle),
+        [n.name, n.race, n.occupation, n.location, notesToPlainText(n.description), notesToPlainText(n.secrets)].some(
+          (v) => v?.toLowerCase().includes(needle),
         ),
     )
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -210,7 +212,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
           name: npc.name,
           race: npc.race,
           location: npc.location,
-          description: [npc.occupation, npc.description].filter((v) => v?.trim()).join('\n\n'),
+          description: joinNotes([npc.occupation, npc.description]),
           photo_path: npc.photoPath || null,
         },
         reveal,
@@ -326,11 +328,11 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                   </span>
                 </div>
                 {npc.location && <p className="secret-npc__meta"><Icon name="pin" /> {npc.location}</p>}
-                {npc.description && <p className="npc-card__description">{npc.description}</p>}
+                {npc.description && <RichText className="npc-card__description" value={npc.description} />}
                 {npc.secrets && (
                   <div className="secret-npc__secrets">
                     <span className="secret-npc__secrets-label">DM only</span>
-                    <p>{npc.secrets}</p>
+                    <RichText value={npc.secrets} />
                   </div>
                 )}
                 <div className="npc-card__actions">
@@ -415,19 +417,21 @@ function SecretNpcsTab({ campaignId, addRequest }) {
             </div>
             <div className="field">
               <label htmlFor="dm-npc-description">Description (players see this if revealed)</label>
-              <textarea
+              <RichTextEditor
                 id="dm-npc-description"
                 value={form.description}
-                onChange={set('description')}
+                onChange={(html) => setForm((prev) => ({ ...prev, description: html }))}
+                ariaLabel="Description (players see this if revealed)"
                 placeholder="Looks, voice, mannerisms…"
               />
             </div>
             <div className="field">
               <label htmlFor="dm-npc-secrets"><Icon name="lock" /> Secret notes (never shared)</label>
-              <textarea
+              <RichTextEditor
                 id="dm-npc-secrets"
                 value={form.secrets}
-                onChange={set('secrets')}
+                onChange={(html) => setForm((prev) => ({ ...prev, secrets: html }))}
+                ariaLabel="secrets"
                 placeholder="Motives, what they know, plot hooks…"
               />
             </div>
