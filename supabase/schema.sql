@@ -1670,3 +1670,45 @@ begin
 end;
 $$;
 grant execute on function complete_password_reset(text, text) to anon;
+
+-- ── Live map: party journey trail, typed and linked pins ─────────────
+-- Every time the party pin is moved, a row here records where it went,
+-- so the map can draw the party's journey as a dotted trail (labelled
+-- by the session played on that day). Anon-writable like map_markers.
+create table if not exists map_pin_moves (
+  id uuid primary key default gen_random_uuid(),
+  map_id uuid not null references maps(id) on delete cascade,
+  x double precision not null check (x >= 0 and x <= 1),
+  y double precision not null check (y >= 0 and y <= 1),
+  created_at timestamptz not null default now()
+);
+create index if not exists map_pin_moves_map_idx on map_pin_moves (map_id, created_at);
+
+alter table map_pin_moves enable row level security;
+drop policy if exists "anon full access map_pin_moves" on map_pin_moves;
+create policy "anon full access map_pin_moves" on map_pin_moves for all to anon using (true) with check (true);
+
+-- A pin's type (shown as its icon and used by the map's filters), and an
+-- optional link to the campaign entry it's about — tapping the pin opens
+-- that NPC / place / quest / lore card, and the card can show its pin.
+alter table map_markers add column if not exists category text not null default 'event';
+alter table map_markers drop constraint if exists map_markers_category_check;
+alter table map_markers add constraint map_markers_category_check
+  check (category in ('event', 'town', 'dungeon', 'quest', 'danger'));
+alter table map_markers add column if not exists entity_type text;
+alter table map_markers add column if not exists entity_id uuid;
+alter table map_markers drop constraint if exists map_markers_entity_type_check;
+alter table map_markers add constraint map_markers_entity_type_check
+  check (entity_type is null or entity_type in ('npc', 'place', 'quest', 'lore'));
+create index if not exists map_markers_entity_idx on map_markers (entity_type, entity_id);
+
+-- Live updates for the trail (the pin itself already syncs via maps).
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') and not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'map_pin_moves'
+  ) then
+    alter publication supabase_realtime add table public.map_pin_moves;
+  end if;
+end $$;
