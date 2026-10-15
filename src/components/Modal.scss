@@ -52,6 +52,7 @@
 // A form that brings its own panel styling shouldn't draw a second box
 // inside the dialog's.
 .modal__panel > .panel {
+  margin: 0;
   padding: 0;
   border: none;
   background: transparent;

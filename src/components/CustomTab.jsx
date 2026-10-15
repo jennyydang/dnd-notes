@@ -168,7 +168,15 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
         </Modal>
       )}
 
-      {isAdding && renderEntryForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Entry">
+
+          {renderEntryForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Entry">

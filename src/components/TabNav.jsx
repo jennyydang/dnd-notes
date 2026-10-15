@@ -19,18 +19,27 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
     setMore((m) => (m.left === left && m.right === right ? m : { left, right }))
   }, [vertical])
 
-  // Keep the selected tab in view when it's past either end (clear of
-  // the ‹ › buttons).
-  const showActive = useCallback(() => {
-    const nav = navRef.current
-    const active = nav?.querySelector('.tab-nav__item--active')
-    if (!nav || !active || vertical || nav.scrollWidth <= nav.clientWidth) return
-    const navBox = nav.getBoundingClientRect()
-    const box = active.getBoundingClientRect()
-    const pad = 44
-    if (box.left < navBox.left + pad) nav.scrollLeft -= navBox.left + pad - box.left
-    else if (box.right > navBox.right - pad) nav.scrollLeft += box.right - (navBox.right - pad)
-  }, [vertical])
+  // Keep the selected tab in view. `center` (after picking a tab) glides
+  // it to the middle of the bar; otherwise it's only nudged in from
+  // behind an end, clear of the ‹ › buttons.
+  const showActive = useCallback(
+    (center = false) => {
+      const nav = navRef.current
+      const active = nav?.querySelector('.tab-nav__item--active')
+      if (!nav || !active || vertical || nav.scrollWidth <= nav.clientWidth) return
+      const navBox = nav.getBoundingClientRect()
+      const box = active.getBoundingClientRect()
+      const pad = 44
+      let delta = 0
+      if (center) delta = box.left + box.width / 2 - (navBox.left + navBox.width / 2)
+      else if (box.left < navBox.left + pad) delta = box.left - (navBox.left + pad)
+      else if (box.right > navBox.right - pad) delta = box.right - (navBox.right - pad)
+      if (Math.abs(delta) < 2) return
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      nav.scrollTo({ left: nav.scrollLeft + delta, behavior: center && !reduce ? 'smooth' : 'auto' })
+    },
+    [vertical],
+  )
 
   useEffect(() => {
     const nav = navRef.current
@@ -52,8 +61,11 @@ function TabNav({ tabs, activeTab, onSelect, onAddTab, className, vertical = fal
     }
   }, [measure, showActive, vertical, tabs.length])
 
+  // Opening: just make sure it's visible. Picking another tab: centre it.
+  const firstRun = useRef(true)
   useEffect(() => {
-    showActive()
+    showActive(!firstRun.current)
+    firstRun.current = false
   }, [activeTab, showActive, tabs.length])
 
   function scrollBy(direction) {

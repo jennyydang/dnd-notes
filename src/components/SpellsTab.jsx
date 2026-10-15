@@ -275,7 +275,15 @@ function SpellsTab({ campaignId, playerId }) {
         </p>
       )}
 
-      {isAdding && renderSpellForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Spell">
+
+          {renderSpellForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Spell">

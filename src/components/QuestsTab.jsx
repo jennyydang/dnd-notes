@@ -152,7 +152,15 @@ function QuestsTab({ campaignId }) {
         </button>
       </div>
 
-      {isAdding && renderQuestForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Quest">
+
+          {renderQuestForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Quest">

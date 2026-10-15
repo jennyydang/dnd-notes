@@ -272,7 +272,15 @@ function NpcsTab({ campaignId }) {
         </button>
       </div>
 
-      {isAdding && renderNpcForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add NPC">
+
+          {renderNpcForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit NPC">
