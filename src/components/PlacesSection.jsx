@@ -144,7 +144,8 @@ function PlacesSection({ campaignId }) {
       {!loading && !error && places.length === 0 && (
         <p className="empty-state">
           No places yet. Tag one in your session notes with <strong>#city</strong>,{' '}
-          <strong>#dungeon</strong>, <strong>#region</strong> or <strong>#location</strong>, or
+          <strong>#dungeon</strong>, <strong>#region</strong>, <strong>#campsite</strong> or{' '}
+          <strong>#location</strong>, or
           add it here.
         </p>
       )}
