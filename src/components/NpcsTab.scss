@@ -156,9 +156,12 @@
     }
   }
 
+  // A long single word breaks rather than running under the status pill.
   &__name {
+    min-width: 0;
     font-size: 1.15rem;
     color: $parchment;
+    overflow-wrap: anywhere;
   }
 
   &--compact {
