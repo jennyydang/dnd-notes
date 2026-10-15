@@ -115,6 +115,8 @@ function CampaignDataProvider({ campaignId, playerId, children }) {
     byKey,
     getEntity: (type, id) => byKey.get(entityKey(type, id)) || null,
     links: links.items,
+    // Pins on this campaign's maps (raw rows) — for "Show on map".
+    mapMarkers: markers.items,
     linkEntities,
     removeLink,
     loading,

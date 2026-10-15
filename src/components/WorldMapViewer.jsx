@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { CampaignDataContext, useCampaignNav } from '../hooks/useCampaignData.js'
 import { supabase } from '../lib/supabaseClient.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
@@ -12,7 +13,32 @@ const ZOOM_MIN = 1
 const ZOOM_MAX = 6
 const DRAG_THRESHOLD_PX = 5
 
-const emptyMarkerForm = { title: '', notes: '', photoFile: null, photoPreview: '', photoRemoved: false }
+const emptyMarkerForm = {
+  title: '',
+  notes: '',
+  photoFile: null,
+  photoPreview: '',
+  photoRemoved: false,
+  category: 'event',
+  entityKey: '', // 'npc:<id>' etc. — what this pin is about
+}
+
+// Pin types: the icon each shows and the map's filter chips.
+const CATEGORIES = [
+  { id: 'event', label: 'Event', icon: 'pushpin' },
+  { id: 'town', label: 'Town', icon: 'home' },
+  { id: 'dungeon', label: 'Dungeon', icon: 'monster' },
+  { id: 'quest', label: 'Quest', icon: 'quest' },
+  { id: 'danger', label: 'Danger', icon: 'alert' },
+]
+const categoryOf = (id) => CATEGORIES.find((c) => c.id === id) || CATEGORIES[0]
+// Entries a pin can be about.
+const LINKABLE = [
+  { type: 'npc', label: 'NPCs' },
+  { type: 'place', label: 'Places' },
+  { type: 'quest', label: 'Quests' },
+  { type: 'lore', label: 'Lore' },
+]
 const emptyZoomForm = { title: '', imageFile: null, imagePreview: '', editing: false }
 
 const markerFromRow = (r) => ({
@@ -22,6 +48,9 @@ const markerFromRow = (r) => ({
   title: r.title,
   notes: r.notes,
   kind: r.kind,
+  category: r.category || 'event',
+  entityType: r.entity_type || null,
+  entityId: r.entity_id || null,
   photoPath: r.photo_path,
   photo: getPublicUrl(MARKER_BUCKET, r.photo_path),
 })
@@ -60,9 +89,17 @@ function clamp(value, min, max) {
 // onRenameSelf works the same way for the marker's title, and onUpdated
 // tells the parent the new caption/image so this view refreshes.
 // onRenameMap (top-level map only) renames it through MapsTab's hook.
-function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onRenameSelf, onUpdated, onRenameMap }) {
+function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, onDeleteSelf, onRenameSelf, onUpdated, onRenameMap }) {
   const { items: markers, addItem, updateItem, removeItem } =
     useSupabaseTable('map_markers', { fromRow: markerFromRow, filters: { map_id: map.id } })
+  // This map's own row, live — so the party pin moves when anyone moves it.
+  const { items: liveMapRows } = useSupabaseTable('maps', { filters: { id: map.id } })
+  // Every place the party pin has been, oldest first: the journey trail.
+  const pinMoves = useSupabaseTable('map_pin_moves', { filters: { map_id: map.id } })
+  const campaignData = useContext(CampaignDataContext)
+  const nav = useCampaignNav()
+  const [showTrail, setShowTrail] = useState(true)
+  const [trailPoint, setTrailPoint] = useState(null) // the trail dot whose label is showing
 
   // Zoom and pan as one value, so they always change together.
   const [view, setView] = useState({ zoom: 1, x: 0, y: 0 })
@@ -119,7 +156,73 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
   async function movePin(x, y) {
     const { error } = await supabase.from('maps').update({ pin_x: x, pin_y: y }).eq('id', map.id)
     if (error) throw new Error(error.message)
+    // Add the stop to the journey trail (skipped quietly if the trail's
+    // table hasn't been set up yet — the pin itself has already moved).
+    try {
+      await pinMoves.addItem({ x, y })
+    } catch (err) {
+      console.warn('Journey trail not saved:', err.message)
+    }
   }
+
+  async function clearTrail() {
+    if (!window.confirm('Clear the party’s journey trail on this map? The pin stays where it is.')) return
+    const { error } = await supabase.from('map_pin_moves').delete().eq('map_id', map.id)
+    if (error) setFormError(error.message)
+    setTrailPoint(null)
+    pinMoves.refetch({ silent: true })
+  }
+
+  // Someone else moved the pin: follow it (it glides there, see the
+  // anchor's transition) unless we're dragging it ourselves.
+  const livePin = liveMapRows[0]
+  useEffect(() => {
+    if (!livePin || livePin.pin_x == null || dragStartRef.current) return
+    setPin((current) =>
+      current.x === livePin.pin_x && current.y === livePin.pin_y ? current : { x: livePin.pin_x, y: livePin.pin_y },
+    )
+  }, [livePin?.pin_x, livePin?.pin_y]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Entries a pin can be about, A→Z.
+  const linkable = useMemo(
+    () =>
+      (campaignData?.entities || [])
+        .filter((e) => LINKABLE.some((l) => l.type === e.type))
+        .sort((a, b) => (a.title || '').localeCompare(b.title || '')),
+    [campaignData?.entities],
+  )
+  const linkedEntity = (marker) =>
+    marker.entityType && campaignData ? campaignData.getEntity(marker.entityType, marker.entityId) : null
+
+  // Filter chips: which pin types are hidden right now.
+  const [hidden, setHidden] = useState(() => new Set())
+  const typeOf = (marker) => (marker.kind === 'zoom' ? 'zoom' : marker.category)
+  const presentTypes = [
+    ...CATEGORIES.filter((c) => markers.some((m) => m.kind !== 'zoom' && m.category === c.id)),
+    ...(markers.some((m) => m.kind === 'zoom') ? [{ id: 'zoom', label: 'Areas', icon: 'zoom' }] : []),
+  ]
+  const toggleType = (id) =>
+    setHidden((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  // Trail stops, each labelled with the session played that day (or the
+  // date when there are no notes for it).
+  const trail = useMemo(() => {
+    const sessions = campaignData?.tables?.session?.items || []
+    const titleByDay = new Map()
+    for (const sess of sessions) if (sess.session_date) titleByDay.set(sess.session_date, sess.title || 'Session')
+    return pinMoves.items.map((move) => {
+      const when = new Date(move.created_at)
+      const day = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}`
+      const label =
+        titleByDay.get(day) || when.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+      return { id: move.id, x: move.x, y: move.y, label }
+    })
+  }, [pinMoves.items, campaignData?.tables?.session?.items])
 
   // The map's size at zoom 1: as large as fits inside the viewport
   // (whole map visible), keeping the image's shape.
@@ -179,6 +282,31 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
   useEffect(() => {
     setView((prev) => settleRef.current(prev))
   }, [box?.w, box?.h, imgSize?.w, imgSize?.h])
+
+  // "Show on map": glide in on the requested pin and make it pulse.
+  const [flying, setFlying] = useState(false)
+  const [flashId, setFlashId] = useState(null)
+  const flownTo = useRef(null)
+  const flyTimers = useRef([])
+  useEffect(() => {
+    if (!focusMarkerId || flownTo.current === focusMarkerId || !base || !box) return
+    const target = markers.find((m) => m.id === focusMarkerId)
+    if (!target) return
+    flownTo.current = focusMarkerId
+    setHidden((current) => (current.has(typeOf(target)) ? new Set() : current))
+    setFlying(true)
+    setView((prev) => {
+      const z = Math.max(prev.zoom, 2.5)
+      return settleRef.current({ zoom: z, x: box.w / 2 - target.x * base.w * z, y: box.h / 2 - target.y * base.h * z })
+    })
+    setFlashId(focusMarkerId)
+    // Not tied to this effect's cleanup: a live refresh mid-flight must
+    // not cancel them (that would leave the pin pulsing for good).
+    flyTimers.current.push(setTimeout(() => setFlying(false), 750))
+    flyTimers.current.push(setTimeout(() => setFlashId(null), 3200))
+  }, [focusMarkerId, markers, base?.w, base?.h, box?.w, box?.h]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => flyTimers.current.forEach(clearTimeout), [])
+
 
   // Native (non-passive) listener: React's onWheel is passive and can't
   // preventDefault, which we need to stop the page itself from scrolling.
@@ -387,6 +515,8 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
       photoFile: null,
       photoPreview: marker.photo || '',
       photoRemoved: false,
+      category: marker.category,
+      entityKey: marker.entityType ? `${marker.entityType}:${marker.entityId}` : '',
     })
     setEditingMarkerId(marker.id)
     setPendingMarkerPos(null)
@@ -423,6 +553,18 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
     if (!markerForm.title.trim()) return
 
     const payload = { title: markerForm.title, notes: markerForm.notes }
+    // Type and link are only sent when used (or being cleared), so a
+    // database without those columns yet still saves plain pins.
+    const editing = editingMarkerId ? markers.find((m) => m.id === editingMarkerId) : null
+    if (markerForm.category !== 'event' || (editing && editing.category !== 'event')) payload.category = markerForm.category
+    if (markerForm.entityKey) {
+      const [entityType, entityId] = markerForm.entityKey.split(':')
+      payload.entity_type = entityType
+      payload.entity_id = entityId
+    } else if (editing?.entityType) {
+      payload.entity_type = null
+      payload.entity_id = null
+    }
 
     try {
       if (markerForm.photoFile) {
@@ -569,6 +711,23 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
           <button type="button" className="btn btn--text" onClick={resetView}>
             Reset
           </button>
+          {trail.length > 0 && (
+            <>
+              <button
+                type="button"
+                className={`btn btn--text${showTrail ? ' is-on' : ''}`}
+                onClick={() => setShowTrail((v) => !v)}
+                aria-pressed={showTrail}
+              >
+                <Icon name="trend" /> Journey
+              </button>
+              {showTrail && (
+                <button type="button" className="btn btn--text" onClick={clearTrail}>
+                  Clear trail
+                </button>
+              )}
+            </>
+          )}
           {pin.x == null && (
             <button
               type="button"
@@ -583,7 +742,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
             className="btn btn--text"
             onClick={() => setPlacementMode((m) => (m === 'event' ? null : 'event'))}
           >
-            {placementMode === 'event' ? 'Click the map to place it' : '+ Drop Event Marker'}
+            {placementMode === 'event' ? 'Click the map to place it' : '+ Drop Pin'}
           </button>
           <button
             type="button"
@@ -613,6 +772,22 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
         </div>
       </div>
 
+      {presentTypes.length > 1 && (
+        <div className="world-map-viewer__filters" role="group" aria-label="Show pins">
+          {presentTypes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={`chip world-map-viewer__filter${hidden.has(t.id) ? '' : ' chip--active'}`}
+              aria-pressed={!hidden.has(t.id)}
+              onClick={() => toggleType(t.id)}
+            >
+              <Icon name={t.icon} /> {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div
         className={`world-map-viewer__viewport${placementMode ? ' world-map-viewer__viewport--placing' : ''}`}
         ref={viewportRef}
@@ -622,6 +797,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
           ref={stageRef}
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transition: flying ? 'transform 0.7s cubic-bezier(0.3, 0.7, 0.2, 1)' : undefined,
             width: base ? base.w : '100%',
             height: base ? base.h : undefined,
             aspectRatio: base ? undefined : `${aspect}`,
@@ -638,9 +814,44 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
             onLoad={(e) => setImgSize({ w: e.target.naturalWidth, h: e.target.naturalHeight })}
           />
 
+          {/* The party's journey: a dotted line through every stop, ending
+              at the pin. Tap a stop to see which session it was. */}
+          {showTrail && trail.length > 0 && (
+            <>
+              <svg className="world-map-viewer__trail" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <polyline
+                  points={[...trail, ...(pin.x != null ? [pinPos] : [])].map((p) => `${p.x * 100},${p.y * 100}`).join(' ')}
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+              {trail.map((stop, index) => (
+                <div
+                  key={stop.id}
+                  className="world-map-viewer__anchor world-map-viewer__anchor--trail"
+                  style={{ left: `${stop.x * 100}%`, top: `${stop.y * 100}%` }}
+                >
+                  <button
+                    type="button"
+                    className={`world-map-viewer__trail-stop${trailPoint === stop.id ? ' is-open' : ''}`}
+                    style={{ transform: `translate(-50%, -50%) scale(${1 / zoom})` }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => setTrailPoint((open) => (open === stop.id ? null : stop.id))}
+                    aria-label={`Stop ${index + 1}: ${stop.label}`}
+                  >
+                    {trailPoint === stop.id && (
+                      <span className="world-map-viewer__trail-label">
+                        {index + 1}. {stop.label}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </>
+          )}
+
           {pin.x != null && (
             <div
-              className="world-map-viewer__anchor"
+              className={`world-map-viewer__anchor world-map-viewer__anchor--glide${drag?.kind === 'pin' ? ' is-dragging' : ''}`}
               style={{ left: `${pinPos.x * 100}%`, top: `${pinPos.y * 100}%` }}
             >
               <div
@@ -657,25 +868,36 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
             </div>
           )}
 
-          {markers.map((marker) => {
+          {markers.filter((marker) => !hidden.has(typeOf(marker))).map((marker) => {
             const pos = drag?.kind === 'marker' && drag.id === marker.id ? drag : marker
             const isZoom = marker.kind === 'zoom'
+            const entity = linkedEntity(marker)
+            // An active quest's pin glows gold.
+            const activeQuest = entity?.type === 'quest' && entity.open
+            const classes = [
+              isZoom ? 'world-map-viewer__zoom-marker' : 'world-map-viewer__event-marker',
+              !isZoom && `world-map-viewer__event-marker--${marker.category}`,
+              activeQuest && 'is-active-quest',
+              flashId === marker.id && 'is-focused',
+            ]
+              .filter(Boolean)
+              .join(' ')
             return (
               <div
                 key={marker.id}
-                className="world-map-viewer__anchor"
+                className={`world-map-viewer__anchor world-map-viewer__anchor--glide${drag?.id === marker.id ? ' is-dragging' : ''}`}
                 style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%` }}
               >
                 <div
-                  className={isZoom ? 'world-map-viewer__zoom-marker' : 'world-map-viewer__event-marker'}
+                  className={classes}
                   style={{ transform: `translate(-50%, -100%) scale(${1 / zoom})` }}
                   onPointerDown={(e) => startDrag(e, 'marker', marker.id, marker.x, marker.y)}
                   onPointerMove={moveDrag}
                   onPointerUp={endDrag}
                   onPointerCancel={endDrag}
-                  title={marker.title || (isZoom ? 'Zoom area' : 'Event marker')}
+                  title={marker.title || (isZoom ? 'Zoom area' : categoryOf(marker.category).label)}
                 >
-                  <Icon name={isZoom ? 'zoom' : 'pushpin'} />
+                  <Icon name={isZoom ? 'zoom' : categoryOf(marker.category).icon} />
                 </div>
               </div>
             )
@@ -695,7 +917,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
             onPointerDown={(e) => e.stopPropagation()}
             onSubmit={submitMarkerForm}
           >
-            <h3>{editingMarkerId ? 'Edit Event Marker' : 'New Event Marker'}</h3>
+            <h3>{editingMarkerId ? 'Edit Pin' : 'New Pin'}</h3>
             <div className="field">
               <label htmlFor="marker-title">Title</label>
               <input
@@ -706,6 +928,55 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
                 placeholder="The bridge collapsed"
                 required
               />
+            </div>
+            <div className="world-map-viewer__form-row">
+              <div className="field">
+                <label htmlFor="marker-category">Type</label>
+                <select
+                  id="marker-category"
+                  value={markerForm.category}
+                  onChange={(e) => setMarkerForm({ ...markerForm, category: e.target.value })}
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="marker-entity">About</label>
+                <select
+                  id="marker-entity"
+                  value={markerForm.entityKey}
+                  onChange={(e) => {
+                    const key = e.target.value
+                    const entity = linkable.find((x) => `${x.type}:${x.id}` === key)
+                    setMarkerForm({
+                      ...markerForm,
+                      entityKey: key,
+                      // An untitled pin takes the entry's name.
+                      title: markerForm.title.trim() || !entity ? markerForm.title : entity.title,
+                      category:
+                        markerForm.category === 'event' && entity?.type === 'quest' ? 'quest' : markerForm.category,
+                    })
+                  }}
+                >
+                  <option value="">Nothing linked</option>
+                  {LINKABLE.map((group) => {
+                    const options = linkable.filter((x) => x.type === group.type)
+                    return options.length ? (
+                      <optgroup key={group.type} label={group.label}>
+                        {options.map((x) => (
+                          <option key={x.id} value={`${x.type}:${x.id}`}>
+                            {x.title || 'Untitled'}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ) : null
+                  })}
+                </select>
+              </div>
             </div>
             <div className="field">
               <label htmlFor="marker-notes">Notes</label>
@@ -752,7 +1023,7 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
                 Cancel
               </button>
               <button type="submit" className="btn btn--primary">
-                {editingMarkerId ? 'Save Changes' : 'Add Marker'}
+                {editingMarkerId ? 'Save Changes' : 'Add Pin'}
               </button>
             </div>
           </form>
@@ -851,9 +1122,30 @@ function WorldMapViewer({ map, campaignId, onClose, backLabel, onDeleteSelf, onR
                 alt={detailsMarker.title || 'Event'}
               />
             )}
+            <p className="world-map-viewer__details-type">
+              <Icon name={categoryOf(detailsMarker.category).icon} /> {categoryOf(detailsMarker.category).label}
+            </p>
             {detailsMarker.notes && (
               <p className="world-map-viewer__details-notes">{detailsMarker.notes}</p>
             )}
+            {(() => {
+              const entity = linkedEntity(detailsMarker)
+              if (!entity) return null
+              return (
+                <button
+                  type="button"
+                  className="world-map-viewer__details-link"
+                  onClick={() => nav.openEntity(entity.type, entity.id)}
+                >
+                  <Icon name={entity.icon} />
+                  <span>
+                    <span className="world-map-viewer__details-link-type">{entity.label}</span>
+                    {entity.title || 'Untitled'}
+                  </span>
+                  <Icon name="next" />
+                </button>
+              )
+            })()}
             <div className="world-map-viewer__details-actions">
               <button type="button" className="btn btn--text" onClick={() => openEditForm(detailsMarker)}>
                 Edit

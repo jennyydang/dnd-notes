@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import WorldMapViewer from './WorldMapViewer.jsx'
@@ -6,6 +6,8 @@ import PlacesSection from './PlacesSection.jsx'
 import Icon from './Icon.jsx'
 import './MapsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
+import { onMapFocus, takeMapFocus } from '../lib/mapFocus.js'
+import { CampaignDataContext } from '../hooks/useCampaignData.js'
 
 const BUCKET = 'maps'
 
@@ -31,6 +33,29 @@ function MapsTab({ campaignId }) {
   const [renameError, setRenameError] = useState(null)
   const fileInputRef = useRef(null)
   const activeWorldMap = maps.find((m) => m.id === activeWorldMapId) || null
+  // "Show on map" from a card: { mapId, markerId } until the maps load.
+  const campaignData = useContext(CampaignDataContext)
+  const [focus, setFocus] = useState(() => takeMapFocus())
+  const [focusMarkerId, setFocusMarkerId] = useState(null)
+  useEffect(() => onMapFocus(() => setFocus(takeMapFocus())), [])
+  useEffect(() => {
+    if (!focus || loading) return
+    // A pin on a zoom area's map: climb to the top-level map and fly to
+    // the zoom area that leads there instead.
+    const markersById = new Map((campaignData?.mapMarkers || []).map((m) => [m.id, m]))
+    let mapRow = maps.find((m) => m.id === focus.mapId)
+    let markerId = focus.markerId
+    for (let guard = 0; mapRow?.sourceMarkerId && guard < 10; guard += 1) {
+      const doorway = markersById.get(mapRow.sourceMarkerId)
+      if (!doorway) break
+      markerId = doorway.id
+      mapRow = maps.find((m) => m.id === doorway.map_id)
+    }
+    setFocus(null)
+    if (!mapRow) return
+    setActiveWorldMapId(mapRow.id)
+    setFocusMarkerId(markerId)
+  }, [focus, loading, maps, campaignData?.mapMarkers])
   // Zoom-area maps (nested under a 'zoom' marker on another map) aren't
   // top-level campaign maps — they're only reachable by clicking that
   // marker, not from this flat grid.
@@ -232,7 +257,11 @@ function MapsTab({ campaignId }) {
         <WorldMapViewer
           map={activeWorldMap}
           campaignId={campaignId}
-          onClose={() => setActiveWorldMapId(null)}
+          focusMarkerId={focusMarkerId}
+          onClose={() => {
+            setActiveWorldMapId(null)
+            setFocusMarkerId(null)
+          }}
           onRenameMap={(caption) => renameMap(activeWorldMap.id, caption)}
         />
       )}
