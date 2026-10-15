@@ -698,9 +698,9 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   const pinPos = drag?.kind === 'pin' ? drag : pin
 
   return (
-    <div className="world-map-viewer" role="dialog" aria-modal="true" aria-label={map.caption || 'World Map'}>
+    <div className="world-map-viewer" role="dialog" aria-modal="true" aria-label={map.caption || 'Interactive Map'}>
       <div className="world-map-viewer__toolbar">
-        <span className="world-map-viewer__title">{map.caption || 'World Map'}</span>
+        <span className="world-map-viewer__title">{map.caption || 'Interactive Map'}</span>
         <div className="world-map-viewer__controls">
           <button type="button" className="btn btn--text" onClick={() => zoomByFactor(1.25)} aria-label="Zoom in">
             +
@@ -809,7 +809,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
         >
           <img
             src={map.src}
-            alt={map.caption || 'World map'}
+            alt={map.caption || 'Interactive map'}
             draggable={false}
             onLoad={(e) => setImgSize({ w: e.target.naturalWidth, h: e.target.naturalHeight })}
           />
@@ -1162,7 +1162,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
         <WorldMapViewer
           map={openZoomMap}
           campaignId={campaignId}
-          backLabel={map.caption || 'World Map'}
+          backLabel={map.caption || 'Interactive Map'}
           onClose={() => setOpenZoomMap(null)}
           onDeleteSelf={() => removeItem(openZoomMap.sourceMarkerId)}
           onRenameSelf={(title) => updateItem(openZoomMap.sourceMarkerId, { title })}

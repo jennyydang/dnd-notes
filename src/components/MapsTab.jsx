@@ -174,7 +174,7 @@ function MapsTab({ campaignId }) {
               >
                 <img src={map.src} alt={map.caption || 'Campaign map'} />
               </button>
-              {map.isWorldMap && <span className="map-card__world-badge">World Map</span>}
+              {map.isWorldMap && <span className="map-card__world-badge">Interactive Map</span>}
               {renaming?.id === map.id ? (
                 <form className="map-card__rename" onSubmit={saveRename}>
                   <input
@@ -216,7 +216,7 @@ function MapsTab({ campaignId }) {
                 className="map-card__world-toggle btn btn--text"
                 onClick={() => (map.isWorldMap ? unsetWorldMap(map) : setWorldMap(map))}
               >
-                {map.isWorldMap ? 'Unset World Map' : 'Set as World Map'}
+                {map.isWorldMap ? 'Unset Interactive Map' : 'Set as Interactive Map'}
               </button>
               <button
                 type="button"
