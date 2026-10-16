@@ -44,10 +44,6 @@
     -webkit-touch-callout: none;
     user-select: none;
     background: $bg-deep;
-
-    &--placing {
-      cursor: crosshair;
-    }
   }
 
   &__stage {
@@ -429,6 +425,11 @@
 
     &:active {
       cursor: grabbing;
+    }
+
+    &--party {
+      border-style: solid;
+      background: rgba($gold, 0.16);
     }
 
     &--zoom {

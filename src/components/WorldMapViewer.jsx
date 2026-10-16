@@ -122,7 +122,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   // already updates the canonical row, this just avoids waiting on that
   // round trip to show the new position).
   const [pin, setPin] = useState({ x: map.pinX, y: map.pinY })
-  const [placementMode, setPlacementMode] = useState(null) // null | 'pin' (the party's first spot)
   const [pendingMarkerPos, setPendingMarkerPos] = useState(null)
   const [markerForm, setMarkerForm] = useState(null)
   const [editingMarkerId, setEditingMarkerId] = useState(null)
@@ -504,15 +503,25 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       onPointerUp(e) {
         setNewDrag(null)
         if (paletteDragged.current && overMap(e.clientX, e.clientY)) {
-          setConfirmDrop({ kind, ...computeFractionalPosition(e.clientX, e.clientY) })
+          dropFromPalette(kind, computeFractionalPosition(e.clientX, e.clientY))
         }
       },
       onPointerCancel: () => setNewDrag(null),
       onClick() {
         if (paletteDragged.current) return
         const r = viewportRef.current?.getBoundingClientRect()
-        if (r) setConfirmDrop({ kind, ...computeFractionalPosition(r.left + r.width / 2, r.top + r.height / 2) })
+        if (r) dropFromPalette(kind, computeFractionalPosition(r.left + r.width / 2, r.top + r.height / 2))
       },
+    }
+  }
+  // A pin or zoom area asks first (its form follows); the party is just
+  // placed (with the usual Undo).
+  function dropFromPalette(kind, { x, y }) {
+    if (kind === 'party') {
+      setPin({ x, y })
+      movePin(x, y, null).catch((err) => setFormError(err.message))
+    } else {
+      setConfirmDrop({ kind, x, y })
     }
   }
   function acceptDrop() {
@@ -668,17 +677,15 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       pinged: false,
     }
     panStartRef.current = start
-    // Hold still to ping that spot (not while placing a pin or marker).
+    // Hold still to ping that spot.
     clearTimeout(longPressRef.current)
-    if (!placementMode) {
-      const { clientX, clientY } = e
-      longPressRef.current = setTimeout(() => {
-        if (panStartRef.current !== start || start.moved || activePointersRef.current.size !== 1) return
-        start.pinged = true
-        const { x, y } = computeFractionalPosition(clientX, clientY)
-        sendPing(x, y)
-      }, LONG_PRESS_MS)
-    }
+    const { clientX, clientY } = e
+    longPressRef.current = setTimeout(() => {
+      if (panStartRef.current !== start || start.moved || activePointersRef.current.size !== 1) return
+      start.pinged = true
+      const { x, y } = computeFractionalPosition(clientX, clientY)
+      sendPing(x, y)
+    }, LONG_PRESS_MS)
   }
 
   function handleStagePointerMove(e) {
@@ -727,27 +734,16 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       moveMarkerTo(moving.id, x, y)
       return
     }
-    if (!placementMode) {
-      // Double-tap (or double-click) zooms in on that spot.
-      const now = Date.now()
-      const last = lastTapRef.current
-      if (last && now - last.at < DOUBLE_TAP_MS && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 30) {
-        lastTapRef.current = null
-        const rect = viewportRef.current.getBoundingClientRect()
-        glide()
-        zoomAt(e.clientX - rect.left, e.clientY - rect.top, 2)
-      } else {
-        lastTapRef.current = { at: now, x: e.clientX, y: e.clientY }
-      }
-      return
-    }
-
-    const { x, y } = computeFractionalPosition(e.clientX, e.clientY)
-    if (placementMode === 'pin') {
-      const from = pin.x == null ? null : pin
-      setPin({ x, y })
-      setPlacementMode(null)
-      movePin(x, y, from).catch((err) => setFormError(err.message))
+    // Double-tap (or double-click) zooms in on that spot.
+    const now = Date.now()
+    const last = lastTapRef.current
+    if (last && now - last.at < DOUBLE_TAP_MS && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 30) {
+      lastTapRef.current = null
+      const rect = viewportRef.current.getBoundingClientRect()
+      glide()
+      zoomAt(e.clientX - rect.left, e.clientY - rect.top, 2)
+    } else {
+      lastTapRef.current = { at: now, x: e.clientX, y: e.clientY }
     }
   }
 
@@ -1064,15 +1060,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       <div className="world-map-viewer__toolbar">
         <span className="world-map-viewer__title">{map.caption || 'Interactive Map'}</span>
         <div className="world-map-viewer__controls">
-          {pin.x == null && (
-            <button
-              type="button"
-              className="btn btn--text"
-              onClick={() => setPlacementMode((m) => (m === 'pin' ? null : 'pin'))}
-            >
-              {placementMode === 'pin' ? 'Click the map to drop your pin' : 'Drop "I am here" pin'}
-            </button>
-          )}
           {onRenameSelf && (
             <button type="button" className="btn btn--text" onClick={startEditingZoomArea}>
               <Icon name="edit" /> Edit
@@ -1091,7 +1078,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
 
       <div className={`world-map-viewer__body${showList ? ' world-map-viewer__body--list' : ''}`}>
       <div
-        className={`world-map-viewer__viewport${placementMode ? ' world-map-viewer__viewport--placing' : ''}${hoverId ? ' world-map-viewer__viewport--hovering' : ''}${newDrag?.over ? ' world-map-viewer__viewport--drop' : ''}`}
+        className={`world-map-viewer__viewport${hoverId ? ' world-map-viewer__viewport--hovering' : ''}${newDrag?.over ? ' world-map-viewer__viewport--drop' : ''}`}
         ref={viewportRef}
       >
         <div
@@ -1482,6 +1469,16 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
         <div className="world-map-viewer__palette" role="group" aria-label="Add to the map">
           <span className="world-map-viewer__palette-label">Drag onto the map</span>
           <div className="world-map-viewer__palette-items">
+            {/* Until the party has a place on this map. */}
+            {pin.x == null && (
+              <button
+                type="button"
+                className="world-map-viewer__palette-item world-map-viewer__palette-item--party"
+                {...paletteProps('party')}
+              >
+                <Icon name="pin" /> Party
+              </button>
+            )}
             <button type="button" className="world-map-viewer__palette-item" {...paletteProps('event')}>
               <Icon name="pushpin" /> Pin
             </button>
@@ -1505,7 +1502,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             style={{ left: newDrag.cx, top: newDrag.cy }}
             aria-hidden="true"
           >
-            <Icon name={newDrag.kind === 'zoom' ? 'zoom' : 'pushpin'} />
+            <Icon name={newDrag.kind === 'zoom' ? 'zoom' : newDrag.kind === 'party' ? 'pin' : 'pushpin'} />
           </div>,
           document.body,
         )}
