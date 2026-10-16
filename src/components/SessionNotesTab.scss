@@ -29,6 +29,17 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
+
+    // Fields shrink to their column (a date field's built-in minimum
+    // width otherwise pushes it out past the dialog on iPad).
+    > .field {
+      min-width: 0;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+    }
   }
 
   &__actions {
@@ -422,5 +433,57 @@
 @keyframes session-audio-pulse {
   to {
     opacity: 0.35;
+  }
+}
+
+// iPad / iPhone Safari draw date fields with their own minimum width and
+// centred text; let them fit the column like the other fields.
+@supports (-webkit-touch-callout: none) {
+  .session-form input[type='date'] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    text-align: left;
+  }
+}
+
+// In the Add / Edit dialog the form fills the dialog: title, date and the
+// formatting toolbar stay put at the top, Delete / Cancel / Save at the
+// bottom, and only the recap text scrolls in between.
+.modal__panel:has(> .session-form) {
+  display: flex;
+  flex-direction: column;
+  // As tall as the dialog may be (its max-height, which also allows for
+  // the on-screen keyboard).
+  height: 100dvh;
+  overflow: hidden;
+
+  > .session-form {
+    flex: 1;
+    min-height: 0;
+
+    > .field:has(.rich-notes) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .rich-notes {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .rich-notes__body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      border-radius: $radius;
+    }
+
+    .rich-notes__content {
+      min-height: 100%;
+    }
   }
 }

@@ -348,7 +348,7 @@ export function RichNotesEditor({
         })}
       </div>
 
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="rich-notes__body" />
 
       <p className="rich-notes__hint">
         Tag with <kbd>@</kbd> person, <kbd>#</kbd> place, <kbd>~</kbd> lore, <kbd>$</kbd> loot —
