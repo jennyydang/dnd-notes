@@ -6,6 +6,8 @@ import { useQuickNotes } from '../hooks/useQuickNotes.js'
 import { initiativeBonus } from '../lib/character.js'
 import { formatDateTime } from '../lib/sessionMode.js'
 import { useActiveSession } from '../hooks/useActiveSession.js'
+import { useSessionRecorder } from '../hooks/useSessionRecorder.js'
+import { formatDuration, recordingSupported, startRecording, stopRecording } from '../lib/sessionRecorder.js'
 import PreviouslyOn from './session/PreviouslyOn.jsx'
 import TabNav from './TabNav.jsx'
 import VitalsPanel from './session/VitalsPanel.jsx'
@@ -91,6 +93,9 @@ function SessionMode({ campaignName }) {
     ? quickNotes.notes.filter((n) => !n.sessionNoteId && new Date(n.createdAt) >= new Date(active.startedAt))
     : []
 
+  const rec = useSessionRecorder()
+  const recording = !rec.target && (rec.status === 'recording' || rec.status === 'paused')
+
   const panelClass = (id) => `session-mode__panel session-mode__panel--${id}${panel === id ? ' session-mode__panel--active' : ''}`
 
   return (
@@ -106,6 +111,23 @@ function SessionMode({ campaignName }) {
               <button type="button" className="btn" onClick={() => save({ ...active, paused: !active.paused })}>
                 <Icon name={active.paused ? 'play' : 'pause'} /> {active.paused ? 'Resume' : 'Pause'}
               </button>
+              {/* Record the table; it's saved with the recap at End session. */}
+              {recordingSupported() &&
+                (recording ? (
+                  <button type="button" className="btn session-mode__rec is-on" onClick={() => stopRecording()}>
+                    <span className="session-mode__rec-dot" aria-hidden="true" /> {formatDuration(rec.seconds)} · Stop
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn session-mode__rec"
+                    onClick={() => startRecording(null)}
+                    disabled={rec.status !== 'idle' || Boolean(rec.pending && !rec.target)}
+                    title={rec.pending && !rec.target ? 'A recording is waiting to be saved with the recap' : undefined}
+                  >
+                    <Icon name="mic" /> Record audio
+                  </button>
+                ))}
               <button type="button" className="btn btn--danger" onClick={() => setEnding(true)}>
                 ■ End session
               </button>

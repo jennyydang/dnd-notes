@@ -27,6 +27,7 @@ import QuickCreateModal from './QuickCreateModal.jsx'
 import AccountMenu from './AccountMenu.jsx'
 import { PartyPresence, SyncStatus } from './LiveStatus.jsx'
 import SessionDock from './session/SessionDock.jsx'
+import RecordingBar from './session/RecordingBar.jsx'
 import TurnAlert from './session/TurnAlert.jsx'
 import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
@@ -337,6 +338,8 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
           {/* Home and Session Mode have their own quick add and session controls. */}
           {!dmView && <SessionDock hidden={knownTab === 'home' || knownTab === 'session'} />}
+          {/* While a session is being recorded (any tab). */}
+          <RecordingBar />
           {roleReady && <TurnAlert />}
           {/* Combat theme for everyone; the shake-and-roll alert is for players. */}
           {roleReady && <CombatMode showAlert={Boolean(playerId) && !isDm} />}

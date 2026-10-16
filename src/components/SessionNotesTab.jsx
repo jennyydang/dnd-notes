@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
-import { getPublicUrl } from '../lib/storage.js'
+import { getPublicUrl, removeImage } from '../lib/storage.js'
+import { AUDIO_BUCKET, formatDuration } from '../lib/sessionRecorder.js'
+import SessionAudio from './SessionAudio.jsx'
 import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
 import { extractMentions, notesToPlainText } from '../lib/richNotes.js'
 import { TAG_GROUPS } from '../lib/tags.js'
@@ -22,6 +24,8 @@ const fromRow = (r) => ({
   sessionDate: r.session_date,
   notes: r.notes,
   createdAt: r.created_at,
+  audioPath: r.audio_path || null,
+  audioSeconds: r.audio_seconds ?? null,
 })
 
 const partyFromRow = (r) => ({
@@ -111,7 +115,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
     ? { campaign_id: campaignId, player_id: playerId }
     : { campaign_id: campaignId }
 
-  const { items: sessions, loading, error, addItem, updateItem, removeItem } =
+  const { items: sessions, loading, error, addItem, updateItem, removeItem, refetch } =
     useSupabaseTable('session_notes', {
       fromRow,
       orderBy: 'session_date',
@@ -201,6 +205,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
     const session = sessions.find((s) => s.id === id)
     if (!confirmDelete(`the session “${session?.title || 'Untitled Session'}”`)) return
     await removeItem(id)
+    if (session?.audioPath) await removeImage(AUDIO_BUCKET, session.audioPath)
     if (editingId === id) cancelForm()
     if (viewingId === id) setViewingId(null)
   }
@@ -296,6 +301,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
               ◆
             </div>
             <RichNotesView value={viewingSession.notes} className="session-detail__notes" />
+            <SessionAudio session={viewingSession} onChanged={() => refetch({ silent: true })} />
             <div className="session-detail__actions">
               <button type="button" className="btn btn--text" onClick={() => setExportTarget(viewingSession.id)}>
                 Export
@@ -331,6 +337,12 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
                   </button>
                   {session.sessionDate && (
                     <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
+                  )}
+                  {session.audioPath && (
+                    <span className="session-card__audio" title="Has a recording">
+                      <Icon name="mic" />
+                      {session.audioSeconds ? formatDuration(session.audioSeconds) : 'Audio'}
+                    </span>
                   )}
                 </div>
                 <p className="session-card__notes">{notesToPlainText(session.notes)}</p>

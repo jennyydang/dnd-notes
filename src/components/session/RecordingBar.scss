@@ -1,0 +1,138 @@
+@use '../../styles/variables' as *;
+
+// Bottom-left, clear of the session dock (bottom-right); on phones,
+// centred just above the bottom bar.
+.recording-bar {
+  position: fixed;
+  left: 1.25rem;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: calc(100vw - 1.5rem);
+  padding: 0.35rem 0.4rem 0.35rem 0.85rem;
+  border: 1px solid rgba(#e0574a, 0.6);
+  border-radius: 999px;
+  background: rgba($bg-deep, 0.94);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  color: $text-light;
+  font-size: 0.85rem;
+  animation: recording-bar-in 0.25s ease;
+
+  > svg {
+    flex: 0 0 auto;
+    color: $gold-light;
+  }
+
+  &.is-paused {
+    border-color: rgba($gold, 0.55);
+  }
+
+  &--error {
+    border-color: rgba(#e0574a, 0.8);
+  }
+
+  &__dot {
+    flex: 0 0 auto;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+    background: #e0574a;
+    box-shadow: 0 0 0 0 rgba(#e0574a, 0.7);
+    animation: recording-dot 1.6s ease-out infinite;
+
+    .is-paused & {
+      background: $gold;
+      animation: none;
+    }
+  }
+
+  &__text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    strong {
+      font-variant-numeric: tabular-nums;
+      color: $parchment;
+    }
+  }
+
+  &__btn {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid rgba($gold-dim, 0.6);
+    border-radius: 50%;
+    background: transparent;
+    color: $gold-light;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba($gold, 0.12);
+    }
+
+    &--stop {
+      border-color: rgba(#e0574a, 0.7);
+      color: #f08a7e;
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  &__spinner {
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid rgba($gold, 0.3);
+    border-top-color: $gold-light;
+    border-radius: 50%;
+    animation: recording-spin 0.8s linear infinite;
+  }
+}
+
+@keyframes recording-dot {
+  70% {
+    box-shadow: 0 0 0 0.45rem rgba(#e0574a, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(#e0574a, 0);
+  }
+}
+
+@keyframes recording-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .recording-bar {
+    left: 50%;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    animation-name: recording-bar-in-phone;
+  }
+}
+
+@keyframes recording-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes recording-bar-in-phone {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
