@@ -1066,22 +1066,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
         </div>
       </div>
 
-      {presentTypes.length > 1 && (
-        <div className="world-map-viewer__filters" role="group" aria-label="Show pins">
-          {presentTypes.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`chip world-map-viewer__filter${hidden.has(t.id) ? '' : ' chip--active'}`}
-              aria-pressed={!hidden.has(t.id)}
-              onClick={() => toggleType(t.id)}
-            >
-              <Icon name={t.icon} /> {t.label}
-            </button>
-          ))}
-        </div>
-      )}
-
       <div className={`world-map-viewer__body${showList ? ' world-map-viewer__body--list' : ''}`}>
       <div
         className={`world-map-viewer__viewport${placementMode ? ' world-map-viewer__viewport--placing' : ''}${hoverId ? ' world-map-viewer__viewport--hovering' : ''}${newDrag?.over ? ' world-map-viewer__viewport--drop' : ''}`}
@@ -1379,6 +1363,22 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             <p className="world-map-viewer__list-empty">No pins yet — drag one from below onto the map.</p>
           )}
         </aside>
+        {/* Show or hide pins by type. */}
+        {presentTypes.length > 1 && (
+          <div className="world-map-viewer__filters" role="group" aria-label="Show pins by type">
+            {presentTypes.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`chip world-map-viewer__filter${hidden.has(t.id) ? '' : ' chip--active'}`}
+                aria-pressed={!hidden.has(t.id)}
+                onClick={() => toggleType(t.id)}
+              >
+                <Icon name={t.icon} /> {t.label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="world-map-viewer__palette" role="group" aria-label="Add to the map">
           <span className="world-map-viewer__palette-label">Drag onto the map</span>
           <div className="world-map-viewer__palette-items">
