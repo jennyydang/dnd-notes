@@ -44,10 +44,6 @@
     -webkit-touch-callout: none;
     user-select: none;
     background: $bg-deep;
-
-    &--placing {
-      cursor: crosshair;
-    }
   }
 
   &__stage {
@@ -429,6 +425,11 @@
 
     &:active {
       cursor: grabbing;
+    }
+
+    &--party {
+      border-style: solid;
+      background: rgba($gold, 0.16);
     }
 
     &--zoom {
@@ -1122,6 +1123,11 @@
   &:hover {
     border-color: $gold;
   }
+}
+
+.world-map-viewer__form .world-map-viewer__form-move {
+  align-self: flex-start;
+  padding-left: 0;
 }
 
 .world-map-viewer__form-actions {
