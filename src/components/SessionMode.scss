@@ -106,12 +106,16 @@
       order: 1;
     }
 
-    &--initiative {
+    &--polls {
       order: 2;
     }
 
-    &--reference {
+    &--initiative {
       order: 3;
+    }
+
+    &--reference {
+      order: 4;
     }
   }
 

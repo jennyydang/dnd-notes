@@ -7,11 +7,12 @@ import { initiativeBonus } from '../lib/character.js'
 import { formatDateTime } from '../lib/sessionMode.js'
 import { useActiveSession } from '../hooks/useActiveSession.js'
 import { useSessionRecorder } from '../hooks/useSessionRecorder.js'
-import { formatDuration, recordingSupported, startRecording, stopRecording } from '../lib/sessionRecorder.js'
+import { addRecordingMark, formatDuration, recordingSupported, startRecording, stopRecording } from '../lib/sessionRecorder.js'
 import PreviouslyOn from './session/PreviouslyOn.jsx'
 import TabNav from './TabNav.jsx'
 import VitalsPanel from './session/VitalsPanel.jsx'
 import QuickNotesPanel from './session/QuickNotesPanel.jsx'
+import { PollsPanel } from './session/Polls.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import ReferencePanel from './session/ReferencePanel.jsx'
 import EndSessionModal from './session/EndSessionModal.jsx'
@@ -23,6 +24,7 @@ import './SessionMode.scss'
 const PANELS = [
   { id: 'vitals', label: 'Character' },
   { id: 'notes', label: 'Notes' },
+  { id: 'polls', label: 'Vote' },
   { id: 'initiative', label: 'Initiative' },
   { id: 'reference', label: 'Reference' },
 ]
@@ -114,9 +116,14 @@ function SessionMode({ campaignName }) {
               {/* Record the table; it's saved with the recap at End session. */}
               {recordingSupported() &&
                 (recording ? (
-                  <button type="button" className="btn session-mode__rec is-on" onClick={() => stopRecording()}>
-                    <span className="session-mode__rec-dot" aria-hidden="true" /> {formatDuration(rec.seconds)} · Stop
-                  </button>
+                  <>
+                    <button type="button" className="btn" onClick={() => addRecordingMark()} title="Bookmark this moment">
+                      <Icon name="bookmark" /> Mark{rec.marks.length ? ` (${rec.marks.length})` : ''}
+                    </button>
+                    <button type="button" className="btn session-mode__rec is-on" onClick={() => stopRecording()}>
+                      <span className="session-mode__rec-dot" aria-hidden="true" /> {formatDuration(rec.seconds)} · Stop
+                    </button>
+                  </>
                 ) : (
                   <button
                     type="button"
@@ -200,6 +207,9 @@ function SessionMode({ campaignName }) {
         )}
         <div className={panelClass('notes')}>
           <QuickNotesPanel quickNotes={quickNotes} since={active?.startedAt} />
+        </div>
+        <div className={panelClass('polls')}>
+          <PollsPanel />
         </div>
         {!character && (
           <>

@@ -10,13 +10,20 @@ const SPEEDS = [1, 1.5, 2]
 // A session recording's player: play / pause, a seek bar, the time and a
 // speed button (long sessions are easier to skim at 1.5× or 2×). It loads
 // nothing until played, so a list of sessions stays light.
-function AudioPlayer({ src, seconds, label = 'Session recording', compact = false }) {
+//
+// `marks` ([{ t, label }]) show as ticks on the seek bar. `controlRef`
+// gets { seek(seconds, play?), time() } so a marks list can jump the
+// player; `onTime(seconds)` reports where playback is.
+function AudioPlayer({ src, seconds, label = 'Session recording', compact = false, marks = [], controlRef, onTime }) {
   const audioRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(seconds || 0)
   const [speed, setSpeed] = useState(1)
   const [error, setError] = useState(null)
+  // A jump asked for before the audio has loaded (it loads only when
+  // played): applied once it knows its length.
+  const pendingSeek = useRef(null)
 
   useEffect(() => {
     const onOther = (e) => {
@@ -45,9 +52,27 @@ function AudioPlayer({ src, seconds, label = 'Session recording', compact = fals
   function seek(value) {
     const audio = audioRef.current
     if (!audio) return
-    audio.currentTime = value
+    if (audio.readyState < 1) pendingSeek.current = value
+    else audio.currentTime = value
     setCurrent(value)
   }
+
+  // Let the recap page's marks list drive this player.
+  useEffect(() => {
+    if (!controlRef) return undefined
+    controlRef.current = {
+      seek: (t, play = true) => {
+        const audio = audioRef.current
+        if (!audio) return
+        seek(t)
+        if (play && audio.paused) toggle()
+      },
+      time: () => pendingSeek.current ?? audioRef.current?.currentTime ?? 0,
+    }
+    return () => {
+      controlRef.current = null
+    }
+  })
 
   function nextSpeed() {
     const next = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]
@@ -70,8 +95,19 @@ function AudioPlayer({ src, seconds, label = 'Session recording', compact = fals
         }}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
-        onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
+        onTimeUpdate={(e) => {
+          if (pendingSeek.current != null) return // still on its way there
+          setCurrent(e.currentTarget.currentTime)
+          onTime?.(e.currentTarget.currentTime)
+        }}
+        onLoadedMetadata={(e) => {
+          const audio = e.currentTarget
+          if (Number.isFinite(audio.duration)) setDuration(audio.duration)
+          if (pendingSeek.current != null) {
+            audio.currentTime = pendingSeek.current
+            pendingSeek.current = null
+          }
+        }}
         onDurationChange={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
         onError={() => {
           setPlaying(false)
@@ -86,6 +122,7 @@ function AudioPlayer({ src, seconds, label = 'Session recording', compact = fals
       >
         <Icon name={playing ? 'pause' : 'play'} />
       </button>
+      <span className="audio-player__track">
       <input
         type="range"
         className="audio-player__seek"
@@ -98,6 +135,23 @@ function AudioPlayer({ src, seconds, label = 'Session recording', compact = fals
         aria-label={`Seek in ${label}`}
         aria-valuetext={`${formatDuration(current)} of ${formatDuration(total)}`}
       />
+      {/* Bookmarks along the bar (tap to jump there). */}
+      {total > 0 &&
+        marks.map((m, i) => (
+          <button
+            key={`${m.t}-${i}`}
+            type="button"
+            className={`audio-player__mark${current >= m.t ? ' is-passed' : ''}`}
+            style={{ left: `${Math.min(100, (m.t / total) * 100)}%` }}
+            onClick={() => {
+              if (controlRef?.current) controlRef.current.seek(m.t)
+              else seek(m.t)
+            }}
+            title={`${formatDuration(m.t)} · ${m.label}`}
+            aria-label={`Jump to ${m.label} at ${formatDuration(m.t)}`}
+          />
+        ))}
+      </span>
       <span className="audio-player__time">
         {current > 0 || playing ? `${formatDuration(current)} / ` : ''}
         {formatDuration(total)}

@@ -27,6 +27,7 @@ const fromRow = (r) => ({
   createdAt: r.created_at,
   audioPath: r.audio_path || null,
   audioSeconds: r.audio_seconds ?? null,
+  audioMarks: Array.isArray(r.audio_marks) ? r.audio_marks : [],
 })
 
 const partyFromRow = (r) => ({
@@ -349,6 +350,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
                       src={getPublicUrl(AUDIO_BUCKET, session.audioPath)}
                       seconds={session.audioSeconds}
                       label={`${session.title || 'Untitled Session'} recording`}
+                      marks={session.audioMarks}
                       compact
                     />
                   )}

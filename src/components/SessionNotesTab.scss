@@ -460,6 +460,143 @@
     margin-left: auto;
     color: #f08a7e;
   }
+
+  &__marks-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    color: $gold-light;
+    font-size: 0.85rem;
+
+    svg {
+      width: 0.9rem;
+      height: 0.9rem;
+    }
+  }
+}
+
+// A recording's bookmarks, under its player.
+.recording-marks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    h5 {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0;
+      color: $gold-light;
+      font-size: 0.85rem;
+    }
+
+    .btn {
+      padding: 0.25rem 0.5rem;
+      min-height: 0;
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__empty {
+    margin: 0;
+    color: $text-muted;
+    font-size: 0.85rem;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__time {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 4.6rem;
+    padding: 0.25rem 0.55rem;
+    border: 1px solid rgba($gold-dim, 0.6);
+    border-radius: 999px;
+    background: transparent;
+    color: $gold-light;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba($gold, 0.12);
+    }
+
+    svg {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+  }
+
+  &__label {
+    flex: 1;
+    min-width: 0;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid transparent;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    font-size: 0.9rem;
+
+    &:hover {
+      border-color: rgba($gold-dim, 0.4);
+    }
+
+    &:focus {
+      border-color: $gold;
+      background: $bg-deep;
+      outline: none;
+    }
+  }
+
+  &__delete {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: #f08a7e;
+      background: rgba(#e0574a, 0.1);
+    }
+
+    svg {
+      width: 0.9rem;
+      height: 0.9rem;
+    }
+  }
 }
 
 @keyframes session-audio-pulse {
