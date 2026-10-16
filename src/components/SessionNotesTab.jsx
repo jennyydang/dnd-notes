@@ -325,7 +325,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
       {!loading && !error && !viewingSession && sortedSessions.length > 0 && (
         <div className="session-list">
           {sortedSessions.map((session) => (
-            <article className="session-card panel" key={session.id}>
+            <article className={`session-card panel${session.sessionDate ? '' : ' session-card--no-date'}`} key={session.id}>
               <span className="session-card__badge" aria-hidden="true">
                 <Icon name="scroll" />
               </span>

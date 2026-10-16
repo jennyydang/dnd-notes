@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { useEdgeFades } from '../hooks/useEdgeFades.js'
 import {
   goalFromRow,
   goalProgress,
@@ -356,6 +357,8 @@ function GoalBoard({ table, kind, title, addLabel, emptyText, note }) {
 export function GoalStrip() {
   const { active } = usePartyGoals()
   const nav = useCampaignNav()
+  // Fades the row's edges where more goals are scrolled out of view.
+  const [listRef, fadeClass] = useEdgeFades()
   if (!active.length) return null
   return (
     <section className="goal-strip" aria-label="Party goals">
@@ -367,7 +370,7 @@ export function GoalStrip() {
           All goals →
         </button>
       </div>
-      <ul className="goal-strip__list">
+      <ul ref={listRef} className={`goal-strip__list ${fadeClass}`}>
         {active.map((goal) => {
           const next = nextStep(goal)
           return (
