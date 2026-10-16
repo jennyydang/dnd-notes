@@ -36,6 +36,23 @@
     }
   }
 
+  // Record audio: a red dot and the running time while it records.
+  &__rec.is-on {
+    border-color: rgba(#e0574a, 0.7);
+    color: $text-light;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__rec-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin-right: 0.15rem;
+    border-radius: 50%;
+    background: #e0574a;
+    animation: session-mode-rec 1.2s ease-in-out infinite alternate;
+  }
+
   &__status-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1105,5 +1122,11 @@
   }
   to {
     opacity: 0;
+  }
+}
+
+@keyframes session-mode-rec {
+  to {
+    opacity: 0.35;
   }
 }

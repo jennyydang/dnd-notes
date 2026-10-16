@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { applySettings, getSettings, resetSettings, saveSetting } from '../lib/settings.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import './SettingsPanel.scss'
+import AiConnectionPanel from './AiConnectionPanel.jsx'
 
 const BG_BUCKET = 'player-backgrounds'
 
@@ -190,6 +191,14 @@ function SettingsPanel({ onDone }) {
       <div className="settings-panel__section">
         <h4>Text Size</h4>
         {renderGroup('fontSize', FONT_SIZES)}
+      </div>
+
+      <div className="settings-panel__section">
+        <h4>AI Assistant</h4>
+        <p className="field-hint">
+          Connect your own Claude or ChatGPT account for the roleplay assistant on the Character screen.
+        </p>
+        <AiConnectionPanel />
       </div>
 
       <div className="settings-panel__actions">

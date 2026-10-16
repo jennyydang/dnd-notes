@@ -1715,3 +1715,23 @@ end $$;
 -- The order of a map's pins in its Pins list, set by the campaign's
 -- creator or DM by dragging. Unset pins sort after, oldest first.
 alter table map_markers add column if not exists sort_order double precision;
+
+-- ── Session recordings ───────────────────────────────────────────────
+-- A recap's audio: recorded in the app (Session Mode, or a recap's own
+-- page) or uploaded. The file lives in the "session-audio" bucket;
+-- audio_seconds is its length, shown on the recap's card.
+alter table session_notes add column if not exists audio_path text;
+alter table session_notes add column if not exists audio_seconds integer;
+
+insert into storage.buckets (id, name, public)
+values ('session-audio', 'session-audio', true)
+on conflict (id) do nothing;
+
+drop policy if exists "anon full access session-audio bucket" on storage.objects;
+create policy "anon full access session-audio bucket"
+  on storage.objects for all to anon
+  using (bucket_id = 'session-audio') with check (bucket_id = 'session-audio');
+
+-- A recording's doodle: its loudness over time as ~96 levels (0–1), drawn
+-- as an ink squiggle on the recap and its card.
+alter table session_notes add column if not exists audio_doodle jsonb;
