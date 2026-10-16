@@ -6,6 +6,14 @@ const mention = (char, id, label) =>
 const e = (type, id, title, raw = {}) => ({ type, id, title, raw: { id, ...raw } })
 
 describe('relationship web', () => {
+  it('joins party members and goals to one party hub', () => {
+    const web = buildRelationshipWeb([e('character', 'a', 'Ana'), e('character', 'b', 'Bo'), e('goal', 'g', 'Buy a ship')])
+    const hub = web.nodes.find((n) => n.key === 'party:hub')
+    expect(hub.degree).toBe(3)
+    expect(neighbours(web, 'party:hub').map((x) => x.edge.reasons[0]).sort()).toEqual(['Party goal', 'Party member', 'Party member'])
+    expect(buildRelationshipWeb([e('npc', 'n', 'X')]).nodes.some((n) => n.hub)).toBe(false)
+  })
+
   it('splits a recap into paragraphs with their tags', () => {
     const html = `<p>We met ${mention('@', 'n1', 'Marta')} at ${mention('#', 'p1', 'Saltmere')}.</p><ul><li>Kira &amp; ${mention('~', 'l1', 'Tide Cult')}</li></ul>`
     const paras = recapParagraphs(html)
@@ -35,6 +43,7 @@ describe('relationship web', () => {
     expect(edge('npc:n1', 'place:p1').reasons).toEqual(['Met here'])
     expect(edge('loot:i1', 'character:c1').reasons).toEqual(['Holds it'])
     expect(web.nodes.find((n) => n.key === 'npc:n2').degree).toBe(0)
+    expect(edge('character:c1', 'party:hub').reasons).toEqual(['Party member'])
     expect(neighbours(web, 'npc:n1')[0].node.label).toBe('Tide Cult')
   })
 })

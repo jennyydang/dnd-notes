@@ -145,6 +145,17 @@
     animation: web-pulse 1.8s ease-in-out infinite;
   }
 
+  // The party hub: a gold coin the members gather round.
+  &__node--hub &__dot-node {
+    stroke: $gold-light;
+    stroke-width: 3;
+  }
+
+  &__node--hub &__label {
+    font-family: $font-display;
+    fill: $gold-light;
+  }
+
   &__node.is-match &__halo {
     stroke: rgba($gold-light, 0.7);
     stroke-dasharray: 3 3;
