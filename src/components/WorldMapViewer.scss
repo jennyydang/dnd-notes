@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .world-map-viewer {
@@ -222,6 +223,7 @@
     flex: 1;
     min-height: 0;
     display: flex;
+    overflow: hidden;
 
     > .world-map-viewer__viewport {
       flex: 1;
@@ -235,20 +237,112 @@
 
   // Beside the map (under it on phones): the pin cards, then the new
   // pin / zoom area to drag onto the map.
+  // Slides in from the right (up from the bottom on phones); its tab
+  // stays on the map's edge to bring it back.
   &__side {
-    flex: 0 0 auto;
-    width: clamp(15rem, 24vw, 19rem);
+    --side-w: clamp(15rem, 24vw, 19rem);
+    position: relative;
+    flex: 0 0 var(--side-w);
+    width: var(--side-w);
     min-height: 0;
-    display: flex;
-    flex-direction: column;
-    background: $bg-panel;
-    border-left: 1px solid rgba($gold-dim, 0.35);
+    transition: margin 0.35s cubic-bezier(0.3, 0.7, 0.2, 1);
+
+    &.is-closed {
+      margin-right: calc(-1 * var(--side-w));
+    }
 
     @media (max-width: 720px) {
       flex: 0 0 auto;
       width: auto;
+
+      &.is-closed {
+        margin-right: 0;
+      }
+    }
+  }
+
+  &__side-inner {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: $bg-panel;
+    border-left: 1px solid rgba($gold-dim, 0.35);
+
+    @media (max-width: 720px) {
+      height: auto;
+      max-height: 22rem;
       border-left: none;
       border-top: 1px solid rgba($gold-dim, 0.35);
+      transition: max-height 0.35s cubic-bezier(0.3, 0.7, 0.2, 1);
+
+      .is-closed > & {
+        max-height: 0;
+      }
+    }
+  }
+
+  // The Pins tab on the column's outer edge.
+  &__side-tab {
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    z-index: 6;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 0.35rem;
+    border: $border-gold;
+    border-right: none;
+    border-radius: $radius-lg 0 0 $radius-lg;
+    background: $bg-panel;
+    box-shadow: -4px 4px 14px rgba(0, 0, 0, 0.35);
+    color: $gold-light;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    span {
+      writing-mode: vertical-rl;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: color.adjust($bg-panel, $lightness: 4%);
+    }
+
+    @media (max-width: 720px) {
+      top: auto;
+      right: auto;
+      bottom: 100%;
+      left: 0.75rem;
+      transform: none;
+      flex-direction: row;
+      padding: 0.3rem 0.75rem;
+      border: $border-gold;
+      border-bottom: none;
+      border-radius: $radius-lg $radius-lg 0 0;
+      box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.3);
+
+      span {
+        writing-mode: horizontal-tb;
+      }
+
+      // → / ← turn into ↓ (hide) / ↑ (show).
+      .world-map-viewer__side-tab-arrow {
+        transform: rotate(90deg);
+      }
     }
   }
 
@@ -647,6 +741,10 @@
     white-space: nowrap;
     animation: legend-in 0.2s ease;
 
+    @media (max-width: 720px) {
+      bottom: 2.6rem;
+    }
+
     span {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -775,6 +873,12 @@
     position: absolute;
     left: 50%;
     bottom: calc(0.75rem + env(safe-area-inset-bottom));
+
+    // Clear of the Pins tab on the map's bottom edge.
+    @media (max-width: 720px) {
+      bottom: 2.6rem;
+    }
+
     transform: translateX(-50%);
     margin: 0;
     padding: 0.3rem 0.8rem;

@@ -989,6 +989,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   // nested under it; only this map's own image needs explicit storage
   // cleanup here.
   async function deleteZoomArea() {
+    if (!window.confirm(`Delete “${map.caption || 'this area'}”? Its map and pins go too.`)) return
     try {
       await onDeleteSelf()
     } catch (err) {
@@ -1006,14 +1007,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       <div className="world-map-viewer__toolbar">
         <span className="world-map-viewer__title">{map.caption || 'Interactive Map'}</span>
         <div className="world-map-viewer__controls">
-          <button
-            type="button"
-            className={`btn btn--text${showList ? ' is-on' : ''}`}
-            onClick={() => setShowList((v) => !v)}
-            aria-pressed={showList}
-          >
-            <Icon name="rows" /> Pins
-          </button>
           {trail.length > 0 && (
             <>
               <button
@@ -1053,11 +1046,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           {onRenameMap && (
             <button type="button" className="btn btn--text" onClick={renameThisMap}>
               <Icon name="edit" /> Rename Map
-            </button>
-          )}
-          {onDeleteSelf && (
-            <button type="button" className="btn btn--danger" onClick={deleteZoomArea}>
-              Delete This Area
             </button>
           )}
           <button type="button" className="btn btn--primary" onClick={onClose}>
@@ -1290,8 +1278,19 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       </div>
 
       {/* Mini cards for every pin: hover to find it, tap to go there. */}
-      {showList && (
-        <div className="world-map-viewer__side">
+      <div className={`world-map-viewer__side${showList ? '' : ' is-closed'}`}>
+        <button
+          type="button"
+          className="world-map-viewer__side-tab"
+          onClick={() => setShowList((v) => !v)}
+          aria-expanded={showList}
+          aria-label={showList ? 'Hide pins' : 'Show pins'}
+        >
+          <Icon name="rows" />
+          <span>Pins</span>
+          <Icon name={showList ? 'next' : 'prev'} className="world-map-viewer__side-tab-arrow" />
+        </button>
+        <div className="world-map-viewer__side-inner" inert={!showList}>
         <aside className="world-map-viewer__list" aria-label="Pins on this map" ref={listRef}>
           {pin.x != null && (
             <button
@@ -1395,7 +1394,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           </div>
         </div>
         </div>
-      )}
+      </div>
 
       {/* The marker being dragged in, under the finger / cursor. */}
       {newDrag?.moved &&
@@ -1614,6 +1613,11 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             </div>
             {formError && <p className="empty-state empty-state--error">{formError}</p>}
             <div className="world-map-viewer__form-actions">
+              {zoomForm.editing && onDeleteSelf && (
+                <button type="button" className="btn btn--danger form-delete" onClick={deleteZoomArea}>
+                  Delete
+                </button>
+              )}
               <button type="button" className="btn btn--text" onClick={cancelZoomForm}>
                 Cancel
               </button>
