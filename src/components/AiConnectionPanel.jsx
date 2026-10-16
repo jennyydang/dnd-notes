@@ -1,14 +1,59 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAiConnection } from '../hooks/useAiConnection.js'
-import { PROVIDERS, maskKey, saveAiConnection, testAiConnection } from '../lib/aiConnection.js'
+import { AI_CONNECTION_EVENT, PROVIDERS, maskKey, saveAiConnection, testAiConnection } from '../lib/aiConnection.js'
+import { isChatGptSignInEnabled, startChatGptSignIn, takeChatGptSignInError } from '../lib/chatgptSignIn.js'
 import Icon from './Icon.jsx'
 import './AiConnectionPanel.scss'
 
-// Connect the player's own Claude or ChatGPT account (an API key) for the
-// roleplay assistant. The key is checked with a tiny request, then kept
-// on this device only.
+// "Sign in with ChatGPT" — shown only once the app is approved and has a
+// client ID (lib/chatgptSignIn.js). Runs on the player's ChatGPT plan.
+function ChatGptSignInButton() {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(() => takeChatGptSignInError())
+  // A sign-in that fails after this is already on screen.
+  useEffect(() => {
+    const onChange = () => {
+      const message = takeChatGptSignInError()
+      if (message) setError(message)
+    }
+    window.addEventListener(AI_CONNECTION_EVENT, onChange)
+    return () => window.removeEventListener(AI_CONNECTION_EVENT, onChange)
+  }, [])
+  return (
+    <div className="ai-connect__signin">
+      <button
+        type="button"
+        className="btn btn--primary ai-connect__chatgpt"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true)
+          setError(null)
+          try {
+            await startChatGptSignIn()
+          } catch (err) {
+            setError(err.message)
+            setBusy(false)
+          }
+        }}
+      >
+        <Icon name="link" /> {busy ? 'Opening ChatGPT…' : 'Sign in with ChatGPT'}
+      </button>
+      <p className="field-hint">Uses your ChatGPT plan — no API key needed.</p>
+      {error && (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// Connect the player's own AI account for the roleplay assistant: Sign in
+// with ChatGPT (when switched on), or a Claude / ChatGPT API key, checked
+// with a tiny request and kept on this device only.
 function AiConnectionPanel({ compact = false }) {
   const connection = useAiConnection()
+  const chatGptSignIn = isChatGptSignInEnabled()
   const [editing, setEditing] = useState(false)
   const [provider, setProvider] = useState(connection?.provider || 'anthropic')
   const [apiKey, setApiKey] = useState('')
@@ -41,6 +86,28 @@ function AiConnectionPanel({ compact = false }) {
     } finally {
       setStatus('idle')
     }
+  }
+
+  if (connection?.provider === 'chatgpt') {
+    return (
+      <div className={`ai-connect ai-connect--on${compact ? ' ai-connect--compact' : ''}`}>
+        <p className="ai-connect__status">
+          <Icon name="check-square" /> Signed in with <strong>ChatGPT</strong>
+          <span className="ai-connect__meta">
+            {[connection.email, connection.model, 'your ChatGPT plan', 'this device'].filter(Boolean).join(' · ')}
+          </span>
+        </p>
+        <div className="ai-connect__actions">
+          <button
+            type="button"
+            className="btn btn--text ai-connect__disconnect"
+            onClick={() => window.confirm('Sign out of ChatGPT on this device?') && saveAiConnection(null)}
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (connection && !editing) {
@@ -83,15 +150,30 @@ function AiConnectionPanel({ compact = false }) {
         <p className="ai-connect__lead">
           Connect your own <strong>Claude</strong> or <strong>ChatGPT</strong> account to get suggestions here.
         </p>
-        <button type="button" className="btn btn--primary" onClick={() => setEditing(true)}>
-          <Icon name="link" /> Connect AI
-        </button>
+        {chatGptSignIn ? (
+          <>
+            <ChatGptSignInButton />
+            <button type="button" className="btn btn--text" onClick={() => setEditing(true)}>
+              Use an API key instead
+            </button>
+          </>
+        ) : (
+          <button type="button" className="btn btn--primary" onClick={() => setEditing(true)}>
+            <Icon name="link" /> Connect AI
+          </button>
+        )}
       </div>
     )
   }
 
   return (
     <form className="ai-connect" onSubmit={connect}>
+      {chatGptSignIn && !compact && (
+        <>
+          <ChatGptSignInButton />
+          <p className="ai-connect__or">or use an API key</p>
+        </>
+      )}
       <div className="ai-connect__providers" role="radiogroup" aria-label="AI service">
         {Object.values(PROVIDERS).map((p) => (
           <button

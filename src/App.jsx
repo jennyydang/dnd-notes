@@ -14,6 +14,8 @@ import { installKeyboardAvoidance } from './lib/keyboard.js'
 import { installSwipeActions } from './lib/swipeActions.js'
 import { installPullToRefresh } from './lib/pullToRefresh.js'
 import { installSelectMenus } from './lib/selectMenu.js'
+import { AI_CONNECTION_EVENT, saveAiConnection } from './lib/aiConnection.js'
+import { finishChatGptSignIn, rememberChatGptSignInError } from './lib/chatgptSignIn.js'
 import { getStored, setStored } from './lib/sessionMode.js'
 import './App.scss'
 
@@ -50,6 +52,16 @@ function App() {
   useEffect(() => installSwipeActions(), [])
   useEffect(() => installPullToRefresh(), [])
   useEffect(() => installSelectMenus(), [])
+  // Back from "Sign in with ChatGPT": finish it and keep the connection.
+  useEffect(() => {
+    finishChatGptSignIn()
+      .then((connection) => connection && saveAiConnection(connection))
+      .catch((err) => {
+        // Keep any connection the player already had; just say why.
+        rememberChatGptSignInError(err.message)
+        window.dispatchEvent(new Event(AI_CONNECTION_EVENT))
+      })
+  }, [])
 
   // Picks up a changed session (e.g. a new username from Account).
   useEffect(() => {

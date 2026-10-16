@@ -1,4 +1,5 @@
 import { getPlayerSession } from './auth.js'
+import { askChatGpt } from './chatgptSignIn.js'
 
 // A player's own AI account, used by the roleplay assistant: an API key
 // for Claude (Anthropic) or ChatGPT (OpenAI). Subscriptions like Claude
@@ -37,11 +38,14 @@ function storageKey() {
   return `dnd-notes-ai:${playerId}`
 }
 
-// { provider, apiKey, model } or null.
+// { provider, apiKey, model } — or, signed in with ChatGPT,
+// { provider: 'chatgpt', accessToken, refreshToken, expiresAt, email, model }
+// (lib/chatgptSignIn.js) — or null.
 export function getAiConnection() {
   try {
     const raw = localStorage.getItem(storageKey())
     const value = raw ? JSON.parse(raw) : null
+    if (value?.provider === 'chatgpt') return value.accessToken ? value : null
     return value && PROVIDERS[value.provider] && value.apiKey ? value : null
   } catch {
     return null
@@ -60,7 +64,11 @@ export function saveAiConnection(connection) {
 export const maskKey = (key) => (key ? `••••${key.slice(-4)}` : '')
 
 // The model's reply text for one prompt.
-export async function askModel({ provider, apiKey, model }, prompt, { signal, maxTokens = 1200 } = {}) {
+export async function askModel(connection, prompt, { signal, maxTokens = 1200 } = {}) {
+  const { provider, apiKey, model } = connection
+  // Signed in with ChatGPT: runs on the player's plan (renewing the sign-in
+  // when it's due, and saving the renewed one).
+  if (provider === 'chatgpt') return askChatGpt(connection, prompt, { signal, maxTokens, save: saveAiConnection })
   const chosen = model?.trim() || PROVIDERS[provider].defaultModel
   if (provider === 'anthropic') {
     const response = await fetch('https://api.anthropic.com/v1/messages', {

@@ -71,6 +71,27 @@ request/response contract is documented in `src/lib/roleplayAssistant.js`.
 Without it the assistant says so plainly and offers **Copy prompt**, built
 only from the character's recorded notes, for use in any assistant.
 
+Players can also connect **their own** AI account (Settings → AI Assistant,
+or the assistant itself), kept on their device only — never in Supabase:
+
+- **Claude or ChatGPT API key** — works now (`src/lib/aiConnection.js`).
+- **Sign in with ChatGPT** — runs on the player's ChatGPT plan, no API key.
+  It's built but **switched off**: OpenAI offers it to websites as a
+  limited trial for approved partners
+  ([developers.openai.com/siwc/website](https://developers.openai.com/siwc/website)).
+  Once OpenAI approves the app and issues a client ID:
+  1. Register `https://dnd-notes.vercel.app/` as the redirect URI.
+  2. Deploy the token exchange (it holds any client secret server-side):
+     ```sh
+     supabase secrets set CHATGPT_CLIENT_ID=… CHATGPT_CLIENT_SECRET=… \
+       ALLOWED_ORIGINS=https://dnd-notes.vercel.app
+     supabase functions deploy chatgpt-auth --no-verify-jwt
+     ```
+  3. Set `VITE_CHATGPT_CLIENT_ID` (the same client ID) on Vercel and redeploy.
+  The **Sign in with ChatGPT** button then appears. The flow
+  (`src/lib/chatgptSignIn.js`, `supabase/functions/chatgpt-auth`) hasn't been
+  run against OpenAI's live sign-in yet, so check it once it's on.
+
 ### Live sync and offline play
 
 - **Live updates.** When anyone in the party adds or edits something, every
