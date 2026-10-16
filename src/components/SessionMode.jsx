@@ -13,6 +13,7 @@ import TabNav from './TabNav.jsx'
 import VitalsPanel from './session/VitalsPanel.jsx'
 import QuickNotesPanel from './session/QuickNotesPanel.jsx'
 import { PollsPanel } from './session/Polls.jsx'
+import { GoalStrip } from './PartyGoals.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import ReferencePanel from './session/ReferencePanel.jsx'
 import EndSessionModal from './session/EndSessionModal.jsx'
@@ -170,6 +171,8 @@ function SessionMode({ campaignName }) {
           </button>
         ))}
       </div>
+
+      <GoalStrip />
 
       <TabNav tabs={nav.isDm ? PANELS : PLAYER_PANELS} activeTab={panel} onSelect={setPanel} className="tab-nav--pill session-mode__switcher" label="Session panels" />
 

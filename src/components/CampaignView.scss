@@ -166,12 +166,65 @@
   }
 
   &__group-label {
+    margin: 0.25rem 0 0;
+  }
+
+  // The group heading folds its pages away (and back).
+  &__group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.2rem 0.25rem;
+    border: 0;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-muted;
     font-family: $font-body;
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: $text-muted;
-    margin: 0.25rem 0 0 0.25rem;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      color: $gold-light;
+    }
+  }
+
+  &__group-chevron {
+    width: 0.85rem;
+    height: 0.85rem;
+    transform: rotate(90deg);
+    transition: transform 0.2s ease;
+
+    .is-folded & {
+      transform: rotate(0deg);
+    }
+  }
+
+  &__group-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-left: 0.15rem;
+    border-radius: 50%;
+    background: $gold;
+  }
+
+  &__group-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.25s ease;
+
+    .is-folded & {
+      grid-template-rows: 0fr;
+    }
+  }
+
+  &__group-inner {
+    min-height: 0;
+    overflow: hidden;
   }
 
   // Phone-only chrome (the sidebar carries these on wider screens).

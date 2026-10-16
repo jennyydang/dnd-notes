@@ -1794,3 +1794,9 @@ begin
     end if;
   end loop;
 end $$;
+
+-- ── Party goal steps ──────────────────────────────────────────────────
+-- A goal broken into checkable steps ([{ id, text, done }]) — its
+-- progress ring fills as they're ticked off — and when it was achieved.
+alter table party_goals add column if not exists steps jsonb not null default '[]'::jsonb;
+alter table party_goals add column if not exists completed_at timestamptz;

@@ -31,10 +31,14 @@ function PreviouslyOn({ campaignName, onClose, onBegin }) {
     })
   }, [entities])
 
+  const overlayRef = useRef(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
   useEffect(() => {
-    beginRef.current?.focus()
+    // Focus Begin for the keyboard, but open at the top of the recap
+    // (focusing scrolled the overlay down to the button).
+    beginRef.current?.focus({ preventScroll: true })
+    if (overlayRef.current) overlayRef.current.scrollTop = 0
     const unlock = lockScroll()
     function onKey(event) {
       if (event.key === 'Escape') onCloseRef.current()
@@ -71,7 +75,7 @@ function PreviouslyOn({ campaignName, onClose, onBegin }) {
   const lastTitle = card.last?.title && card.last.title !== 'Untitled Session' ? card.last.title : null
 
   return (
-    <div className="previously" role="dialog" aria-modal="true" aria-labelledby="previously-title" onClick={onClose}>
+    <div ref={overlayRef} className="previously" role="dialog" aria-modal="true" aria-labelledby="previously-title" onClick={onClose}>
       <article className="previously__card" onClick={(e) => e.stopPropagation()}>
         <p className="previously__eyebrow">Previously on</p>
         <h2 id="previously-title" className="previously__title">

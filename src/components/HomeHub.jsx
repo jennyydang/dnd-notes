@@ -16,6 +16,7 @@ import { SectionCard, StatusMessage } from './ui.jsx'
 import Icon from './Icon.jsx'
 import './HomeHub.scss'
 import AnimatedNumber from './AnimatedNumber.jsx'
+import { GoalStrip } from './PartyGoals.jsx'
 
 const QUICK_ACTIONS = [
   { type: 'npc', label: 'NPC', icon: 'user' },
@@ -206,6 +207,8 @@ function HomeHub({ campaignName }) {
           )}
         </button>
       </section>
+
+      <GoalStrip />
 
       {previously && (
         <PreviouslyOn
