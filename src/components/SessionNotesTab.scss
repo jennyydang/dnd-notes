@@ -64,22 +64,38 @@
   gap: 1.25rem;
 }
 
+// Icon and title on the top row; the date, the recap text and the actions
+// run the card's full width underneath.
 .session-card {
   padding: 1.1rem 1.25rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  // title · date · recap · actions. The recap row can shrink, so on a long
+  // recap only the text scrolls (the card caps at the shared max height,
+  // _shared.scss) — title and Export / Edit stay put.
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.85rem;
+  row-gap: 0.6rem;
 
-  // The card caps at the shared max height (_shared.scss), but only the
-  // recap text scrolls — title and Edit/Delete/Export stay put.
+  &--no-date {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
   .session-list & {
-    align-items: stretch;
     overflow: hidden;
   }
 
+  // The wrappers step aside so their children sit on the card's grid.
+  &__body,
+  &__main {
+    display: contents;
+  }
+
   &__badge {
+    grid-column: 1;
+    grid-row: 1;
     flex-shrink: 0;
-    align-self: flex-start;
     width: 2.4rem;
     height: 2.4rem;
     border-radius: $radius;
@@ -91,24 +107,10 @@
     font-size: 1.15rem;
   }
 
-  &__body {
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  &__main {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
   &__title {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
     background: transparent;
     border: none;
     padding: 0;
@@ -124,13 +126,15 @@
   }
 
   &__date {
+    grid-column: 1 / -1;
     font-size: 0.85rem;
     color: $text-muted;
     font-style: italic;
   }
 
   &__notes {
-    flex: 0 1 auto;
+    grid-column: 1 / -1;
+    align-self: stretch;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -140,12 +144,8 @@
     white-space: pre-wrap;
   }
 
-  &__main,
   &__actions {
-    flex-shrink: 0;
-  }
-
-  &__actions {
+    grid-column: 1 / -1;
     display: flex;
     justify-content: flex-end;
     align-items: center;
