@@ -781,7 +781,9 @@
     line-height: 1.25;
     white-space: nowrap;
     pointer-events: none;
-    animation: legend-in 0.15s ease;
+    // Rises into place. (Its own keyframes keep translateX(-50%) — a
+    // shared fade-in replaced the transform, so it slid in sideways.)
+    animation: pin-label-in 0.2s cubic-bezier(0.3, 0.7, 0.2, 1);
 
     small {
       color: $text-muted;
@@ -1347,5 +1349,16 @@
   from {
     opacity: 0;
     transform: translateY(-4px);
+  }
+}
+
+@keyframes pin-label-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
   }
 }
