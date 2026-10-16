@@ -760,6 +760,37 @@
     }
   }
 
+  // A pin's name, shown above it on hover. It lives inside the marker,
+  // so it shares the marker's counter-scale and stays the same size.
+  &__pin-label {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 1.1rem);
+    z-index: 2;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.3rem 0.6rem;
+    border: $border-gold;
+    border-radius: $radius;
+    background: rgba($bg-deep, 0.94);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    color: $text-light;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    pointer-events: none;
+    animation: legend-in 0.15s ease;
+
+    small {
+      color: $text-muted;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+  }
+
   // Round buttons floating over the map (legend toggle, zoom).
   &__fab {
     display: grid;
