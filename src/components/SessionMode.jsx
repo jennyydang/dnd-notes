@@ -25,13 +25,13 @@ import './SessionMode.scss'
 const PANELS = [
   { id: 'vitals', label: 'Character' },
   { id: 'notes', label: 'Notes' },
-  { id: 'polls', label: 'Vote' },
   { id: 'initiative', label: 'Initiative' },
   { id: 'reference', label: 'Reference' },
 ]
 // Players follow combat through the turn banner and roll prompt; the
-// initiative tracker itself is the DM's (and the admin's).
-const PLAYER_PANELS = PANELS.filter((p) => p.id !== 'initiative')
+// initiative tracker itself is the DM's (and the admin's). Players vote
+// here; the DM runs votes from Tools.
+const PLAYER_PANELS = [...PANELS.filter((p) => p.id !== 'initiative' && p.id !== 'reference'), { id: 'polls', label: 'Vote' }, { id: 'reference', label: 'Reference' }]
 
 const QUICK_ADD = [
   { type: 'npc', label: 'NPC', icon: 'user' },
@@ -211,9 +211,11 @@ function SessionMode({ campaignName }) {
         <div className={panelClass('notes')}>
           <QuickNotesPanel quickNotes={quickNotes} since={active?.startedAt} />
         </div>
-        <div className={panelClass('polls')}>
-          <PollsPanel />
-        </div>
+        {!nav.isDm && (
+          <div className={panelClass('polls')}>
+            <PollsPanel />
+          </div>
+        )}
         {!character && (
           <>
             {nav.isDm && (

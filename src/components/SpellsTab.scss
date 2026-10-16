@@ -112,21 +112,32 @@
     gap: 0.5rem;
   }
 
+  // The flame that opens the spell's flavour text: gold on a warm disc so
+  // it reads clearly against the dark card.
   &__flavor-btn {
     flex-shrink: 0;
-    width: 1.9rem;
-    height: 1.9rem;
+    width: 2.4rem;
+    height: 2.4rem;
     border-radius: 50%;
-    background: $bg-deep;
-    border: 1px solid rgba($gold-dim, 0.6);
+    background: radial-gradient(circle at 50% 40%, rgba($gold, 0.32), rgba($gold, 0.12));
+    border: 1px solid rgba($gold, 0.75);
+    color: $gold-light;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: 1.15rem;
     line-height: 1;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      border-color 0.2s,
+      box-shadow 0.2s;
 
-    &:hover {
-      border-color: $gold;
+    &:hover,
+    &:focus-visible {
+      background: radial-gradient(circle at 50% 40%, rgba($gold, 0.5), rgba($gold, 0.2));
+      border-color: $gold-light;
+      box-shadow: 0 0 0.6rem rgba($gold, 0.45);
     }
   }
 

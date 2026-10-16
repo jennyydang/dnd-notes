@@ -5,6 +5,12 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 1.5rem;
+
+  &__polls {
+    flex: 1 1 420px;
+    max-width: 560px;
+    min-width: 0;
+  }
 }
 
 .currency-calculator {
