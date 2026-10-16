@@ -6,6 +6,21 @@ import QuickNoteInput from '../QuickNoteInput.jsx'
 import QuickCreateModal from '../QuickCreateModal.jsx'
 import { SectionCard, StatusMessage } from '../ui.jsx'
 import Icon from '../Icon.jsx'
+import { noteTagsToPlain, plainToNoteTags, splitNoteTags } from '../../lib/noteTags.js'
+import { groupForChar } from '../../lib/tags.js'
+
+// A note's text with its tags (e.g. an NPC added from a DM share) as chips.
+function NoteText({ content }) {
+  return splitNoteTags(content).map((part, i) =>
+    part.tag ? (
+      <span key={i} className={`mention mention--${groupForChar(part.tag.char)}`}>
+        {part.tag.label}
+      </span>
+    ) : (
+      part.text
+    ),
+  )
+}
 
 function splitNote(content) {
   const [first, ...rest] = content.trim().split('\n')
@@ -14,7 +29,7 @@ function splitNote(content) {
 
 function NoteRow({ note, onEdit, onDelete, onConvert, convertedEntity, onOpenConverted }) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(note.content)
+  const [draft, setDraft] = useState(() => noteTagsToPlain(note.content))
   const [error, setError] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -25,7 +40,7 @@ function NoteRow({ note, onEdit, onDelete, onConvert, convertedEntity, onOpenCon
       return
     }
     try {
-      await onEdit(note.id, draft)
+      await onEdit(note.id, plainToNoteTags(draft, note.content))
       setEditing(false)
       setError(null)
     } catch (err) {
@@ -57,7 +72,7 @@ function NoteRow({ note, onEdit, onDelete, onConvert, convertedEntity, onOpenCon
               className="btn btn--text"
               onClick={() => {
                 setEditing(false)
-                setDraft(note.content)
+                setDraft(noteTagsToPlain(note.content))
                 setError(null)
               }}
             >
@@ -70,7 +85,9 @@ function NoteRow({ note, onEdit, onDelete, onConvert, convertedEntity, onOpenCon
         </form>
       ) : (
         <div className="quick-notes__body">
-          <p className="quick-notes__content">{note.content}</p>
+          <p className="quick-notes__content">
+            <NoteText content={note.content} />
+          </p>
           {note.convertedTo && (
             <p className="quick-notes__converted">
               ✓ Turned into{' '}
@@ -192,7 +209,7 @@ function QuickNotesPanel({ quickNotes, since }) {
       {converting && (
         <QuickCreateModal
           initialType={converting.type}
-          initial={splitNote(converting.note.content)}
+          initial={splitNote(noteTagsToPlain(converting.note.content))}
           onClose={() => setConverting(null)}
           onCreated={(entity) => quickNotes.markConverted(converting.note.id, entity)}
         />
