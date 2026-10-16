@@ -340,32 +340,37 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
                     <span className="session-card__date">{formatSessionDate(session.sessionDate)}</span>
                   )}
                 </div>
-                {/* Listen without opening the recap. */}
-                {session.audioPath && (
-                  <AudioPlayer
-                    key={session.audioPath}
-                    src={getPublicUrl(AUDIO_BUCKET, session.audioPath)}
-                    seconds={session.audioSeconds}
-                    label={`${session.title || 'Untitled Session'} recording`}
-                    compact
-                  />
-                )}
                 <p className="session-card__notes">{notesToPlainText(session.notes)}</p>
-                <div className="session-card__actions">
+                <div className={`session-card__actions${session.audioPath ? ' session-card__actions--audio' : ''}`}>
+                  {/* Listen without opening the recap: bottom-left, by the actions. */}
+                  {session.audioPath && (
+                    <AudioPlayer
+                      key={session.audioPath}
+                      src={getPublicUrl(AUDIO_BUCKET, session.audioPath)}
+                      seconds={session.audioSeconds}
+                      label={`${session.title || 'Untitled Session'} recording`}
+                      compact
+                    />
+                  )}
                   <button
                     type="button"
-                    className="btn btn--text"
+                    className="btn btn--text session-card__export"
                     onClick={() => setExportTarget(session.id)}
                     aria-label={`Export ${session.title || 'Untitled Session'}`}
+                    title="Export"
                   >
-                    Export
+                    <Icon name="download" />
+                    <span className="session-card__export-label">Export</span>
                   </button>
                   <button
                     type="button"
-                    className="btn btn--text"
+                    className="btn btn--text session-card__export"
                     onClick={() => startEditing(session)}
+                    aria-label={`Edit ${session.title || 'Untitled Session'}`}
+                    title="Edit"
                   >
-                    Edit
+                    {session.audioPath && <Icon name="edit" className="session-card__edit-icon" />}
+                    <span className="session-card__export-label">Edit</span>
                   </button>
                 </div>
               </div>
