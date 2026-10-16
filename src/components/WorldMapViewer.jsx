@@ -1060,18 +1060,38 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       <div className="world-map-viewer__toolbar">
         <span className="world-map-viewer__title">{map.caption || 'Interactive Map'}</span>
         <div className="world-map-viewer__controls">
+          {/* Phones show these as icons in one row (labels hidden). */}
           {onRenameSelf && (
-            <button type="button" className="btn btn--text" onClick={startEditingZoomArea}>
-              <Icon name="edit" /> Edit
+            <button
+              type="button"
+              className="btn btn--text world-map-viewer__tool"
+              onClick={startEditingZoomArea}
+              aria-label="Edit this area"
+            >
+              <Icon name="edit" /> <span className="world-map-viewer__tool-label">Edit</span>
             </button>
           )}
           {onRenameMap && (
-            <button type="button" className="btn btn--text" onClick={renameThisMap}>
-              <Icon name="edit" /> Rename Map
+            <button
+              type="button"
+              className="btn btn--text world-map-viewer__tool"
+              onClick={renameThisMap}
+              aria-label="Rename map"
+            >
+              <Icon name="edit" /> <span className="world-map-viewer__tool-label">Rename Map</span>
             </button>
           )}
-          <button type="button" className="btn btn--primary" onClick={onClose}>
-            {backLabel ? `← Back to ${backLabel}` : 'Close'}
+          <button
+            type="button"
+            className="btn btn--primary world-map-viewer__close"
+            onClick={onClose}
+            aria-label={backLabel ? `Back to ${backLabel}` : 'Close map'}
+          >
+            <Icon
+              name={backLabel ? 'prev' : 'close'}
+              className={`world-map-viewer__close-icon${backLabel ? '' : ' world-map-viewer__close-icon--x'}`}
+            />
+            <span className="world-map-viewer__tool-label">{backLabel ? `Back to ${backLabel}` : 'Close'}</span>
           </button>
         </div>
       </div>
