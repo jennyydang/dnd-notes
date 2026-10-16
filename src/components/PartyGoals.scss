@@ -80,8 +80,8 @@
   align-items: start;
 }
 
-// A goal as a task card: tick, title and edit along the top; linked
-// entries as tags; the subtask count opens its checklist.
+// A goal as a task card: tick, title and edit along the top; the
+// subtask count opens its checklist.
 .goal-card {
   padding: 1rem 1.1rem 0.85rem;
   display: flex;
@@ -143,32 +143,6 @@
     }
   }
 
-  &__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  &__tag {
-    min-height: 1.9rem;
-    padding: 0.15rem 0.6rem;
-    border: 0;
-    border-radius: 5px;
-    background: $gold;
-    color: $bg-deep;
-    font: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-
-    &:hover {
-      background: $gold-light;
-    }
-  }
-
   &__notes {
     margin: 0;
     color: $text-muted;
@@ -183,25 +157,8 @@
   &__foot {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 0.5rem;
-  }
-
-  &__link-btn {
-    display: grid;
-    place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border: 1.5px dashed rgba($gold-dim, 0.8);
-    border-radius: 50%;
-    background: transparent;
-    color: $text-muted;
-    cursor: pointer;
-
-    &:hover {
-      border-color: $gold;
-      color: $gold-light;
-    }
   }
 
   &__toggle {

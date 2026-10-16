@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
-import { entityKey } from '../lib/entities.js'
 import {
   goalFromRow,
   goalProgress,
@@ -68,21 +67,6 @@ function CheckCircle({ checked, label, onToggle, size = 'md' }) {
       <Icon name="check" />
     </button>
   )
-}
-
-// The entries linked to a goal (quests, NPCs, loot that help with it).
-function useGoalLinks(goal) {
-  const { links, byKey } = useCampaignData()
-  return links
-    .filter(
-      (l) => (l.source_type === 'goal' && l.source_id === goal.id) || (l.target_type === 'goal' && l.target_id === goal.id),
-    )
-    .map((l) =>
-      l.source_type === 'goal' && l.source_id === goal.id
-        ? byKey.get(entityKey(l.target_type, l.target_id))
-        : byKey.get(entityKey(l.source_type, l.source_id)),
-    )
-    .filter(Boolean)
 }
 
 function Subtasks({ goal, onSave }) {
@@ -159,8 +143,6 @@ function Subtasks({ goal, onSave }) {
 }
 
 function GoalCard({ goal, onEdit, onSave, onToggleDone }) {
-  const nav = useCampaignNav()
-  const linked = useGoalLinks(goal)
   const done = goal.status === 'Completed'
   const doneSteps = goal.steps.filter((s) => s.done).length
   const [open, setOpen] = useState(false)
@@ -185,30 +167,9 @@ function GoalCard({ goal, onEdit, onSave, onToggleDone }) {
         </button>
       </header>
 
-      {linked.length > 0 && (
-        <ul className="goal-card__tags" aria-label="Linked">
-          {linked.map((e) => (
-            <li key={`${e.type}:${e.id}`}>
-              <button type="button" className="goal-card__tag" onClick={() => nav.openEntity(e.type, e.id)}>
-                {e.title}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
       {goal.notes && <RichText className="goal-card__notes" value={goal.notes} />}
 
       <footer className="goal-card__foot">
-        <button
-          type="button"
-          className="goal-card__link-btn"
-          aria-label={`Link ${goal.title} to a quest, NPC or item`}
-          title="Link to a quest, NPC or item"
-          onClick={() => nav.openEntity('goal', goal.id)}
-        >
-          <Icon name="link" />
-        </button>
         <button
           type="button"
           className={`goal-card__toggle${open ? ' is-open' : ''}`}
