@@ -92,7 +92,19 @@ export async function startRecording(target = null) {
     return
   }
   const mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported?.(t))
-  recorder = new MediaRecorder(stream, { ...(mimeType ? { mimeType } : {}), audioBitsPerSecond: BITS_PER_SECOND })
+  try {
+    recorder = new MediaRecorder(stream, { ...(mimeType ? { mimeType } : {}), audioBitsPerSecond: BITS_PER_SECOND })
+  } catch {
+    // Some browsers refuse a format or bitrate they don't like: take
+    // their own defaults rather than not recording at all.
+    try {
+      recorder = new MediaRecorder(stream)
+    } catch (err) {
+      release()
+      set({ error: `This browser couldn’t start recording: ${err?.message || err}` })
+      return
+    }
+  }
   chunks = []
   recorder.ondataavailable = (e) => e.data?.size && chunks.push(e.data)
   // Chunks every 10s, so a long recording isn't one huge buffer at stop.
@@ -139,6 +151,11 @@ export function stopRecording() {
       const blob = new Blob(chunks, { type })
       const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm'
       release()
+      if (!blob.size) {
+        set({ ...idle, error: 'The recording came out empty — the browser didn’t capture any audio. Try again.' })
+        resolve(null)
+        return
+      }
       const pending = { blob, seconds, ext }
       set({ status: 'idle', pending, banked: 0 })
       if (target) {
@@ -192,11 +209,13 @@ async function saveAudio(sessionId, file, ext, seconds) {
   if (before?.audio_path) await supabase.storage.from(AUDIO_BUCKET).remove([before.audio_path])
 }
 
-// Uploads the finished (pending) recording onto a recap.
+// Uploads the finished (pending) recording onto a recap. If it fails,
+// the recording is kept (with its recap) so it can be retried or saved
+// to the device — never silently dropped.
 export async function attachRecording(sessionId) {
   const pending = state.pending
   if (!pending) return
-  set({ status: 'saving', error: null })
+  set({ status: 'saving', error: null, target: sessionId })
   try {
     await saveAudio(sessionId, pending.blob, pending.ext, pending.seconds)
     set({ ...idle })
@@ -226,6 +245,28 @@ export async function removeAudio(sessionId, path) {
     .eq('id', sessionId)
   if (error) throw new Error(error.message)
   if (path) await supabase.storage.from(AUDIO_BUCKET).remove([path])
+}
+
+// Tries the failed upload again, onto the same recap.
+export function retryRecording() {
+  if (state.pending && state.target) return attachRecording(state.target).catch(() => {})
+  return Promise.resolve()
+}
+
+// The finished recording as a file on the device (a backup, or when it
+// won't upload).
+export function downloadRecording() {
+  const pending = state.pending
+  if (!pending) return
+  const url = URL.createObjectURL(pending.blob)
+  const a = document.createElement('a')
+  const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ').replace(':', '-')
+  a.href = url
+  a.download = `Session recording ${stamp}.${pending.ext}`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
 
 export function clearRecorderError() {
