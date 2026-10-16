@@ -1732,6 +1732,5 @@ create policy "anon full access session-audio bucket"
   on storage.objects for all to anon
   using (bucket_id = 'session-audio') with check (bucket_id = 'session-audio');
 
--- A recording's doodle: its loudness over time as ~96 levels (0–1), drawn
--- as an ink squiggle on the recap and its card.
-alter table session_notes add column if not exists audio_doodle jsonb;
+-- (Recordings briefly had a drawn "doodle"; it was removed.)
+alter table session_notes drop column if exists audio_doodle;

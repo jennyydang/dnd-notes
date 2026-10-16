@@ -2,9 +2,11 @@ import { useSessionRecorder } from '../../hooks/useSessionRecorder.js'
 import {
   clearRecorderError,
   discardRecording,
+  downloadRecording,
   formatDuration,
   pauseRecording,
   resumeRecording,
+  retryRecording,
   stopRecording,
 } from '../../lib/sessionRecorder.js'
 import Icon from '../Icon.jsx'
@@ -17,6 +19,32 @@ function RecordingBar() {
   const rec = useSessionRecorder()
   const live = rec.status === 'recording' || rec.status === 'paused'
   const waiting = rec.status === 'idle' && rec.pending && !rec.target
+  const discard = () =>
+    window.confirm('Discard this recording? It hasn’t been saved anywhere.') && discardRecording()
+
+  // A finished recording that didn't upload: keep it, and offer to try
+  // again or save it to the device — never let it quietly disappear.
+  if (rec.status === 'idle' && rec.pending && rec.error) {
+    return (
+      <div className="recording-bar recording-bar--error" role="alert">
+        <Icon name="mic" />
+        <span className="recording-bar__text" title={rec.error}>
+          Recording not saved ({formatDuration(rec.pending.seconds)}) — {rec.error.replace(/^The recording didn’t save: /, '')}
+        </span>
+        {rec.target && (
+          <button type="button" className="recording-bar__btn" onClick={retryRecording} aria-label="Try saving again" title="Try again">
+            <Icon name="sync" />
+          </button>
+        )}
+        <button type="button" className="recording-bar__btn" onClick={downloadRecording} aria-label="Save to this device" title="Save to this device">
+          <Icon name="download" />
+        </button>
+        <button type="button" className="recording-bar__btn" onClick={discard} aria-label="Discard recording" title="Discard">
+          <Icon name="trash" />
+        </button>
+      </div>
+    )
+  }
 
   if (rec.error && !live) {
     return (
@@ -42,14 +70,12 @@ function RecordingBar() {
       <div className="recording-bar" role="status">
         <Icon name="mic" />
         <span className="recording-bar__text">
-          Recording ready ({formatDuration(rec.pending.seconds)}) — it’s saved with the recap when you end the session
+          Recording ready ({formatDuration(rec.pending.seconds)}) — not saved yet: End session and save the recap to keep it
         </span>
-        <button
-          type="button"
-          className="recording-bar__btn"
-          onClick={() => window.confirm('Discard this recording?') && discardRecording()}
-          aria-label="Discard recording"
-        >
+        <button type="button" className="recording-bar__btn" onClick={downloadRecording} aria-label="Save to this device" title="Save to this device">
+          <Icon name="download" />
+        </button>
+        <button type="button" className="recording-bar__btn" onClick={discard} aria-label="Discard recording" title="Discard">
           <Icon name="trash" />
         </button>
       </div>
