@@ -364,10 +364,24 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   const [hoverId, setHoverId] = useState(null) // 'party' or a marker id
   const listRef = useRef(null)
   useEffect(() => {
-    // Hovering a pin scrolls its card into view.
-    if (!hoverId || !listRef.current) return
-    listRef.current.querySelector(`[data-pin="${hoverId}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  }, [hoverId])
+    // Hovering a pin scrolls its card into view — within the list only
+    // (scrollIntoView would also scroll the page, sliding a closed panel
+    // into sight), and never while the panel is closed.
+    const list = listRef.current
+    if (!hoverId || !list || !showList) return
+    const card = list.querySelector(`[data-pin="${hoverId}"]`)
+    if (!card) return
+    const l = list.getBoundingClientRect()
+    const c = card.getBoundingClientRect()
+    const pad = 8
+    let dx = 0
+    let dy = 0
+    if (c.top < l.top + pad) dy = c.top - l.top - pad
+    else if (c.bottom > l.bottom - pad) dy = c.bottom - l.bottom + pad
+    if (c.left < l.left + pad) dx = c.left - l.left - pad
+    else if (c.right > l.right - pad) dx = c.right - l.right + pad
+    if (dx || dy) list.scrollBy({ left: dx, top: dy, behavior: 'smooth' })
+  }, [hoverId, showList])
   // Pins in list order: the creator / DM's arrangement, then the rest
   // newest first. A just-dropped order shows at once (optimistic).
   const [localOrder, setLocalOrder] = useState(null)
@@ -1144,9 +1158,14 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
                 onPointerMove={moveDrag}
                 onPointerUp={endDrag}
                 onPointerCancel={endDrag}
-                title="Drag to update the party's location"
+                aria-label="The party (drag to move)"
               >
                 <Icon name="pin" />
+                {hoverId === 'party' && (
+                  <span className="world-map-viewer__pin-label">
+                    The party <small>Drag to move</small>
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -1200,9 +1219,16 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
                   onPointerMove={moving?.id === marker.id ? moveDrag : undefined}
                   onPointerUp={moving?.id === marker.id ? endDrag : undefined}
                   onPointerCancel={moving?.id === marker.id ? endDrag : undefined}
-                  title={marker.title || (isZoom ? 'Zoom area' : categoryOf(marker.category).label)}
+                  aria-label={marker.title || (isZoom ? 'Zoom area' : categoryOf(marker.category).label)}
                 >
                   <Icon name={isZoom ? 'zoom' : categoryOf(marker.category).icon} />
+                  {/* Its name on hover, so the closed panel needn't open. */}
+                  {hoverId === marker.id && !moving && (
+                    <span className="world-map-viewer__pin-label">
+                      {marker.title || (isZoom ? 'Zoom area' : categoryOf(marker.category).label)}
+                      <small>{isZoom ? 'Area' : categoryOf(marker.category).label}</small>
+                    </span>
+                  )}
                 </div>
               </div>
             )
