@@ -35,6 +35,79 @@
     gap: 0.5rem;
   }
 
+  // Desktop: "‹ Back to …" or the word "Close" (its × is for phones).
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  &__close-icon--x {
+    display: none;
+  }
+
+  // Phones: one row — back / close on the left, the name in the middle,
+  // Edit / Rename as an icon on the right.
+  @media (max-width: 720px) {
+    &__toolbar {
+      flex-wrap: nowrap;
+      gap: 0.5rem;
+      padding-bottom: 0.6rem;
+    }
+
+    &__controls {
+      display: contents;
+    }
+
+    &__title {
+      order: 1;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    &__close {
+      order: 0;
+    }
+
+    &__tool {
+      order: 2;
+    }
+
+    // (Doubled up to outrank the shared .btn / phone touch-target rules.)
+    &__toolbar .btn#{&}__close,
+    &__toolbar .btn#{&}__tool {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      min-height: 0;
+      padding: 0;
+      border-radius: 50%;
+
+      svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+
+    &__toolbar .btn#{&}__tool {
+      border: $border-gold;
+    }
+
+    &__close-icon--x {
+      display: block;
+    }
+
+    &__tool-label {
+      display: none;
+    }
+  }
+
   &__viewport {
     position: relative;
     flex: 1;
