@@ -166,16 +166,58 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     }
   }
 
-  async function movePin(x, y) {
-    const { error } = await supabase.from('maps').update({ pin_x: x, pin_y: y }).eq('id', map.id)
-    if (error) throw new Error(error.message)
+  // `from` is where the pin was (null for its first drop), kept so the
+  // move can be undone.
+  async function movePin(x, y, from = null) {
+    await savePin(x, y)
     // Add the stop to the journey trail (skipped quietly if the trail's
     // table hasn't been set up yet — the pin itself has already moved).
+    let stop = null
     try {
-      await pinMoves.addItem({ x, y })
+      stop = await pinMoves.addItem({ x, y })
     } catch (err) {
       console.warn('Journey trail not saved:', err.message)
     }
+    offerUndo({ stopId: stop?.id ?? null, from })
+  }
+
+  async function savePin(x, y) {
+    const { error } = await supabase.from('maps').update({ pin_x: x, pin_y: y }).eq('id', map.id)
+    if (error) throw new Error(error.message)
+  }
+
+  // "Party moved · Undo" for a few seconds after each move: puts the pin
+  // back and takes that stop off the journey trail.
+  const [lastMove, setLastMove] = useState(null) // { stopId, from }
+  const undoTimer = useRef(null)
+  function offerUndo(move) {
+    clearTimeout(undoTimer.current)
+    setLastMove(move)
+    undoTimer.current = setTimeout(() => setLastMove(null), 8000)
+  }
+  useEffect(() => () => clearTimeout(undoTimer.current), [])
+
+  async function undoMove(move) {
+    clearTimeout(undoTimer.current)
+    setLastMove(null)
+    const back = move.from || { x: null, y: null }
+    setPin(back)
+    try {
+      await savePin(back.x, back.y)
+      if (move.stopId) await pinMoves.removeItem(move.stopId)
+    } catch (err) {
+      setFormError(err.message)
+    }
+    setTrailPoint(null)
+  }
+
+  // Step the party back one stop on the trail (any time, not just right
+  // after a move): drop the latest stop and return to the one before.
+  function undoLastStop() {
+    const last = trail[trail.length - 1]
+    const before = trail[trail.length - 2]
+    if (!last || !before) return
+    undoMove({ stopId: last.id, from: { x: before.x, y: before.y } })
   }
 
   async function clearTrail() {
@@ -702,9 +744,10 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
 
     const { x, y } = computeFractionalPosition(e.clientX, e.clientY)
     if (placementMode === 'pin') {
+      const from = pin.x == null ? null : pin
       setPin({ x, y })
       setPlacementMode(null)
-      movePin(x, y).catch((err) => setFormError(err.message))
+      movePin(x, y, from).catch((err) => setFormError(err.message))
     }
   }
 
@@ -783,7 +826,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       setPin(final)
       setDrag(null)
       try {
-        await movePin(final.x, final.y)
+        await movePin(final.x, final.y, { x: start.startX, y: start.startY })
       } catch (err) {
         setFormError(err.message)
       }
@@ -1031,6 +1074,16 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
               >
                 <Icon name="trend" /> Journey
               </button>
+              {showTrail && trail.length > 1 && (
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={undoLastStop}
+                  title={`Back to ${trail[trail.length - 2].label}`}
+                >
+                  <Icon name="undo" /> Undo last move
+                </button>
+              )}
               {showTrail && (
                 <button type="button" className="btn btn--text" onClick={clearTrail}>
                   Clear trail
@@ -1286,6 +1339,23 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           </button>
         </div>
 
+        {lastMove && !moving && (
+          <div className="world-map-viewer__move-bar" role="status" onPointerDown={(e) => e.stopPropagation()}>
+            <span>Party moved</span>
+            <button type="button" className="btn btn--primary" onClick={() => undoMove(lastMove)}>
+              <Icon name="undo" /> Undo
+            </button>
+            <button
+              type="button"
+              className="btn btn--text world-map-viewer__move-bar-dismiss"
+              onClick={() => setLastMove(null)}
+              aria-label="Dismiss"
+            >
+              <Icon name="close" />
+            </button>
+          </div>
+        )}
+
         {moving && (
           <div className="world-map-viewer__move-bar" role="status" onPointerDown={(e) => e.stopPropagation()}>
             <span>Drag the pin, or tap its new spot</span>
@@ -1298,7 +1368,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           </div>
         )}
 
-        {!moving && pings.length === 0 && zoom <= 1.05 && (
+        {!moving && !lastMove && pings.length === 0 && zoom <= 1.05 && (
           <p className="world-map-viewer__hint">Hold anywhere to ping · double-tap to zoom</p>
         )}
       </div>
