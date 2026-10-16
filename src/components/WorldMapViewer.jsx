@@ -1075,12 +1075,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           )}
           {onRenameSelf && (
             <button type="button" className="btn btn--text" onClick={startEditingZoomArea}>
-              Edit This Area
-            </button>
-          )}
-          {onMoveSelf && (
-            <button type="button" className="btn btn--text" onClick={onMoveSelf}>
-              <Icon name="move" /> Move This Area
+              <Icon name="edit" /> Edit
             </button>
           )}
           {onRenameMap && (
@@ -1717,6 +1712,22 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
                 />
               </div>
             </div>
+            {/* Where the area sits on the map it's part of. */}
+            {zoomForm.editing && onMoveSelf && (
+              <div className="field">
+                <label>On the map</label>
+                <button
+                  type="button"
+                  className="btn btn--text world-map-viewer__form-move"
+                  onClick={() => {
+                    cancelZoomForm()
+                    onMoveSelf()
+                  }}
+                >
+                  <Icon name="move" /> Move this area
+                </button>
+              </div>
+            )}
             {formError && <p className="empty-state empty-state--error">{formError}</p>}
             <div className="world-map-viewer__form-actions">
               {zoomForm.editing && onDeleteSelf && (
