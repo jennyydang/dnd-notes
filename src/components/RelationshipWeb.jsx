@@ -8,7 +8,7 @@ import './RelationshipWeb.scss'
 const MIN_ZOOM = 0.25
 const MAX_ZOOM = 3
 const TAP_PX = 5
-const radius = (n) => Math.min(22, 7 + Math.sqrt(n.degree) * 3.2)
+const radius = (n) => (n.hub ? 24 : Math.min(22, 7 + Math.sqrt(n.degree) * 3.2))
 const clampZoom = (k) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k))
 
 // The Connections tab: everyone and everything the party has tied
@@ -187,8 +187,13 @@ function RelationshipWeb() {
       if (!g.moved) {
         const next = selected === g.key ? null : g.key
         setSelected(next)
-        // On a phone the details sheet would cover it: bring it above.
-        if (next && sizeRef.current.w < 720) centerOn(next)
+        // Bring it out from under the details panel (or the phone's sheet).
+        const p = next && positions.current.get(next)
+        if (p) {
+          const { w } = sizeRef.current
+          const sx = p.x * viewRef.current.k + viewRef.current.x
+          if (w < 720 || sx > w - 340) centerOn(next)
+        }
       }
     } else if (!g.moved) {
       setSelected(null)
@@ -345,12 +350,12 @@ function RelationshipWeb() {
                 if (!p) return null
                 const r = radius(n)
                 const dim = (near && !near.has(n.key)) || (q && !matchKeys.has(n.key))
-                const showLabel = n.degree >= 3 || view.k > 1.1 || near?.has(n.key) || matchKeys.has(n.key)
+                const showLabel = n.hub || n.degree >= 3 || view.k > 1.1 || near?.has(n.key) || matchKeys.has(n.key)
                 return (
                   <g
                     key={n.key}
                     data-node={n.key}
-                    className={`web__node${selected === n.key ? ' is-selected' : ''}${dim ? ' is-dim' : ''}${matchKeys.has(n.key) ? ' is-match' : ''}`}
+                    className={`web__node${n.hub ? ' web__node--hub' : ''}${selected === n.key ? ' is-selected' : ''}${dim ? ' is-dim' : ''}${matchKeys.has(n.key) ? ' is-match' : ''}`}
                     transform={`translate(${p.x} ${p.y})`}
                     onPointerEnter={(e) => e.pointerType === 'mouse' && setHovered(n.key)}
                     onPointerLeave={() => setHovered(null)}
@@ -390,7 +395,7 @@ function RelationshipWeb() {
                 <span className="web__panel-kind">{selectedNode.entity.label}</span>
                 <h3>{selectedNode.label}</h3>
               </div>
-              <button type="button" className="btn web__open" onClick={() => nav.openEntity(selectedNode.type, selectedNode.id)}>
+              <button type="button" className="btn web__open" onClick={() => (selectedNode.hub ? nav.goTo('party') : nav.openEntity(selectedNode.type, selectedNode.id))}>
                 Open
               </button>
               <button type="button" className="icon-btn" aria-label="Close" onClick={() => setSelected(null)}>

@@ -12,7 +12,12 @@ export const WEB_TYPES = {
   lore: { label: 'Lore & factions', color: '#9b8fd6' },
   quest: { label: 'Quests', color: '#d0708f' },
   loot: { label: 'Loot', color: '#7fb3c8' },
+  goal: { label: 'Party goals', color: '#8fc46b' },
 }
+
+// The hub every party member (and party goal) hangs off, so the party
+// reads as one group in the web.
+export const PARTY_HUB = 'party:hub'
 
 const MENTION_TYPE = { '@': 'npc', '#': 'place', '~': 'lore', $: 'loot' }
 
@@ -76,6 +81,18 @@ export function buildRelationshipWeb(entities, links = []) {
     if (!WEB_TYPES[e.type]) continue
     nodes.set(`${e.type}:${e.id}`, { key: `${e.type}:${e.id}`, type: e.type, id: e.id, label: e.title || e.label, entity: e, degree: 0 })
   }
+  const members = [...nodes.values()].filter((n) => n.type === 'character')
+  if (members.length) {
+    nodes.set(PARTY_HUB, {
+      key: PARTY_HUB,
+      type: 'character',
+      id: null,
+      hub: true,
+      label: 'The Party',
+      entity: { type: 'character', label: 'Party', title: 'The Party', raw: {} },
+      degree: 0,
+    })
+  }
   const edges = new Map()
   function connect(ka, kb, reason) {
     if (ka === kb || !nodes.has(ka) || !nodes.has(kb)) return
@@ -95,8 +112,10 @@ export function buildRelationshipWeb(entities, links = []) {
   const npcByName = byName('npc')
   const placeByName = byName('place')
   const charByName = byName('character')
-  const party = [...nodes.values()]
-    .filter((n) => n.type === 'character')
+  for (const m of members) connect(m.key, PARTY_HUB, 'Party member')
+  for (const n of nodes.values()) if (n.type === 'goal') connect(n.key, PARTY_HUB, 'Party goal')
+
+  const party = members
     .map((n) => ({ key: n.key, re: nameMatcher(n.label) }))
     .filter((p) => p.re)
 
