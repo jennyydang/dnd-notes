@@ -148,10 +148,66 @@
   &__actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
     border-top: 1px solid rgba($gold-dim, 0.3);
+
+    // With a recording: the player takes the left, Export / Edit the right.
+    &--audio {
+      justify-content: flex-start;
+
+      .audio-player {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 26rem;
+        margin-right: auto;
+      }
+    }
+  }
+
+  &__export {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  // Phones: Export becomes just its icon, so the player keeps its room.
+  @media (max-width: 720px) {
+    &__actions--audio {
+      gap: 0.25rem;
+
+      .btn {
+        padding-left: 0.45rem;
+        padding-right: 0.45rem;
+      }
+    }
+
+    // Export and Edit become just their icons, and the card's player
+    // drops its speed button (it's on the recap page's player), so the
+    // player keeps room for its seek bar.
+    &__actions--audio &__export-label {
+      display: none;
+    }
+
+    &__actions--audio .audio-player__speed {
+      display: none;
+    }
+  }
+
+  // Edit's pencil only shows where Edit is icon-only (phones).
+  &__edit-icon {
+    display: none;
+
+    @media (max-width: 720px) {
+      display: block;
+    }
   }
 }
 
