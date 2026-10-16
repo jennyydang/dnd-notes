@@ -60,7 +60,8 @@ async function existingId(table, column, value) {
 
 // The line written into the player's quick notes when they take a share
 // in, with the matching tag — @ for an NPC, # for a map (Maps & Places),
-// ! for a monster or a piece of art (an event on the Timeline) — so it
+// % for a monster or creature, ! for a piece of art (an event on the
+// Timeline) — so it
 // lands in their recap at End Session like a tag they'd typed.
 export function shareNote(share, partyId) {
   const p = share.payload || {}
@@ -71,7 +72,7 @@ export function shareNote(share, partyId) {
     case 'map':
       return `Got a map: ${tagToken({ char: '#', id: partyId, label: name })} — shared by the DM.`
     case 'creature':
-      return `${tagToken({ char: '!', id: `share-${share.id}`, label: `Came face to face with ${name}` })} — shared by the DM.`
+      return `Faced ${tagToken({ char: '%', id: partyId, label: name, kind: p.kind === 'Creature' ? 'Creature' : 'Monster' })} — shared by the DM.`
     case 'art':
       return `${tagToken({ char: '!', id: `share-${share.id}`, label: `Saw ${share.title || 'a scene'}` })} — shared by the DM.`
     default:

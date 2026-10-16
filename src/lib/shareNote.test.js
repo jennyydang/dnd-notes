@@ -14,8 +14,8 @@ describe('share notes', () => {
     expect(noteTagsToPlain(map)).toBe('Got a map: #Sea chart — shared by the DM.')
 
     const monster = shareNote({ id: 's3', kind: 'creature', title: 'Kraken', payload: { name: 'Kraken' } }, 'c1')
-    expect(noteTagsToPlain(monster)).toBe('!Came face to face with Kraken — shared by the DM.')
-    expect(tagOf(monster).char).toBe('!')
+    expect(noteTagsToPlain(monster)).toBe('Faced %Kraken — shared by the DM.')
+    expect(tagOf(monster)).toMatchObject({ char: '%', id: 'c1', kind: 'Monster' })
 
     const art = shareNote({ id: 's4', kind: 'art', title: 'The burning keep', payload: {} }, 'a1')
     expect(noteTagsToPlain(art)).toBe('!Saw The burning keep — shared by the DM.')

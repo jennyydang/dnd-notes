@@ -18,6 +18,12 @@ describe('note tags', () => {
     expect(plainToNoteTags(edited, note)).toBe(`Met ${marta} again. Lost the map.`)
   })
 
+  it('handles monster tags', () => {
+    const kraken = tagToken({ char: '%', id: 'c1', label: 'Kraken', kind: 'Monster' })
+    expect(noteTagsToPlain(`Faced ${kraken}`)).toBe('Faced %Kraken')
+    expect(recapParagraphs(`<p>${noteToRecapHtml(kraken)}</p>`)[0].mentions).toEqual([{ type: 'creature', id: 'c1' }])
+  })
+
   it('becomes real recap tags', () => {
     const html = `<p>${noteToRecapHtml(`Met ${marta} & <b>`)}</p>`
     expect(html).toContain('&amp; &lt;b&gt;')

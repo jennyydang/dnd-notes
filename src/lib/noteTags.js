@@ -1,7 +1,7 @@
 import { groupForChar } from './tags.js'
 
 // Tags inside a plain-text quick note. A quick note is just text, so a tag
-// (@person, #place, ~lore, $loot, !event) is stored as a small token:
+// (@person, #place, ~lore, $loot, %monster, !event) is stored as a token:
 //
 //   {{tag:@|<id>|<kind>|Old Marta}}
 //
@@ -10,7 +10,7 @@ import { groupForChar } from './tags.js'
 // the notes into a recap — so it lands in "People Met", the Timeline and
 // the Connections web like one typed in the editor.
 
-const TOKEN = /\{\{tag:([@#~$!])\|([^|}]*)\|([^|}]*)\|([^}]*)\}\}/g
+const TOKEN = /\{\{tag:([@#~$%!])\|([^|}]*)\|([^|}]*)\|([^}]*)\}\}/g
 const clean = (s) => String(s ?? '').replace(/[|{}]/g, ' ').replace(/\s+/g, ' ').trim()
 
 export function tagToken({ char, id, label, kind = '' }) {

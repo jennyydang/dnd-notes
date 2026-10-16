@@ -25,6 +25,8 @@ export const TAG_GROUPS = {
     icon: 'coins',
     kinds: ['Item', 'Artifact', 'Magic Item'],
   },
+  // "%Kraken" — a monster or creature from the Monsters & Creatures tab.
+  creature: { char: '%', tab: 'creatures', noun: 'monster', icon: 'monster', kinds: ['Monster', 'Creature'] },
   // "!event The dragon attacks" — not backed by a table: an event lives
   // only as a chip in its session's recap, and the Timeline tab reads
   // them back out of the notes (so editing the recap edits the timeline).

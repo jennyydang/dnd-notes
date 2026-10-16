@@ -201,6 +201,16 @@
     }
   }
 
+  &--creature {
+    background: rgba(#7d5ba6, 0.3);
+    border: 1px solid rgba(#a98bd3, 0.85);
+    color: #e5d9f7;
+
+    &::before {
+      @include line-icon('skull');
+    }
+  }
+
   // Events are whole sentences, so unlike name chips they wrap with the
   // surrounding text instead of staying on one line.
   &--event {
