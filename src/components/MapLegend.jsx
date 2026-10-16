@@ -63,14 +63,11 @@ function Row({ item }) {
   )
 }
 
-export default function MapLegend({ onClose }) {
+export default function MapLegend() {
   return (
     <section className="map-legend" aria-label="Map legend" onPointerDown={(e) => e.stopPropagation()}>
       <header className="map-legend__head">
         <h4>Legend</h4>
-        <button type="button" className="map-legend__close" onClick={onClose} aria-label="Hide legend">
-          ×
-        </button>
       </header>
       <h5>Settlements</h5>
       <ul>

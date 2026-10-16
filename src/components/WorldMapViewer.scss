@@ -608,6 +608,134 @@
   }
 
   // Overview map in the corner while zoomed in.
+  // The pin being moved: a pulsing ring, and it can be grabbed.
+  .is-moving {
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    svg {
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 8px rgba($gold-light, 0.95));
+      animation: new-pin-bob 0.9s ease-in-out infinite;
+    }
+  }
+
+  // "Drag the pin, or tap its new spot" — Cancel / Done.
+  &__move-bar {
+    position: absolute;
+    left: 50%;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    z-index: 6;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: calc(100% - 1.5rem);
+    padding: 0.4rem 0.45rem 0.4rem 0.9rem;
+    border: $border-gold;
+    border-radius: 999px;
+    background: rgba($bg-deep, 0.92);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    color: $text-light;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    animation: legend-in 0.2s ease;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .btn {
+      padding: 0.35rem 0.8rem;
+      min-height: 0;
+    }
+
+    .btn--primary {
+      border-radius: 999px;
+    }
+  }
+
+  // Round buttons floating over the map (legend toggle, zoom).
+  &__fab {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: $border-gold;
+    border-radius: 50%;
+    background: rgba($bg-deep, 0.88);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    color: $gold-light;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: $gold;
+      background: rgba($bg-panel, 0.95);
+    }
+
+    &:active {
+      transform: scale(0.94);
+    }
+
+    &.is-on {
+      border-color: $gold;
+      background: rgba($gold, 0.22);
+    }
+
+    svg {
+      width: 1.15rem;
+      height: 1.15rem;
+    }
+  }
+
+  &__legend-toggle {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 5;
+  }
+
+  &__zoom-controls {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  @media (max-width: 720px) {
+    &__legend-toggle {
+      top: 0.5rem;
+      left: 0.5rem;
+    }
+
+    &__zoom-controls {
+      top: 0.5rem;
+      right: 0.5rem;
+      gap: 0.3rem;
+    }
+
+    &__fab {
+      width: 2.3rem;
+      height: 2.3rem;
+    }
+  }
+
   &__overview {
     position: absolute;
     right: 0.75rem;
@@ -958,11 +1086,11 @@
 // The map key, over the map's top-left corner.
 .map-legend {
   position: absolute;
-  top: 0.75rem;
+  top: 3.75rem;
   left: 0.75rem;
   z-index: 4;
   width: 15rem;
-  max-height: calc(100% - 4.5rem);
+  max-height: calc(100% - 7.5rem);
   overflow-y: auto;
   padding: 0.7rem 0.85rem 0.8rem;
   border: $border-gold;
@@ -983,25 +1111,6 @@
       margin: 0;
       color: $gold-light;
       font-size: 0.95rem;
-    }
-  }
-
-  &__close {
-    width: 1.8rem;
-    height: 1.8rem;
-    margin: -0.3rem -0.4rem -0.3rem 0;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: $text-muted;
-    font-size: 1.2rem;
-    line-height: 1;
-    cursor: pointer;
-
-    &:hover,
-    &:focus-visible {
-      color: $gold-light;
-      background: rgba($gold, 0.1);
     }
   }
 
@@ -1047,11 +1156,11 @@
 
   // Phones: the map is short, so a compact two-column key.
   @media (max-width: 720px) {
-    top: 0.5rem;
+    top: 3.2rem;
     left: 0.5rem;
-    right: 0.5rem;
+    right: 3.3rem;
     width: auto;
-    max-height: calc(100% - 1rem);
+    max-height: calc(100% - 3.7rem);
     padding: 0.45rem 0.6rem 0.55rem;
 
     &__head {

@@ -96,7 +96,7 @@ function clamp(value, min, max) {
 // onRenameSelf works the same way for the marker's title, and onUpdated
 // tells the parent the new caption/image so this view refreshes.
 // onRenameMap (top-level map only) renames it through MapsTab's hook.
-function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, onDeleteSelf, onRenameSelf, onUpdated, onRenameMap }) {
+function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, onDeleteSelf, onRenameSelf, onMoveSelf, onUpdated, onRenameMap }) {
   const { items: markers, addItem, updateItem, removeItem } =
     useSupabaseTable('map_markers', { fromRow: markerFromRow, filters: { map_id: map.id } })
   // This map's own row, live — so the party pin moves when anyone moves it.
@@ -148,6 +148,10 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   const pinchRef = useRef(null)
   const longPressRef = useRef(null)
   const lastTapRef = useRef(null)
+  // Placed pins stay put: a tap opens them, and only "Move" (from the
+  // pin's dialog) lets one be dragged — or tapped onto a new spot.
+  const markerTapRef = useRef(null) // the marker a press started on
+  const [moving, setMoving] = useState(null) // { id, origin: {x, y}, moved }
 
   useEffect(() => {
     return () => {
@@ -341,12 +345,12 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   // The pin list beside the map: hovering a card (or a pin) highlights
   // its partner. Under it sit the new pin / zoom area to drag in.
   const [showList, setShowList] = useState(true)
-  // The map key; whether it's open is remembered on this device.
+  // The map key: open unless it's been closed on this device.
   const [showLegend, setShowLegend] = useState(() => {
     try {
-      return localStorage.getItem('dnd-notes-map-legend') === '1'
+      return localStorage.getItem('dnd-notes-map-legend') !== '0'
     } catch {
-      return false
+      return true
     }
   })
   function toggleLegend(next = !showLegend) {
@@ -509,13 +513,60 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
   useEffect(() => {
     const el = viewportRef.current
     if (!el) return
+    // Trackpads work like an iPad: pinch to zoom, two-finger slide to
+    // pan. Browsers report a pinch as a wheel with ctrlKey (Safari also
+    // as gesture events, below); a mouse wheel still zooms.
     function onWheel(e) {
       e.preventDefault()
       const rect = el.getBoundingClientRect()
-      zoomAt(e.clientX - rect.left, e.clientY - rect.top, Math.exp(-e.deltaY * 0.001))
+      const px = e.clientX - rect.left
+      const py = e.clientY - rect.top
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? rect.height : 1
+      const dx = e.deltaX * unit
+      const dy = e.deltaY * unit
+      if (e.ctrlKey) {
+        zoomAt(px, py, Math.exp(-dy * 0.01))
+        return
+      }
+      // A trackpad scrolls in fine pixel steps (and sideways); a mouse
+      // wheel in whole notches (wheelDelta a multiple of 120, or lines).
+      const trackpad =
+        e.deltaMode === 0 &&
+        (dx !== 0 || (e.wheelDeltaY ? Math.abs(e.wheelDeltaY) === Math.abs(e.deltaY * 3) : true))
+      if (trackpad) {
+        setView((prev) => settleRef.current({ zoom: prev.zoom, x: prev.x - dx, y: prev.y - dy }))
+      } else {
+        zoomAt(px, py, Math.exp(-dy * 0.0015))
+      }
+    }
+    // Safari's trackpad pinch. Ignored while fingers are on the screen,
+    // where the pointer handlers already pinch-zoom.
+    let lastScale = null
+    function onGestureStart(e) {
+      if (activePointersRef.current.size > 0) return
+      e.preventDefault()
+      lastScale = 1
+    }
+    function onGestureChange(e) {
+      if (lastScale == null) return
+      e.preventDefault()
+      const rect = el.getBoundingClientRect()
+      zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.scale / lastScale)
+      lastScale = e.scale
+    }
+    function onGestureEnd() {
+      lastScale = null
     }
     el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
+    el.addEventListener('gesturestart', onGestureStart)
+    el.addEventListener('gesturechange', onGestureChange)
+    el.addEventListener('gestureend', onGestureEnd)
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('gesturestart', onGestureStart)
+      el.removeEventListener('gesturechange', onGestureChange)
+      el.removeEventListener('gestureend', onGestureEnd)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -608,7 +659,18 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
     clearTimeout(longPressRef.current)
     const start = panStartRef.current
     panStartRef.current = null
+    const tapped = markerTapRef.current
+    markerTapRef.current = null
     if (!start || start.moved || start.pinged) return
+    if (tapped) {
+      openMarker(tapped)
+      return
+    }
+    if (moving) {
+      const { x, y } = computeFractionalPosition(e.clientX, e.clientY)
+      moveMarkerTo(moving.id, x, y)
+      return
+    }
     if (!placementMode) {
       // Double-tap (or double-click) zooms in on that spot.
       const now = Date.now()
@@ -698,13 +760,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
 
     if (!start.moved) {
       setDrag(null)
-      if (start.kind === 'marker') {
-        const marker = markers.find((m) => m.id === start.id)
-        if (marker) {
-          if (marker.kind === 'zoom') openZoomArea(marker)
-          else setDetailsMarker(marker)
-        }
-      }
       return
     }
 
@@ -719,17 +774,41 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
         setFormError(err.message)
       }
     } else {
-      // Keep showing the drag position until the committed list actually
-      // reflects it (updateItem awaits its own refetch before resolving),
-      // so clearing `drag` here never causes a flash back to the old spot.
-      try {
-        await updateItem(start.id, { x: final.x, y: final.y })
-      } catch (err) {
-        setFormError(err.message)
-      } finally {
-        setDrag(null)
-      }
+      await moveMarkerTo(start.id, final.x, final.y)
     }
+  }
+
+  // A pin opens its details; a zoom area opens its closer map.
+  function openMarker(id) {
+    const marker = markers.find((m) => m.id === id)
+    if (!marker) return
+    if (marker.kind === 'zoom') openZoomArea(marker)
+    else setDetailsMarker(marker)
+  }
+
+  function startMoving(marker) {
+    setDetailsMarker(null)
+    setMoving({ id: marker.id, origin: { x: marker.x, y: marker.y }, moved: false })
+  }
+
+  async function moveMarkerTo(id, x, y) {
+    setMoving((m) => (m && m.id === id ? { ...m, moved: true } : m))
+    // Keep showing the new spot until the committed list reflects it
+    // (updateItem awaits its own refetch), so it never flashes back.
+    setDrag({ kind: 'marker', id, x, y })
+    try {
+      await updateItem(id, { x, y })
+    } catch (err) {
+      setFormError(err.message)
+    } finally {
+      setDrag(null)
+    }
+  }
+
+  function cancelMoving() {
+    const current = moving
+    setMoving(null)
+    if (current?.moved) moveMarkerTo(current.id, current.origin.x, current.origin.y)
   }
 
   function openEditForm(marker) {
@@ -927,15 +1006,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       <div className="world-map-viewer__toolbar">
         <span className="world-map-viewer__title">{map.caption || 'Interactive Map'}</span>
         <div className="world-map-viewer__controls">
-          <button type="button" className="btn btn--text" onClick={() => zoomByFactor(1.25)} aria-label="Zoom in">
-            +
-          </button>
-          <button type="button" className="btn btn--text" onClick={() => zoomByFactor(0.8)} aria-label="Zoom out">
-            &minus;
-          </button>
-          <button type="button" className="btn btn--text" onClick={resetView}>
-            Reset
-          </button>
           <button
             type="button"
             className={`btn btn--text${showList ? ' is-on' : ''}`}
@@ -943,14 +1013,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             aria-pressed={showList}
           >
             <Icon name="rows" /> Pins
-          </button>
-          <button
-            type="button"
-            className={`btn btn--text${showLegend ? ' is-on' : ''}`}
-            onClick={() => toggleLegend()}
-            aria-pressed={showLegend}
-          >
-            <Icon name="map" /> Legend
           </button>
           {trail.length > 0 && (
             <>
@@ -981,6 +1043,11 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           {onRenameSelf && (
             <button type="button" className="btn btn--text" onClick={startEditingZoomArea}>
               Edit This Area
+            </button>
+          )}
+          {onMoveSelf && (
+            <button type="button" className="btn btn--text" onClick={onMoveSelf}>
+              <Icon name="move" /> Move This Area
             </button>
           )}
           {onRenameMap && (
@@ -1140,6 +1207,7 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
               activeQuest && 'is-active-quest',
               flashId === marker.id && 'is-focused',
               hoverId === marker.id && 'is-hovered',
+              moving?.id === marker.id && 'is-moving',
             ]
               .filter(Boolean)
               .join(' ')
@@ -1153,10 +1221,13 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
                   className={classes}
                   {...hoverProps(marker.id)}
                   style={{ transform: `translate(-50%, -100%) scale(${1 / zoom})` }}
-                  onPointerDown={(e) => startDrag(e, 'marker', marker.id, marker.x, marker.y)}
-                  onPointerMove={moveDrag}
-                  onPointerUp={endDrag}
-                  onPointerCancel={endDrag}
+                  onPointerDown={(e) => {
+                    if (moving?.id === marker.id) startDrag(e, 'marker', marker.id, marker.x, marker.y)
+                    else markerTapRef.current = marker.id
+                  }}
+                  onPointerMove={moving?.id === marker.id ? moveDrag : undefined}
+                  onPointerUp={moving?.id === marker.id ? endDrag : undefined}
+                  onPointerCancel={moving?.id === marker.id ? endDrag : undefined}
                   title={marker.title || (isZoom ? 'Zoom area' : categoryOf(marker.category).label)}
                 >
                   <Icon name={isZoom ? 'zoom' : categoryOf(marker.category).icon} />
@@ -1192,9 +1263,44 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           </button>
         )}
 
-        {showLegend && <MapLegend onClose={() => toggleLegend(false)} />}
+        {/* Floating over the map: the legend toggle (top-left) and zoom. */}
+        <button
+          type="button"
+          className={`world-map-viewer__fab world-map-viewer__legend-toggle${showLegend ? ' is-on' : ''}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => toggleLegend()}
+          aria-pressed={showLegend}
+          aria-label={showLegend ? 'Hide legend' : 'Show legend'}
+          title={showLegend ? 'Hide legend' : 'Show legend'}
+        >
+          <Icon name="map" />
+        </button>
+        {showLegend && <MapLegend />}
+        <div className="world-map-viewer__zoom-controls" role="group" aria-label="Zoom" onPointerDown={(e) => e.stopPropagation()}>
+          <button type="button" className="world-map-viewer__fab" onClick={() => zoomByFactor(1.25)} aria-label="Zoom in" title="Zoom in">
+            <Icon name="plus" />
+          </button>
+          <button type="button" className="world-map-viewer__fab" onClick={() => zoomByFactor(0.8)} aria-label="Zoom out" title="Zoom out">
+            <Icon name="minus" />
+          </button>
+          <button type="button" className="world-map-viewer__fab" onClick={resetView} aria-label="Fit the whole map" title="Fit the whole map">
+            <Icon name="maximize" />
+          </button>
+        </div>
 
-        {pings.length === 0 && zoom <= 1.05 && (
+        {moving && (
+          <div className="world-map-viewer__move-bar" role="status" onPointerDown={(e) => e.stopPropagation()}>
+            <span>Drag the pin, or tap its new spot</span>
+            <button type="button" className="btn btn--text" onClick={cancelMoving}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn--primary" onClick={() => setMoving(null)}>
+              Done
+            </button>
+          </div>
+        )}
+
+        {!moving && pings.length === 0 && zoom <= 1.05 && (
           <p className="world-map-viewer__hint">Hold anywhere to ping · double-tap to zoom</p>
         )}
       </div>
@@ -1576,7 +1682,10 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
             })()}
             <div className="world-map-viewer__details-actions">
               <button type="button" className="btn btn--text" onClick={() => openEditForm(detailsMarker)}>
-                Edit
+                <Icon name="edit" /> Edit
+              </button>
+              <button type="button" className="btn btn--text" onClick={() => startMoving(detailsMarker)}>
+                <Icon name="move" /> Move pin
               </button>
               <button type="button" className="btn btn--danger" onClick={() => deleteMarker(detailsMarker)}>
                 Delete
@@ -1594,6 +1703,11 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
           onClose={() => setOpenZoomMap(null)}
           onDeleteSelf={() => removeItem(openZoomMap.sourceMarkerId)}
           onRenameSelf={(title) => updateItem(openZoomMap.sourceMarkerId, { title })}
+          onMoveSelf={() => {
+            const marker = markers.find((m) => m.id === openZoomMap.sourceMarkerId)
+            setOpenZoomMap(null)
+            if (marker) startMoving(marker)
+          }}
           onUpdated={(patch) => setOpenZoomMap((current) => (current ? { ...current, ...patch } : current))}
         />
       )}
