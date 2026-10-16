@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import { listCampaignMembers } from '../lib/campaigns.js'
-import PartyGoals from './PartyGoals.jsx'
+import PartyGoals, { PersonalGoals } from './PartyGoals.jsx'
 import Modal from './Modal.jsx'
 import './PartyTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
@@ -506,6 +506,7 @@ function PartyTab({ campaignId, playerId }) {
   return (
     <section className="party-tab">
       <PartyGoals />
+      <PersonalGoals />
 
       <h3 className="party-tab__section-title">Party Members</h3>
       <div className="party-tab__toolbar">

@@ -1800,3 +1800,35 @@ end $$;
 -- progress ring fills as they're ticked off — and when it was achieved.
 alter table party_goals add column if not exists steps jsonb not null default '[]'::jsonb;
 alter table party_goals add column if not exists completed_at timestamptz;
+
+-- ── Personal goals ───────────────────────────────────────────────────
+-- A player's own goals for their character, shaped like party_goals.
+-- Same trust model as session_notes: the app only ever reads and writes
+-- the logged-in player's rows (player_id), and they're kept out of the
+-- campaign-wide index, so other players never see them.
+create table if not exists personal_goals (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  title text not null,
+  status text not null default 'Active' check (status in ('Active', 'Completed')),
+  notes text not null default '',
+  steps jsonb not null default '[]'::jsonb,
+  completed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists personal_goals_owner_idx on personal_goals (campaign_id, player_id);
+
+alter table personal_goals enable row level security;
+drop policy if exists "anon full access personal_goals" on personal_goals;
+create policy "anon full access personal_goals" on personal_goals for all to anon using (true) with check (true);
+
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') and not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'personal_goals'
+  ) then
+    alter publication supabase_realtime add table public.personal_goals;
+  end if;
+end $$;
