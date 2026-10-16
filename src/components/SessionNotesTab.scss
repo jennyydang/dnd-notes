@@ -426,6 +426,14 @@
 
   @media (max-width: 720px) {
     flex-direction: column;
+    // The card takes the screen's width rather than its content's, so a
+    // wide recording (player, bookmarks) or the highlight reel can't
+    // push the page sideways.
+    align-items: stretch;
+
+    &__card {
+      width: 100%;
+    }
 
     &__side {
       flex: none;

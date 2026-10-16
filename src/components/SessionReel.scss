@@ -1,0 +1,179 @@
+@use '../styles/variables' as *;
+
+.session-reel {
+  // Takes the width it's given; its strip of tiles scrolls rather than
+  // stretching the recap card (which sizes to its content on phones).
+  contain: inline-size;
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem 1.1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0;
+    color: $gold-light;
+    font-size: 1.05rem;
+  }
+
+  &__count {
+    font-family: $font-body;
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+
+  &__play {
+    min-height: 2.5rem;
+  }
+
+  // A sideways strip of moments, snapping one tile at a time.
+  &__list {
+    display: flex;
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0.35rem 0.1rem 0.5rem;
+    overflow-x: auto;
+    list-style: none;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  &__item {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    transition:
+      opacity 0.3s,
+      transform 0.3s;
+
+    &.is-past {
+      opacity: 0.55;
+    }
+
+    &.is-playing {
+      transform: translateY(-3px) scale(1.03);
+    }
+  }
+
+  &__tile {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    width: 13rem;
+    height: 100%;
+    min-height: 8.5rem;
+    padding: 0.75rem 0.8rem;
+    border: 1px solid rgba($gold-dim, 0.45);
+    border-radius: $radius;
+    background: rgba($bg-deep, 0.5);
+    color: $text-light;
+    font: inherit;
+    text-align: left;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.3s;
+
+    @at-root button#{&} {
+      cursor: pointer;
+
+      &:hover {
+        border-color: $gold;
+      }
+    }
+
+    .is-playing & {
+      border-color: $gold-light;
+      box-shadow: 0 0 1rem rgba($gold, 0.45);
+    }
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: 0.2rem;
+    border-radius: 50%;
+    background: rgba($gold, 0.16);
+    color: $gold-light;
+
+    .session-reel__tile--person & {
+      background: rgba($maroon-light, 0.3);
+      color: $maroon-text;
+    }
+
+    .session-reel__tile--place & {
+      background: rgba($green-light, 0.22);
+      color: $green-text;
+    }
+
+    .session-reel__tile--lore & {
+      background: rgba($gray-light, 0.28);
+      color: $gray-text;
+    }
+
+    .session-reel__tile--creature & {
+      background: rgba(#7d5ba6, 0.3);
+      color: #e5d9f7;
+    }
+
+    .session-reel__tile--event & {
+      background: rgba($maroon, 0.35);
+      color: $parchment;
+    }
+  }
+
+  &__verb {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
+  &__time {
+    font-family: $font-display;
+    letter-spacing: 0;
+    color: $gold;
+  }
+
+  &__label {
+    font-family: $font-display;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $parchment;
+    overflow-wrap: anywhere;
+  }
+
+  &__context {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: $text-muted;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-reel__item {
+    transition: none;
+
+    &.is-playing {
+      transform: none;
+    }
+  }
+}

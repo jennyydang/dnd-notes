@@ -42,20 +42,25 @@ export function recapParagraphs(html) {
   if (!html || !/^\s*</.test(html)) {
     return String(html || '')
       .split(/\n\s*\n/)
-      .map((text) => ({ mentions: [], text }))
+      .map((text) => ({ mentions: [], tags: [], text }))
   }
   return html
     .split(/<\/(?:p|li|h[1-6]|blockquote)>/i)
     .map((chunk) => {
       const mentions = []
+      // Every tag, in order (events too): { char, id, label }.
+      const tags = []
       for (const m of chunk.matchAll(/<span\b[^>]*data-type="mention"[^>]*>/gi)) {
-        const type = MENTION_TYPE[attr(m[0], 'data-mention-suggestion-char')]
+        const char = attr(m[0], 'data-mention-suggestion-char')
+        const type = MENTION_TYPE[char]
         const id = attr(m[0], 'data-id')
         if (type && id) mentions.push({ type, id })
+        if (char && id) tags.push({ char, id, label: attr(m[0], 'data-label') || '' })
       }
-      return { mentions, text: decode(chunk.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim() }
+      const text = decode(chunk.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ''))
+      return { mentions, tags, text: text.replace(/\s+/g, ' ').trim() }
     })
-    .filter((p) => p.mentions.length || p.text)
+    .filter((p) => p.tags.length || p.text)
 }
 
 const norm = (s) =>

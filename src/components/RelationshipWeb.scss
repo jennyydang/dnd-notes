@@ -130,6 +130,11 @@
     transition: transform 0.2s;
   }
 
+  &__attitude {
+    fill: none;
+    stroke-width: 2.5;
+  }
+
   &__halo {
     fill: transparent;
     stroke: transparent;

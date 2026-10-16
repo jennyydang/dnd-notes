@@ -3,6 +3,7 @@ import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
 import { WEB_TYPES, buildRelationshipWeb, neighbours } from '../lib/relationshipWeb.js'
 import { bounds, seedPositions, step } from '../lib/forceLayout.js'
 import Icon from './Icon.jsx'
+import { attitudeInfo } from '../lib/attitude.js'
 import './RelationshipWeb.scss'
 
 const MIN_ZOOM = 0.25
@@ -361,6 +362,10 @@ function RelationshipWeb() {
                     onPointerLeave={() => setHovered(null)}
                   >
                     <circle r={r + 5} className="web__halo" />
+                    {/* An NPC's ring shows how they feel about the party. */}
+                    {attitudeInfo(n.entity.raw?.attitude) && n.type === 'npc' && (
+                      <circle r={r + 2.5} className="web__attitude" stroke={attitudeInfo(n.entity.raw.attitude).color} />
+                    )}
                     <circle r={r} fill={WEB_TYPES[n.type].color} className="web__dot-node" />
                     {showLabel && (
                       <text className="web__label" y={r + 13} fontSize={12 / Math.sqrt(view.k)}>
@@ -392,7 +397,14 @@ function RelationshipWeb() {
             <header className="web__panel-head">
               <span className="web__dot web__dot--big" style={{ background: WEB_TYPES[selectedNode.type].color }} aria-hidden="true" />
               <div>
-                <span className="web__panel-kind">{selectedNode.entity.label}</span>
+                <span className="web__panel-kind">
+                  {selectedNode.entity.label}
+                  {selectedNode.type === 'npc' && selectedNode.entity.raw?.attitude && (
+                    <span style={{ color: attitudeInfo(selectedNode.entity.raw.attitude)?.color }}>
+                      {' '}· {selectedNode.entity.raw.attitude}
+                    </span>
+                  )}
+                </span>
                 <h3>{selectedNode.label}</h3>
               </div>
               <button type="button" className="btn web__open" onClick={() => (selectedNode.hub ? nav.goTo('party') : nav.openEntity(selectedNode.type, selectedNode.id))}>
