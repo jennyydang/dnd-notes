@@ -1734,3 +1734,7 @@ create policy "anon full access session-audio bucket"
 
 -- (Recordings briefly had a drawn "doodle"; it was removed.)
 alter table session_notes drop column if exists audio_doodle;
+
+-- A recording's bookmarks: moments marked while recording (or listening
+-- back), as [{ "t": seconds, "label": "Big fight" }].
+alter table session_notes add column if not exists audio_marks jsonb not null default '[]'::jsonb;

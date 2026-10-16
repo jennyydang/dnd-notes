@@ -14,9 +14,10 @@ const BITS_PER_SECOND = 24000
 export const MAX_AUDIO_BYTES = 50 * 1024 * 1024
 const TYPES = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus']
 
-const idle = { status: 'idle', target: null, error: null, pending: null, startedAt: 0, banked: 0 }
+const idle = { status: 'idle', target: null, error: null, pending: null, startedAt: 0, banked: 0, marks: [] }
 // status: idle | recording | paused | saving
-// pending: a finished recording not yet attached ({ blob, seconds, ext })
+// pending: a finished recording not yet attached ({ blob, seconds, ext, marks })
+// marks: bookmarks made while recording ([{ t: seconds, label }])
 let state = idle
 let recorder = null
 let stream = null
@@ -112,7 +113,16 @@ export async function startRecording(target = null) {
   window.addEventListener('beforeunload', warnOnLeave)
   document.addEventListener('visibilitychange', onVisible)
   holdScreenOn()
-  set({ status: 'recording', target, startedAt: Date.now(), banked: 0, pending: null })
+  set({ status: 'recording', target, startedAt: Date.now(), banked: 0, pending: null, marks: [] })
+}
+
+// Bookmarks this moment of the recording ("big fight", "funny bit") — named
+// later on the recap's page. Returns the mark.
+export function addRecordingMark(label = '') {
+  if (state.status !== 'recording' && state.status !== 'paused') return null
+  const mark = { t: elapsedSeconds(), label: label || `Mark ${state.marks.length + 1}` }
+  set({ marks: [...state.marks, mark] })
+  return mark
 }
 
 export function pauseRecording() {
@@ -156,7 +166,7 @@ export function stopRecording() {
         resolve(null)
         return
       }
-      const pending = { blob, seconds, ext }
+      const pending = { blob, seconds, ext, marks: state.marks }
       set({ status: 'idle', pending, banked: 0 })
       if (target) {
         try {
@@ -195,7 +205,7 @@ async function upload(file, ext) {
 }
 
 // Saves an audio file onto a recap, replacing (and deleting) any it had.
-async function saveAudio(sessionId, file, ext, seconds) {
+async function saveAudio(sessionId, file, ext, seconds, marks = []) {
   const { data: before } = await supabase.from('session_notes').select('audio_path').eq('id', sessionId).single()
   const path = await upload(file, ext)
   const { error } = await supabase
@@ -207,6 +217,21 @@ async function saveAudio(sessionId, file, ext, seconds) {
     throw new Error(error.message)
   }
   if (before?.audio_path) await supabase.storage.from(AUDIO_BUCKET).remove([before.audio_path])
+  // Marks go on separately: if they can't be saved (say the audio_marks
+  // column isn't there yet), the recording itself is still kept.
+  try {
+    await saveMarks(sessionId, marks)
+  } catch (err) {
+    console.warn('Recording marks not saved:', err.message)
+  }
+}
+
+// A recap's recording bookmarks, sorted by time.
+export async function saveMarks(sessionId, marks) {
+  const sorted = [...(marks || [])].sort((a, b) => a.t - b.t)
+  const { error } = await supabase.from('session_notes').update({ audio_marks: sorted }).eq('id', sessionId)
+  if (error) throw new Error(error.message)
+  return sorted
 }
 
 // Uploads the finished (pending) recording onto a recap. If it fails,
@@ -217,7 +242,7 @@ export async function attachRecording(sessionId) {
   if (!pending) return
   set({ status: 'saving', error: null, target: sessionId })
   try {
-    await saveAudio(sessionId, pending.blob, pending.ext, pending.seconds)
+    await saveAudio(sessionId, pending.blob, pending.ext, pending.seconds, pending.marks)
     set({ ...idle })
   } catch (err) {
     set({ status: 'idle', error: `The recording didn’t save: ${err.message}` })
@@ -245,6 +270,7 @@ export async function removeAudio(sessionId, path) {
     .eq('id', sessionId)
   if (error) throw new Error(error.message)
   if (path) await supabase.storage.from(AUDIO_BUCKET).remove([path])
+  await saveMarks(sessionId, []).catch(() => {})
 }
 
 // Tries the failed upload again, onto the same recap.

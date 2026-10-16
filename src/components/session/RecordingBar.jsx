@@ -1,5 +1,7 @@
 import { useSessionRecorder } from '../../hooks/useSessionRecorder.js'
+import { useState } from 'react'
 import {
+  addRecordingMark,
   clearRecorderError,
   discardRecording,
   downloadRecording,
@@ -17,6 +19,7 @@ import './RecordingBar.scss'
 // waits here ("ready") until End Session attaches it to the recap.
 function RecordingBar() {
   const rec = useSessionRecorder()
+  const [flash, setFlash] = useState(null) // "Marked 12:03", briefly
   const live = rec.status === 'recording' || rec.status === 'paused'
   const waiting = rec.status === 'idle' && rec.pending && !rec.target
   const discard = () =>
@@ -87,8 +90,28 @@ function RecordingBar() {
     <div className={`recording-bar${rec.status === 'paused' ? ' is-paused' : ''}`} role="status">
       <span className="recording-bar__dot" aria-hidden="true" />
       <span className="recording-bar__text">
-        {rec.status === 'paused' ? 'Paused' : 'Recording'} <strong>{formatDuration(rec.seconds)}</strong>
+        {flash || (
+          <>
+            {rec.status === 'paused' ? 'Paused' : 'Recording'} <strong>{formatDuration(rec.seconds)}</strong>
+          </>
+        )}
       </span>
+      {/* Bookmark this moment, to find it again when listening back. */}
+      <button
+        type="button"
+        className="recording-bar__btn recording-bar__btn--mark"
+        onClick={() => {
+          const mark = addRecordingMark()
+          if (!mark) return
+          setFlash(`Marked ${formatDuration(mark.t)}`)
+          setTimeout(() => setFlash(null), 1500)
+        }}
+        aria-label="Mark this moment"
+        title="Mark this moment"
+      >
+        <Icon name="bookmark" />
+        {rec.marks.length > 0 && <span className="recording-bar__count">{rec.marks.length}</span>}
+      </button>
       <button
         type="button"
         className="recording-bar__btn"

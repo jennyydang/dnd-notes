@@ -3,6 +3,7 @@ import { useSessionRecorder } from '../hooks/useSessionRecorder.js'
 import {
   AUDIO_BUCKET,
   formatDuration,
+  addRecordingMark,
   recordingSupported,
   removeAudio,
   startRecording,
@@ -12,6 +13,7 @@ import {
 import { getPublicUrl } from '../lib/storage.js'
 import Icon from './Icon.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
+import RecordingMarks from './RecordingMarks.jsx'
 
 // A session recap's audio: play it, or record / upload one. Recording
 // runs in the shared recorder, so it keeps going on other tabs (the
@@ -25,6 +27,8 @@ function SessionAudio({ session, onChanged }) {
   const mine = rec.target === session.id
   const live = mine && (rec.status === 'recording' || rec.status === 'paused')
   const recorderBusy = rec.status !== 'idle'
+  const player = useRef(null)
+  const [position, setPosition] = useState(0)
 
   async function run(task) {
     setBusy(true)
@@ -63,6 +67,14 @@ function SessionAudio({ session, onChanged }) {
         <div className="session-audio__live" role="status">
           <span className={`session-audio__dot${rec.status === 'paused' ? ' is-paused' : ''}`} aria-hidden="true" />
           {rec.status === 'paused' ? 'Paused' : 'Recording'} · {formatDuration(rec.seconds)}
+          {rec.marks.length > 0 && (
+            <span className="session-audio__marks-count">
+              <Icon name="bookmark" /> {rec.marks.length}
+            </span>
+          )}
+          <button type="button" className="btn" onClick={() => addRecordingMark()}>
+            <Icon name="bookmark" /> Mark
+          </button>
           <button type="button" className="btn btn--primary" onClick={() => stopRecording().then(() => onChanged?.())}>
             <Icon name="stop" /> Stop &amp; save
           </button>
@@ -70,7 +82,25 @@ function SessionAudio({ session, onChanged }) {
       ) : mine && rec.status === 'saving' ? (
         <p className="session-audio__hint">Saving the recording…</p>
       ) : src ? (
-        <AudioPlayer key={src} src={src} seconds={session.audioSeconds} label={`${session.title || 'Session'} recording`} />
+        <>
+          <AudioPlayer
+            key={src}
+            src={src}
+            seconds={session.audioSeconds}
+            label={`${session.title || 'Session'} recording`}
+            marks={session.audioMarks}
+            controlRef={player}
+            onTime={setPosition}
+          />
+          <RecordingMarks
+            key={`${src}-${session.audioMarks.length}`}
+            sessionId={session.id}
+            marks={session.audioMarks}
+            player={player}
+            position={position}
+            onSaved={onChanged}
+          />
+        </>
       ) : (
         <p className="session-audio__hint">No recording yet. Record the table as you play, or upload one.</p>
       )}
