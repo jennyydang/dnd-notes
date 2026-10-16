@@ -29,7 +29,7 @@ import { PartyPresence, SyncStatus } from './LiveStatus.jsx'
 import SessionDock from './session/SessionDock.jsx'
 import RecordingBar from './session/RecordingBar.jsx'
 import TurnAlert from './session/TurnAlert.jsx'
-import { PollPopup, PollsPanel } from './session/Polls.jsx'
+import { PollPopup } from './session/Polls.jsx'
 import RelationshipWeb from './RelationshipWeb.jsx'
 import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
@@ -104,6 +104,8 @@ const DM_AREAS = [
   { id: 'dm-maps', label: 'Maps', icon: 'map', tabs: ['dm-maps'] },
   // The shared initiative tracker, so the DM can run turn order.
   { id: 'dm-combat', label: 'Combat', icon: 'quest', tabs: ['dm-combat'] },
+  // Party votes, plus the shared calculators and trackers.
+  { id: 'dm-tools', label: 'Tools', icon: 'tools', tabs: ['tools'] },
 ]
 
 const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
@@ -354,7 +356,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           <RecordingBar />
           {roleReady && <TurnAlert />}
           {/* A new party vote pops up wherever you are (Session Mode shows it in place). */}
-          {playerId && roleReady && <PollPopup onSessionTab={knownTab === 'session' || knownTab === 'dm-combat'} />}
+          {playerId && roleReady && <PollPopup onSessionTab={knownTab === (isDm ? 'tools' : 'session')} />}
           {/* Combat theme for everyone; the shake-and-roll alert is for players. */}
           {roleReady && <CombatMode showAlert={Boolean(playerId) && !isDm} />}
           {/* Players see the DM's live reveals; the DM is the one sending them. */}
@@ -462,11 +464,10 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {isDm && knownTab === 'dm-combat' && (
                 <div className="campaign-view__combat">
                   <InitiativeTracker />
-                  <PollsPanel />
                   <PartyLevelUp />
                 </div>
               )}
-              {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}
+              {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} showPolls={isDm} />}
               {activeCustomTab && (
                 <CustomTab
                   key={activeCustomTab.id}
