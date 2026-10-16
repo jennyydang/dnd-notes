@@ -1064,33 +1064,6 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
       <div className="world-map-viewer__toolbar">
         <span className="world-map-viewer__title">{map.caption || 'Interactive Map'}</span>
         <div className="world-map-viewer__controls">
-          {trail.length > 0 && (
-            <>
-              <button
-                type="button"
-                className={`btn btn--text${showTrail ? ' is-on' : ''}`}
-                onClick={() => setShowTrail((v) => !v)}
-                aria-pressed={showTrail}
-              >
-                <Icon name="trend" /> Journey
-              </button>
-              {showTrail && trail.length > 1 && (
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={undoLastStop}
-                  title={`Back to ${trail[trail.length - 2].label}`}
-                >
-                  <Icon name="undo" /> Undo last move
-                </button>
-              )}
-              {showTrail && (
-                <button type="button" className="btn btn--text" onClick={clearTrail}>
-                  Clear trail
-                </button>
-              )}
-            </>
-          )}
           {pin.x == null && (
             <button
               type="button"
@@ -1326,7 +1299,44 @@ function WorldMapViewer({ map, campaignId, focusMarkerId, onClose, backLabel, on
         >
           <Icon name="map" />
         </button>
-        {showLegend && <MapLegend />}
+        {showLegend && (
+          <MapLegend>
+            {/* The journey: show it, step it back, or clear it. */}
+            {trail.length > 0 && (
+              <div className="map-legend__journey">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showTrail}
+                  className={`map-legend__switch${showTrail ? ' is-on' : ''}`}
+                  onClick={() => setShowTrail((v) => !v)}
+                >
+                  <span className="map-legend__switch-track" aria-hidden="true">
+                    <span className="map-legend__switch-thumb" />
+                  </span>
+                  Show journey
+                </button>
+                {showTrail && (
+                  <div className="map-legend__journey-actions">
+                    {trail.length > 1 && (
+                      <button
+                        type="button"
+                        className="btn btn--text"
+                        onClick={undoLastStop}
+                        title={`Back to ${trail[trail.length - 2].label}`}
+                      >
+                        <Icon name="undo" /> Undo last move
+                      </button>
+                    )}
+                    <button type="button" className="btn btn--text" onClick={clearTrail}>
+                      <Icon name="trash" /> Clear trail
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </MapLegend>
+        )}
         <div className="world-map-viewer__zoom-controls" role="group" aria-label="Zoom" onPointerDown={(e) => e.stopPropagation()}>
           <button type="button" className="world-map-viewer__fab" onClick={() => zoomByFactor(1.25)} aria-label="Zoom in" title="Zoom in">
             <Icon name="plus" />
