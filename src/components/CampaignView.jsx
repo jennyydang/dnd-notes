@@ -30,6 +30,7 @@ import SessionDock from './session/SessionDock.jsx'
 import RecordingBar from './session/RecordingBar.jsx'
 import TurnAlert from './session/TurnAlert.jsx'
 import { PollPopup, PollsPanel } from './session/Polls.jsx'
+import RelationshipWeb from './RelationshipWeb.jsx'
 import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
 import DownedPulse from './session/DownedPulse.jsx'
@@ -56,6 +57,7 @@ const TAB_DEFS = {
   tools: { label: 'Tools', icon: 'tools' },
   sessions: { label: 'Session Notes', icon: 'book' },
   timeline: { label: 'Timeline', icon: 'hourglass' },
+  web: { label: 'Connections', icon: 'network' },
   npcs: { label: 'NPCs', icon: 'users' },
   creatures: { label: 'Monsters & Creatures', icon: 'monster' },
   art: { label: 'Art', icon: 'image' },
@@ -82,7 +84,7 @@ const AREAS = [
     id: 'journal',
     label: 'Journal',
     icon: 'book',
-    tabs: ['sessions', 'timeline', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
+    tabs: ['sessions', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
     custom: true,
   },
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
@@ -410,6 +412,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                 />
               )}
               {knownTab === 'timeline' && <TimelineTab campaignId={campaignId} playerId={playerId} />}
+              {knownTab === 'web' && <RelationshipWeb />}
               {knownTab === 'spells' && <SpellsTab campaignId={campaignId} playerId={playerId} />}
               {knownTab === 'party' && <PartyTab campaignId={campaignId} playerId={playerId} />}
               {knownTab === 'maps' && <MapsTab campaignId={campaignId} />}
