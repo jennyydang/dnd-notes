@@ -1,3 +1,4 @@
+import { noteToRecapHtml } from './noteTags.js'
 // Live-session helpers: the "session in progress" marker, per-device UI
 // state kept in localStorage (never user content — that lives in Supabase),
 // and turning quick notes into a session recap without retyping them.
@@ -71,13 +72,6 @@ export function todayIso(date = new Date()) {
   return new Date(date.getTime() - offset).toISOString().slice(0, 10)
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
-
 // Oldest first, one bullet per note, prefixed with its time — the same
 // HTML shape the recap editor produces, so it opens ready to edit.
 export function quickNotesToRecapHtml(notes) {
@@ -86,7 +80,8 @@ export function quickNotesToRecapHtml(notes) {
   const items = sorted
     .map((note) => {
       const time = formatTime(note.createdAt)
-      const lines = escapeHtml(note.content.trim()).split('\n').join('<br>')
+      // Tags in a note (e.g. an NPC added from a DM share) become real recap tags.
+      const lines = noteToRecapHtml(note.content.trim()).split('\n').join('<br>')
       return `<li><p>${time ? `<strong>${time}</strong> — ` : ''}${lines}</p></li>`
     })
     .join('')

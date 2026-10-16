@@ -17,6 +17,7 @@ import Icon from './Icon.jsx'
 import './HomeHub.scss'
 import AnimatedNumber from './AnimatedNumber.jsx'
 import { GoalStrip } from './PartyGoals.jsx'
+import { noteTagsToPlain } from '../lib/noteTags.js'
 
 const QUICK_ACTIONS = [
   { type: 'npc', label: 'NPC', icon: 'user' },
@@ -396,7 +397,7 @@ function HomeHub({ campaignName }) {
                     <MiniCard
                       icon="edit"
                       type="Quick note"
-                      title={n.content}
+                      title={noteTagsToPlain(n.content)}
                       meta={formatDateTime(n.createdAt)}
                       onClick={() => nav.openEntity('note', n.id)}
                     />

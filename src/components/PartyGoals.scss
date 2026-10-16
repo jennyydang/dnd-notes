@@ -19,6 +19,15 @@
     color: $gold-light;
     font-size: 1.1rem;
   }
+
+  &__note {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
 }
 
 .goal-form {

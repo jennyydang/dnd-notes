@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
+import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import {
   goalFromRow,
   goalProgress,
@@ -194,10 +195,12 @@ function GoalCard({ goal, onEdit, onSave, onToggleDone }) {
   )
 }
 
-// What the party is working towards, as task cards: tick a goal off when
-// it's done, and break it into subtasks.
-function PartyGoals() {
-  const { active, achieved, table, loading, error } = usePartyGoals()
+// A board of goals as task cards: tick a goal off when it's done, and
+// break it into subtasks. Used for the party's shared goals and for each
+// player's private ones.
+function GoalBoard({ table, kind, title, addLabel, emptyText, note }) {
+  const { active, achieved } = sortGoals(table.items.map(goalFromRow))
+  const { loading, error } = table
   const [editing, setEditing] = useState(null) // goal | 'new' | null
   const [form, setForm] = useState({ title: '', notes: '', steps: '' })
   const [formError, setFormError] = useState(null)
@@ -259,11 +262,14 @@ function PartyGoals() {
   const editingGoal = editing && editing !== 'new' ? goals.find((g) => g.id === editing.id) : null
 
   return (
-    <section className="party-goals">
+    <section className={`party-goals party-goals--${kind}`}>
       <div className="party-goals__head">
-        <h3 className="party-goals__title">Party Goals</h3>
+        <div>
+          <h3 className="party-goals__title">{title}</h3>
+          {note && <p className="party-goals__note">{note}</p>}
+        </div>
         <button type="button" className="btn btn--primary" onClick={() => open('new')}>
-          + Add Party Goal
+          + {addLabel}
         </button>
       </div>
 
@@ -271,10 +277,7 @@ function PartyGoals() {
       {(error || actionError) && <p className="empty-state empty-state--error">{error || actionError}</p>}
 
       {!loading && !error && goals.length === 0 && (
-        <p className="empty-state">
-          No party goals yet. These are things the party as a whole wants — a ship, a keep, revenge — separate from
-          quests handed to you by NPCs. Break each into subtasks and tick them off.
-        </p>
+        <p className="empty-state">{emptyText}</p>
       )}
 
       {goals.length > 0 && (
@@ -292,12 +295,12 @@ function PartyGoals() {
       )}
 
       {editing && (
-        <Modal onClose={() => setEditing(null)} label={editing === 'new' ? 'Add Party Goal' : 'Edit Party Goal'}>
+        <Modal onClose={() => setEditing(null)} label={editing === 'new' ? addLabel : `Edit ${addLabel.replace(/^Add /, '')}`}>
           <form className="goal-form panel" onSubmit={submit}>
             <div className="field">
-              <label htmlFor="goal-title">Goal</label>
+              <label htmlFor={`goal-title-${kind}`}>Goal</label>
               <input
-                id="goal-title"
+                id={`goal-title-${kind}`}
                 type="text"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -307,9 +310,9 @@ function PartyGoals() {
             </div>
             {editing === 'new' && (
               <div className="field">
-                <label htmlFor="goal-steps">Subtasks (one per line)</label>
+                <label htmlFor={`goal-steps-${kind}`}>Subtasks (one per line)</label>
                 <textarea
-                  id="goal-steps"
+                  id={`goal-steps-${kind}`}
                   rows={4}
                   value={form.steps}
                   onChange={(e) => setForm({ ...form, steps: e.target.value })}
@@ -318,9 +321,9 @@ function PartyGoals() {
               </div>
             )}
             <div className="field">
-              <label htmlFor="goal-notes">Notes</label>
+              <label htmlFor={`goal-notes-${kind}`}>Notes</label>
               <RichTextEditor
-                id="goal-notes"
+                id={`goal-notes-${kind}`}
                 value={form.notes}
                 onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
                 ariaLabel="Notes"
@@ -338,7 +341,7 @@ function PartyGoals() {
                 Cancel
               </button>
               <button type="submit" className="btn btn--primary">
-                {editing === 'new' ? 'Add Party Goal' : 'Save Changes'}
+                {editing === 'new' ? addLabel : 'Save Changes'}
               </button>
             </div>
           </form>
@@ -383,6 +386,47 @@ export function GoalStrip() {
         })}
       </ul>
     </section>
+  )
+}
+
+// What the party as a whole wants, shared with everyone in the campaign.
+function PartyGoals() {
+  const { tables } = useCampaignData()
+  return (
+    <GoalBoard
+      table={tables.goal}
+      kind="party"
+      title="Party Goals"
+      addLabel="Add Party Goal"
+      emptyText="No party goals yet. These are things the party as a whole wants — a ship, a keep, revenge — separate from quests handed to you by NPCs. Break each into subtasks and tick them off."
+    />
+  )
+}
+
+const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
+
+// The logged-in player's own goals. Only ever loaded for that player (by
+// player_id), and kept out of the campaign index, so no one else sees
+// them in the Party tab, search or the Connections web.
+export function PersonalGoals() {
+  const { campaignId, playerId } = useCampaignData()
+  const table = useSupabaseTable('personal_goals', {
+    filters: { campaign_id: campaignId, player_id: playerId || NO_PLAYER },
+  })
+  if (!playerId) return null
+  return (
+    <GoalBoard
+      table={table}
+      kind="personal"
+      title="My Goals"
+      addLabel="Add My Goal"
+      note={
+        <>
+          <Icon name="lock" /> Only you can see these.
+        </>
+      }
+      emptyText="Nothing here yet. What does your character want for themselves — a debt repaid, a rival beaten, a secret kept? Only you can see these goals."
+    />
   )
 }
 

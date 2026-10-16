@@ -3,7 +3,7 @@ import { entityKey } from './entities.js'
 
 // Session-note tag groups (lib/tags.js) → entity types. Events have no
 // row of their own, so they aren't linkable entries.
-const MENTION_TYPES = { person: 'npc', place: 'place', lore: 'lore', loot: 'loot' }
+const MENTION_TYPES = { person: 'npc', place: 'place', lore: 'lore', loot: 'loot', creature: 'creature' }
 
 // Resolves a mention to an entity. Falls back to searching every type by
 // id, since older "#" tags pointed at Lore entries before Places existed.

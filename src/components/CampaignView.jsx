@@ -31,6 +31,7 @@ import RecordingBar from './session/RecordingBar.jsx'
 import TurnAlert from './session/TurnAlert.jsx'
 import { PollPopup } from './session/Polls.jsx'
 import RelationshipWeb from './RelationshipWeb.jsx'
+import DmOverview from './DmOverview.jsx'
 import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
 import DownedPulse from './session/DownedPulse.jsx'
@@ -74,6 +75,7 @@ const TAB_DEFS = {
   'dm-maps': { label: 'Maps', icon: 'map' },
   'dm-creatures': { label: 'Monsters', icon: 'monster' },
   'dm-combat': { label: 'Combat', icon: 'quest' },
+  'dm-overview': { label: 'Party Overview', icon: 'compass' },
   'dm-players': { label: 'Players', icon: 'shield' },
 }
 
@@ -90,12 +92,14 @@ const AREAS = [
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
   { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep'] },
   // The admin's view of the DM tools (DMs themselves get DM_AREAS).
-  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-players', 'dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
+  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-overview', 'dm-players', 'dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
 
 // A DM's whole view of the campaign: just their private NPCs, monsters, art and maps,
 // each with a Share button that notifies the players.
 const DM_AREAS = [
+  // What the party has pieced together, so the DM can follow along.
+  { id: 'dm-overview', label: 'Overview', icon: 'compass', tabs: ['dm-overview'] },
   // Who's in the campaign, their characters, and sign-up invite links.
   { id: 'dm-players', label: 'Players', icon: 'shield', tabs: ['dm-players'] },
   { id: 'dm-npcs', label: 'NPCs', icon: 'users', tabs: ['dm-npcs'] },
@@ -181,7 +185,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   // player layout flash first.
   const roleReady = !playerId || !roleLoading
   const areas = dmView ? DM_AREAS : AREAS.filter((area) => !area.dmOnly || isDm)
-  const homeTab = dmView ? 'dm-npcs' : 'home'
+  const homeTab = dmView ? 'dm-overview' : 'home'
 
   const areaTabs = (area) => [
     ...area.tabs.map((id) => ({ id, ...TAB_DEFS[id] })),
@@ -460,6 +464,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {isDm && knownTab === 'dm-art' && <ArtGallery campaignId={campaignId} manage />}
               {isDm && knownTab === 'dm-maps' && <DmMapsTab campaignId={campaignId} />}
               {isDm && knownTab === 'dm-creatures' && <DmCreaturesTab campaignId={campaignId} />}
+              {isDm && knownTab === 'dm-overview' && <DmOverview />}
               {isDm && knownTab === 'dm-players' && <DmPlayersTab campaignName={campaignName} />}
               {isDm && knownTab === 'dm-combat' && (
                 <div className="campaign-view__combat">

@@ -73,6 +73,7 @@ const MENTION_SECTIONS = [
   { group: 'place', title: 'Places Visited', tabLabel: 'Maps' },
   { group: 'lore', title: 'Lore', tabLabel: 'Lore' },
   { group: 'loot', title: 'Loot Found', tabLabel: 'Loot' },
+  { group: 'creature', title: 'Monsters Faced', tabLabel: 'Monsters & Creatures' },
   { group: 'event', title: 'Events', tabLabel: 'Timeline' },
 ]
 

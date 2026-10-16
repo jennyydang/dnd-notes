@@ -1,3 +1,4 @@
+import { noteTagsToPlain } from './noteTags.js'
 import { notesToPlainText } from './richNotes.js'
 
 // One registry describing every kind of campaign entry the app can search,
@@ -108,9 +109,9 @@ export const ENTITY_TYPES = {
     tab: 'session',
     scope: 'player',
     normalize: (r) => ({
-      title: firstLine(r.content),
+      title: firstLine(noteTagsToPlain(r.content)),
       subtitle: '',
-      body: plain(r.content),
+      body: plain(noteTagsToPlain(r.content)),
       tags: r.converted_to ? ['converted'] : [],
     }),
   },
