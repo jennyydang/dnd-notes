@@ -1,5 +1,4 @@
 import { supabase } from './supabaseClient.js'
-import { doodleFromAudio, toDoodle, trackLevels } from './audioDoodle.js'
 
 // One audio recording at a time, kept outside React so it carries on
 // while the player moves between tabs (a component's own MediaRecorder
@@ -23,7 +22,6 @@ let recorder = null
 let stream = null
 let chunks = []
 let wakeLock = null
-let levels = null // the microphone's loudness as it records (for the doodle)
 const listeners = new Set()
 
 function set(patch) {
@@ -99,11 +97,6 @@ export async function startRecording(target = null) {
   recorder.ondataavailable = (e) => e.data?.size && chunks.push(e.data)
   // Chunks every 10s, so a long recording isn't one huge buffer at stop.
   recorder.start(10000)
-  try {
-    levels = trackLevels(stream)
-  } catch {
-    levels = null // no doodle, but the recording still works
-  }
   window.addEventListener('beforeunload', warnOnLeave)
   document.addEventListener('visibilitychange', onVisible)
   holdScreenOn()
@@ -113,20 +106,16 @@ export async function startRecording(target = null) {
 export function pauseRecording() {
   if (state.status !== 'recording') return
   recorder.pause()
-  levels?.pause()
   set({ status: 'paused', banked: state.banked + (Date.now() - state.startedAt) })
 }
 
 export function resumeRecording() {
   if (state.status !== 'paused') return
   recorder.resume()
-  levels?.resume()
   set({ status: 'recording', startedAt: Date.now() })
 }
 
 function release() {
-  levels?.stop()
-  levels = null
   stream?.getTracks().forEach((t) => t.stop())
   stream = null
   recorder = null
@@ -149,11 +138,8 @@ export function stopRecording() {
       const type = recorder.mimeType || chunks[0]?.type || 'audio/webm'
       const blob = new Blob(chunks, { type })
       const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm'
-      let doodle = levels ? toDoodle(levels.stop()) : null
       release()
-      // No live levels (or only silence heard): draw it from the file.
-      if (!doodle) doodle = await doodleFromAudio(blob, seconds).catch(() => null)
-      const pending = { blob, seconds, ext, doodle }
+      const pending = { blob, seconds, ext }
       set({ status: 'idle', pending, banked: 0 })
       if (target) {
         try {
@@ -192,12 +178,12 @@ async function upload(file, ext) {
 }
 
 // Saves an audio file onto a recap, replacing (and deleting) any it had.
-async function saveAudio(sessionId, file, ext, seconds, doodle) {
+async function saveAudio(sessionId, file, ext, seconds) {
   const { data: before } = await supabase.from('session_notes').select('audio_path').eq('id', sessionId).single()
   const path = await upload(file, ext)
   const { error } = await supabase
     .from('session_notes')
-    .update({ audio_path: path, audio_seconds: seconds ?? null, audio_doodle: doodle ?? null })
+    .update({ audio_path: path, audio_seconds: seconds ?? null })
     .eq('id', sessionId)
   if (error) {
     await supabase.storage.from(AUDIO_BUCKET).remove([path])
@@ -212,7 +198,7 @@ export async function attachRecording(sessionId) {
   if (!pending) return
   set({ status: 'saving', error: null })
   try {
-    await saveAudio(sessionId, pending.blob, pending.ext, pending.seconds, pending.doodle)
+    await saveAudio(sessionId, pending.blob, pending.ext, pending.seconds)
     set({ ...idle })
   } catch (err) {
     set({ status: 'idle', error: `The recording didn’t save: ${err.message}` })
@@ -230,28 +216,13 @@ export async function uploadAudioFile(sessionId, file) {
     audio.onerror = () => resolve(null)
     audio.src = URL.createObjectURL(file)
   })
-  let doodle = null
-  try {
-    doodle = await doodleFromAudio(file, seconds)
-  } catch {
-    doodle = null // a format the browser can't decode: no doodle
-  }
-  await saveAudio(sessionId, file, ext, seconds, doodle)
-}
-
-// Draws (and saves) a doodle for a recording made before doodles.
-export async function saveDoodle(sessionId, audioUrl, seconds) {
-  const doodle = await doodleFromAudio(audioUrl, seconds)
-  if (!doodle) return null
-  const { error } = await supabase.from('session_notes').update({ audio_doodle: doodle }).eq('id', sessionId)
-  if (error) throw new Error(error.message)
-  return doodle
+  await saveAudio(sessionId, file, ext, seconds)
 }
 
 export async function removeAudio(sessionId, path) {
   const { error } = await supabase
     .from('session_notes')
-    .update({ audio_path: null, audio_seconds: null, audio_doodle: null })
+    .update({ audio_path: null, audio_seconds: null })
     .eq('id', sessionId)
   if (error) throw new Error(error.message)
   if (path) await supabase.storage.from(AUDIO_BUCKET).remove([path])

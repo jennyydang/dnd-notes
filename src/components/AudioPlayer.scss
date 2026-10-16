@@ -1,0 +1,125 @@
+@use '../styles/variables' as *;
+
+.audio-player {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem 0.45rem 0.45rem;
+  border: 1px solid rgba($gold-dim, 0.45);
+  border-radius: 999px;
+  background: rgba($bg-deep, 0.6);
+
+  &__play {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(180deg, $gold, #b48f1f);
+    color: #1c140e;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      transform: scale(1.06);
+    }
+
+    svg {
+      width: 1.05rem;
+      height: 1.05rem;
+    }
+  }
+
+  // A thin gold track that fills as it plays.
+  &__seek {
+    flex: 1;
+    min-width: 3rem;
+    height: 1.6rem;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+
+    &::-webkit-slider-runnable-track {
+      height: 0.3rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, $gold-light var(--played, 0%), rgba($gold-dim, 0.45) var(--played, 0%));
+    }
+
+    &::-moz-range-track {
+      height: 0.3rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, $gold-light var(--played, 0%), rgba($gold-dim, 0.45) var(--played, 0%));
+    }
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 0.85rem;
+      height: 0.85rem;
+      margin-top: -0.275rem;
+      border: none;
+      border-radius: 50%;
+      background: $parchment;
+      box-shadow: 0 0 0 3px rgba($gold, 0.3);
+    }
+
+    &::-moz-range-thumb {
+      width: 0.85rem;
+      height: 0.85rem;
+      border: none;
+      border-radius: 50%;
+      background: $parchment;
+    }
+  }
+
+  &__time {
+    flex: 0 0 auto;
+    color: $text-muted;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__speed {
+    flex: 0 0 auto;
+    min-width: 2.4rem;
+    padding: 0.2rem 0.45rem;
+    border: 1px solid rgba($gold-dim, 0.6);
+    border-radius: 999px;
+    background: transparent;
+    color: $gold-light;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba($gold, 0.12);
+    }
+  }
+
+  &__error {
+    flex-basis: 100%;
+    margin: 0 0 0 0.5rem;
+    color: #f08a7e;
+    font-size: 0.8rem;
+  }
+
+  // On a session card: a little smaller.
+  &--compact {
+    flex-wrap: nowrap;
+    gap: 0.45rem;
+    padding: 0.3rem 0.5rem 0.3rem 0.3rem;
+
+    .audio-player__play {
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+}

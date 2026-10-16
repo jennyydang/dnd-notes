@@ -1,18 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useSessionRecorder } from '../hooks/useSessionRecorder.js'
 import {
   AUDIO_BUCKET,
   formatDuration,
   recordingSupported,
   removeAudio,
-  saveDoodle,
   startRecording,
   stopRecording,
   uploadAudioFile,
 } from '../lib/sessionRecorder.js'
 import { getPublicUrl } from '../lib/storage.js'
 import Icon from './Icon.jsx'
-import AudioDoodle from './AudioDoodle.jsx'
+import AudioPlayer from './AudioPlayer.jsx'
 
 // A session recap's audio: play it, or record / upload one. Recording
 // runs in the shared recorder, so it keeps going on other tabs (the
@@ -26,32 +25,6 @@ function SessionAudio({ session, onChanged }) {
   const mine = rec.target === session.id
   const live = mine && (rec.status === 'recording' || rec.status === 'paused')
   const recorderBusy = rec.status !== 'idle'
-  const audioRef = useRef(null)
-  const [progress, setProgress] = useState(0)
-  const [drawing, setDrawing] = useState(false)
-
-  // A recording from before doodles: draw its doodle once, from the file.
-  const needsDoodle = Boolean(src && !session.audioDoodle)
-  useEffect(() => {
-    if (!needsDoodle) return undefined
-    let cancelled = false
-    setDrawing(true)
-    saveDoodle(session.id, src, session.audioSeconds)
-      .then((doodle) => !cancelled && doodle && onChanged?.())
-      .catch(() => {}) // can't decode it here: just no doodle
-      .finally(() => !cancelled && setDrawing(false))
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needsDoodle, session.id, src])
-
-  function seek(fraction) {
-    const audio = audioRef.current
-    if (!audio || !Number.isFinite(audio.duration)) return
-    audio.currentTime = fraction * audio.duration
-    setProgress(fraction)
-  }
 
   async function run(task) {
     setBusy(true)
@@ -97,29 +70,7 @@ function SessionAudio({ session, onChanged }) {
       ) : mine && rec.status === 'saving' ? (
         <p className="session-audio__hint">Saving the recording…</p>
       ) : src ? (
-        <>
-          {session.audioDoodle ? (
-            <AudioDoodle
-              doodle={session.audioDoodle}
-              progress={progress}
-              onSeek={seek}
-              label="Recording — tap to jump to that moment"
-            />
-          ) : (
-            drawing && <p className="session-audio__hint">Drawing its doodle…</p>
-          )}
-          <audio
-            ref={audioRef}
-            className="session-audio__player"
-            src={src}
-            controls
-            preload="metadata"
-            onTimeUpdate={(e) => {
-              const a = e.currentTarget
-              if (Number.isFinite(a.duration) && a.duration > 0) setProgress(a.currentTime / a.duration)
-            }}
-          />
-        </>
+        <AudioPlayer key={src} src={src} seconds={session.audioSeconds} label={`${session.title || 'Session'} recording`} />
       ) : (
         <p className="session-audio__hint">No recording yet. Record the table as you play, or upload one.</p>
       )}

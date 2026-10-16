@@ -129,24 +129,6 @@
     font-style: italic;
   }
 
-  // A small "has a recording" tag (with its length).
-  &__audio {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.1rem 0.5rem;
-    border: 1px solid rgba($gold-dim, 0.6);
-    border-radius: 999px;
-    color: $gold-light;
-    font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-
-    svg {
-      width: 0.85rem;
-      height: 0.85rem;
-    }
-  }
-
   &__notes {
     flex: 0 1 auto;
     min-height: 0;
@@ -378,12 +360,6 @@
     font-family: inherit;
     font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
-  }
-
-  &__player {
-    width: 100%;
-    height: 2.5rem;
-    color-scheme: dark;
   }
 
   &__hint {
