@@ -49,6 +49,30 @@ const ROUTES = [
   },
 ]
 
+// The app's own marks: the party's pin and the trail it leaves.
+const PARTY = [
+  {
+    label: 'The party',
+    swatch: (
+      <g transform="translate(10 1.5) scale(0.7)" fill="none" stroke="#e8c766" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+        <circle cx="12" cy="10" r="3" />
+      </g>
+    ),
+  },
+  {
+    label: 'Party journey',
+    note: 'each stop, by session',
+    swatch: (
+      <g>
+        <line x1="5" y1="13" x2="27" y2="7" stroke="#e8c766" strokeWidth="2" strokeLinecap="round" strokeDasharray="0.5 4" />
+        <circle cx="5" cy="13" r="2.6" fill="#e8c766" stroke="#171210" strokeWidth="1.2" />
+        <circle cx="27" cy="7" r="2.6" fill="#e8c766" stroke="#171210" strokeWidth="1.2" />
+      </g>
+    ),
+  },
+]
+
 function Row({ item }) {
   return (
     <li className="map-legend__row">
@@ -63,7 +87,8 @@ function Row({ item }) {
   )
 }
 
-export default function MapLegend() {
+// `children`: controls shown under the key (the journey toggle).
+export default function MapLegend({ children }) {
   return (
     <section className="map-legend" aria-label="Map legend" onPointerDown={(e) => e.stopPropagation()}>
       <header className="map-legend__head">
@@ -81,6 +106,13 @@ export default function MapLegend() {
           <Row key={item.label} item={item} />
         ))}
       </ul>
+      <h5>Party</h5>
+      <ul>
+        {PARTY.map((item) => (
+          <Row key={item.label} item={item} />
+        ))}
+      </ul>
+      {children}
     </section>
   )
 }

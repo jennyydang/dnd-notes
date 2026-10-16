@@ -907,9 +907,14 @@
     left: 50%;
     bottom: calc(0.75rem + env(safe-area-inset-bottom));
 
-    // Clear of the Pins tab on the map's bottom edge.
+    // Clear of the Pins tab on the map's bottom edge, and out of the way
+    // of an open legend (which fills most of a phone's map).
     @media (max-width: 720px) {
       bottom: 2.6rem;
+
+      .map-legend ~ & {
+        display: none;
+      }
     }
 
     transform: translateX(-50%);
@@ -1303,6 +1308,78 @@
     height: 1.6rem;
     border-radius: 4px;
     background: #c9d4ec;
+  }
+
+  // Under the key: the party's journey, on a switch, with its actions.
+  &__journey {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba($gold-dim, 0.35);
+  }
+
+  &__switch {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.2rem 0;
+    border: none;
+    background: none;
+    color: $text-light;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  &__switch-track {
+    position: relative;
+    flex: 0 0 auto;
+    width: 2.3rem;
+    height: 1.3rem;
+    border: 1px solid rgba($gold-dim, 0.8);
+    border-radius: 999px;
+    background: rgba($bg-panel, 0.9);
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease;
+
+    .is-on & {
+      border-color: $gold;
+      background: rgba($gold, 0.35);
+    }
+  }
+
+  &__switch-thumb {
+    position: absolute;
+    top: 50%;
+    left: 0.15rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    background: $text-muted;
+    transform: translateY(-50%);
+    transition:
+      transform 0.2s cubic-bezier(0.3, 0.7, 0.2, 1),
+      background 0.2s ease;
+
+    .is-on & {
+      background: $gold-light;
+      transform: translate(1rem, -50%);
+    }
+  }
+
+  &__journey-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+
+    .btn {
+      min-height: 0;
+      padding: 0.3rem 0.5rem;
+      font-size: 0.78rem;
+    }
   }
 
   // Phones: the map is short, so a compact two-column key.
