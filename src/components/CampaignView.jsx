@@ -29,6 +29,7 @@ import { PartyPresence, SyncStatus } from './LiveStatus.jsx'
 import SessionDock from './session/SessionDock.jsx'
 import RecordingBar from './session/RecordingBar.jsx'
 import TurnAlert from './session/TurnAlert.jsx'
+import { PollPopup, PollsPanel } from './session/Polls.jsx'
 import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
 import DownedPulse from './session/DownedPulse.jsx'
@@ -341,6 +342,8 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           {/* While a session is being recorded (any tab). */}
           <RecordingBar />
           {roleReady && <TurnAlert />}
+          {/* A new party vote pops up wherever you are (Session Mode shows it in place). */}
+          {playerId && roleReady && <PollPopup onSessionTab={knownTab === 'session' || knownTab === 'dm-combat'} />}
           {/* Combat theme for everyone; the shake-and-roll alert is for players. */}
           {roleReady && <CombatMode showAlert={Boolean(playerId) && !isDm} />}
           {/* Players see the DM's live reveals; the DM is the one sending them. */}
@@ -426,6 +429,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {isDm && knownTab === 'dm-combat' && (
                 <div className="campaign-view__combat">
                   <InitiativeTracker />
+                  <PollsPanel />
                   <PartyLevelUp />
                 </div>
               )}

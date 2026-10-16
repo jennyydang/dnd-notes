@@ -12,6 +12,7 @@ import PreviouslyOn from './session/PreviouslyOn.jsx'
 import TabNav from './TabNav.jsx'
 import VitalsPanel from './session/VitalsPanel.jsx'
 import QuickNotesPanel from './session/QuickNotesPanel.jsx'
+import { PollsPanel } from './session/Polls.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import ReferencePanel from './session/ReferencePanel.jsx'
 import EndSessionModal from './session/EndSessionModal.jsx'
@@ -23,6 +24,7 @@ import './SessionMode.scss'
 const PANELS = [
   { id: 'vitals', label: 'Character' },
   { id: 'notes', label: 'Notes' },
+  { id: 'polls', label: 'Vote' },
   { id: 'initiative', label: 'Initiative' },
   { id: 'reference', label: 'Reference' },
 ]
@@ -205,6 +207,9 @@ function SessionMode({ campaignName }) {
         )}
         <div className={panelClass('notes')}>
           <QuickNotesPanel quickNotes={quickNotes} since={active?.startedAt} />
+        </div>
+        <div className={panelClass('polls')}>
+          <PollsPanel />
         </div>
         {!character && (
           <>

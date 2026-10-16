@@ -4,7 +4,7 @@ import {
   Image, Inbox, LayoutGrid, Library, Lightbulb, Link, ListTodo, Lock, Map, MapPin, Menu, Maximize, MessageCircle, MessageSquare, Mic, Minus, Bookmark, Move, Square, Undo2, Upload,
   NotebookPen, Pause, PawPrint, Pencil, Pin, Play, Plus, RefreshCw, Rows3, ScrollText, Search, Send, Shield, ShieldCheck, Skull,
   Sparkles, Speech, SquareCheck, Star, Swords, Target, Trash2, TrendingUp, TriangleAlert, User, Users, VenetianMask, WifiOff, Wrench, X, Zap,
-  ZoomIn,
+  ZoomIn, Check, Vote, Network,
 } from 'lucide-react'
 
 // The app's icon set (Grimoire: no emoji in the UI). Line icons from
@@ -23,6 +23,7 @@ const ICONS = {
   chart: ChartBar,
   character: VenetianMask,
   chat: MessageSquare,
+  check: Check,
   'check-square': SquareCheck,
   clipboard: Clipboard,
   close: X,
@@ -30,6 +31,8 @@ const ICONS = {
   compass: Compass,
   creature: PawPrint,
   crown: Crown,
+  vote: Vote,
+  network: Network,
   dice: Dices,
   download: Download,
   edit: Pencil,

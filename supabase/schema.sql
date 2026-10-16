@@ -1744,3 +1744,53 @@ alter table session_notes add column if not exists audio_marks jsonb not null de
 alter table quests drop constraint if exists quests_status_check;
 alter table quests add constraint quests_status_check
   check (status in ('Rumour','Active','Completed','Failed'));
+
+-- ── Party polls ──────────────────────────────────────────────────────
+-- A question put to the table ("River or mountain pass?"); everyone votes
+-- live. When it's closed the decision is written into each member's quick
+-- notes, so it lands in their session recap.
+create table if not exists polls (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  question text not null,
+  options jsonb not null default '[]'::jsonb,
+  created_by uuid references players(id) on delete set null,
+  created_by_name text not null default '',
+  status text not null default 'open' check (status in ('open', 'closed')),
+  result text not null default '',
+  closed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists polls_campaign_idx on polls (campaign_id, created_at desc);
+
+create table if not exists poll_votes (
+  id uuid primary key default gen_random_uuid(),
+  poll_id uuid not null references polls(id) on delete cascade,
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  voter_name text not null default '',
+  option_index int not null,
+  created_at timestamptz not null default now(),
+  unique (poll_id, player_id)
+);
+create index if not exists poll_votes_campaign_idx on poll_votes (campaign_id);
+
+alter table polls enable row level security;
+alter table poll_votes enable row level security;
+drop policy if exists "anon full access polls" on polls;
+drop policy if exists "anon full access poll_votes" on poll_votes;
+create policy "anon full access polls" on polls for all to anon using (true) with check (true);
+create policy "anon full access poll_votes" on poll_votes for all to anon using (true) with check (true);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['polls', 'poll_votes'] loop
+    if exists (select 1 from pg_publication where pubname = 'supabase_realtime') and not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;
