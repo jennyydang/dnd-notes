@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage } from '../lib/storage.js'
 import { AUDIO_BUCKET, formatDuration } from '../lib/sessionRecorder.js'
 import SessionAudio from './SessionAudio.jsx'
+import AudioDoodle from './AudioDoodle.jsx'
 import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
 import { extractMentions, notesToPlainText } from '../lib/richNotes.js'
 import { TAG_GROUPS } from '../lib/tags.js'
@@ -26,6 +27,7 @@ const fromRow = (r) => ({
   createdAt: r.created_at,
   audioPath: r.audio_path || null,
   audioSeconds: r.audio_seconds ?? null,
+  audioDoodle: Array.isArray(r.audio_doodle) ? r.audio_doodle : null,
 })
 
 const partyFromRow = (r) => ({
@@ -345,6 +347,9 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
                     </span>
                   )}
                 </div>
+                {session.audioDoodle && (
+                  <AudioDoodle doodle={session.audioDoodle} compact label="Recording doodle" />
+                )}
                 <p className="session-card__notes">{notesToPlainText(session.notes)}</p>
                 <div className="session-card__actions">
                   <button

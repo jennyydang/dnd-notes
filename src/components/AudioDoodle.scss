@@ -1,0 +1,84 @@
+@use '../styles/variables' as *;
+
+.audio-doodle {
+  display: block;
+  width: 100%;
+  height: 4.5rem;
+  overflow: visible;
+
+  path,
+  line {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    // The drawing stretches to fit; the pen width shouldn't.
+    vector-effect: non-scaling-stroke;
+  }
+
+  &__baseline {
+    stroke: rgba($gold-dim, 0.45);
+    stroke-width: 1;
+    stroke-dasharray: 2 6;
+  }
+
+  &__echo {
+    stroke: rgba($gold-light, 0.28);
+    stroke-width: 1;
+  }
+
+  &__ink {
+    stroke: $gold-light;
+    stroke-width: 2.2;
+    filter: drop-shadow(0 0 3px rgba($gold, 0.35));
+
+    &.is-unplayed {
+      stroke: rgba($gold-dim, 0.9);
+      filter: none;
+    }
+  }
+
+  &__star {
+    fill: rgba($gold-dim, 0.9) !important;
+    stroke: none;
+    transition: fill 0.3s ease;
+
+    &.is-reached,
+    .audio-doodle:not(.audio-doodle--seekable) & {
+      fill: $parchment !important;
+      filter: drop-shadow(0 0 4px rgba($gold-light, 0.8));
+    }
+  }
+
+  &__head {
+    stroke: $parchment;
+    stroke-width: 1.5;
+  }
+
+  &--seekable {
+    cursor: pointer;
+    border-radius: $radius;
+
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $gold;
+      outline-offset: 2px;
+    }
+  }
+
+  // Small, on a session card: just the squiggle.
+  &--compact {
+    height: 1.8rem;
+
+    .audio-doodle__star,
+    .audio-doodle__echo {
+      display: none;
+    }
+
+    .audio-doodle__ink {
+      stroke-width: 1.6;
+    }
+  }
+}
