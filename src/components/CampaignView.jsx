@@ -124,6 +124,15 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   // Reopen where the player left off in this campaign (survives refresh).
   const [activeTab, setActiveTabState] = useState(() => getStored(lastTabKey(campaignId), 'home'))
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  // Sidebar groups (Session, Journal, Character…) folded away, remembered.
+  const [foldedGroups, setFoldedGroups] = useState(() => getStored('dnd-notes-sidebar-folded', []))
+  function toggleGroup(id) {
+    setFoldedGroups((all) => {
+      const next = all.includes(id) ? all.filter((g) => g !== id) : [...all, id]
+      setStored('dnd-notes-sidebar-folded', next)
+      return next
+    })
+  }
   const [showFeedback, setShowFeedback] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -364,21 +373,42 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                   <h2 className="campaign-view__name">{campaignName}</h2>
                 </div>
 
-                {roleReady && areas.map((area) => (
-                  <div className="campaign-view__group" key={area.id}>
-                    {area.tabs.length > 1 && (
-                      <h3 className="campaign-view__group-label">{area.label}</h3>
-                    )}
-                    <TabNav
-                      tabs={areaTabs(area)}
-                      activeTab={knownTab}
-                      onSelect={setActiveTab}
-                      className="tab-nav--sidebar"
-                      label={`${area.label} sections`}
-                      vertical
-                    />
-                  </div>
-                ))}
+                {roleReady && areas.map((area) => {
+                  const foldable = area.tabs.length > 1
+                  const folded = foldable && foldedGroups.includes(area.id)
+                  const holdsActive = areaTabs(area).some((t) => t.id === knownTab)
+                  return (
+                    <div className={`campaign-view__group${folded ? ' is-folded' : ''}`} key={area.id}>
+                      {foldable && (
+                        <h3 className="campaign-view__group-label">
+                          <button
+                            type="button"
+                            className="campaign-view__group-toggle"
+                            aria-expanded={!folded}
+                            aria-controls={`sidebar-group-${area.id}`}
+                            onClick={() => toggleGroup(area.id)}
+                          >
+                            <Icon name="next" className="campaign-view__group-chevron" />
+                            {area.label}
+                            {folded && holdsActive && <span className="campaign-view__group-dot" aria-label="(current page)" />}
+                          </button>
+                        </h3>
+                      )}
+                      <div className="campaign-view__group-body" id={`sidebar-group-${area.id}`} inert={folded || undefined}>
+                        <div className="campaign-view__group-inner">
+                          <TabNav
+                            tabs={areaTabs(area)}
+                            activeTab={knownTab}
+                            onSelect={setActiveTab}
+                            className="tab-nav--sidebar"
+                            label={`${area.label} sections`}
+                            vertical
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </aside>
             )}
 

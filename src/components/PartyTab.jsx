@@ -505,7 +505,7 @@ function PartyTab({ campaignId, playerId }) {
 
   return (
     <section className="party-tab">
-      <PartyGoals campaignId={campaignId} />
+      <PartyGoals />
 
       <h3 className="party-tab__section-title">Party Members</h3>
       <div className="party-tab__toolbar">
