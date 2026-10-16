@@ -236,7 +236,8 @@
   // Beside the map (under it on phones): the pin cards, then the new
   // pin / zoom area to drag onto the map.
   &__side {
-    flex: 0 0 17rem;
+    flex: 0 0 auto;
+    width: clamp(15rem, 24vw, 19rem);
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -245,6 +246,7 @@
 
     @media (max-width: 720px) {
       flex: 0 0 auto;
+      width: auto;
       border-left: none;
       border-top: 1px solid rgba($gold-dim, 0.35);
     }
@@ -785,13 +787,25 @@
   }
 
   // Pin type filters, under the toolbar.
+  // Pin-type chips, under the pin cards (a sideways row on phones).
   &__filters {
+    flex: 0 0 auto;
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    padding: 0.5rem 1.25rem;
-    background: $bg-panel;
-    border-bottom: 1px solid rgba($gold-dim, 0.25);
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid rgba($gold-dim, 0.25);
+
+    @media (max-width: 720px) {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding: 0.45rem 0.75rem;
+      scrollbar-width: none;
+
+      > * {
+        flex: 0 0 auto;
+      }
+    }
   }
 
   &__filter {
