@@ -326,7 +326,7 @@ function NpcsTab({ campaignId }) {
                 </button>
                 <span className="npc-card__meta">
                   <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>{npc.status}</span>
-                  <AttitudeMeter npc={npc} compact />
+                  <AttitudeMeter npc={npc} onSave={(patch) => updateItem(npc.id, patch)} />
                   {(npc.race || npc.metAt) && (
                     <span className="npc-card__meta-text">{[npc.race, npc.metAt].filter(Boolean).join(' · ')}</span>
                   )}
@@ -367,8 +367,11 @@ function NpcsTab({ campaignId }) {
                       card's full width instead of sharing it with the pill. */}
                   <div className="npc-card__who">
                     <h3 className="npc-card__name">{npc.name}</h3>
-                    <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>
-                      {npc.status}
+                    <span className="npc-card__badges">
+                      <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>
+                        {npc.status}
+                      </span>
+                      <AttitudeMeter npc={npc} onSave={(patch) => updateItem(npc.id, patch)} />
                     </span>
                   </div>
                 </div>
@@ -383,7 +386,6 @@ function NpcsTab({ campaignId }) {
                   <dd>{npc.metAt || '—'}</dd>
                 </div>
               </dl>
-              <AttitudeMeter npc={npc} onSave={(patch) => updateItem(npc.id, patch)} />
               {npc.description && <RichText className="npc-card__description" value={npc.description} />}
               <div className="npc-card__actions">
                 <button

@@ -1,124 +1,145 @@
 @use '../styles/variables' as *;
 
-.attitude {
-  display: grid;
-  gap: 0.45rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid rgba($gold-dim, 0.3);
-  border-radius: $radius;
-  background: rgba($bg-deep, 0.35);
+// The NPC card's rapport: one pill beside the life status.
+.rapport-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.8rem;
+  padding: 0.1rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--attitude, #{$gold-dim}) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--attitude, transparent) 16%, transparent);
+  color: var(--attitude, #{$text-muted});
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 
-  &__head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.5rem;
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--attitude, #{$gold}) 28%, transparent);
   }
 
-  &__label {
-    font-size: 0.75rem;
+  &:disabled {
+    cursor: default;
+  }
+
+  &--unset {
+    border-style: dashed;
+    border-color: rgba($gold-dim, 0.6);
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.75;
+
+    &:hover {
+      opacity: 1;
+      color: $gold-light;
+    }
+  }
+
+  &__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--attitude);
+    box-shadow: 0 0 0.35rem var(--attitude);
+  }
+}
+
+// The picker dialog.
+.rapport {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+
+  &__title {
+    margin: 0;
+    font-size: 1.15rem;
+    color: $gold-light;
+  }
+
+  &__options {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  &__option {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 2.9rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid rgba($gold-dim, 0.4);
+    border-radius: $radius;
+    background: rgba($bg-deep, 0.5);
+    color: $text-light;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color 0.2s,
+      background 0.2s;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--attitude) 70%, transparent);
+    }
+
+    &.is-chosen {
+      border-color: var(--attitude);
+      background: color-mix(in srgb, var(--attitude) 16%, transparent);
+    }
+  }
+
+  &__dot {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    background: var(--attitude);
+  }
+
+  &__name {
+    font-family: $font-display;
+    color: var(--attitude);
+  }
+
+  &__hint {
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__now {
+    font-size: 0.72rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: $text-muted;
   }
 
-  &__now {
-    font-family: $font-display;
-    font-size: 0.95rem;
-    color: $text-muted;
-  }
+  &__history {
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba($gold-dim, 0.3);
 
-  // Five steps, worst to best; the current one fills with its colour.
-  &__track {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0.3rem;
-  }
-
-  &__step {
-    position: relative;
-    height: 0.7rem;
-    padding: 0;
-    border: 1px solid color-mix(in srgb, var(--attitude) 60%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--attitude) 14%, transparent);
-    cursor: pointer;
-    transition:
-      background 0.25s,
-      transform 0.15s,
-      box-shadow 0.25s;
-
-    // A taller finger target than the slim bar.
-    &::after {
-      content: '';
-      position: absolute;
-      inset: -0.75rem -0.1rem;
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0 0 0.5rem;
+      font-size: 0.85rem;
+      color: $text-muted;
     }
 
-    &:hover {
-      background: color-mix(in srgb, var(--attitude) 40%, transparent);
+    ol {
+      display: grid;
+      gap: 0.45rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
-
-    &.is-on {
-      background: var(--attitude);
-      box-shadow: 0 0 0.6rem color-mix(in srgb, var(--attitude) 55%, transparent);
-      animation: attitude-set 0.35s ease-out;
-    }
-
-    &.is-picking {
-      background: color-mix(in srgb, var(--attitude) 55%, transparent);
-      transform: scaleY(1.3);
-    }
-  }
-
-  &__why {
-    display: flex;
-    gap: 0.35rem;
-    align-items: center;
-
-    input {
-      flex: 1;
-      min-width: 0;
-      min-height: 2.5rem;
-      padding: 0.3rem 0.6rem;
-      border: 1px solid rgba($gold-dim, 0.6);
-      border-radius: $radius;
-      background: rgba($bg-deep, 0.6);
-      color: $text-light;
-      font: inherit;
-
-      &:focus {
-        border-color: $gold;
-        outline: none;
-      }
-    }
-  }
-
-  &__log-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    justify-self: start;
-    min-height: 2rem;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: $text-muted;
-    font: inherit;
-    font-size: 0.82rem;
-    cursor: pointer;
-
-    &:hover {
-      color: $gold-light;
-    }
-  }
-
-  &__log {
-    display: grid;
-    gap: 0.35rem;
-    margin: 0;
-    padding: 0 0 0 0.25rem;
-    list-style: none;
   }
 
   &__entry {
@@ -127,7 +148,7 @@
     gap: 0 0.5rem;
     padding-left: 0.6rem;
     border-left: 2px solid $gray;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
 
     &--up {
       border-left-color: #7fbf8e;
@@ -138,44 +159,14 @@
     }
 
     time {
-      grid-column: 2;
-      grid-row: 1;
       font-size: 0.78rem;
       color: $text-muted;
     }
-  }
-
-  &__change {
-    color: $text-light;
   }
 
   &__note {
     grid-column: 1 / -1;
     color: $text-muted;
     font-style: italic;
-  }
-}
-
-.attitude-chip {
-  display: inline-block;
-  padding: 0.05rem 0.5rem;
-  border: 1px solid color-mix(in srgb, var(--attitude) 70%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--attitude) 18%, transparent);
-  color: var(--attitude);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-@keyframes attitude-set {
-  50% {
-    transform: scaleY(1.5);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .attitude__step {
-    transition: none;
-    animation: none !important;
   }
 }
