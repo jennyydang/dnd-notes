@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage } from '../lib/storage.js'
 import { AUDIO_BUCKET } from '../lib/sessionRecorder.js'
 import SessionAudio from './SessionAudio.jsx'
+import SessionReel from './SessionReel.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
 import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
 import { extractMentions, notesToPlainText } from '../lib/richNotes.js'
@@ -305,6 +306,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
             </div>
             <RichNotesView value={viewingSession.notes} className="session-detail__notes" />
             <SessionAudio session={viewingSession} onChanged={() => refetch({ silent: true })} />
+            <SessionReel session={viewingSession} />
             <div className="session-detail__actions">
               <button type="button" className="btn btn--text" onClick={() => setExportTarget(viewingSession.id)}>
                 Export

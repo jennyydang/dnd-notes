@@ -6,6 +6,7 @@ import { ProgressRing } from './PartyGoals.jsx'
 import AnimatedNumber from './AnimatedNumber.jsx'
 import { SectionCard } from './ui.jsx'
 import Icon from './Icon.jsx'
+import { ATTITUDES } from '../lib/attitude.js'
 import './DmOverview.scss'
 
 const DISCOVERY_TYPES = ['npc', 'place', 'lore', 'loot', 'quest']
@@ -44,6 +45,7 @@ function EntityRow({ entity, meta }) {
 // — their private recaps and personal goals stay private.
 function DmOverview() {
   const { entities, tables } = useCampaignData()
+  const nav = useCampaignNav()
   const polls = usePolls()
 
   const by = useMemo(() => {
@@ -134,6 +136,33 @@ function DmOverview() {
                 {doneQuests.length} quest{doneQuests.length === 1 ? '' : 's'} finished:{' '}
                 {doneQuests.map((q) => q.title).join(', ')}
               </p>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Who’s with us" icon="users" className="dm-overview__card">
+            {by.npc.some((n) => n.raw?.attitude) ? (
+              <ul className="dm-overview__attitudes">
+                {[...ATTITUDES].reverse().map((a) => {
+                  const people = by.npc.filter((n) => n.raw?.attitude === a.id)
+                  if (!people.length) return null
+                  return (
+                    <li key={a.id}>
+                      <span className="dm-overview__attitude" style={{ '--attitude': a.color }}>
+                        {a.id}
+                      </span>
+                      <span className="dm-overview__people">
+                        {people.map((n) => (
+                          <button key={n.id} type="button" className="dm-overview__person" onClick={() => nav.openEntity('npc', n.id)}>
+                            {n.title}
+                          </button>
+                        ))}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <p className="inline-state">The party hasn’t marked how any NPC feels about them yet.</p>
             )}
           </SectionCard>
 

@@ -10,6 +10,7 @@ import { ViewToggle } from './ui.jsx'
 import { useViewMode } from '../hooks/useViewMode.js'
 import Icon from './Icon.jsx'
 import { RichText, RichTextEditor } from './RichText.jsx'
+import AttitudeMeter from './AttitudeMeter.jsx'
 
 const BUCKET = 'npc-portraits'
 const LIFE_STATUSES = ['Alive', 'Deceased', 'Unknown', 'Missing']
@@ -33,6 +34,8 @@ const fromRow = (r) => ({
   status: r.status,
   description: r.description,
   photo: getPublicUrl(BUCKET, r.photo_path),
+  attitude: r.attitude || null,
+  attitudeLog: Array.isArray(r.attitude_log) ? r.attitude_log : [],
 })
 
 function NpcsTab({ campaignId }) {
@@ -323,6 +326,7 @@ function NpcsTab({ campaignId }) {
                 </button>
                 <span className="npc-card__meta">
                   <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>{npc.status}</span>
+                  <AttitudeMeter npc={npc} compact />
                   {(npc.race || npc.metAt) && (
                     <span className="npc-card__meta-text">{[npc.race, npc.metAt].filter(Boolean).join(' · ')}</span>
                   )}
@@ -379,6 +383,7 @@ function NpcsTab({ campaignId }) {
                   <dd>{npc.metAt || '—'}</dd>
                 </div>
               </dl>
+              <AttitudeMeter npc={npc} onSave={(patch) => updateItem(npc.id, patch)} />
               {npc.description && <RichText className="npc-card__description" value={npc.description} />}
               <div className="npc-card__actions">
                 <button

@@ -1832,3 +1832,13 @@ begin
     alter publication supabase_realtime add table public.personal_goals;
   end if;
 end $$;
+
+-- ── NPC attitude ─────────────────────────────────────────────────────
+-- How an NPC feels about the party (Hostile · Wary · Neutral · Friendly ·
+-- Ally; null = not judged yet), and the history of how that changed:
+-- [{ from, to, note, at }].
+alter table npcs add column if not exists attitude text;
+alter table npcs drop constraint if exists npcs_attitude_check;
+alter table npcs add constraint npcs_attitude_check
+  check (attitude is null or attitude in ('Hostile', 'Wary', 'Neutral', 'Friendly', 'Ally'));
+alter table npcs add column if not exists attitude_log jsonb not null default '[]'::jsonb;

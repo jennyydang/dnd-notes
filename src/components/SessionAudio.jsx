@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSessionRecorder } from '../hooks/useSessionRecorder.js'
 import {
   AUDIO_BUCKET,
@@ -15,6 +15,8 @@ import Icon from './Icon.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
 import RecordingMarks from './RecordingMarks.jsx'
 
+export const AUDIO_SEEK_EVENT = 'dnd-notes-audio-seek'
+
 // A session recap's audio: play it, or record / upload one. Recording
 // runs in the shared recorder, so it keeps going on other tabs (the
 // recording bar shows it) and attaches itself here when stopped.
@@ -29,6 +31,17 @@ function SessionAudio({ session, onChanged }) {
   const recorderBusy = rec.status !== 'idle'
   const player = useRef(null)
   const [position, setPosition] = useState(0)
+
+  // The highlight reel's bookmark tiles jump the recording to their moment.
+  useEffect(() => {
+    function onSeek(event) {
+      if (event.detail?.sessionId !== session.id) return
+      player.current?.seek(event.detail.t, true)
+      document.querySelector('.session-audio')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    window.addEventListener(AUDIO_SEEK_EVENT, onSeek)
+    return () => window.removeEventListener(AUDIO_SEEK_EVENT, onSeek)
+  }, [session.id])
 
   async function run(task) {
     setBusy(true)
