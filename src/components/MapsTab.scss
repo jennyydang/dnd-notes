@@ -64,37 +64,6 @@
     }
   }
 
-  &__rename-btn {
-    flex-shrink: 0;
-    padding: 0.3rem 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  &__rename {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    padding: 0.6rem;
-    border-top: 1px solid rgba($gold-dim, 0.4);
-
-    input {
-      width: 100%;
-      min-height: 2.5rem;
-      background: $bg-deep;
-      border: 1px solid $gold;
-      border-radius: $radius;
-      color: $text-light;
-      padding: 0.4rem 0.6rem;
-      font-size: 1rem;
-    }
-  }
-
-  &__rename-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.4rem;
-  }
-
   &__remove {
     position: absolute;
     top: 0.4rem;
@@ -165,8 +134,36 @@
   }
 
   &__caption {
+    margin: 0;
     color: $parchment;
     font-family: $font-display;
+  }
+
+  &__caption-row,
+  &__rename {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  &__rename {
+    input {
+      width: min(20rem, 70vw);
+      min-height: 2.5rem;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid $gold;
+      border-radius: $radius;
+      background: $bg-deep;
+      color: $text-light;
+      font-size: 1rem;
+    }
+
+    .field-error {
+      flex-basis: 100%;
+      text-align: center;
+    }
   }
 
   &__close {

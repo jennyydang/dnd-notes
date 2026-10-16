@@ -28,7 +28,7 @@ function MapsTab({ campaignId }) {
   const [lightboxMap, setLightboxMap] = useState(null)
   const [activeWorldMapId, setActiveWorldMapId] = useState(null)
   const [uploadError, setUploadError] = useState(null)
-  // Rename on a card: { id, value } while editing that map's name.
+  // Rename (from the open map): { id, value } while editing its name.
   const [renaming, setRenaming] = useState(null)
   const [renameError, setRenameError] = useState(null)
   const fileInputRef = useRef(null)
@@ -78,6 +78,11 @@ function MapsTab({ campaignId }) {
     } catch (err) {
       setUploadError(err.message)
     }
+  }
+
+  function closeLightbox() {
+    setLightboxMap(null)
+    setRenaming(null)
   }
 
   function startRename(map) {
@@ -171,42 +176,11 @@ function MapsTab({ campaignId }) {
                 <img src={map.src} alt={map.caption || 'Campaign map'} />
               </button>
               {map.isWorldMap && <span className="map-card__world-badge">Interactive</span>}
-              {renaming?.id === map.id ? (
-                <form className="map-card__rename" onSubmit={saveRename}>
-                  <input
-                    type="text"
-                    value={renaming.value}
-                    onChange={(e) => setRenaming({ ...renaming, value: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Escape' && setRenaming(null)}
-                    placeholder="Map name"
-                    aria-label="Map name"
-                    autoFocus
-                  />
-                  <div className="map-card__rename-actions">
-                    <button type="button" className="btn btn--text" onClick={() => setRenaming(null)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn--primary">
-                      Save
-                    </button>
-                  </div>
-                  {renameError && <p className="field-error">{renameError}</p>}
-                </form>
-              ) : (
-                <div className="map-card__name-row">
-                  <span className={`map-card__name${map.caption ? '' : ' map-card__name--empty'}`}>
-                    {map.caption || 'Untitled map'}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn--text map-card__rename-btn"
-                    onClick={() => startRename(map)}
-                    aria-label={`Rename ${map.caption || 'this map'}`}
-                  >
-                    <Icon name="edit" /> Rename
-                  </button>
-                </div>
-              )}
+              <div className="map-card__name-row">
+                <span className={`map-card__name${map.caption ? '' : ' map-card__name--empty'}`}>
+                  {map.caption || 'Untitled map'}
+                </span>
+              </div>
               <button
                 type="button"
                 className="map-card__world-toggle btn btn--text"
@@ -234,14 +208,44 @@ function MapsTab({ campaignId }) {
           className="lightbox"
           role="dialog"
           aria-modal="true"
-          onClick={() => setLightboxMap(null)}
+          onClick={() => closeLightbox()}
         >
           <img src={lightboxMap.src} alt={lightboxMap.caption} />
-          <p className="lightbox__caption">{lightboxMap.caption}</p>
+          {/* Rename lives here, on the open map (not on its card). */}
+          {(() => {
+            const current = maps.find((m) => m.id === lightboxMap.id) || lightboxMap
+            return renaming?.id === current.id ? (
+              <form className="lightbox__rename" onSubmit={saveRename} onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="text"
+                  value={renaming.value}
+                  onChange={(e) => setRenaming({ ...renaming, value: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Escape' && setRenaming(null)}
+                  placeholder="Map name"
+                  aria-label="Map name"
+                  autoFocus
+                />
+                <button type="button" className="btn btn--text" onClick={() => setRenaming(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn--primary">
+                  Save
+                </button>
+                {renameError && <p className="field-error">{renameError}</p>}
+              </form>
+            ) : (
+              <div className="lightbox__caption-row" onClick={(e) => e.stopPropagation()}>
+                <p className="lightbox__caption">{current.caption || 'Untitled map'}</p>
+                <button type="button" className="btn btn--text" onClick={() => startRename(current)}>
+                  <Icon name="edit" /> Rename Map
+                </button>
+              </div>
+            )
+          })()}
           <button
             type="button"
             className="lightbox__close"
-            onClick={() => setLightboxMap(null)}
+            onClick={() => closeLightbox()}
             aria-label="Close"
           >
             &times;
