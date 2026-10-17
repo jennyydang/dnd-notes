@@ -157,7 +157,7 @@ export function RichNotesEditor({
       place: { name, kind, notes: '' },
       lore: { title: name, category: kind, notes: '' },
       loot: { item: name, kind, found_at: origin, holder: '', notes: '' },
-      creature: { name, kind: kind || 'Monster', notes: '' },
+      creature: { name, kind: 'Creature', notes: '' },
     }[group]
     // addItem broadcasts the change, so the target tab updates too.
     return tables[group].addItem(payload)
@@ -338,7 +338,7 @@ export function RichNotesEditor({
         <span className="rich-notes__toolbar-divider" aria-hidden="true" />
         {GROUP_ORDER.map((group) => {
           const { icon, noun, char, keyword } = TAG_GROUPS[group]
-          const article = { person: 'a ', place: 'a ', monster: 'a ', event: 'an ' }[noun] ?? ''
+          const article = { person: 'a ', place: 'a ', creature: 'a ', event: 'an ' }[noun] ?? ''
           return toolbarButton(
             group,
             <>
@@ -354,7 +354,7 @@ export function RichNotesEditor({
       <EditorContent editor={editor} className="rich-notes__body" />
 
       <p className="rich-notes__hint">
-        Tag with <kbd>@</kbd> person, <kbd>#</kbd> place, <kbd>~</kbd> lore, <kbd>$</kbd> loot, <kbd>%</kbd> monster —
+        Tag with <kbd>@</kbd> person, <kbd>#</kbd> place, <kbd>~</kbd> lore, <kbd>$</kbd> loot, <kbd>%</kbd> creature —
         e.g. <kbd>#city Waterdeep</kbd>. New ones are added to their tab automatically.{' '}
         <kbd>!event</kbd> adds a moment to the Timeline.
       </p>

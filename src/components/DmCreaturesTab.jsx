@@ -4,66 +4,32 @@ import { useDmShares } from '../hooks/useDmShares.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
-import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ShareStatus from './ShareStatus.jsx'
 import Icon from './Icon.jsx'
 import './CreaturesTab.scss'
 import './SecretNpcsTab.scss'
 import { RichText, RichTextEditor } from './RichText.jsx'
+import { CreatureGallery, PhotoPicker } from './CreaturePhotos.jsx'
+import { CREATURE_TYPES, deletePhotos, photoList, savePickerItems, toPickerItems } from '../lib/creatures.js'
 
-const KINDS = ['Monster', 'Creature']
-const FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'Monster', label: 'Monsters' },
-  { id: 'Creature', label: 'Creatures' },
-]
-const CREATURE_TYPES = [
-  'Aberration', 'Beast', 'Celestial', 'Construct', 'Dragon', 'Elemental', 'Fey',
-  'Fiend', 'Giant', 'Humanoid', 'Monstrosity', 'Ooze', 'Plant', 'Undead',
-]
-
-const emptyForm = {
-  name: '',
-  kind: 'Monster',
-  creatureType: '',
-  challenge: '',
-  armorClass: '',
-  hitPoints: '',
-  description: '',
-  secrets: '',
-  shareStats: false,
-}
+const emptyForm = { name: '', creatureType: '', description: '', secrets: '', photos: [] }
 
 const fromRow = (r) => ({
   id: r.id,
   name: r.name,
-  kind: r.kind,
   creatureType: r.creature_type,
-  challenge: r.challenge,
-  armorClass: r.armor_class,
-  hitPoints: r.hit_points,
   description: r.description,
   secrets: r.secrets,
-  shareStats: r.share_stats,
+  photos: photoList(r.photos),
   createdAt: r.created_at,
 })
 
 const partyFromRow = (r) => ({ id: r.id, dmCreatureId: r.dm_creature_id })
 
-// Whole numbers only; blank means "unknown" (stored as null).
-function parseStat(value, max) {
-  if (String(value).trim() === '') return { value: null }
-  const n = Number(value)
-  if (!Number.isInteger(n) || n < 0 || n > max) return { error: `Use a whole number from 0 to ${max}.` }
-  return { value: n }
-}
-
-const statIcon = (kind) => (kind === 'Creature' ? 'creature' : 'monster')
-
-// The DM's private bestiary: stat out monsters and creatures ahead of
-// time, then Share one when the party meets it. Players add a copy to
-// their Monsters & Creatures tab — with AC/HP/CR only if the DM allows.
+// The DM's private bestiary: write creatures up ahead of time (photos,
+// what the party sees, private notes), then Share one when the party
+// meets it. Players add a copy — photos included — to their Creatures tab.
 function DmCreaturesTab({ campaignId }) {
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_creatures', {
     fromRow,
@@ -78,7 +44,6 @@ function DmCreaturesTab({ campaignId }) {
   const statusOf = (c) =>
     addedIds.has(c.id) ? 'added' : byKey.has(shareKey('creature', c.id)) ? 'sent' : 'private'
 
-  const [filter, setFilter] = useState('all')
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -88,30 +53,19 @@ function DmCreaturesTab({ campaignId }) {
   const [sharingId, setSharingId] = useState(null)
   const [actionError, setActionError] = useState(null)
 
-  const counts = {
-    all: items.length,
-    Monster: items.filter((c) => c.kind === 'Monster').length,
-    Creature: items.filter((c) => c.kind === 'Creature').length,
-  }
-  const visible = items
-    .filter((c) => filter === 'all' || c.kind === filter)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  const visible = [...items].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   function openForm(creature = null) {
     setForm(
       creature
         ? {
             name: creature.name,
-            kind: creature.kind,
             creatureType: creature.creatureType,
-            challenge: creature.challenge,
-            armorClass: creature.armorClass ?? '',
-            hitPoints: creature.hitPoints ?? '',
             description: creature.description,
             secrets: creature.secrets,
-            shareStats: creature.shareStats,
+            photos: toPickerItems(creature.photos),
           }
-        : { ...emptyForm, kind: filter === 'Creature' ? 'Creature' : 'Monster' },
+        : emptyForm,
     )
     setEditingId(creature?.id || null)
     setFieldErrors({})
@@ -128,29 +82,26 @@ function DmCreaturesTab({ campaignId }) {
   async function submitForm(event) {
     event.preventDefault()
     if (saving) return
-    const ac = parseStat(form.armorClass, 50)
-    const hp = parseStat(form.hitPoints, 9999)
     const errors = {}
     if (!form.name.trim()) errors.name = 'Give it a name.'
-    if (ac.error) errors.armorClass = ac.error
-    if (hp.error) errors.hitPoints = hp.error
     setFieldErrors(errors)
     if (Object.keys(errors).length) return
-    const payload = {
-      name: form.name.trim(),
-      kind: form.kind,
-      creature_type: form.creatureType.trim(),
-      challenge: form.challenge.trim(),
-      armor_class: ac.value,
-      hit_points: hp.value,
-      description: form.description,
-      secrets: form.secrets,
-      share_stats: form.shareStats,
-    }
     setSaving(true)
+    setFormError(null)
     try {
+      const before = editingId ? items.find((c) => c.id === editingId)?.photos : []
+      const { paths, removed } = await savePickerItems(form.photos, before)
+      const payload = {
+        name: form.name.trim(),
+        kind: 'Creature',
+        creature_type: form.creatureType.trim(),
+        description: form.description,
+        secrets: form.secrets,
+        photos: paths,
+      }
       if (editingId) await updateItem(editingId, payload)
       else await addItem(payload)
+      await deletePhotos(removed)
       closeForm()
     } catch (err) {
       setFormError(err.message)
@@ -160,10 +111,10 @@ function DmCreaturesTab({ campaignId }) {
   }
 
   async function share(c, reveal = false) {
-    const what = c.shareStats ? 'name, type, description and stats (CR, AC, HP)' : 'name, type and description — not its stats'
+    const what = 'name, type, photos and description'
     const message = reveal
       ? `Reveal ${c.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications. They'll see its ${what}. Never your DM notes.`
-      : `Share ${c.name} with the players?\n\nEveryone gets a notification and can add it to Monsters & Creatures. They'll see its ${what}. Never your DM notes.`
+      : `Share ${c.name} with the players?\n\nEveryone gets a notification and can add it to Creatures. They'll see its ${what}. Never your DM notes.`
     if (!window.confirm(message)) return false
     setActionError(null)
     setSharingId(c.id)
@@ -175,10 +126,10 @@ function DmCreaturesTab({ campaignId }) {
         title: c.name,
         payload: {
           name: c.name,
-          kind: c.kind,
+          kind: 'Creature',
           creature_type: c.creatureType,
           description: c.description,
-          ...(c.shareStats ? { challenge: c.challenge, armor_class: c.armorClass, hit_points: c.hitPoints } : {}),
+          photos: c.photos,
         },
         reveal,
       })
@@ -202,6 +153,7 @@ function DmCreaturesTab({ campaignId }) {
     try {
       await removeItem(c.id)
       await removeSharesFor(c.id)
+      await deletePhotos(c.photos)
       return true
     } catch (err) {
       setActionError(`Couldn’t delete: ${err.message}`)
@@ -221,16 +173,9 @@ function DmCreaturesTab({ campaignId }) {
     <section className="creatures-tab dm-creatures">
       <DmPrivacyNote />
 
-      <div className="creatures-tab__toolbar">
-        <TabNav
-          tabs={FILTERS.map((f) => ({ ...f, label: `${f.label} (${counts[f.id]})` }))}
-          activeTab={filter}
-          onSelect={setFilter}
-          className="tab-nav--pill creatures-tab__filter"
-          label="Show monsters or creatures"
-        />
+      <div className="creatures-tab__toolbar creatures-tab__toolbar--end">
         <button type="button" className="btn btn--primary" onClick={() => openForm()}>
-          + Add {filter === 'Creature' ? 'Creature' : 'Monster'}
+          + Add Creature
         </button>
       </div>
 
@@ -243,14 +188,12 @@ function DmCreaturesTab({ campaignId }) {
       {error && (
         <p className="empty-state empty-state--error">
           {error}
-          {/dm_creatures/.test(error) && ' — run the latest supabase/schema.sql to add the DM monsters table.'}
+          {/dm_creatures|photos/.test(error) && ' — run the latest supabase/schema.sql to update the DM creatures table.'}
         </p>
       )}
       {!loading && !error && visible.length === 0 && (
         <p className="empty-state">
-          {items.length === 0
-            ? 'No monsters yet. Stat them out ahead of time — they stay private until you press Share.'
-            : `No ${filter === 'Monster' ? 'monsters' : 'creatures'} yet.`}
+          No creatures yet. Write them up ahead of time — they stay private until you press Share.
         </p>
       )}
 
@@ -261,36 +204,14 @@ function DmCreaturesTab({ campaignId }) {
             const revealed = revealedKeys.has(shareKey('creature', c.id))
             return (
               <article
-                className={`creature-card panel creature-card--${c.kind.toLowerCase()}${revealed ? ' dm-revealed' : ''}`}
+                className={`creature-card panel${revealed ? ' dm-revealed' : ''}`}
                 key={c.id}
               >
+                <CreatureGallery photos={c.photos} name={c.name} />
                 <header className="creature-card__header">
                   <h3 className="creature-card__name">{c.name}</h3>
-                  <span className={`creature-card__kind creature-card__kind--${c.kind.toLowerCase()}`}>
-                    <span aria-hidden="true">{statIcon(c.kind)}</span> {c.kind}
-                  </span>
                 </header>
-                {(c.creatureType || c.challenge) && (
-                  <p className="creature-card__meta">
-                    {[c.creatureType, c.challenge && `CR ${c.challenge}`].filter(Boolean).join(' · ')}
-                  </p>
-                )}
-                {(c.armorClass !== null || c.hitPoints !== null) && (
-                  <dl className="creature-card__stats">
-                    {c.armorClass !== null && (
-                      <div>
-                        <dt>AC</dt>
-                        <dd>{c.armorClass}</dd>
-                      </div>
-                    )}
-                    {c.hitPoints !== null && (
-                      <div>
-                        <dt>HP</dt>
-                        <dd>{c.hitPoints}</dd>
-                      </div>
-                    )}
-                  </dl>
-                )}
+                {c.creatureType && <p className="creature-card__meta">{c.creatureType}</p>}
                 {c.description && <RichText className="creature-card__notes" value={c.description} />}
                 {c.secrets && (
                   <div className="secret-npc__secrets">
@@ -298,9 +219,6 @@ function DmCreaturesTab({ campaignId }) {
                     <RichText value={c.secrets} />
                   </div>
                 )}
-                <p className="creature-card__where">
-                  <Icon name={c.shareStats ? 'chart' : 'lock'} /> {c.shareStats ? 'Stats are shared with players' : 'Stats stay hidden when shared'}
-                </p>
                 <div className="creature-card__actions">
                   <ShareStatus
                     kind="creature"
@@ -324,23 +242,9 @@ function DmCreaturesTab({ campaignId }) {
       )}
 
       {formOpen && (
-        <Modal onClose={closeForm} label={editingId ? `Edit ${form.kind}` : `Add ${form.kind}`}>
+        <Modal onClose={closeForm} label={editingId ? 'Edit Creature' : 'Add Creature'}>
           <form className="creature-form form-stack" onSubmit={submitForm} noValidate>
-            <h3 className="section-card__title">{editingId ? `Edit ${form.kind}` : `Add ${form.kind}`}</h3>
-            <div className="chip-row" role="radiogroup" aria-label="Monster or creature">
-              {KINDS.map((kind) => (
-                <button
-                  key={kind}
-                  type="button"
-                  role="radio"
-                  aria-checked={form.kind === kind}
-                  className={`chip${form.kind === kind ? ' chip--active' : ''}`}
-                  onClick={() => setForm({ ...form, kind })}
-                >
-                  {statIcon(kind)} {kind}
-                </button>
-              ))}
-            </div>
+            <h3 className="section-card__title">{editingId ? 'Edit Creature' : 'Add Creature'}</h3>
             <div className="form-row">
               <div className="field">
                 <label htmlFor="dm-creature-name">Name</label>
@@ -349,7 +253,7 @@ function DmCreaturesTab({ campaignId }) {
                   type="text"
                   value={form.name}
                   onChange={set('name')}
-                  placeholder={form.kind === 'Monster' ? 'Red-web Spider Queen' : 'Giant Owl'}
+                  placeholder="Red-web Spider Queen"
                   aria-invalid={Boolean(fieldErrors.name)}
                   autoFocus
                 />
@@ -372,48 +276,7 @@ function DmCreaturesTab({ campaignId }) {
                 </datalist>
               </div>
             </div>
-            <div className="form-row">
-              <div className="field">
-                <label htmlFor="dm-creature-cr">Challenge (CR)</label>
-                <input id="dm-creature-cr" type="text" value={form.challenge} onChange={set('challenge')} placeholder="5" />
-              </div>
-              <div className="field">
-                <label htmlFor="dm-creature-ac">AC</label>
-                <input
-                  id="dm-creature-ac"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  max="50"
-                  value={form.armorClass}
-                  onChange={set('armorClass')}
-                  aria-invalid={Boolean(fieldErrors.armorClass)}
-                />
-                {fieldErrors.armorClass && <p className="field-error">{fieldErrors.armorClass}</p>}
-              </div>
-              <div className="field">
-                <label htmlFor="dm-creature-hp">HP</label>
-                <input
-                  id="dm-creature-hp"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  max="9999"
-                  value={form.hitPoints}
-                  onChange={set('hitPoints')}
-                  aria-invalid={Boolean(fieldErrors.hitPoints)}
-                />
-                {fieldErrors.hitPoints && <p className="field-error">{fieldErrors.hitPoints}</p>}
-              </div>
-            </div>
-            <label className="art-form__check dm-creatures__check">
-              <input
-                type="checkbox"
-                checked={form.shareStats}
-                onChange={(e) => setForm({ ...form, shareStats: e.target.checked })}
-              />
-              Players see CR, AC and HP when I share it
-            </label>
+            <PhotoPicker id="dm-creature-photos" items={form.photos} onChange={(photos) => setForm((prev) => ({ ...prev, photos }))} />
             <div className="field">
               <label htmlFor="dm-creature-description">Description (players see this)</label>
               <RichTextEditor
@@ -453,7 +316,7 @@ function DmCreaturesTab({ campaignId }) {
                 Cancel
               </button>
               <button type="submit" className="btn btn--primary" disabled={saving}>
-                {saving ? 'Saving…' : editingId ? 'Save Changes' : `Add ${form.kind}`}
+                {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Creature'}
               </button>
             </div>
           </form>

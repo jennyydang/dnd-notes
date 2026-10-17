@@ -1842,3 +1842,24 @@ alter table npcs drop constraint if exists npcs_attitude_check;
 alter table npcs add constraint npcs_attitude_check
   check (attitude is null or attitude in ('Hostile', 'Wary', 'Neutral', 'Friendly', 'Ally'));
 alter table npcs add column if not exists attitude_log jsonb not null default '[]'::jsonb;
+
+-- ── Creatures (monsters folded in) ───────────────────────────────────
+-- "Monster" and "Creature" are now just creatures: existing monsters are
+-- relabelled. CR / AC / HP aren't shown any more (the columns stay, so
+-- nothing already written is lost). Creatures can have several photos:
+-- storage paths in the creature-photos bucket.
+update creatures set kind = 'Creature' where kind = 'Monster';
+alter table creatures alter column kind set default 'Creature';
+alter table creatures add column if not exists photos jsonb not null default '[]'::jsonb;
+
+update dm_creatures set kind = 'Creature' where kind = 'Monster';
+alter table dm_creatures alter column kind set default 'Creature';
+alter table dm_creatures add column if not exists photos jsonb not null default '[]'::jsonb;
+
+insert into storage.buckets (id, name, public)
+values ('creature-photos', 'creature-photos', true)
+on conflict (id) do nothing;
+drop policy if exists "anon full access creature-photos bucket" on storage.objects;
+create policy "anon full access creature-photos bucket"
+  on storage.objects for all to anon
+  using (bucket_id = 'creature-photos') with check (bucket_id = 'creature-photos');

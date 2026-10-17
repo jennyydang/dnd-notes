@@ -1,112 +1,58 @@
 import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { confirmDelete } from '../lib/confirm.js'
-import TabNav from './TabNav.jsx'
 import Modal from './Modal.jsx'
 import './CreaturesTab.scss'
 import { RichText, RichTextEditor } from './RichText.jsx'
+import { CreatureGallery, PhotoPicker } from './CreaturePhotos.jsx'
+import { CREATURE_TYPES, deletePhotos, photoList, savePickerItems, toPickerItems } from '../lib/creatures.js'
 
-const KINDS = ['Monster', 'Creature']
-
-const FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'Monster', label: 'Monsters' },
-  { id: 'Creature', label: 'Creatures' },
-]
-
-// The standard 5e creature types, offered as suggestions (free text is fine).
-const CREATURE_TYPES = [
-  'Aberration', 'Beast', 'Celestial', 'Construct', 'Dragon', 'Elemental', 'Fey',
-  'Fiend', 'Giant', 'Humanoid', 'Monstrosity', 'Ooze', 'Plant', 'Undead',
-]
-
-const emptyForm = {
-  name: '',
-  kind: 'Monster',
-  creatureType: '',
-  challenge: '',
-  armorClass: '',
-  hitPoints: '',
-  encounteredAt: '',
-  notes: '',
-}
+const emptyForm = { name: '', creatureType: '', encounteredAt: '', notes: '', photos: [] }
 
 const fromRow = (r) => ({
   id: r.id,
   name: r.name,
-  kind: r.kind,
   creatureType: r.creature_type,
-  challenge: r.challenge,
-  armorClass: r.armor_class,
-  hitPoints: r.hit_points,
   encounteredAt: r.encountered_at,
   notes: r.notes,
+  photos: photoList(r.photos),
   createdAt: r.created_at,
 })
 
-// Whole numbers only; blank means "unknown" (stored as null).
-function parseStat(value, max) {
-  if (String(value).trim() === '') return { value: null }
-  const n = Number(value)
-  if (!Number.isInteger(n) || n < 0 || n > max) return { error: `Use a whole number from 0 to ${max}.` }
-  return { value: n }
-}
-
-// Monsters & creatures the party has met, shared by the whole campaign:
-// any player can add, edit or remove one. A filter switches between all
-// of them, just monsters, or just creatures.
+// Creatures the party has met, shared by the whole campaign: any player
+// can add, edit or remove one, with as many photos as they like.
 function CreaturesTab({ campaignId }) {
   const { items: creatures, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('creatures', {
     fromRow,
     filters: { campaign_id: campaignId },
   })
-  const [filter, setFilter] = useState('all')
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
-  const [fieldErrors, setFieldErrors] = useState({})
+  const [nameError, setNameError] = useState(null)
   const [saving, setSaving] = useState(false)
 
-  const counts = useMemo(
-    () => ({
-      all: creatures.length,
-      Monster: creatures.filter((c) => c.kind === 'Monster').length,
-      Creature: creatures.filter((c) => c.kind === 'Creature').length,
-    }),
+  const visible = useMemo(
+    () => [...creatures].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
     [creatures],
   )
-  const visible = useMemo(
-    () =>
-      creatures
-        .filter((c) => filter === 'all' || c.kind === filter)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-    [creatures, filter],
-  )
 
-  function startAdding() {
-    // New entries default to whichever list is being viewed.
-    setForm({ ...emptyForm, kind: filter === 'Creature' ? 'Creature' : 'Monster' })
-    setEditingId(null)
+  function openForm(creature = null) {
+    setForm(
+      creature
+        ? {
+            name: creature.name,
+            creatureType: creature.creatureType,
+            encounteredAt: creature.encounteredAt,
+            notes: creature.notes,
+            photos: toPickerItems(creature.photos),
+          }
+        : emptyForm,
+    )
+    setEditingId(creature?.id || null)
     setFormError(null)
-    setFieldErrors({})
-    setFormOpen(true)
-  }
-
-  function startEditing(creature) {
-    setForm({
-      name: creature.name,
-      kind: creature.kind,
-      creatureType: creature.creatureType,
-      challenge: creature.challenge,
-      armorClass: creature.armorClass ?? '',
-      hitPoints: creature.hitPoints ?? '',
-      encounteredAt: creature.encounteredAt,
-      notes: creature.notes,
-    })
-    setEditingId(creature.id)
-    setFormError(null)
-    setFieldErrors({})
+    setNameError(null)
     setFormOpen(true)
   }
 
@@ -114,36 +60,32 @@ function CreaturesTab({ campaignId }) {
     setFormOpen(false)
     setEditingId(null)
     setForm(emptyForm)
-    setFormError(null)
-    setFieldErrors({})
   }
 
   async function submitForm(event) {
     event.preventDefault()
     if (saving) return
-    const ac = parseStat(form.armorClass, 50)
-    const hp = parseStat(form.hitPoints, 9999)
-    const errors = {}
-    if (!form.name.trim()) errors.name = 'Give it a name.'
-    if (ac.error) errors.armorClass = ac.error
-    if (hp.error) errors.hitPoints = hp.error
-    setFieldErrors(errors)
-    if (Object.keys(errors).length) return
-
-    const payload = {
-      name: form.name.trim(),
-      kind: form.kind,
-      creature_type: form.creatureType.trim(),
-      challenge: form.challenge.trim(),
-      armor_class: ac.value,
-      hit_points: hp.value,
-      encountered_at: form.encounteredAt.trim(),
-      notes: form.notes,
+    if (!form.name.trim()) {
+      setNameError('Give it a name.')
+      return
     }
+    setNameError(null)
     setSaving(true)
+    setFormError(null)
     try {
+      const before = editingId ? creatures.find((c) => c.id === editingId)?.photos : []
+      const { paths, removed } = await savePickerItems(form.photos, before)
+      const payload = {
+        name: form.name.trim(),
+        kind: 'Creature',
+        creature_type: form.creatureType.trim(),
+        encountered_at: form.encounteredAt.trim(),
+        notes: form.notes,
+        photos: paths,
+      }
       if (editingId) await updateItem(editingId, payload)
       else await addItem(payload)
+      await deletePhotos(removed)
       closeForm()
     } catch (err) {
       setFormError(err.message)
@@ -156,6 +98,7 @@ function CreaturesTab({ campaignId }) {
     if (!confirmDelete(`“${creature.name}”`)) return false
     try {
       await removeItem(creature.id)
+      await deletePhotos(creature.photos)
       return true
     } catch (err) {
       window.alert(`Couldn’t delete: ${err.message}`)
@@ -169,42 +112,19 @@ function CreaturesTab({ campaignId }) {
   }
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
-  const label = filter === 'Creature' ? 'Creature' : filter === 'Monster' ? 'Monster' : 'Monster or Creature'
 
   return (
     <section className="creatures-tab">
-      <div className="creatures-tab__toolbar">
-        <TabNav
-          tabs={FILTERS.map((f) => ({ ...f, label: `${f.label} (${counts[f.id]})` }))}
-          activeTab={filter}
-          onSelect={setFilter}
-          className="tab-nav--pill creatures-tab__filter"
-          label="Show monsters or creatures"
-        />
-        <button type="button" className="btn btn--primary" onClick={startAdding}>
-          + Add {label}
+      <div className="creatures-tab__toolbar creatures-tab__toolbar--end">
+        <button type="button" className="btn btn--primary" onClick={() => openForm()}>
+          + Add Creature
         </button>
       </div>
 
       {formOpen && (
-        <Modal onClose={closeForm} label={editingId ? `Edit ${form.kind}` : `Add ${form.kind}`}>
+        <Modal onClose={closeForm} label={editingId ? 'Edit Creature' : 'Add Creature'}>
           <form className="creature-form form-stack" onSubmit={submitForm} noValidate>
-            <h3 className="section-card__title">{editingId ? `Edit ${form.kind}` : `Add ${form.kind}`}</h3>
-
-            <div className="chip-row" role="radiogroup" aria-label="Monster or creature">
-              {KINDS.map((kind) => (
-                <button
-                  key={kind}
-                  type="button"
-                  role="radio"
-                  aria-checked={form.kind === kind}
-                  className={`chip${form.kind === kind ? ' chip--active' : ''}`}
-                  onClick={() => setForm({ ...form, kind })}
-                >
-                  {kind === 'Monster' ? 'monster' : 'creature'} {kind}
-                </button>
-              ))}
-            </div>
+            <h3 className="section-card__title">{editingId ? 'Edit Creature' : 'Add Creature'}</h3>
 
             <div className="form-row">
               <div className="field">
@@ -214,11 +134,11 @@ function CreaturesTab({ campaignId }) {
                   type="text"
                   value={form.name}
                   onChange={set('name')}
-                  placeholder={form.kind === 'Monster' ? 'Young Black Dragon' : 'Giant Owl'}
-                  aria-invalid={Boolean(fieldErrors.name)}
+                  placeholder="Young Black Dragon"
+                  aria-invalid={Boolean(nameError)}
                   autoFocus
                 />
-                {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
+                {nameError && <p className="field-error">{nameError}</p>}
               </div>
               <div className="field">
                 <label htmlFor="creature-type">Type</label>
@@ -238,45 +158,13 @@ function CreaturesTab({ campaignId }) {
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="field">
-                <label htmlFor="creature-cr">Challenge (CR)</label>
-                <input id="creature-cr" type="text" value={form.challenge} onChange={set('challenge')} placeholder="1/2" />
-              </div>
-              <div className="field">
-                <label htmlFor="creature-ac">AC</label>
-                <input
-                  id="creature-ac"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  max="50"
-                  value={form.armorClass}
-                  onChange={set('armorClass')}
-                  aria-invalid={Boolean(fieldErrors.armorClass)}
-                />
-                {fieldErrors.armorClass && <p className="field-error">{fieldErrors.armorClass}</p>}
-              </div>
-              <div className="field">
-                <label htmlFor="creature-hp">HP</label>
-                <input
-                  id="creature-hp"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  max="9999"
-                  value={form.hitPoints}
-                  onChange={set('hitPoints')}
-                  aria-invalid={Boolean(fieldErrors.hitPoints)}
-                />
-                {fieldErrors.hitPoints && <p className="field-error">{fieldErrors.hitPoints}</p>}
-              </div>
-            </div>
-
             <div className="field">
               <label htmlFor="creature-where">Where we met it</label>
               <input id="creature-where" type="text" value={form.encounteredAt} onChange={set('encounteredAt')} placeholder="The Sunken Crypt" />
             </div>
+
+            <PhotoPicker items={form.photos} onChange={(photos) => setForm((prev) => ({ ...prev, photos }))} />
+
             <div className="field">
               <label htmlFor="creature-notes">Notes</label>
               <RichTextEditor
@@ -284,7 +172,7 @@ function CreaturesTab({ campaignId }) {
                 value={form.notes}
                 onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
                 ariaLabel="Notes"
-                placeholder="Weak to radiant damage, flees below half HP…"
+                placeholder="Weak to radiant damage, flees when hurt…"
               />
             </div>
 
@@ -304,7 +192,7 @@ function CreaturesTab({ campaignId }) {
                 Cancel
               </button>
               <button type="submit" className="btn btn--primary" disabled={saving}>
-                {saving ? 'Saving…' : editingId ? 'Save Changes' : `Add ${form.kind}`}
+                {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Creature'}
               </button>
             </div>
           </form>
@@ -315,53 +203,27 @@ function CreaturesTab({ campaignId }) {
       {error && (
         <p className="empty-state empty-state--error">
           {error}
-          {/creatures/.test(error) && ' — run the latest supabase/schema.sql to add the Monsters & Creatures table.'}
+          {/creatures|photos/.test(error) && ' — run the latest supabase/schema.sql to update the Creatures table.'}
         </p>
       )}
 
       {!loading && !error && visible.length === 0 && (
-        <p className="empty-state">
-          {creatures.length === 0
-            ? 'No monsters or creatures yet. Add the things your party has fought, befriended or fled from.'
-            : `No ${filter === 'Monster' ? 'monsters' : 'creatures'} yet.`}
-        </p>
+        <p className="empty-state">No creatures yet. Add the things your party has fought, befriended or fled from.</p>
       )}
 
       {!loading && !error && visible.length > 0 && (
         <div className="creature-list">
           {visible.map((c) => (
-            <article className={`creature-card panel creature-card--${c.kind.toLowerCase()}`} key={c.id}>
+            <article className="creature-card panel" key={c.id}>
+              <CreatureGallery photos={c.photos} name={c.name} />
               <header className="creature-card__header">
                 <h3 className="creature-card__name">{c.name}</h3>
-                <span className={`creature-card__kind creature-card__kind--${c.kind.toLowerCase()}`}>
-                  <span aria-hidden="true">{c.kind === 'Monster' ? 'monster' : 'creature'}</span> {c.kind}
-                </span>
               </header>
-              {(c.creatureType || c.challenge) && (
-                <p className="creature-card__meta">
-                  {[c.creatureType, c.challenge && `CR ${c.challenge}`].filter(Boolean).join(' · ')}
-                </p>
-              )}
-              {(c.armorClass !== null || c.hitPoints !== null) && (
-                <dl className="creature-card__stats">
-                  {c.armorClass !== null && (
-                    <div>
-                      <dt>AC</dt>
-                      <dd>{c.armorClass}</dd>
-                    </div>
-                  )}
-                  {c.hitPoints !== null && (
-                    <div>
-                      <dt>HP</dt>
-                      <dd>{c.hitPoints}</dd>
-                    </div>
-                  )}
-                </dl>
-              )}
+              {c.creatureType && <p className="creature-card__meta">{c.creatureType}</p>}
               {c.encounteredAt && <p className="creature-card__where">Met: {c.encounteredAt}</p>}
               {c.notes && <RichText className="creature-card__notes" value={c.notes} />}
               <div className="creature-card__actions">
-                <button type="button" className="btn btn--text" onClick={() => startEditing(c)}>
+                <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
                   Edit
                 </button>
                 <button type="button" className="btn btn--danger card-delete" onClick={() => removeCreature(c)}>

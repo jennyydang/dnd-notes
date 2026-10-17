@@ -5,7 +5,7 @@ import './ShareStatus.scss'
 
 const REVEALED_MS = 3000
 
-// The DM's share control on an NPC / art / map / monster card:
+// The DM's share control on an NPC / art / map / creature card:
 // private → "Share" button; sent → waiting; added → where it went. With
 // `onReveal`, a "Reveal now" button also pops it up full-screen for the
 // players at the table (it resolves true once sent). Once `revealed`, the

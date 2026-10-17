@@ -5,7 +5,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { toEditorContent } from '../lib/richNotes.js'
 import './RichText.scss'
 
-// Simple formatting for the notes on cards (NPCs, loot, monsters, places,
+// Simple formatting for the notes on cards (NPCs, loot, creatures, places,
 // quests, lore, party…): bold, italic, underline, bulleted and numbered
 // lists. Stored as a small HTML subset; older plain-text notes still read
 // and edit fine. RichText shows them without running any stored HTML —

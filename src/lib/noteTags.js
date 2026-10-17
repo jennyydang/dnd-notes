@@ -1,7 +1,7 @@
 import { groupForChar } from './tags.js'
 
 // Tags inside a plain-text quick note. A quick note is just text, so a tag
-// (@person, #place, ~lore, $loot, %monster, !event) is stored as a token:
+// (@person, #place, ~lore, $loot, %creature, !event) is stored as a token:
 //
 //   {{tag:@|<id>|<kind>|Old Marta}}
 //

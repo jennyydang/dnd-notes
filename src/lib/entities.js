@@ -146,19 +146,18 @@ export const ENTITY_TYPES = {
   },
 }
 
-// Monsters & creatures (one table, split by kind).
+// Creatures the party has met.
 ENTITY_TYPES.creature = {
   table: 'creatures',
   label: 'Creature',
-  plural: 'Monsters & creatures',
-  icon: 'monster',
+  plural: 'Creatures',
+  icon: 'creature',
   tab: 'creatures',
   normalize: (r) => ({
     title: text(r.name),
-    subtitle: [r.creature_type, r.challenge && `CR ${r.challenge}`].filter(Boolean).join(' · '),
+    subtitle: text(r.creature_type),
     body: [r.encountered_at && `Met: ${r.encountered_at}`, plain(r.notes)].filter(Boolean).join('\n'),
-    tags: [r.kind, r.creature_type].filter(Boolean),
-    label: r.kind === 'Monster' ? 'Monster' : 'Creature',
+    tags: [r.creature_type].filter(Boolean),
   }),
 }
 

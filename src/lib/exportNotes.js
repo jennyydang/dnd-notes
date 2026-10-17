@@ -12,7 +12,7 @@ const SUMMARY_GROUPS = [
   ['place', 'Places'],
   ['lore', 'Lore'],
   ['loot', 'Loot'],
-  ['creature', 'Monsters'],
+  ['creature', 'Creatures'],
   ['event', 'Events'],
 ]
 

@@ -167,7 +167,7 @@ function NotificationsPanel({ campaignId, inbox, notes, onClose }) {
               const result = results[share.id]
               const image = shareImage(share)
               const detail = shareDetail(share)
-              const icon = share.kind === 'creature' && share.payload.kind === 'Creature' ? 'creature' : kind.icon
+              const icon = kind.icon
               return (
                 <li key={share.id} className={`dm-share dm-share--${share.kind}`}>
                   <div className="dm-share__thumb" aria-hidden="true">
