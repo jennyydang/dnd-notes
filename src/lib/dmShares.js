@@ -9,12 +9,11 @@ export const SHARE_KINDS = {
   npc: { label: 'NPC', icon: 'user', tab: 'npcs', tabLabel: 'NPCs', bucket: 'npc-portraits' },
   art: { label: 'Art', icon: 'image', tab: 'art', tabLabel: 'Art', bucket: 'campaign-art' },
   map: { label: 'Map', icon: 'map', tab: 'maps', tabLabel: 'Maps', bucket: 'maps' },
-  creature: { label: 'Monster', icon: 'monster', tab: 'creatures', tabLabel: 'Monsters & Creatures', bucket: null },
+  creature: { label: 'Creature', icon: 'creature', tab: 'creatures', tabLabel: 'Creatures', bucket: 'creature-photos' },
 }
 
-// "Monster" or "Creature" for a creature share; the kind's label otherwise.
+// The kind's label ("NPC", "Creature"…).
 export function shareLabel(share) {
-  if (share.kind === 'creature') return share.payload.kind === 'Creature' ? 'Creature' : 'Monster'
   return SHARE_KINDS[share.kind].label
 }
 
@@ -60,7 +59,7 @@ async function existingId(table, column, value) {
 
 // The line written into the player's quick notes when they take a share
 // in, with the matching tag — @ for an NPC, # for a map (Maps & Places),
-// % for a monster or creature, ! for a piece of art (an event on the
+// % for a creature, ! for a piece of art (an event on the
 // Timeline) — so it
 // lands in their recap at End Session like a tag they'd typed.
 export function shareNote(share, partyId) {
@@ -72,7 +71,7 @@ export function shareNote(share, partyId) {
     case 'map':
       return `Got a map: ${tagToken({ char: '#', id: partyId, label: name })} — shared by the DM.`
     case 'creature':
-      return `Faced ${tagToken({ char: '%', id: partyId, label: name, kind: p.kind === 'Creature' ? 'Creature' : 'Monster' })} — shared by the DM.`
+      return `Encountered ${tagToken({ char: '%', id: partyId, label: name })} — shared by the DM.`
     case 'art':
       return `${tagToken({ char: '!', id: `share-${share.id}`, label: `Saw ${share.title || 'a scene'}` })} — shared by the DM.`
     default:
@@ -115,15 +114,20 @@ async function addToPartyTables(share, campaignId) {
   if (kind === 'creature') {
     const had = await existingId('creatures', 'dm_creature_id', sourceId)
     if (had) return { result: 'already', id: had }
+    // The party gets its own copies of the photos, so the DM deleting
+    // theirs doesn't take the party's with it.
+    const photos = []
+    for (const path of Array.isArray(payload.photos) ? payload.photos : []) {
+      const copy = await copyOrReuse(SHARE_KINDS.creature.bucket, path)
+      if (copy) photos.push(copy)
+    }
     const { data: made, error } = await supabase.from('creatures').insert({
       campaign_id: campaignId,
       name: payload.name || share.title || 'Unnamed',
-      kind: payload.kind === 'Creature' ? 'Creature' : 'Monster',
+      kind: 'Creature',
       creature_type: payload.creature_type || '',
-      challenge: payload.challenge || '',
-      armor_class: payload.armor_class ?? null,
-      hit_points: payload.hit_points ?? null,
       notes: payload.description || '',
+      photos,
       dm_creature_id: sourceId,
     }).select('id').single()
     if (error) {
@@ -170,11 +174,13 @@ async function addToPartyTables(share, campaignId) {
   return { result: 'added', id: made.id }
 }
 
-// The picture that goes with a share (portrait, art or map), if any.
+// The picture that goes with a share (portrait, art, map or a creature's
+// first photo), if any.
 export function shareImage(share) {
   const { bucket } = SHARE_KINDS[share.kind]
   if (!bucket) return ''
-  const path = share.kind === 'npc' ? share.payload.photo_path : share.payload.image_path
+  const p = share.payload
+  const path = share.kind === 'npc' ? p.photo_path : share.kind === 'creature' ? p.photos?.[0] : p.image_path
   return getPublicUrl(bucket, path)
 }
 
@@ -183,9 +189,6 @@ export function shareDetail(share) {
   const p = share.payload
   if (share.kind === 'npc') return [p.race, p.location].filter(Boolean).join(' · ')
   if (share.kind === 'art') return p.category || ''
-  if (share.kind === 'creature') {
-    const stats = [p.challenge && `CR ${p.challenge}`, p.armor_class != null && `AC ${p.armor_class}`, p.hit_points != null && `HP ${p.hit_points}`]
-    return [p.creature_type, ...stats].filter(Boolean).join(' · ')
-  }
+  if (share.kind === 'creature') return p.creature_type || ''
   return ''
 }

@@ -12,7 +12,7 @@ const VERBS = {
   place: 'Went to',
   lore: 'Learned of',
   loot: 'Found',
-  creature: 'Faced',
+  creature: 'Encountered',
   event: 'Moment',
 }
 

@@ -1,7 +1,7 @@
 // The relationship web: who and what is connected to what, built from
 // what the party has already written down —
 //  • tags that share a paragraph of a session recap (@person, #place,
-//    ~lore, $loot, %monster), and party members named in that paragraph;
+//    ~lore, $loot, %creature), and party members named in that paragraph;
 //  • explicit links between entries ("met at", "clue for"…);
 //  • a quest's "given by", an NPC's "met at", an item's holder.
 
@@ -12,7 +12,7 @@ export const WEB_TYPES = {
   lore: { label: 'Lore & factions', color: '#9b8fd6' },
   quest: { label: 'Quests', color: '#d0708f' },
   loot: { label: 'Loot', color: '#7fb3c8' },
-  creature: { label: 'Monsters', color: '#c9625e' },
+  creature: { label: 'Creatures', color: '#c9625e' },
   goal: { label: 'Party goals', color: '#8fc46b' },
 }
 

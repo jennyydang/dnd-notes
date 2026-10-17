@@ -60,7 +60,7 @@ const TAB_DEFS = {
   timeline: { label: 'Timeline', icon: 'hourglass' },
   web: { label: 'Connections', icon: 'network' },
   npcs: { label: 'NPCs', icon: 'users' },
-  creatures: { label: 'Monsters & Creatures', icon: 'monster' },
+  creatures: { label: 'Creatures', icon: 'creature' },
   art: { label: 'Art', icon: 'image' },
   maps: { label: 'Maps & Places', icon: 'map' },
   quests: { label: 'Quests', icon: 'quest' },
@@ -73,7 +73,7 @@ const TAB_DEFS = {
   'dm-npcs': { label: 'NPCs', icon: 'users' },
   'dm-art': { label: 'Art', icon: 'image' },
   'dm-maps': { label: 'Maps', icon: 'map' },
-  'dm-creatures': { label: 'Monsters', icon: 'monster' },
+  'dm-creatures': { label: 'Creatures', icon: 'creature' },
   'dm-combat': { label: 'Combat', icon: 'quest' },
   'dm-overview': { label: 'Party Overview', icon: 'compass' },
   'dm-players': { label: 'Players', icon: 'shield' },
@@ -95,7 +95,7 @@ const AREAS = [
   { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-overview', 'dm-players', 'dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
 
-// A DM's whole view of the campaign: just their private NPCs, monsters, art and maps,
+// A DM's whole view of the campaign: just their private NPCs, creatures, art and maps,
 // each with a Share button that notifies the players.
 const DM_AREAS = [
   // What the party has pieced together, so the DM can follow along.
@@ -103,7 +103,7 @@ const DM_AREAS = [
   // Who's in the campaign, their characters, and sign-up invite links.
   { id: 'dm-players', label: 'Players', icon: 'shield', tabs: ['dm-players'] },
   { id: 'dm-npcs', label: 'NPCs', icon: 'users', tabs: ['dm-npcs'] },
-  { id: 'dm-creatures', label: 'Monsters', icon: 'monster', tabs: ['dm-creatures'] },
+  { id: 'dm-creatures', label: 'Creatures', icon: 'creature', tabs: ['dm-creatures'] },
   { id: 'dm-art', label: 'Art', icon: 'image', tabs: ['dm-art'] },
   { id: 'dm-maps', label: 'Maps', icon: 'map', tabs: ['dm-maps'] },
   // The shared initiative tracker, so the DM can run turn order.

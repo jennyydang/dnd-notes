@@ -11,7 +11,7 @@ import { RichText } from './RichText.jsx'
 const REVEAL_WINDOW_MS = 5 * 60 * 1000
 const SEEN_LIMIT = 50
 
-// "some art", "a map", "an NPC", "a monster".
+// "some art", "a map", "an NPC", "a creature".
 function revealNoun(share) {
   if (share.kind === 'art') return 'some art'
   const label = share.kind === 'npc' ? 'NPC' : shareLabel(share).toLowerCase()
@@ -20,7 +20,7 @@ function revealNoun(share) {
 
 const SPARKS = 12
 
-// When the DM presses "Reveal now", the NPC, monster, art or map fills the
+// When the DM presses "Reveal now", the NPC, creature, art or map fills the
 // screen of every player who has the campaign open — like sliding a
 // handout across the table. It arrives sealed: a wax seal drops in and
 // cracks, sparks fly, and the handout unrolls like a scroll. Each reveal

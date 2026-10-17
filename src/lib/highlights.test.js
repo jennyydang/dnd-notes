@@ -21,7 +21,7 @@ describe('highlight reel', () => {
     expect(reel.map((m) => `${m.verb} ${m.label}`)).toEqual([
       'Went to Saltmere',
       'Met Old Marta',
-      'Faced Kraken',
+      'Encountered Kraken',
       'Moment The lighthouse fell',
       'Bookmarked Intro',
       'Bookmarked Fight',
