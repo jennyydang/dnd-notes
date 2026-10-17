@@ -91,7 +91,7 @@ function ExportNotesDialog({ sessions, campaignName, onClose }) {
   ]
 
   return (
-    <Modal onClose={onClose} label={isAll ? 'Export all session notes' : 'Export session notes'}>
+    <Modal onClose={onClose} label={isAll ? 'Export all session notes' : 'Export session notes'} size="narrow">
       <div className="export-notes">
         <h3 className="section-card__title">{isAll ? 'Export all session notes' : 'Export session notes'}</h3>
         <p className="export-notes__scope">
@@ -133,7 +133,7 @@ function ExportNotesDialog({ sessions, campaignName, onClose }) {
           {status?.message}
         </p>
 
-        <div className="form-actions">
+        <div className="export-notes__done">
           <button type="button" className="btn btn--text" onClick={onClose}>
             Done
           </button>

@@ -905,3 +905,17 @@ input[type='checkbox'] {
 .form-delete {
   margin-right: auto;
 }
+
+// Date fields: iPad / iPhone Safari collapse an empty one to a thin sliver
+// (its value box has no height until a date is picked) and centre the
+// text. Give every date field the same height and alignment as the
+// other inputs.
+input[type='date'] {
+  min-height: 2.4rem;
+  line-height: 1.4;
+
+  &::-webkit-date-and-time-value {
+    min-height: 1.4em;
+    text-align: left;
+  }
+}

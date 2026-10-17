@@ -1,11 +1,15 @@
 @use '../styles/variables' as *;
 
+// Sits in a narrow dialog (Modal size="narrow"), which already pads it.
 .export-notes {
-  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  width: min(100%, 32rem);
+  gap: 0.75rem;
+  width: 100%;
+
+  .section-card__title {
+    margin: 0;
+  }
 
   &__scope {
     margin: 0;
@@ -35,14 +39,24 @@
     gap: 0.5rem;
   }
 
+  // Only takes room once there's something to say ("Copied!").
   &__status {
-    min-height: 1.4em;
     margin: 0;
     color: $green-text;
+
+    &:empty {
+      display: none;
+    }
 
     &--error {
       color: $maroon-text;
     }
+  }
+
+  &__done {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -0.25rem;
   }
 }
 
@@ -51,8 +65,8 @@
   align-items: center;
   gap: 0.85rem;
   width: 100%;
-  min-height: 3.5rem;
-  padding: 0.65rem 0.9rem;
+  min-height: 3.25rem;
+  padding: 0.55rem 0.85rem;
   text-align: left;
   background: $bg-deep;
   border: 1px solid $ink-soft;
