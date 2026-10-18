@@ -1,6 +1,7 @@
 // The in-app guide (AppGuide.jsx): how to use every part of the app.
-// Each section has topics; `for` is 'player', 'dm' or 'all' (default).
-// Text can use **bold** and `keys`.
+// Each section has topics; `for` is 'player', 'dm' or 'all' (default), on
+// a section or a single topic. Text can use **bold** and `keys`. Button
+// names are quoted as they appear on screen — keep them in step.
 
 export const GUIDE = [
   {
@@ -8,44 +9,50 @@ export const GUIDE = [
     title: 'Getting started',
     icon: 'compass',
     intro:
-      'Adventurer’s Log is your party’s shared campaign notebook. Everyone in a campaign sees the same NPCs, places, quests and loot, live; your session recaps, quick notes and prep stay private to you.',
+      'Adventurer’s Log is your party’s shared campaign notebook. Everyone in a campaign sees the same NPCs, places, quests, loot and lore, live. Your session recaps, quick notes, prep and personal goals stay private to you.',
     topics: [
       {
         title: 'Create or join a campaign',
-        where: 'Your campaign list',
+        where: 'Your Campaigns',
         steps: [
-          'To start one, create a new campaign and give it a name, description and cover picture. You become its creator.',
-          'To join a friend’s, use **Join with a code** and type the code they give you, or open the invite link they send.',
+          'Tap **+ Campaign**.',
+          '**New Campaign**: add a cover, name and description, then **Create Campaign**.',
+          '**Join Existing**: type the **Join Code** the campaign’s creator gives you, then **Join**.',
+          'Or open an invite link someone sent you, and tap **Join campaign**.',
           'Tap a campaign’s card to open it.',
         ],
-        tips: ['Every card shows its join code, so the creator can read it out at the table.'],
+        tips: [
+          'The creator (or DM) of a campaign gets **Edit**, **Members**, **Archive** and **Delete** on its card. **Members** shows the join code and lets them remove someone.',
+          '**Show archived** brings archived campaigns back into view.',
+        ],
       },
       {
         title: 'Find your way around',
         where: 'Inside a campaign',
         steps: [
-          'Screens are grouped into **Home**, **Session**, **Journal**, **Character** and **Prep**: the sidebar on a computer or tablet, the bar along the bottom on a phone.',
-          'An area with several screens shows them as a row of pills along the top.',
-          'The app remembers the last screen you had open in each campaign.',
+          'Players’ screens are grouped into **Home**, **Session**, **Journal**, **Character** and **Prep**: the sidebar on a computer or tablet, the bar along the bottom on a phone. A DM gets their own menu (see **For the DM**).',
+          'A group with several screens shows them as a row of pills along the top.',
+          '**← Campaigns** goes back to your campaign list. The app remembers the last screen you had open in each campaign.',
         ],
       },
       {
         title: 'Search everything',
-        where: 'The search bar at the top',
+        where: 'The search box at the top',
+        for: 'player',
         steps: [
-          'Click the search bar, or press `⌘K` / `Ctrl+K` anywhere in a campaign.',
-          'Type part of a name or anything from the notes. Spelling mistakes are forgiven.',
-          'Filter by type, then use the arrow keys and `Enter` (or tap) to open a result.',
+          'Click **Search NPCs, places, quests, notes…**, or press `⌘K` / `Ctrl+K` anywhere in a campaign.',
+          'Type part of a name or anything from the notes; spelling mistakes are forgiven. Filter by type, or change **Sort** (Best match, Newest, A → Z).',
+          'Use `↑` `↓` and `Enter` (or tap) to open a result. Screens show up too (“Go to Quests”), and **+ Create “…”** makes a new NPC with that name.',
         ],
       },
       {
-        title: 'Your account',
+        title: 'Your account and settings',
         where: 'Your initial or picture, top right',
         steps: [
-          '**Account** changes your username or password.',
-          '**Profile picture** adds a photo; the party sees it on your face in the “here now” row.',
-          '**Settings** holds app preferences and your AI assistant connection.',
-          '**App guide** opens this guide, and **Send Feedback** reaches the app’s maker.',
+          '**Account**: change your username, name, email or password (your current password is needed to save).',
+          '**Profile picture**: upload and crop a photo. The party sees it on your face in the “here now” row.',
+          '**Settings**: background (or upload your own), moving background (Embers & Fog, Fog Only, Off), font, text size, and the **AI Assistant** connection. **Reset to Defaults** undoes it all.',
+          '**App guide** opens this guide. **Send Feedback** reaches the app’s maker; tick **Tell me when it’s solved** and the reply arrives in your bell.',
         ],
       },
     ],
@@ -54,22 +61,24 @@ export const GUIDE = [
     id: 'home',
     title: 'Home',
     icon: 'home',
+    for: 'player',
     topics: [
       {
         title: 'What Home shows',
         where: 'Home',
         steps: [
-          'Your campaign, the next session date (set it in Prep), and the in-world **Day** counter.',
-          '**Start Session** (or **Resume Session**) takes you into Session Mode.',
-          '**Previously on…** opens a recap card of last session to read aloud.',
-          'Below: the party’s goals, your character at a glance, quick add, open threads, and recent sessions and entries.',
+          '**Start Session** (or **Resume Session**) and the next session date (set it in Prep).',
+          '**Previously on…** opens last session’s recap to read out, with **Read it aloud**.',
+          'The party’s goals with their progress rings (**All goals →**), your character’s HP and AC, **Quick add**, **Last session**, **Open threads** and **Recently added**.',
+          'When the DM has revealed something new, a banner says so; **View →** opens the bell.',
         ],
       },
       {
         title: 'Quick add',
         where: 'Home → Quick add',
         steps: [
-          'Type a quick note and press **Save**, or tap **NPC**, **Location**, **Quest**, **Clue** or **Session recap** to start that entry straight away.',
+          'Type in **Jot a quick note…** and press **Save**.',
+          'Or tap **NPC**, **Location**, **Quest**, **Clue** or **Session recap** to start that entry straight away.',
         ],
       },
       {
@@ -77,10 +86,15 @@ export const GUIDE = [
         where: 'Home → Day',
         steps: [
           'Tap **+1 day** after a long rest.',
-          'Tap the **Day** itself for travel or downtime: pick 1 day, 3 days, a week or any number, add what happened (“Kingsroad to Palomerie”), and move the calendar on.',
-          'Quests and party goals can be given a deadline (“Due in 4 days”) in their edit form; their badges count down as the days pass: “3 days left”, “Due today”, “Overdue”.',
+          'Tap **Day N** itself for travel or downtime: pick **1 day**, **3 days**, **A week** or any number, add what happened (“Kingsroad to Palomerie”), then **Move to day N**.',
+          'Give quests and goals a deadline (“Due in 4 days”) in their edit form. Their badges count down as the days pass: “3 days left”, “Due today”, “Overdue by 2 days”.',
         ],
-        tips: ['The whole party shares one calendar, and its history is listed in the Day window.', 'Going back a few days is allowed, for fixing mistakes.'],
+        tips: ['The whole party shares one calendar; the Day window lists its history and what’s coming due.', 'You can go back a few days to fix a mistake.'],
+      },
+      {
+        title: 'Back up the campaign',
+        where: 'Home → bottom of the page',
+        steps: ['**Export campaign backup (JSON)** downloads everything in the campaign as one file.'],
       },
     ],
   },
@@ -92,55 +106,66 @@ export const GUIDE = [
     intro: 'Session Mode keeps everything you need at the table on one screen.',
     topics: [
       {
-        title: 'Start and end a session',
-        where: 'Home → Start Session',
+        title: 'Start, pause and end',
+        where: 'Session → Session Mode',
         steps: [
-          '**Start Session** opens the “Previously on…” card; read it out, then begin.',
-          'During play, Session Mode tracks your HP, conditions, spell slots and notes.',
-          '**End Session** writes a recap draft from your quick notes for you to tidy up and save.',
+          '**Start session** (or **Start Session** on Home). If there’s a past session, the “Previously on…” card opens first; tap **Begin session**.',
+          '**Pause** / **Resume** as needed. While a session runs, a session dock follows you to other screens with a note box and quick-add buttons.',
+          '**■ End session** opens your recap, already filled in from this session’s quick notes. Tidy it and tap **Save recap & end**, or **End without recap**.',
         ],
       },
       {
-        title: 'Hit points, conditions and rests',
-        where: 'Session → Session Mode',
+        title: 'Your character in play',
+        where: 'Session Mode → Character',
         steps: [
-          'Enter an amount and tap damage or heal; undo puts it back. Temporary HP is used up first.',
-          'Track conditions, exhaustion, concentration, death saves, spell slots and limited-use features.',
-          'Short and long rests restore what they should.',
+          'Type an amount and tap **− Damage** or **+ Heal**; **Undo** puts it back. Temp HP is used up first.',
+          'At 0 HP, track **Death saves**; the edges of your screen pulse red until you’re back up.',
+          'Track concentration (**On which spell?**), conditions, exhaustion, spell slots (◆ tap to spend, ◇ tap to restore) and resources.',
+          '**Short rest** and **Long rest** restore what they should.',
         ],
-        tips: ['Stats come from your Character Sheet. Anything missing shows “—” with a link to fill it in.'],
+        tips: ['Stats come from your Character Sheet; anything missing shows “—”.'],
       },
       {
         title: 'Quick notes',
-        where: 'Session → Session Mode',
+        where: 'Session Mode → Notes',
         steps: [
-          'Jot notes as things happen; each is timestamped.',
-          'Type a tag (see **Tags** below) to link a person, place or item as you write.',
-          'Turn a note into an NPC, location, quest, clue, lore or loot entry without retyping it.',
+          'Type in **What just happened? (Enter to save)**; each note is timestamped.',
+          'Use tags (see **Session notes & tags**) to link people, places and items as you write.',
+          '**Make entry ▾** turns a note into an NPC, location, quest, clue, lore or loot entry without retyping it.',
         ],
       },
       {
         title: 'Record the session',
-        where: 'Session → Session Mode',
+        where: 'Session Mode → Record audio',
         steps: [
-          'Start a recording to capture the table’s audio.',
-          'Drop a bookmark at big moments; bookmarks show in the session’s highlight reel and jump the recording to that point.',
+          'Tap **Record audio**. A recording bar stays on screen wherever you go.',
+          'Tap **Mark** at big moments; bookmarks appear in the session’s highlight reel and jump the recording to that point.',
+          'The recording is attached to your recap when you end the session.',
+        ],
+      },
+      {
+        title: 'Party votes',
+        where: 'Session Mode → Vote',
+        steps: [
+          '**+ New vote**: a question and choices, then **Start vote**. The DM can start votes too.',
+          'When a vote opens, “The party is voting” pops up wherever you are. Tap a choice.',
+          'The vote’s creator (or the DM) can **Close vote** to show the result.',
         ],
       },
       {
         title: 'Initiative and your turn',
         where: 'Anywhere in the app',
         steps: [
-          'When the DM calls for initiative, your screen shakes with a **Roll for initiative!** alert.',
+          'When the DM calls for initiative, your screen shakes with **Roll for initiative!** and the app turns red.',
           'Tap **Roll for me** to roll with your bonus, or roll real dice and tell the DM.',
-          'You’ll get **You’re up next** a turn ahead and a **Your turn** banner when it’s yours. Phones buzz too.',
+          '**You’re up next** warns you a turn ahead, and **Your turn** shows when it’s yours. Phones buzz too.',
         ],
-        tips: ['The red combat badge at the top reopens the roll prompt until you’ve rolled.'],
+        tips: ['The ⚔ Round badge at the top reopens the roll prompt until you’ve rolled.'],
       },
       {
-        title: 'Party votes',
-        where: 'Session Mode (players) · Tools (DM)',
-        steps: ['When the DM opens a vote, it pops up for you. Pick an answer, and see the result when the DM closes it.'],
+        title: 'Look things up',
+        where: 'Session Mode → Reference',
+        steps: ['Your spells, inventory, skills and roleplay notes, without leaving the table screen.'],
       },
     ],
   },
@@ -148,6 +173,7 @@ export const GUIDE = [
     id: 'notes',
     title: 'Session notes & tags',
     icon: 'book',
+    for: 'player',
     topics: [
       {
         title: 'Write a recap',
@@ -155,36 +181,37 @@ export const GUIDE = [
         steps: [
           'Tap **+ Add Session Notes**, give it a title and date, and write what happened.',
           '`Return` starts a new paragraph; `Shift+Return` starts a new line in the same paragraph.',
-          'Start a line with `- ` (or `•`) for bullets. Use the toolbar for **bold**, italics, underline and lists.',
+          'Start a line with `- ` or `•` for a bullet list, or use the toolbar.',
         ],
-        tips: ['Recaps are private to you. Copy notes or **Export** them to share.'],
+        tips: ['Recaps are private to you.'],
       },
       {
         title: 'Tags',
-        where: 'Any recap or quick note',
+        where: 'Recaps and quick notes',
         steps: [
-          'Type a tag character and pick from the list, or create a new entry on the spot:',
-          '`@` people (NPCs) · `#` places · `~` lore, factions and clues · `$` loot · `%` creatures · `!event` timeline events.',
-          'A tag becomes a chip; tap it to open that entry.',
+          'Type a symbol and pick from the list, or choose **+ New …** to create the entry on the spot:',
+          '`@` people · `#` places (`#city`, `#dungeon`…) · `~` lore, factions and clues · `$` loot · `%` creatures · `!event` timeline events.',
+          'A tag becomes a chip; tap it to open the entry. A session lists its tags under People Met, Places Visited, Lore, Loot Found, Creatures and Events.',
         ],
         tips: [
-          'Tags are what connect your notes: they power the Timeline, Connections, World Wiki, Prep’s “came up recently” and each entry’s related list.',
+          'Tags connect your notes: they power the Timeline, Connections, World Wiki, Prep’s “Came up recently” and each entry’s links.',
         ],
       },
       {
-        title: 'Highlight reel',
+        title: 'Recording and highlight reel',
         where: 'Journal → Session Notes → a session',
         steps: [
-          'Each session shows a highlight reel: who you met, where you went, what you found and faced, bookmarks, votes and quests.',
-          'Tap **Play** to step through it, or tap a moment to open it.',
+          'Play the session’s recording, or tap a bookmark (“Play from 12:40”). **Record**, **Mark** and **Upload audio** work here too.',
+          'The **Highlight reel** walks through who you met, where you went, what you found and decided. Tap **Play**, or tap a moment to open it.',
         ],
       },
       {
-        title: 'Export and share',
+        title: 'Export',
         where: 'Journal → Session Notes',
         steps: [
-          '**Export** saves one session or all of them as a document.',
-          'Share a note’s text with the party from its menu; tags come along.',
+          '**Export** one session or **Export all**.',
+          'Choose **Copy as text**, **Copy formatted**, **Download for Word**, **Save as PDF** or **Download text file**.',
+          'Tick the box to add a list of everyone and everything tagged.',
         ],
       },
     ],
@@ -193,21 +220,22 @@ export const GUIDE = [
     id: 'world',
     title: 'The world: NPCs, places & more',
     icon: 'users',
-    intro: 'These lists are shared by the whole party, and changes show up on everyone’s screen within a moment.',
+    for: 'player',
+    intro: 'These lists are shared by the whole party; changes show up on everyone’s screen within a moment.',
     topics: [
       {
         title: 'NPCs',
         where: 'Journal → NPCs',
         steps: [
-          '**+ Add NPC**: name, race, where you met, status (Alive, Deceased, Unknown, Missing), a portrait and notes.',
-          'Tap the **Rapport** pill to record how they feel about the party (Hostile → Ally) and why; the history is kept.',
+          '**+ Add NPC**: portrait, name, race, where you met them, life status (Alive, Deceased, Unknown, Missing) and a description.',
+          'Tap **+ Rapport** (or the current one, like “● Wary”) to record how they feel about the party, from Hostile to Ally, and why. The history is kept.',
         ],
       },
       {
         title: 'Creatures',
         where: 'Journal → Creatures',
         steps: [
-          '**+ Add Creature**: name, type (pick from the list or type your own), where you met it, photos (as many as you like) and notes.',
+          '**+ Add Creature**: name, type (pick from the list or type your own), where you met it, notes, and **Add photos** (several at once).',
           'Tap the cover picture to see every photo full size.',
         ],
       },
@@ -215,10 +243,11 @@ export const GUIDE = [
         title: 'Maps & places',
         where: 'Journal → Maps & Places',
         steps: [
-          'Upload maps and open one to view it full screen.',
-          'Drop pins for places, give them a type, and link them to NPCs, quests or notes. Filter pins by type.',
-          'Move the party marker as you travel; its journey trail shows where you’ve been.',
-          'Places also have their own list, with notes, and **Show on map** for pinned ones.',
+          '**+ Add Map Image**, then **Set as Interactive Map** to play on it.',
+          'Drag **Pin** (or **Zoom area**) from the tray onto the map. Give a pin a type (Event, Town, Dungeon, Quest, Danger), a photo and a linked NPC, place, quest or lore entry. Filter pins by type.',
+          'Drag **Party** onto the map and move it as you travel. **Show journey** draws the trail; **Undo last move** and **Clear trail** fix it.',
+          'Press and hold a spot to ping it for everyone looking at the map.',
+          '**+ Add Place** keeps a list of places; **Show on map** jumps to a pinned one.',
         ],
       },
       {
@@ -226,20 +255,24 @@ export const GUIDE = [
         where: 'Journal → Quests',
         steps: [
           '**+ Add Quest**: name, who gave it, status, an optional deadline and notes.',
-          'Drag quests between **Rumours**, **Active** and **Done** (or use the ‹ › buttons).',
+          'Drag a quest between **Rumours**, **Active** and **Done** (long-press first on a touch screen), or use the arrow buttons. Mark it Failed from **Edit**.',
         ],
       },
       {
         title: 'Loot',
         where: 'Journal → Loot',
-        steps: ['Log items with a photo, kind, quantity, where you found them and who holds them. Mark usable items as used.'],
+        steps: [
+          '**+ Add Loot** with a picture, kind, quantity, where it was found and who holds it.',
+          'Switch between holders (**Everyone**, each person, **Unclaimed**) and sort by **Newest** or **A → Z**.',
+          '**Use** a usable item; for a stack, choose how many.',
+        ],
       },
       {
         title: 'Lore, clues and factions',
         where: 'Journal → Lore & Clues',
         steps: [
-          'Record history, religions, factions and clues.',
-          'Give an entry the **Faction** category and its card gets a standing track (Hated → Revered). Tap it to change the party’s standing and say why.',
+          '**+ Add Lore**: history, religions, factions and clues.',
+          'Give an entry the **Faction** category and its card gets a standing track. Tap **+ Standing** to set where the party stands, from Hated to Revered, and why.',
         ],
       },
       {
@@ -248,16 +281,19 @@ export const GUIDE = [
         steps: ['Art the DM has shared with the table: portraits, scenes and handouts. Tap one to view it full size.'],
       },
       {
-        title: 'Your own tabs',
-        where: 'Journal → +',
-        steps: ['Add a custom tab for anything else, such as a recipe book or a bounty board. Rename or delete it from inside the tab.'],
+        title: 'Custom tabs',
+        where: 'Journal',
+        steps: [
+          'Extra tabs in the Journal (a lock means private) hold simple entries: **+ Add Entry**, **Edit**, **Delete**.',
+          '**Rename Tab** and **Delete Tab** are inside the tab.',
+        ],
       },
       {
         title: 'Links between entries',
-        where: 'Any card → Links',
+        where: 'Open any entry',
         steps: [
-          'Open an entry’s links to see everything related to it: links you’ve added, and sessions whose recap tags it.',
-          'Add a link (“Works for”, “Lives in”…) or remove one there.',
+          'Opening an entry shows everything related to it: links you’ve added, and sessions whose recap tags it.',
+          '**Add a link** (“Works for”, “Lives in”…) and **Save link**. **Open in …** takes you to its tab.',
         ],
       },
     ],
@@ -269,25 +305,31 @@ export const GUIDE = [
     topics: [
       {
         title: 'World Wiki',
-        where: 'Journal → World Wiki',
+        where: 'Journal → World Wiki (DM: World Wiki)',
         steps: [
           'Every NPC, place, lore entry, item, creature and quest as a wiki article, A–Z, with search and type filters.',
-          'Each article shows its facts, what’s been written about it, **First noted in** which session, and every recap and quick note that mentions it, with the lines around it.',
-          '**Connections** at the bottom jumps to related articles; **Open entry** edits it.',
+          'An article shows its facts, what’s written about it, **First noted in** which session, and every recap and quick note that mentions it, with the lines around it.',
+          'Tap a connection at the bottom to jump to that article, or **Open entry** to edit it.',
         ],
         tips: ['It reads your own recaps and quick notes, so the more you tag, the richer it gets.'],
       },
       {
         title: 'Timeline',
         where: 'Journal → Timeline',
-        steps: ['The story so far, session by session, including the `!event` moments you tagged.'],
+        for: 'player',
+        steps: [
+          'The story so far, built from the `!event` tags in your recaps, session by session.',
+          '**↑ Earlier** and **Later ↓** move through it.',
+        ],
       },
       {
         title: 'Connections',
         where: 'Journal → Connections',
+        for: 'player',
         steps: [
-          'A web of how people, places, factions and the party connect, drawn from your links and tags.',
-          'Filter what’s shown, and tap a dot to see its connections and open it.',
+          'A web of how the party, NPCs, places, factions, quests, loot and creatures connect, from your links and tags.',
+          'Search, or filter by type. Drag to pan, pinch or scroll to zoom, and **Fit everything** to see it all.',
+          'Tap a dot to highlight its connections; **Open** goes to the entry.',
         ],
       },
     ],
@@ -302,42 +344,44 @@ export const GUIDE = [
         title: 'Character sheet',
         where: 'Character → Character Sheet',
         steps: [
-          'Fill in ability scores, saves, skills, HP, AC, spell slots, resources and inventory; modifiers work themselves out.',
-          'The roleplay side keeps your persona, private thoughts, voice lines, personality, relationships and a development log.',
-          'Everything saves as you type.',
+          'Claim your character on the Party screen first.',
+          '**Mechanics**: ability scores, saves, skills, spellcasting and resources. Modifiers work themselves out.',
+          '**Roleplay**: identity, public persona and private thoughts, voice, personality, relationships, quirks.',
+          '**Quick reference** sums it up for the table. Everything saves as you type.',
         ],
       },
       {
         title: 'Import from D&D Beyond',
-        where: 'Character → Character Sheet',
+        where: 'Character Sheet → Import from D&D Beyond',
         steps: [
-          'Set your D&D Beyond character to **Public**, tap **Import from D&D Beyond** and paste its link.',
-          'Check the preview and choose what to bring in. If the link doesn’t work, use **Upload a file instead**.',
+          'Set your D&D Beyond character to **Public**, paste its link and tap **Import**.',
+          'If that doesn’t work, use **Upload a file instead** (or paste the text).',
+          'Pick what to bring in, then **Import selected**.',
         ],
         tips: ['Double-check values the app had to calculate, such as AC.'],
       },
       {
         title: 'Roleplay assistant',
-        where: 'Character → Character Sheet',
+        where: 'Character Sheet → Assistant',
         steps: [
-          'Ask for in-character ideas based on your notes.',
+          'Describe what’s happening, pick a tone, and tap **Suggest reactions** for in-character ideas based on your notes.',
           'Connect your own Claude or ChatGPT account in **Settings → AI Assistant** (kept on your device only), or use **Copy prompt** to paste into any assistant.',
         ],
       },
       {
         title: 'Spells',
         where: 'Character → Spells',
-        steps: ['Keep your spell list with level, school and notes, and open a spell for its full text.'],
+        steps: ['**+ Add Spell**, switch between **Cantrips** and **Spells**, and tap a spell’s icon for its full text.'],
       },
       {
         title: 'Party and goals',
         where: 'Character → Party',
         steps: [
-          'The roster of everyone adventuring together; claim your character so it’s linked to you.',
-          '**Party goals**: what the group is working towards, broken into subtasks with a progress ring. Tick off the goal when it’s done.',
-          '**Personal goals** are private: only you see them.',
+          '**+ Add Party Member** (a player’s character or an NPC companion). **Claim this character** links it to you.',
+          '**Party Goals** are shared: tick a goal off when it’s done, and break it into subtasks.',
+          '**My Goals** are private to you.',
         ],
-        tips: ['Level up a character and the whole party sees it celebrated.'],
+        tips: ['When the DM levels the party up, your screen celebrates; everyone else sees a banner.'],
       },
     ],
   },
@@ -352,8 +396,8 @@ export const GUIDE = [
         where: 'Prep → Session Prep',
         steps: [
           'Set the **Next session** date; Home shows it.',
-          'Read last session’s recap, the open threads (tap **+** to make one an objective) and who came up recently.',
-          'Keep your own lists: planned scenes and objectives, questions for the DM, items and abilities to prepare, and a before-the-session checklist. Each item can link to an entry.',
+          'Read last session’s recap, the **Open threads** (tap ＋ to make one an objective), and who **Came up recently**.',
+          'Keep your own lists: planned scenes and objectives, questions for the DM, items and abilities to prepare, and a checklist. Each item can link to an entry.',
         ],
         tips: ['Prep is private to you and saves as you type.'],
       },
@@ -365,18 +409,24 @@ export const GUIDE = [
     icon: 'tools',
     topics: [
       {
-        title: 'Money and shards',
+        title: 'Money',
         where: 'Session → Tools',
         for: 'player',
         steps: [
-          '**Money Tracker** keeps your coins; the **Currency Calculator** converts between them.',
-          '**Your Shards** shows the shards your DM has given you. When the DM gives or takes some, a gem pops up on your screen.',
+          '**Money Tracker**: enter your coins and **Save**. **Buy or Sell Something** with **Spend** or **Earn**.',
+          'The **Currency Calculator** converts between platinum, gold, silver, shillings and copper.',
         ],
       },
       {
-        title: 'Team generator',
+        title: 'Shards',
         where: 'Session → Tools',
-        steps: ['Split the party into random teams, such as watches or splitting up in a dungeon.'],
+        for: 'player',
+        steps: ['**Your Shards** shows how many your DM has given you. When the DM gives or takes some, a gem pops up on your screen.'],
+      },
+      {
+        title: 'Team generator',
+        where: 'Tools',
+        steps: ['Add names (or **Use party**), pick how many teams, and **Generate Teams**. **Reshuffle** for a new split.'],
       },
     ],
   },
@@ -396,9 +446,10 @@ export const GUIDE = [
       {
         title: 'Notifications',
         where: 'The bell, top right',
+        for: 'player',
         steps: [
-          'When the DM reveals an NPC, creature, map or art, it lands here.',
-          'Tap **Add to …** to put it in the party’s list (it’s added once, for everyone).',
+          'Revealed NPCs, creatures, maps and art from your DM land under **From your DM**, along with replies to your feedback.',
+          'Tap **+ Add to …** to put it in the party’s list. It’s added once for everyone, and a tagged quick note is written for you.',
         ],
       },
       {
@@ -406,16 +457,16 @@ export const GUIDE = [
         where: 'Anywhere',
         steps: [
           'Install the app to your phone’s home screen; it opens without a connection and shows what you’ve already loaded.',
-          'Changes made offline are saved on the device and sent when you reconnect. The top bar shows what’s waiting to sync.',
+          'Changes made offline are saved on the device and sent when you reconnect. The top bar shows **Offline · N to sync**, **Syncing…**, or **N changes not saved** if something was turned down.',
         ],
       },
       {
         title: 'Phone gestures',
         where: 'On a phone',
         steps: [
-          'Swipe a card left for its actions.',
-          'Pull down at the top of a list to refresh it.',
-          'Swipe a pop-up sheet down to close it.',
+          'Swipe a card left for its **Edit** and **Delete**.',
+          'Pull down at the top of the page to refresh.',
+          'Pinch to zoom maps; press and hold a quest to drag it.',
         ],
       },
     ],
@@ -425,14 +476,15 @@ export const GUIDE = [
     title: 'For the DM',
     icon: 'eye',
     for: 'dm',
-    intro: 'A DM gets their own set of screens. Everything there is private until you reveal it.',
+    intro:
+      'A DM gets their own menu: Overview, World Wiki, Players, NPCs, Creatures, Art, Maps, Combat and Tools. Everything you write there is private until you reveal it.',
     topics: [
       {
         title: 'Invite players',
         where: 'Players',
         steps: [
-          'Create an invite link and send it; whoever opens it can sign up and lands in your campaign.',
-          'See everyone in the campaign and their characters, and remove a player if you need to.',
+          '**Invite players**, optionally say who it’s for, then **Create invite link**. **Copy link** or **Share** it. It works once and lasts 30 days.',
+          'See each player and their characters. **Remove from campaign** takes someone out (their account stays).',
         ],
       },
       {
@@ -440,25 +492,26 @@ export const GUIDE = [
         where: 'NPCs · Creatures · Art · Maps',
         steps: [
           'Write them up ahead of time. **DM only** notes are never shown to players.',
-          'When the party meets one, tap **Reveal now**: it pops up full screen on every player’s device and lands in their notifications to add.',
-          'Revealed cards grey out so you can see what’s still to come; the tag shows whether a player has added it.',
+          'When the party meets one, tap **Reveal now**: it pops up full screen on every player’s device and lands in their bell to add.',
+          'Revealed cards grey out so you can see what’s still to come. The tag shows **Sent — waiting for a player to add** or **✓ In players’ …**.',
         ],
       },
       {
         title: 'Run combat',
         where: 'Combat',
         steps: [
-          'Pick the dice (d20 by default; normal, advantage or disadvantage) and tap **Call for initiative!**. Every player gets the roll prompt and the app turns red.',
-          'Add monsters and party members; the order sorts itself, and you can drag rows to break ties.',
-          'Add conditions with a number of rounds; they count down on that combatant’s turn.',
-          '**End combat** returns everyone to normal.',
+          'Pick the dice (d20 by default; Normal, Advantage or Disadvantage) and tap **Call for initiative!**. Every player gets the roll prompt and the app turns red.',
+          'Add monsters (name, initiative, HP, **Add**) and party members (**+ name**). The order sorts itself; drag rows to break ties.',
+          'Give a combatant a condition with a number of rounds; it counts down on their turn.',
+          '**Start combat**, **Next turn**, then **End combat**.',
         ],
+        tips: ['**Level up the party** (or selected members) plays the level-up celebration for everyone.'],
       },
       {
-        title: 'Party votes, shards and tools',
+        title: 'Votes and shards',
         where: 'Tools',
         steps: [
-          'Start a party vote; players answer from their Session Mode, and you close it to show the result.',
+          '**+ New vote** starts a party vote; players answer from any screen. **Close vote** shows the result.',
           '**Player Shards**: give or take shards per player with − and +. Each player gets an animated alert.',
         ],
       },
@@ -466,8 +519,8 @@ export const GUIDE = [
         title: 'Follow what the party knows',
         where: 'Overview · World Wiki',
         steps: [
-          '**Party Overview** shows what the party has found, their quests and rumours, who’s with them, faction standing and goals.',
-          'The **World Wiki** shows every entry the party has written about the world.',
+          '**Overview** shows what the party is chasing, the rumours they’ve heard, who’s with them, faction standing and their goals.',
+          '**World Wiki** shows every entry the party has written about the world.',
         ],
       },
     ],
