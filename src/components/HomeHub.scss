@@ -116,7 +116,7 @@
 
     &:hover,
     &:focus-visible {
-      background: linear-gradient(rgba($gold, 0.08), rgba($gold, 0.08)), $bg-panel;
+      background: linear-gradient(fade($gold, 0.08), fade($gold, 0.08)), $bg-panel;
     }
   }
 

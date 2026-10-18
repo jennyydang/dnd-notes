@@ -28,7 +28,7 @@
     height: 0.7rem;
     border-radius: 50%;
     background: $green-light;
-    box-shadow: 0 0 0 3px rgba($green-light, 0.25);
+    box-shadow: 0 0 0 3px fade($green-light, 0.25);
 
     &--paused {
       background: $gray-light;
@@ -257,7 +257,7 @@
     font-size: 0.8rem;
     padding: 0.1rem 0.5rem;
     border-radius: 999px;
-    border: 1px solid rgba($maroon-light, 0.8);
+    border: 1px solid fade($maroon-light, 0.8);
     color: $maroon-text;
   }
 
@@ -270,18 +270,18 @@
     animation: vitals-flash 0.6s ease-out forwards;
 
     &--damage {
-      background: rgba($maroon-light, 0.45);
+      background: fade($maroon-light, 0.45);
     }
 
     &--heal {
-      background: rgba($green-light, 0.35);
+      background: fade($green-light, 0.35);
     }
   }
 
   &__hp-bar {
     height: 0.5rem;
     border-radius: 999px;
-    background: rgba($ink-soft, 0.8);
+    background: fade($ink-soft, 0.8);
     overflow: hidden;
 
     span {
@@ -353,7 +353,7 @@
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.75rem;
-    border: 1px dashed rgba($maroon-light, 0.8);
+    border: 1px dashed fade($maroon-light, 0.8);
     border-radius: $radius;
   }
 
@@ -375,7 +375,7 @@
     flex-direction: column;
     gap: 0.5rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 
   &__row-head {
@@ -439,7 +439,7 @@
     }
 
     border-radius: $radius;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid fade($gold-dim, 0.6);
     background: $bg-deep;
     color: $text-muted;
     font-size: 1.1rem;
@@ -447,7 +447,7 @@
     &--available {
       color: $gold-light;
       border-color: $gold;
-      background: rgba($gold, 0.12);
+      background: fade($gold, 0.12);
     }
   }
 
@@ -459,7 +459,7 @@
   &__rests {
     justify-content: flex-start;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 }
 
@@ -564,7 +564,7 @@
 
       &:hover,
       &:focus-visible {
-        background: rgba($gold, 0.12);
+        background: fade($gold, 0.12);
         color: $gold-light;
       }
     }
@@ -675,7 +675,7 @@
     padding: 0.2rem;
     gap: 0.2rem;
     border-radius: 999px;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     background: $bg-deep;
   }
 
@@ -692,7 +692,7 @@
     &--on {
       background: $bg-panel-raised;
       color: $gold-light;
-      box-shadow: inset 0 0 0 1px rgba($gold, 0.55);
+      box-shadow: inset 0 0 0 1px fade($gold, 0.55);
     }
   }
 
@@ -769,7 +769,7 @@
     min-height: 2.25rem;
     padding: 0.2rem 0.75rem;
     border-radius: 999px;
-    border: 1px dashed rgba($gold-dim, 0.8);
+    border: 1px dashed fade($gold-dim, 0.8);
     background: transparent;
     color: $gold-light;
     font-size: 0.88rem;
@@ -786,8 +786,8 @@
     margin: 0;
     padding: 0.45rem 0.7rem;
     border-radius: $radius;
-    background: rgba($gold, 0.1);
-    border: 1px solid rgba($gold, 0.35);
+    background: fade($gold, 0.1);
+    border: 1px solid fade($gold, 0.35);
     color: $gold-light;
     font-size: 0.9rem;
   }
@@ -796,7 +796,7 @@
     margin-left: 0.45rem;
     padding: 0.05rem 0.45rem;
     border-radius: 999px;
-    background: rgba($green, 0.4);
+    background: fade($green, 0.4);
     color: $green-text;
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -825,8 +825,8 @@
     gap: 0.3rem;
     padding: 0.1rem 0.15rem 0.1rem 0.55rem;
     border-radius: 999px;
-    border: 1px solid rgba($maroon-light, 0.55);
-    background: rgba($maroon, 0.25);
+    border: 1px solid fade($maroon-light, 0.55);
+    background: fade($maroon, 0.25);
     color: $maroon-text;
     font-size: 0.8rem;
 
@@ -844,7 +844,7 @@
 
       &:hover,
       &:focus-visible {
-        background: rgba($maroon-light, 0.35);
+        background: fade($maroon-light, 0.35);
       }
     }
   }
@@ -906,8 +906,8 @@
 
     &--current {
       border-color: $gold;
-      background: rgba($gold, 0.14);
-      box-shadow: 0 0 0 1px rgba($gold, 0.4);
+      background: fade($gold, 0.14);
+      box-shadow: 0 0 0 1px fade($gold, 0.4);
     }
   }
 
@@ -1066,7 +1066,7 @@
     li {
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px dotted rgba($gold-dim, 0.3);
+      border-bottom: 1px dotted fade($gold-dim, 0.3);
       padding: 0.15rem 0;
     }
   }

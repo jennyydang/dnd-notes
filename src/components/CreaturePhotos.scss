@@ -25,7 +25,7 @@
     position: relative;
     aspect-ratio: 1;
     overflow: hidden;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     border-radius: $radius;
 
     img {
@@ -42,7 +42,7 @@
     bottom: 0.3rem;
     padding: 0 0.35rem;
     border-radius: 4px;
-    background: rgba($bg-deep, 0.8);
+    background: fade($bg-deep, 0.8);
     color: $gold-light;
     font-size: 0.68rem;
     letter-spacing: 0.06em;
@@ -60,7 +60,7 @@
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: rgba($bg-deep, 0.85);
+    background: fade($bg-deep, 0.85);
     color: $parchment;
     cursor: pointer;
 
@@ -76,9 +76,9 @@
     gap: 0.25rem;
     width: 100%;
     aspect-ratio: 1;
-    border: 1.5px dashed rgba($gold-dim, 0.8);
+    border: 1.5px dashed fade($gold-dim, 0.8);
     border-radius: $radius;
-    background: rgba($bg-deep, 0.4);
+    background: fade($bg-deep, 0.4);
     color: $text-muted;
     font: inherit;
     font-size: 0.8rem;
@@ -92,9 +92,11 @@
 }
 
 // ── On a card ──
-.creature-gallery {
+.creature-hero {
   display: grid;
-  gap: 0.35rem;
+  gap: 2px;
+  background: $bg-deep;
+  border-bottom: 1px solid fade($gold-dim, 0.45);
 
   button {
     display: block;
@@ -110,23 +112,88 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: $radius;
   }
 
   &__cover {
     position: relative;
     aspect-ratio: 16 / 10;
     overflow: hidden;
-    border-radius: $radius;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+
+    img {
+      transition: transform 0.4s ease;
+    }
+
+    &:hover img,
+    &:focus-visible img {
+      transform: scale(1.03);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $gold-light;
+      outline-offset: -2px;
+    }
+
+    // Darken the bottom so the name reads over any photo.
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, fade($bg-deep, 0.92) 0%, fade($bg-deep, 0.55) 30%, transparent 62%);
+      pointer-events: none;
+    }
+
+    .creature-hero__title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1;
+      padding: 0.75rem 1.1rem 0.7rem;
+    }
+  }
+
+  &__title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+
+  &__name {
+    font-family: $font-display;
+    font-size: 1.2rem;
+    line-height: 1.2;
+    color: $parchment;
+    overflow-wrap: anywhere;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
+
+  &__type {
+    padding: 0.05rem 0.55rem;
+    border: 1px solid fade($gold, 0.6);
+    border-radius: 999px;
+    background: fade($bg-deep, 0.65);
+    color: $gold-light;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   &__count {
     position: absolute;
-    right: 0.4rem;
-    bottom: 0.4rem;
-    padding: 0.05rem 0.5rem;
+    top: 0.55rem;
+    right: 0.55rem;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.5rem;
     border-radius: 999px;
-    background: rgba($bg-deep, 0.8);
+    background: fade($bg-deep, 0.8);
     color: $parchment;
     font-size: 0.75rem;
   }
@@ -134,16 +201,25 @@
   &__thumbs {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.35rem;
+    gap: 2px;
     margin: 0;
     padding: 0;
     list-style: none;
 
     button {
       position: relative;
-      aspect-ratio: 1;
+      aspect-ratio: 4 / 3;
       overflow: hidden;
-      border-radius: $radius;
+    }
+
+    img {
+      opacity: 0.85;
+      transition: opacity 0.2s ease;
+    }
+
+    button:hover img,
+    button:focus-visible img {
+      opacity: 1;
     }
   }
 
@@ -152,9 +228,30 @@
     inset: 0;
     display: grid;
     place-items: center;
-    background: rgba($bg-deep, 0.65);
+    background: fade($bg-deep, 0.65);
     color: $parchment;
     font-family: $font-display;
+  }
+
+  // No photos: a quiet banner with a paw mark beside the name.
+  &--empty {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, fade($gold-dim, 0.22), fade($bg-deep, 0.55) 70%);
+  }
+
+  &__mark {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid fade($gold, 0.5);
+    border-radius: 50%;
+    background: fade($bg-deep, 0.6);
+    color: $gold-light;
+    font-size: 1.25rem;
   }
 }
 
@@ -186,9 +283,9 @@
     place-items: center;
     width: 2.75rem;
     height: 2.75rem;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid fade($gold-dim, 0.6);
     border-radius: 50%;
-    background: rgba($bg-deep, 0.75);
+    background: fade($bg-deep, 0.75);
     color: $parchment;
     transform: translateY(-50%);
     cursor: pointer;

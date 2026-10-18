@@ -11,6 +11,7 @@ import { toEditorContent } from '../lib/richNotes.js'
 import { TAG_GROUPS, groupForChar, matchKind, tagSlug, tagText } from '../lib/tags.js'
 import Icon from './Icon.jsx'
 import './RichNotesEditor.scss'
+import { ListShortcuts } from '../lib/listShortcuts.js'
 
 const GROUP_ORDER = ['person', 'place', 'lore', 'loot', 'creature', 'event']
 
@@ -55,6 +56,7 @@ function baseExtensions(mentionOptions = {}) {
       horizontalRule: false,
       link: false,
     }),
+    ListShortcuts,
     TaggedMention.configure({
       renderText: ({ node }) => node.attrs.label ?? '',
       renderHTML: ({ options, node }) => {

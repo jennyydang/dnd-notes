@@ -284,14 +284,14 @@ body {
     border-color: $gold;
     box-shadow:
       0 0.35rem 1rem rgba(0, 0, 0, 0.55),
-      0 0 0.75rem rgba($gold, 0.4);
+      0 0 0.75rem fade($gold, 0.4);
   }
 
   &__ring {
     width: 1.3rem;
     height: 1.3rem;
     border-radius: 50%;
-    border: 2.5px solid rgba($gold-light, 0.25);
+    border: 2.5px solid fade($gold-light, 0.25);
     border-top-color: $gold-light;
     transform: rotate(calc(var(--progress) * 300deg));
   }

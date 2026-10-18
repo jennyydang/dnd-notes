@@ -45,7 +45,7 @@
     flex-shrink: 0;
     border-radius: 50%;
     background: $green-light;
-    box-shadow: 0 0 0 0 rgba($green-light, 0.6);
+    box-shadow: 0 0 0 0 fade($green-light, 0.6);
     animation: session-dock-pulse 2s ease-out infinite;
 
     &--paused {
@@ -104,7 +104,7 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.35);
+    border-top: 1px solid fade($gold-dim, 0.35);
   }
 
   &__count {
@@ -126,7 +126,7 @@
     margin: 0;
     padding: 0.7rem 1rem;
     border-radius: $radius-lg;
-    border: 1px solid rgba($green, 0.6);
+    border: 1px solid fade($green, 0.6);
     background: $bg-panel-raised;
     box-shadow: $shadow-panel;
     color: $green-text;
@@ -135,12 +135,12 @@
 
 @keyframes session-dock-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba($green-light, 0.6);
+    box-shadow: 0 0 0 0 fade($green-light, 0.6);
   }
   70% {
-    box-shadow: 0 0 0 0.45rem rgba($green-light, 0);
+    box-shadow: 0 0 0 0.45rem fade($green-light, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba($green-light, 0);
+    box-shadow: 0 0 0 0 fade($green-light, 0);
   }
 }

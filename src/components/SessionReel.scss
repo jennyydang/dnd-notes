@@ -73,9 +73,9 @@
     height: 100%;
     min-height: 8.5rem;
     padding: 0.75rem 0.8rem;
-    border: 1px solid rgba($gold-dim, 0.45);
+    border: 1px solid fade($gold-dim, 0.45);
     border-radius: $radius;
-    background: rgba($bg-deep, 0.5);
+    background: fade($bg-deep, 0.5);
     color: $text-light;
     font: inherit;
     text-align: left;
@@ -93,7 +93,7 @@
 
     .is-playing & {
       border-color: $gold-light;
-      box-shadow: 0 0 1rem rgba($gold, 0.45);
+      box-shadow: 0 0 1rem fade($gold, 0.45);
     }
   }
 
@@ -104,21 +104,21 @@
     height: 2rem;
     margin-bottom: 0.2rem;
     border-radius: 50%;
-    background: rgba($gold, 0.16);
+    background: fade($gold, 0.16);
     color: $gold-light;
 
     .session-reel__tile--person & {
-      background: rgba($maroon-light, 0.3);
+      background: fade($maroon-light, 0.3);
       color: $maroon-text;
     }
 
     .session-reel__tile--place & {
-      background: rgba($green-light, 0.22);
+      background: fade($green-light, 0.22);
       color: $green-text;
     }
 
     .session-reel__tile--lore & {
-      background: rgba($gray-light, 0.28);
+      background: fade($gray-light, 0.28);
       color: $gray-text;
     }
 
@@ -128,7 +128,7 @@
     }
 
     .session-reel__tile--event & {
-      background: rgba($maroon, 0.35);
+      background: fade($maroon, 0.35);
       color: $parchment;
     }
   }

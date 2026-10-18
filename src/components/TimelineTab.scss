@@ -16,8 +16,8 @@
   overscroll-behavior-y: contain;
   padding: 0.5rem 0.5rem 0.5rem 0;
   border-radius: $radius-lg;
-  border: 1px solid rgba($gold-dim, 0.4);
-  background: rgba($bg-deep, 0.55);
+  border: 1px solid fade($gold-dim, 0.4);
+  background: fade($bg-deep, 0.55);
   scroll-snap-type: y proximity;
 
   &:focus-visible {
@@ -57,7 +57,7 @@
     left: calc(1.375rem - 1px);
     top: 0;
     bottom: 0;
-    border-left: 2px solid rgba($gold-dim, 0.7);
+    border-left: 2px solid fade($gold-dim, 0.7);
   }
 
   &:first-child::before {

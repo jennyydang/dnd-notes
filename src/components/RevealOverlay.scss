@@ -19,7 +19,7 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(circle at 50% 50%, rgba($gold, 0.22), transparent 55%);
+    background: radial-gradient(circle at 50% 50%, fade($gold, 0.22), transparent 55%);
     opacity: 0;
     animation: reveal-glow 1.8s ease-out 0.6s forwards;
   }
@@ -71,7 +71,7 @@
     background:
       radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.18), transparent 40%),
       radial-gradient(circle at 50% 50%, #3a2a2a 0%, #241818 60%, #120c0c 100%);
-    color: rgba($maroon-light, 0.9);
+    color: fade($maroon-light, 0.9);
   }
 
   &__sparks {
@@ -102,9 +102,9 @@
     padding: 1.75rem 1.25rem 1.5rem;
     border-radius: $radius-lg;
     background:
-      radial-gradient(ellipse at 50% 0%, rgba($gold, 0.08), transparent 60%),
-      linear-gradient(180deg, rgba($bg-panel-raised, 0.95), rgba($bg-panel, 0.95));
-    border: 1px solid rgba($gold, 0.35);
+      radial-gradient(ellipse at 50% 0%, fade($gold, 0.08), transparent 60%),
+      linear-gradient(180deg, fade($bg-panel-raised, 0.95), fade($bg-panel, 0.95));
+    border: 1px solid fade($gold, 0.35);
     box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.6);
     clip-path: inset(50% 0 50% 0 round $radius-lg);
     animation: scroll-unroll 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.85s forwards;
@@ -205,8 +205,8 @@
     max-height: 58vh;
     object-fit: contain;
     border-radius: $radius-lg;
-    border: 1px solid rgba($gold, 0.5);
-    box-shadow: 0 0 2.5rem rgba($gold, 0.18);
+    border: 1px solid fade($gold, 0.5);
+    box-shadow: 0 0 2.5rem fade($gold, 0.18);
     background: $bg-deep;
   }
 
@@ -224,7 +224,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba($gold, 0.5);
+    border: 1px solid fade($gold, 0.5);
     background: $bg-panel-raised;
     color: $gold-light;
     font-family: $font-display;

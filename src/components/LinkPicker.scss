@@ -62,7 +62,7 @@
 
       &:hover,
       &:focus-visible {
-        background: rgba($gold, 0.12);
+        background: fade($gold, 0.12);
         color: $gold-light;
       }
     }

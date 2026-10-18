@@ -7,9 +7,9 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.45rem 0.6rem 0.45rem 0.45rem;
-  border: 1px solid rgba($gold-dim, 0.45);
+  border: 1px solid fade($gold-dim, 0.45);
   border-radius: 999px;
-  background: rgba($bg-deep, 0.6);
+  background: fade($bg-deep, 0.6);
 
   &__play {
     flex: 0 0 auto;
@@ -86,13 +86,13 @@
     &::-webkit-slider-runnable-track {
       height: 0.3rem;
       border-radius: 999px;
-      background: linear-gradient(90deg, $gold-light var(--played, 0%), rgba($gold-dim, 0.45) var(--played, 0%));
+      background: linear-gradient(90deg, $gold-light var(--played, 0%), fade($gold-dim, 0.45) var(--played, 0%));
     }
 
     &::-moz-range-track {
       height: 0.3rem;
       border-radius: 999px;
-      background: linear-gradient(90deg, $gold-light var(--played, 0%), rgba($gold-dim, 0.45) var(--played, 0%));
+      background: linear-gradient(90deg, $gold-light var(--played, 0%), fade($gold-dim, 0.45) var(--played, 0%));
     }
 
     &::-webkit-slider-thumb {
@@ -103,7 +103,7 @@
       border: none;
       border-radius: 50%;
       background: $parchment;
-      box-shadow: 0 0 0 3px rgba($gold, 0.3);
+      box-shadow: 0 0 0 3px fade($gold, 0.3);
     }
 
     &::-moz-range-thumb {
@@ -126,7 +126,7 @@
     flex: 0 0 auto;
     min-width: 2.4rem;
     padding: 0.2rem 0.45rem;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid fade($gold-dim, 0.6);
     border-radius: 999px;
     background: transparent;
     color: $gold-light;
@@ -136,7 +136,7 @@
 
     &:hover,
     &:focus-visible {
-      background: rgba($gold, 0.12);
+      background: fade($gold, 0.12);
     }
   }
 

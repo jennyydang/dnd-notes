@@ -7,11 +7,11 @@
   font-size: 0.85rem;
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid rgba($gold-dim, 0.7);
+  border: 1px solid fade($gold-dim, 0.7);
   color: $gold-light;
 
   &--added {
-    border-color: rgba($green-light, 0.8);
+    border-color: fade($green-light, 0.8);
     color: $green-text;
   }
 

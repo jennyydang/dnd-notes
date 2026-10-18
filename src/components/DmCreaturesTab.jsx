@@ -10,7 +10,8 @@ import Icon from './Icon.jsx'
 import './CreaturesTab.scss'
 import './SecretNpcsTab.scss'
 import { RichText, RichTextEditor } from './RichText.jsx'
-import { CreatureGallery, PhotoPicker } from './CreaturePhotos.jsx'
+import { CreatureHero, PhotoPicker } from './CreaturePhotos.jsx'
+import TypeCombobox from './TypeCombobox.jsx'
 import { CREATURE_TYPES, deletePhotos, photoList, savePickerItems, toPickerItems } from '../lib/creatures.js'
 
 const emptyForm = { name: '', creatureType: '', description: '', secrets: '', photos: [] }
@@ -207,33 +208,31 @@ function DmCreaturesTab({ campaignId }) {
                 className={`creature-card panel${revealed ? ' dm-revealed' : ''}`}
                 key={c.id}
               >
-                <CreatureGallery photos={c.photos} name={c.name} />
-                <header className="creature-card__header">
-                  <h3 className="creature-card__name">{c.name}</h3>
-                </header>
-                {c.creatureType && <p className="creature-card__meta">{c.creatureType}</p>}
-                {c.description && <RichText className="creature-card__notes" value={c.description} />}
-                {c.secrets && (
-                  <div className="secret-npc__secrets">
-                    <span className="secret-npc__secrets-label">DM only</span>
-                    <RichText value={c.secrets} />
+                <CreatureHero photos={c.photos} name={c.name} type={c.creatureType} />
+                <div className="creature-card__body">
+                  {c.description && <RichText className="creature-card__notes" value={c.description} />}
+                  {c.secrets && (
+                    <div className="secret-npc__secrets">
+                      <span className="secret-npc__secrets-label">DM only</span>
+                      <RichText value={c.secrets} />
+                    </div>
+                  )}
+                  <div className="creature-card__actions">
+                    <ShareStatus
+                      kind="creature"
+                      status={status}
+                      sharing={sharingId === c.id}
+                      onShare={() => share(c)}
+                      onReveal={() => share(c, true)}
+                      revealed={revealed}
+                    />
+                    <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
+                      Edit
+                    </button>
+                    <button type="button" className="btn btn--danger card-delete" onClick={() => remove(c)}>
+                      Delete
+                    </button>
                   </div>
-                )}
-                <div className="creature-card__actions">
-                  <ShareStatus
-                    kind="creature"
-                    status={status}
-                    sharing={sharingId === c.id}
-                    onShare={() => share(c)}
-                    onReveal={() => share(c, true)}
-                    revealed={revealed}
-                  />
-                  <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
-                    Edit
-                  </button>
-                  <button type="button" className="btn btn--danger card-delete" onClick={() => remove(c)}>
-                    Delete
-                  </button>
                 </div>
               </article>
             )
@@ -261,19 +260,13 @@ function DmCreaturesTab({ campaignId }) {
               </div>
               <div className="field">
                 <label htmlFor="dm-creature-type">Type</label>
-                <input
+                <TypeCombobox
                   id="dm-creature-type"
-                  type="text"
-                  list="dm-creature-types"
                   value={form.creatureType}
-                  onChange={set('creatureType')}
+                  onChange={(creatureType) => setForm((prev) => ({ ...prev, creatureType }))}
+                  options={CREATURE_TYPES}
                   placeholder="Beast, Undead…"
                 />
-                <datalist id="dm-creature-types">
-                  {CREATURE_TYPES.map((t) => (
-                    <option key={t} value={t} />
-                  ))}
-                </datalist>
               </div>
             </div>
             <PhotoPicker id="dm-creature-photos" items={form.photos} onChange={(photos) => setForm((prev) => ({ ...prev, photos }))} />

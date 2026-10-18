@@ -11,7 +11,7 @@
   display: flex;
   align-items: stretch;
   border-radius: $radius-lg;
-  border: 1px solid rgba($gold, 0.6);
+  border: 1px solid fade($gold, 0.6);
   background: $bg-panel-raised;
   box-shadow: $shadow-panel;
   animation: turn-alert-in 0.25s ease-out;
@@ -21,7 +21,7 @@
     background: linear-gradient(180deg, #4a3a1a, $bg-panel-raised);
     box-shadow:
       $shadow-panel,
-      0 0 0 3px rgba($gold, 0.25);
+      0 0 0 3px fade($gold, 0.25);
   }
 
   &__main {

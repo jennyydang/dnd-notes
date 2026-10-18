@@ -79,7 +79,7 @@
   &:hover,
   &:focus-visible {
     border-color: $gold;
-    background: rgba($gold, 0.08);
+    background: fade($gold, 0.08);
   }
 
   &__icon {

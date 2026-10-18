@@ -47,7 +47,7 @@
       z-index: 3;
       margin: 0 calc(-1 * var(--pad)) calc(-1 * var(--pad));
       padding: 1.25rem var(--pad) var(--pad);
-      background: linear-gradient(rgba($bg-panel, 0), $bg-panel 1.1rem);
+      background: linear-gradient(fade($bg-panel, 0), $bg-panel 1.1rem);
     }
   }
 }

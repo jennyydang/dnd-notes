@@ -53,8 +53,8 @@ body::before {
   pointer-events: none;
   background-color: $bg-deep;
   background-image:
-    radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
-    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72)),
+    radial-gradient(ellipse at top, fade($gold, 0.06), transparent 60%),
+    linear-gradient(fade($bg-deep, 0.62), fade($bg-deep, 0.72)),
     url('../assets/parchment-vista.webp');
   background-repeat: no-repeat;
   background-position: center;
@@ -97,7 +97,7 @@ textarea:focus-visible,
 }
 
 ::selection {
-  background: rgba($gold, 0.35);
+  background: fade($gold, 0.35);
 }
 
 ::-webkit-scrollbar {
@@ -120,8 +120,8 @@ textarea:focus-visible,
 // contrast audit.
 html[data-bg='plain'] body {
   background-image:
-    radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
-    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72));
+    radial-gradient(ellipse at top, fade($gold, 0.06), transparent 60%),
+    linear-gradient(fade($bg-deep, 0.62), fade($bg-deep, 0.72));
 }
 
 // --custom-bg-image is set inline on <html> by applySettings() (see
@@ -131,8 +131,8 @@ html[data-bg='plain'] body {
 // existing background-size/position/repeat/attachment on body.
 html[data-bg='custom'] body {
   background-image:
-    radial-gradient(ellipse at top, rgba($gold, 0.06), transparent 60%),
-    linear-gradient(rgba($bg-deep, 0.62), rgba($bg-deep, 0.72)),
+    radial-gradient(ellipse at top, fade($gold, 0.06), transparent 60%),
+    linear-gradient(fade($bg-deep, 0.62), fade($bg-deep, 0.72)),
     var(--custom-bg-image);
 }
 
