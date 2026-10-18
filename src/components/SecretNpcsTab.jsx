@@ -8,7 +8,6 @@ import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ShareStatus from './ShareStatus.jsx'
-import { archiveError, archivePatch } from '../lib/archive.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import Icon from './Icon.jsx'
 import './NpcsTab.scss'
@@ -24,7 +23,6 @@ const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'private', label: 'Private' },
   { id: 'shared', label: 'Revealed' },
-  { id: 'archived', label: 'Archived' },
 ]
 
 const emptyForm = {
@@ -50,7 +48,6 @@ const fromRow = (r) => ({
   photoPath: r.photo_path,
   photo: getPublicUrl(BUCKET, r.photo_path),
   revealedNpcId: r.revealed_npc_id,
-  archivedAt: r.archived_at || null,
   createdAt: r.created_at,
 })
 
@@ -106,20 +103,16 @@ function SecretNpcsTab({ campaignId, addRequest }) {
         ? 'sent'
         : 'private'
   // Revealed (or shared before Reveal replaced Share): it's out, so the
-  // card greys out and can be archived.
+  // card greys out.
   const isShared = (npc) => statusOf(npc) !== 'private' || revealedKeys.has(shareKey('npc', npc.id))
-  const active = items.filter((n) => !n.archivedAt)
-  const archived = items.filter((n) => n.archivedAt)
   const counts = {
-    all: active.length,
-    private: active.filter((n) => !isShared(n)).length,
-    shared: active.filter(isShared).length,
-    archived: archived.length,
+    all: items.length,
+    private: items.filter((n) => !isShared(n)).length,
+    shared: items.filter(isShared).length,
   }
-  const filters = FILTERS.filter((f) => f.id !== 'archived' || archived.length > 0 || filter === 'archived')
   const needle = query.trim().toLowerCase()
-  const visible = (filter === 'archived' ? archived : active)
-    .filter((n) => filter === 'all' || filter === 'archived' || (filter === 'shared') === isShared(n))
+  const visible = items
+    .filter((n) => filter === 'all' || (filter === 'shared') === isShared(n))
     .filter(
       (n) =>
         !needle ||
@@ -238,15 +231,6 @@ function SecretNpcsTab({ campaignId, addRequest }) {
     }
   }
 
-  async function setArchived(npc, archive) {
-    setActionError(null)
-    try {
-      await updateItem(npc.id, archivePatch(archive))
-    } catch (err) {
-      setActionError(archiveError(archive, npc.name, err))
-    }
-  }
-
   async function remove(npc) {
     const status = statusOf(npc)
     if (status === 'added') {
@@ -283,7 +267,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
 
       <div className="secret-npcs__toolbar">
         <TabNav
-          tabs={filters.map((f) => ({ ...f, label: `${f.label} (${counts[f.id]})` }))}
+          tabs={FILTERS.map((f) => ({ ...f, label: `${f.label} (${counts[f.id]})` }))}
           activeTab={filter}
           onSelect={setFilter}
           className="tab-nav--pill secret-npcs__filter"
@@ -323,13 +307,9 @@ function SecretNpcsTab({ campaignId, addRequest }) {
             ? 'No NPCs yet. Jot them down as you invent them — players can’t see this list. When the party meets one, press Reveal.'
             : needle
               ? `Nothing matches “${query.trim()}”.`
-              : filter === 'archived'
-                ? 'Nothing archived.'
-                : filter === 'shared'
-                  ? 'Nothing revealed yet.'
-                  : filter === 'private'
-                    ? 'Everyone here has been revealed.'
-                    : 'Everyone here has been archived.'}
+              : filter === 'shared'
+                ? 'Nothing revealed yet.'
+                : 'Everyone here has been revealed.'}
         </p>
       )}
 
@@ -356,8 +336,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                     </div>
                   </div>
                   <span className={`secret-npc__badge${revealed ? ' secret-npc__badge--revealed' : ''}`}>
-                    <Icon name={npc.archivedAt ? 'archive' : revealed ? 'eye' : 'lock'} />{' '}
-                    {npc.archivedAt ? 'Archived' : revealed ? 'Revealed' : 'Private'}
+                    <Icon name={revealed ? 'eye' : 'lock'} /> {revealed ? 'Revealed' : 'Private'}
                   </span>
                 </div>
                 {npc.location && <p className="secret-npc__meta"><Icon name="pin" /> {npc.location}</p>}
@@ -369,6 +348,9 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                   </div>
                 )}
                 <div className="npc-card__actions">
+                  <button type="button" className="btn btn--text" onClick={() => openForm(npc)}>
+                    Edit
+                  </button>
                   <ShareStatus
                     kind="npc"
                     status={status}
@@ -377,14 +359,6 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                     revealed={revealed}
                     className="secret-npc__share"
                   />
-                  {(revealed || npc.archivedAt) && (
-                    <button type="button" className="btn btn--text" onClick={() => setArchived(npc, !npc.archivedAt)}>
-                      <Icon name={npc.archivedAt ? 'unarchive' : 'archive'} /> {npc.archivedAt ? 'Unarchive' : 'Archive'}
-                    </button>
-                  )}
-                  <button type="button" className="btn btn--text" onClick={() => openForm(npc)}>
-                    Edit
-                  </button>
                   <button type="button" className="btn btn--danger card-delete" onClick={() => remove(npc)}>
                     Delete
                   </button>

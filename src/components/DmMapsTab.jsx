@@ -7,8 +7,6 @@ import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
 import ArtViewer from './ArtViewer.jsx'
 import ShareStatus from './ShareStatus.jsx'
-import ArchiveToggle from './ArchiveToggle.jsx'
-import { archiveError, archivePatch } from '../lib/archive.js'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import Icon from './Icon.jsx'
 import './ArtGallery.scss'
@@ -22,7 +20,6 @@ const fromRow = (r) => ({
   url: getPublicUrl(BUCKET, r.image_path),
   title: r.caption,
   notes: r.notes,
-  archivedAt: r.archived_at || null,
   createdAt: r.created_at,
 })
 
@@ -49,7 +46,7 @@ function DmMapsTab({ campaignId }) {
   const statusOf = (map) =>
     addedIds.has(map.id) ? 'added' : byKey.has(shareKey('map', map.id)) ? 'sent' : 'private'
   // Revealed (or shared before Reveal replaced Share): it's out, so the
-  // tile greys out and can be archived.
+  // tile greys out.
   const isRevealed = (map) => statusOf(map) !== 'private' || revealedKeys.has(shareKey('map', map.id))
 
   const [viewingId, setViewingId] = useState(null)
@@ -60,26 +57,7 @@ function DmMapsTab({ campaignId }) {
   const [sharingId, setSharingId] = useState(null)
   const fileInputRef = useRef(null)
 
-  const [showArchived, setShowArchived] = useState(false)
-  const archivedCount = items.filter((m) => m.archivedAt).length
-  const maps = useMemo(
-    () =>
-      items
-        .filter((m) => Boolean(m.archivedAt) === showArchived)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-    [items, showArchived],
-  )
-
-  // Archiving moves it to the other list, so the viewer closes.
-  async function setArchived(map, archive) {
-    setActionError(null)
-    try {
-      await updateItem(map.id, archivePatch(archive))
-      setViewingId(null)
-    } catch (err) {
-      setActionError(archiveError(archive, map.title || 'this map', err))
-    }
-  }
+  const maps = useMemo(() => [...items].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)), [items])
 
   async function uploadFiles(event) {
     const files = [...(event.target.files || [])]
@@ -177,10 +155,9 @@ function DmMapsTab({ campaignId }) {
           {upload ? `Uploading ${Math.min(upload.done + 1, upload.total)} of ${upload.total}…` : '+ Upload maps'}
         </button>
         <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={uploadFiles} />
-        <ArchiveToggle count={archivedCount} showing={showArchived} onToggle={() => setShowArchived((v) => !v)} />
       </div>
 
-      {maps.length > 0 && !showArchived && (
+      {maps.length > 0 && (
         <p className="art-gallery__summary">
           {added} of {maps.length} in the players’ Maps tab. Tap a map to view, reveal or edit it.
         </p>
@@ -209,11 +186,7 @@ function DmMapsTab({ campaignId }) {
       )}
       {!loading && !error && maps.length === 0 && (
         <p className="empty-state">
-          {showArchived
-            ? 'Nothing archived.'
-            : archivedCount
-              ? 'Every map here has been archived.'
-              : 'No maps yet. Upload the maps you’ve made (several at once is fine). They stay private until you Reveal them.'}
+          No maps yet. Upload the maps you’ve made (several at once is fine). They stay private until you Reveal them.
         </p>
       )}
 
@@ -247,18 +220,6 @@ function DmMapsTab({ campaignId }) {
           onClose={() => setViewingId(null)}
           actions={
             <>
-              <ShareStatus
-                kind="map"
-                status={statusOf(viewing)}
-                sharing={sharingId === viewing.id}
-                onReveal={() => reveal(viewing)}
-                revealed={isRevealed(viewing)}
-              />
-              {(isRevealed(viewing) || viewing.archivedAt) && (
-                <button type="button" className="btn btn--text" onClick={() => setArchived(viewing, !viewing.archivedAt)}>
-                  <Icon name={viewing.archivedAt ? 'unarchive' : 'archive'} /> {viewing.archivedAt ? 'Unarchive' : 'Archive'}
-                </button>
-              )}
               <button
                 type="button"
                 className="btn btn--text"
@@ -266,6 +227,13 @@ function DmMapsTab({ campaignId }) {
               >
                 Edit details
               </button>
+              <ShareStatus
+                kind="map"
+                status={statusOf(viewing)}
+                sharing={sharingId === viewing.id}
+                onReveal={() => reveal(viewing)}
+                revealed={isRevealed(viewing)}
+              />
               <button type="button" className="btn btn--danger" onClick={() => remove(viewing)}>
                 Delete
               </button>
