@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { useDmShares } from '../hooks/useDmShares.js'
+import { useCampaignData } from '../hooks/useCampaignData.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { confirmDelete } from '../lib/confirm.js'
@@ -59,9 +60,11 @@ const npcFromRow = (r) => ({ id: r.id, dmNpcId: r.dm_npc_id })
 // tab (see DmSharesInbox).
 function SecretNpcsTab({ campaignId, addRequest }) {
   const { byKey, revealedKeys } = useDmShares(campaignId)
+  const { playerId } = useCampaignData()
+  // Each DM's NPCs are their own (dm_id); the admin (no player) sees all.
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_npcs', {
     fromRow,
-    filters: { campaign_id: campaignId },
+    filters: playerId ? { campaign_id: campaignId, dm_id: playerId } : { campaign_id: campaignId },
   })
   // The players' NPCs, to tell which of these they've added.
   const { items: partyNpcs } = useSupabaseTable('npcs', {
@@ -298,7 +301,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       {error && (
         <p className="empty-state empty-state--error">
           {error}
-          {/dm_npcs/.test(error) && ' — run the latest supabase/schema.sql to add the DM tables.'}
+          {/dm_npcs|dm_id/.test(error) && ' — run the latest supabase/schema.sql to update the DM tables.'}
         </p>
       )}
       {!loading && !error && visible.length === 0 && (

@@ -477,7 +477,7 @@ export const GUIDE = [
     icon: 'eye',
     for: 'dm',
     intro:
-      'A DM gets their own menu: Overview, World Wiki, Players, NPCs, Creatures, Art, Maps, Combat and Tools. Everything you write there is private until you reveal it.',
+      'A DM gets their own menu: Overview, World Wiki, Players, NPCs, Creatures, Art, Maps, Combat and Tools. Everything you write there is private until you reveal it — a campaign can have several DMs, and each one’s notes are their own.',
     topics: [
       {
         title: 'Invite players',
