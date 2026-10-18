@@ -16,6 +16,7 @@ import SessionNotesTab from './SessionNotesTab.jsx'
 import TimelineTab from './TimelineTab.jsx'
 import SpellsTab from './SpellsTab.jsx'
 import ToolsTab from './ToolsTab.jsx'
+import WikiTab from './WikiTab.jsx'
 import CustomTab from './CustomTab.jsx'
 import HomeHub from './HomeHub.jsx'
 import SessionMode from './SessionMode.jsx'
@@ -60,6 +61,7 @@ const TAB_DEFS = {
   session: { label: 'Session Mode', icon: 'dice' },
   tools: { label: 'Tools', icon: 'tools' },
   sessions: { label: 'Session Notes', icon: 'book' },
+  wiki: { label: 'World Wiki', icon: 'library' },
   timeline: { label: 'Timeline', icon: 'hourglass' },
   web: { label: 'Connections', icon: 'network' },
   npcs: { label: 'NPCs', icon: 'users' },
@@ -89,7 +91,7 @@ const AREAS = [
     id: 'journal',
     label: 'Journal',
     icon: 'book',
-    tabs: ['sessions', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
+    tabs: ['sessions', 'wiki', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
     custom: true,
   },
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
@@ -103,6 +105,8 @@ const AREAS = [
 const DM_AREAS = [
   // What the party has pieced together, so the DM can follow along.
   { id: 'dm-overview', label: 'Overview', icon: 'compass', tabs: ['dm-overview'] },
+  // Everything the party has written about the world, as a wiki.
+  { id: 'dm-wiki', label: 'World Wiki', icon: 'library', tabs: ['wiki'] },
   // Who's in the campaign, their characters, and sign-up invite links.
   { id: 'dm-players', label: 'Players', icon: 'shield', tabs: ['dm-players'] },
   { id: 'dm-npcs', label: 'NPCs', icon: 'users', tabs: ['dm-npcs'] },
@@ -452,6 +456,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {roleReady && (
               <div key={knownTab} className="campaign-view__screen">
               {knownTab === 'home' && <HomeHub campaignName={campaignName} />}
+              {knownTab === 'wiki' && <WikiTab />}
               {knownTab === 'session' && <SessionMode campaignName={campaignName} />}
               {knownTab === 'prep' && <PrepTab />}
               {knownTab === 'character' && <CharacterTab />}
