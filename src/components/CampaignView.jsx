@@ -34,6 +34,7 @@ import RelationshipWeb from './RelationshipWeb.jsx'
 import DmOverview from './DmOverview.jsx'
 import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
 import RevealOverlay from './RevealOverlay.jsx'
+import ShardAlert from './ShardAlert.jsx'
 import DownedPulse from './session/DownedPulse.jsx'
 import LevelUp from './session/LevelUp.jsx'
 import PartyLevelUp from './session/PartyLevelUp.jsx'
@@ -96,7 +97,7 @@ const AREAS = [
 ]
 
 // A DM's whole view of the campaign: just their private NPCs, creatures, art and maps,
-// each with a Share button that notifies the players.
+// each with a Reveal button that shows it to the players.
 const DM_AREAS = [
   // What the party has pieced together, so the DM can follow along.
   { id: 'dm-overview', label: 'Overview', icon: 'compass', tabs: ['dm-overview'] },
@@ -365,6 +366,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
           {roleReady && <CombatMode showAlert={Boolean(playerId) && !isDm} />}
           {/* Players see the DM's live reveals; the DM is the one sending them. */}
           {playerId && roleReady && !isDm && <RevealOverlay campaignId={campaignId} />}
+          {playerId && roleReady && !isDm && <ShardAlert campaignId={campaignId} playerId={playerId} />}
           {/* A heartbeat at the screen edges while your character is dying. */}
           {playerId && roleReady && !isDm && <DownedPulse />}
           {/* Celebrates a party member's level going up, for everyone. */}
@@ -472,7 +474,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                   <PartyLevelUp />
                 </div>
               )}
-              {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} showPolls={isDm} />}
+              {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} isDm={isDm} />}
               {activeCustomTab && (
                 <CustomTab
                   key={activeCustomTab.id}

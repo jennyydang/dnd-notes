@@ -5,18 +5,20 @@ import TeamGenerator from './TeamGenerator.jsx'
 import { PollsPanel } from './session/Polls.jsx'
 import './ToolsTab.scss'
 
-// `showPolls`: the DM runs party votes from here (players vote in Session Mode).
-function ToolsTab({ campaignId, playerId, showPolls = false }) {
+// `isDm`: the DM runs party votes from here (players vote in Session Mode)
+// and hands out shards. The Money Tracker is for players' own purses, so a
+// DM doesn't get one (the admin, with no playerId, keeps its read-only list).
+function ToolsTab({ campaignId, playerId, isDm = false }) {
   return (
     <section className="tools-tab">
-      {showPolls && (
+      {isDm && (
         <div className="tools-tab__polls">
           <PollsPanel />
         </div>
       )}
       <CurrencyCalculator />
-      <WalletTracker campaignId={campaignId} playerId={playerId} />
-      <ShardTracker campaignId={campaignId} playerId={playerId} />
+      {(!isDm || !playerId) && <WalletTracker campaignId={campaignId} playerId={playerId} />}
+      <ShardTracker campaignId={campaignId} playerId={playerId} manage={isDm} />
       <TeamGenerator campaignId={campaignId} />
     </section>
   )

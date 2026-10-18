@@ -7,6 +7,8 @@ import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ArtViewer from './ArtViewer.jsx'
 import ShareStatus from './ShareStatus.jsx'
+import ArchiveToggle from './ArchiveToggle.jsx'
+import { archiveError, archivePatch } from '../lib/archive.js'
 import { useDmShares } from '../hooks/useDmShares.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import Icon from './Icon.jsx'
@@ -24,6 +26,7 @@ const fromRow = (r) => ({
   category: r.category,
   notes: r.notes,
   shared: r.shared,
+  archivedAt: r.archived_at || null,
   createdAt: r.created_at,
 })
 
@@ -34,7 +37,7 @@ function titleFromFile(name) {
 }
 
 // Every piece of art used in the campaign. The DM view (`manage`) uploads
-// and labels it privately, then Shares a piece: players get a notification
+// and labels it privately, then Reveals a piece: players get a notification
 // and one of them adds it to the players' Art tab (which shows only those).
 // Both open pieces in a full-screen viewer, handy for showing at the table.
 function ArtGallery({ campaignId, manage = false }) {
@@ -50,22 +53,38 @@ function ArtGallery({ campaignId, manage = false }) {
   const [actionError, setActionError] = useState(null)
   const fileInputRef = useRef(null)
 
+  // Archiving only tidies the DM's view; players' Art tab ignores it.
+  const [showArchived, setShowArchived] = useState(false)
+  const archivedCount = manage ? items.filter((a) => a.archivedAt).length : 0
   const pieces = useMemo(
     () =>
       items
-        .filter((a) => manage || a.shared)
+        .filter((a) => (manage ? Boolean(a.archivedAt) === showArchived : a.shared))
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-    [items, manage],
+    [items, manage, showArchived],
   )
   const usedCategories = ART_CATEGORIES.filter((c) => pieces.some((a) => a.category === c))
   const visible = pieces.filter((a) => category === 'all' || a.category === category)
   const sharedCount = pieces.filter((a) => a.shared).length
   const { byKey, revealedKeys } = useDmShares(campaignId)
-  const isRevealed = (piece) => revealedKeys.has(shareKey('art', piece.id))
   const [sharingId, setSharingId] = useState(null)
   // 'added' (in the players' Art tab), 'sent' (notification out), 'private'.
   const statusOf = (piece) =>
     piece.shared ? 'added' : byKey.has(shareKey('art', piece.id)) ? 'sent' : 'private'
+  // Revealed (or shared before Reveal replaced Share): it's out, so the
+  // tile greys out and can be archived.
+  const isRevealed = (piece) => statusOf(piece) !== 'private' || revealedKeys.has(shareKey('art', piece.id))
+
+  // Archiving moves it to the other list, so the viewer closes.
+  async function setArchived(piece, archive) {
+    setActionError(null)
+    try {
+      await updateItem(piece.id, archivePatch(archive))
+      setViewingId(null)
+    } catch (err) {
+      setActionError(archiveError(archive, piece.title || 'this art', err))
+    }
+  }
 
   async function uploadFiles(event) {
     const files = [...(event.target.files || [])]
@@ -103,7 +122,7 @@ function ArtGallery({ campaignId, manage = false }) {
     }
   }
 
-  async function share(piece, reveal = false) {
+  async function reveal(piece) {
     setSharingId(piece.id)
     const ok = await run(() =>
       shareWithPlayers({
@@ -112,14 +131,14 @@ function ArtGallery({ campaignId, manage = false }) {
         sourceId: piece.id,
         title: piece.title || 'Untitled',
         payload: { title: piece.title, category: piece.category, notes: piece.notes, image_path: piece.imagePath },
-        reveal,
+        reveal: true,
       }),
     )
     setSharingId(null)
     return ok
   }
 
-  // Takes it back out of the players' Art tab; Share again to re-send.
+  // Takes it back out of the players' Art tab; Reveal again to re-send.
   function unshare(piece) {
     if (!window.confirm(`Remove “${piece.title || 'this art'}” from the players’ Art tab?`)) return
     run(async () => {
@@ -188,13 +207,14 @@ function ArtGallery({ campaignId, manage = false }) {
               {upload ? `Uploading ${Math.min(upload.done + 1, upload.total)} of ${upload.total}…` : '+ Upload art'}
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={uploadFiles} />
+            <ArchiveToggle count={archivedCount} showing={showArchived} onToggle={() => setShowArchived((v) => !v)} />
           </>
         )}
       </div>
 
-      {manage && pieces.length > 0 && (
+      {manage && pieces.length > 0 && !showArchived && (
         <p className="art-gallery__summary">
-          {sharedCount} of {pieces.length} in the players’ Art tab. Tap a piece to view, share or edit it.
+          {sharedCount} of {pieces.length} in the players’ Art tab. Tap a piece to view, reveal or edit it.
         </p>
       )}
 
@@ -222,9 +242,13 @@ function ArtGallery({ campaignId, manage = false }) {
       )}
       {!loading && !error && pieces.length === 0 && (
         <p className="empty-state">
-          {manage
-            ? 'No art yet. Upload the portraits, maps and scenes you’ve used — you can pick several at once, and choose which ones players can see.'
-            : 'No art shared yet. When your DM shares portraits, maps or scenes, they’ll show up here.'}
+          {manage && showArchived
+            ? 'Nothing archived.'
+            : manage && archivedCount
+              ? 'Every piece here has been archived.'
+              : manage
+                ? 'No art yet. Upload the portraits, maps and scenes you’ve used — you can pick several at once, and choose which ones players can see.'
+                : 'No art shared yet. When your DM shares portraits, maps or scenes, they’ll show up here.'}
         </p>
       )}
 
@@ -262,10 +286,14 @@ function ArtGallery({ campaignId, manage = false }) {
                   kind="art"
                   status={statusOf(viewing)}
                   sharing={sharingId === viewing.id}
-                  onShare={() => share(viewing)}
-                  onReveal={() => share(viewing, true)}
+                  onReveal={() => reveal(viewing)}
                   revealed={isRevealed(viewing)}
                 />
+                {(isRevealed(viewing) || viewing.archivedAt) && (
+                  <button type="button" className="btn btn--text" onClick={() => setArchived(viewing, !viewing.archivedAt)}>
+                    <Icon name={viewing.archivedAt ? 'unarchive' : 'archive'} /> {viewing.archivedAt ? 'Unarchive' : 'Archive'}
+                  </button>
+                )}
                 {viewing.shared && (
                   <button type="button" className="btn btn--text" onClick={() => unshare(viewing)}>
                     Remove from players

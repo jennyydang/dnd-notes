@@ -8,6 +8,7 @@ import Modal from './Modal.jsx'
 import TabNav from './TabNav.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ShareStatus from './ShareStatus.jsx'
+import { archiveError, archivePatch } from '../lib/archive.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
 import Icon from './Icon.jsx'
 import './NpcsTab.scss'
@@ -22,7 +23,8 @@ const BUCKET = 'npc-portraits'
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'private', label: 'Private' },
-  { id: 'shared', label: 'Shared' },
+  { id: 'shared', label: 'Revealed' },
+  { id: 'archived', label: 'Archived' },
 ]
 
 const emptyForm = {
@@ -48,13 +50,14 @@ const fromRow = (r) => ({
   photoPath: r.photo_path,
   photo: getPublicUrl(BUCKET, r.photo_path),
   revealedNpcId: r.revealed_npc_id,
+  archivedAt: r.archived_at || null,
   createdAt: r.created_at,
 })
 
 const npcFromRow = (r) => ({ id: r.id, dmNpcId: r.dm_npc_id })
 
 // The DM's private NPC workshop: draft NPCs as you invent them (with
-// secrets players never see), then "Share" one when the party meets them.
+// secrets players never see), then "Reveal" one when the party meets them.
 // Players get a notification and can add a player-safe copy to their NPCs
 // tab (see DmSharesInbox).
 function SecretNpcsTab({ campaignId, addRequest }) {
@@ -102,15 +105,21 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       : byKey.has(shareKey('npc', npc.id))
         ? 'sent'
         : 'private'
-  const isShared = (npc) => statusOf(npc) !== 'private'
+  // Revealed (or shared before Reveal replaced Share): it's out, so the
+  // card greys out and can be archived.
+  const isShared = (npc) => statusOf(npc) !== 'private' || revealedKeys.has(shareKey('npc', npc.id))
+  const active = items.filter((n) => !n.archivedAt)
+  const archived = items.filter((n) => n.archivedAt)
   const counts = {
-    all: items.length,
-    private: items.filter((n) => !isShared(n)).length,
-    shared: items.filter(isShared).length,
+    all: active.length,
+    private: active.filter((n) => !isShared(n)).length,
+    shared: active.filter(isShared).length,
+    archived: archived.length,
   }
+  const filters = FILTERS.filter((f) => f.id !== 'archived' || archived.length > 0 || filter === 'archived')
   const needle = query.trim().toLowerCase()
-  const visible = items
-    .filter((n) => filter === 'all' || (filter === 'shared') === isShared(n))
+  const visible = (filter === 'archived' ? archived : active)
+    .filter((n) => filter === 'all' || filter === 'archived' || (filter === 'shared') === isShared(n))
     .filter(
       (n) =>
         !needle ||
@@ -198,11 +207,9 @@ function SecretNpcsTab({ campaignId, addRequest }) {
     }
   }
 
-  async function share(npc, reveal = false) {
+  async function reveal(npc) {
     const ok = window.confirm(
-      reveal
-        ? `Reveal ${npc.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications. They'll see the name, race, where they're found, description and portrait — never your secret notes.`
-        : `Share ${npc.name} with the players?\n\nEveryone gets a notification and can add them to the NPCs tab. They'll see the name, race, where they're found, description and portrait — never your secret notes.`,
+      `Reveal ${npc.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications, ready to add to the NPCs tab. They'll see the name, race, where they're found, description and portrait — never your secret notes.`,
     )
     if (!ok) return false
     setActionError(null)
@@ -220,7 +227,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
           description: joinNotes([npc.occupation, npc.description]),
           photo_path: npc.photoPath || null,
         },
-        reveal,
+        reveal: true,
       })
       return true
     } catch (err) {
@@ -228,6 +235,15 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       return false
     } finally {
       setSharingId(null)
+    }
+  }
+
+  async function setArchived(npc, archive) {
+    setActionError(null)
+    try {
+      await updateItem(npc.id, archivePatch(archive))
+    } catch (err) {
+      setActionError(archiveError(archive, npc.name, err))
     }
   }
 
@@ -267,7 +283,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
 
       <div className="secret-npcs__toolbar">
         <TabNav
-          tabs={FILTERS.map((f) => ({ ...f, label: `${f.label} (${counts[f.id]})` }))}
+          tabs={filters.map((f) => ({ ...f, label: `${f.label} (${counts[f.id]})` }))}
           activeTab={filter}
           onSelect={setFilter}
           className="tab-nav--pill secret-npcs__filter"
@@ -304,12 +320,16 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       {!loading && !error && visible.length === 0 && (
         <p className="empty-state">
           {items.length === 0
-            ? 'No NPCs yet. Jot them down as you invent them — players can’t see this list. When the party meets one, press Share.'
+            ? 'No NPCs yet. Jot them down as you invent them — players can’t see this list. When the party meets one, press Reveal.'
             : needle
               ? `Nothing matches “${query.trim()}”.`
-              : filter === 'shared'
-                ? 'Nothing shared yet.'
-                : 'Everyone here has been shared.'}
+              : filter === 'archived'
+                ? 'Nothing archived.'
+                : filter === 'shared'
+                  ? 'Nothing revealed yet.'
+                  : filter === 'private'
+                    ? 'Everyone here has been revealed.'
+                    : 'Everyone here has been archived.'}
         </p>
       )}
 
@@ -317,10 +337,10 @@ function SecretNpcsTab({ campaignId, addRequest }) {
         <div className="npc-list">
           {visible.map((npc) => {
             const status = statusOf(npc)
-            const revealed = revealedKeys.has(shareKey('npc', npc.id))
+            const revealed = isShared(npc)
             return (
               <article
-                className={`npc-card secret-npc panel${status !== 'private' ? ' secret-npc--revealed' : ''}${revealed ? ' dm-revealed' : ''}`}
+                className={`npc-card secret-npc panel${revealed ? ' secret-npc--revealed dm-revealed' : ''}`}
                 key={npc.id}
               >
                 <div className="npc-card__main">
@@ -335,8 +355,9 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                       )}
                     </div>
                   </div>
-                  <span className={`secret-npc__badge${status !== 'private' ? ' secret-npc__badge--revealed' : ''}`}>
-                    <Icon name={status === 'private' ? 'lock' : 'eye'} /> {status === 'private' ? 'Private' : 'Shared'}
+                  <span className={`secret-npc__badge${revealed ? ' secret-npc__badge--revealed' : ''}`}>
+                    <Icon name={npc.archivedAt ? 'archive' : revealed ? 'eye' : 'lock'} />{' '}
+                    {npc.archivedAt ? 'Archived' : revealed ? 'Revealed' : 'Private'}
                   </span>
                 </div>
                 {npc.location && <p className="secret-npc__meta"><Icon name="pin" /> {npc.location}</p>}
@@ -352,11 +373,15 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                     kind="npc"
                     status={status}
                     sharing={sharingId === npc.id}
-                    onShare={() => share(npc)}
-                    onReveal={() => share(npc, true)}
+                    onReveal={() => reveal(npc)}
                     revealed={revealed}
                     className="secret-npc__share"
                   />
+                  {(revealed || npc.archivedAt) && (
+                    <button type="button" className="btn btn--text" onClick={() => setArchived(npc, !npc.archivedAt)}>
+                      <Icon name={npc.archivedAt ? 'unarchive' : 'archive'} /> {npc.archivedAt ? 'Unarchive' : 'Archive'}
+                    </button>
+                  )}
                   <button type="button" className="btn btn--text" onClick={() => openForm(npc)}>
                     Edit
                   </button>

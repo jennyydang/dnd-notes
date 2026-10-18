@@ -6,6 +6,8 @@ import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ShareStatus from './ShareStatus.jsx'
+import ArchiveToggle from './ArchiveToggle.jsx'
+import { archiveError, archivePatch } from '../lib/archive.js'
 import Icon from './Icon.jsx'
 import './CreaturesTab.scss'
 import './SecretNpcsTab.scss'
@@ -23,13 +25,14 @@ const fromRow = (r) => ({
   description: r.description,
   secrets: r.secrets,
   photos: photoList(r.photos),
+  archivedAt: r.archived_at || null,
   createdAt: r.created_at,
 })
 
 const partyFromRow = (r) => ({ id: r.id, dmCreatureId: r.dm_creature_id })
 
 // The DM's private bestiary: write creatures up ahead of time (photos,
-// what the party sees, private notes), then Share one when the party
+// what the party sees, private notes), then Reveal one when the party
 // meets it. Players add a copy — photos included — to their Creatures tab.
 function DmCreaturesTab({ campaignId }) {
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_creatures', {
@@ -54,7 +57,23 @@ function DmCreaturesTab({ campaignId }) {
   const [sharingId, setSharingId] = useState(null)
   const [actionError, setActionError] = useState(null)
 
-  const visible = [...items].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  const [showArchived, setShowArchived] = useState(false)
+  // Revealed (or shared before Reveal replaced Share): it's out, so the
+  // card greys out and can be archived.
+  const isOut = (c) => statusOf(c) !== 'private' || revealedKeys.has(shareKey('creature', c.id))
+  const archivedCount = items.filter((c) => c.archivedAt).length
+  const visible = items
+    .filter((c) => Boolean(c.archivedAt) === showArchived)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  async function setArchived(c, archive) {
+    setActionError(null)
+    try {
+      await updateItem(c.id, archivePatch(archive))
+    } catch (err) {
+      setActionError(archiveError(archive, c.name, err))
+    }
+  }
 
   function openForm(creature = null) {
     setForm(
@@ -111,11 +130,8 @@ function DmCreaturesTab({ campaignId }) {
     }
   }
 
-  async function share(c, reveal = false) {
-    const what = 'name, type, photos and description'
-    const message = reveal
-      ? `Reveal ${c.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications. They'll see its ${what}. Never your DM notes.`
-      : `Share ${c.name} with the players?\n\nEveryone gets a notification and can add it to Creatures. They'll see its ${what}. Never your DM notes.`
+  async function reveal(c) {
+    const message = `Reveal ${c.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications, ready to add to Creatures. They'll see its name, type, photos and description. Never your DM notes.`
     if (!window.confirm(message)) return false
     setActionError(null)
     setSharingId(c.id)
@@ -132,7 +148,7 @@ function DmCreaturesTab({ campaignId }) {
           description: c.description,
           photos: c.photos,
         },
-        reveal,
+        reveal: true,
       })
       return true
     } catch (err) {
@@ -175,6 +191,7 @@ function DmCreaturesTab({ campaignId }) {
       <DmPrivacyNote />
 
       <div className="creatures-tab__toolbar creatures-tab__toolbar--end">
+        <ArchiveToggle count={archivedCount} showing={showArchived} onToggle={() => setShowArchived((v) => !v)} />
         <button type="button" className="btn btn--primary" onClick={() => openForm()}>
           + Add Creature
         </button>
@@ -194,7 +211,11 @@ function DmCreaturesTab({ campaignId }) {
       )}
       {!loading && !error && visible.length === 0 && (
         <p className="empty-state">
-          No creatures yet. Write them up ahead of time — they stay private until you press Share.
+          {showArchived
+            ? 'Nothing archived.'
+            : archivedCount
+              ? 'Everything here has been archived.'
+              : 'No creatures yet. Write them up ahead of time — they stay private until you Reveal them.'}
         </p>
       )}
 
@@ -202,7 +223,7 @@ function DmCreaturesTab({ campaignId }) {
         <div className="creature-list">
           {visible.map((c) => {
             const status = statusOf(c)
-            const revealed = revealedKeys.has(shareKey('creature', c.id))
+            const revealed = isOut(c)
             return (
               <article
                 className={`creature-card panel${revealed ? ' dm-revealed' : ''}`}
@@ -222,10 +243,14 @@ function DmCreaturesTab({ campaignId }) {
                       kind="creature"
                       status={status}
                       sharing={sharingId === c.id}
-                      onShare={() => share(c)}
-                      onReveal={() => share(c, true)}
+                      onReveal={() => reveal(c)}
                       revealed={revealed}
                     />
+                    {(revealed || c.archivedAt) && (
+                      <button type="button" className="btn btn--text" onClick={() => setArchived(c, !c.archivedAt)}>
+                        <Icon name={c.archivedAt ? 'unarchive' : 'archive'} /> {c.archivedAt ? 'Unarchive' : 'Archive'}
+                      </button>
+                    )}
                     <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
                       Edit
                     </button>

@@ -1,0 +1,23 @@
+@use '../styles/variables' as *;
+
+.archive-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.4rem;
+  padding: 0.3rem 0.85rem;
+  border: 1px dashed fade($gold-dim, 0.8);
+  border-radius: 999px;
+  background: transparent;
+  color: $text-muted;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover,
+  &.is-on {
+    border-style: solid;
+    border-color: $gold;
+    color: $gold-light;
+  }
+}

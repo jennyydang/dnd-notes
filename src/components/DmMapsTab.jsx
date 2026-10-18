@@ -7,6 +7,8 @@ import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
 import ArtViewer from './ArtViewer.jsx'
 import ShareStatus from './ShareStatus.jsx'
+import ArchiveToggle from './ArchiveToggle.jsx'
+import { archiveError, archivePatch } from '../lib/archive.js'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import Icon from './Icon.jsx'
 import './ArtGallery.scss'
@@ -20,6 +22,7 @@ const fromRow = (r) => ({
   url: getPublicUrl(BUCKET, r.image_path),
   title: r.caption,
   notes: r.notes,
+  archivedAt: r.archived_at || null,
   createdAt: r.created_at,
 })
 
@@ -30,7 +33,7 @@ function captionFromFile(name) {
   return base ? base.charAt(0).toUpperCase() + base.slice(1) : 'Untitled map'
 }
 
-// The DM's private maps. Share one and players get a notification; adding
+// The DM's private maps. Reveal one and players get a notification; adding
 // it puts a copy (with its own image file) in the players' Maps tab.
 function DmMapsTab({ campaignId }) {
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_maps', {
@@ -42,10 +45,12 @@ function DmMapsTab({ campaignId }) {
     filters: { campaign_id: campaignId },
   })
   const { byKey, revealedKeys } = useDmShares(campaignId)
-  const isRevealed = (map) => revealedKeys.has(shareKey('map', map.id))
   const addedIds = useMemo(() => new Set(partyMaps.map((m) => m.dmMapId).filter(Boolean)), [partyMaps])
   const statusOf = (map) =>
     addedIds.has(map.id) ? 'added' : byKey.has(shareKey('map', map.id)) ? 'sent' : 'private'
+  // Revealed (or shared before Reveal replaced Share): it's out, so the
+  // tile greys out and can be archived.
+  const isRevealed = (map) => statusOf(map) !== 'private' || revealedKeys.has(shareKey('map', map.id))
 
   const [viewingId, setViewingId] = useState(null)
   const [editing, setEditing] = useState(null)
@@ -55,7 +60,26 @@ function DmMapsTab({ campaignId }) {
   const [sharingId, setSharingId] = useState(null)
   const fileInputRef = useRef(null)
 
-  const maps = useMemo(() => [...items].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)), [items])
+  const [showArchived, setShowArchived] = useState(false)
+  const archivedCount = items.filter((m) => m.archivedAt).length
+  const maps = useMemo(
+    () =>
+      items
+        .filter((m) => Boolean(m.archivedAt) === showArchived)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+    [items, showArchived],
+  )
+
+  // Archiving moves it to the other list, so the viewer closes.
+  async function setArchived(map, archive) {
+    setActionError(null)
+    try {
+      await updateItem(map.id, archivePatch(archive))
+      setViewingId(null)
+    } catch (err) {
+      setActionError(archiveError(archive, map.title || 'this map', err))
+    }
+  }
 
   async function uploadFiles(event) {
     const files = [...(event.target.files || [])]
@@ -88,7 +112,7 @@ function DmMapsTab({ campaignId }) {
     }
   }
 
-  async function share(map, reveal = false) {
+  async function reveal(map) {
     setSharingId(map.id)
     const ok = await run(() =>
       shareWithPlayers({
@@ -97,7 +121,7 @@ function DmMapsTab({ campaignId }) {
         sourceId: map.id,
         title: map.title || 'Untitled map',
         payload: { caption: map.title, image_path: map.imagePath },
-        reveal,
+        reveal: true,
       }),
     )
     setSharingId(null)
@@ -153,11 +177,12 @@ function DmMapsTab({ campaignId }) {
           {upload ? `Uploading ${Math.min(upload.done + 1, upload.total)} of ${upload.total}…` : '+ Upload maps'}
         </button>
         <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={uploadFiles} />
+        <ArchiveToggle count={archivedCount} showing={showArchived} onToggle={() => setShowArchived((v) => !v)} />
       </div>
 
-      {maps.length > 0 && (
+      {maps.length > 0 && !showArchived && (
         <p className="art-gallery__summary">
-          {added} of {maps.length} in the players’ Maps tab. Tap a map to view, share or edit it.
+          {added} of {maps.length} in the players’ Maps tab. Tap a map to view, reveal or edit it.
         </p>
       )}
       {uploadErrors.length > 0 && (
@@ -184,7 +209,11 @@ function DmMapsTab({ campaignId }) {
       )}
       {!loading && !error && maps.length === 0 && (
         <p className="empty-state">
-          No maps yet. Upload the maps you’ve made (several at once is fine). They stay private until you press Share.
+          {showArchived
+            ? 'Nothing archived.'
+            : archivedCount
+              ? 'Every map here has been archived.'
+              : 'No maps yet. Upload the maps you’ve made (several at once is fine). They stay private until you Reveal them.'}
         </p>
       )}
 
@@ -222,10 +251,14 @@ function DmMapsTab({ campaignId }) {
                 kind="map"
                 status={statusOf(viewing)}
                 sharing={sharingId === viewing.id}
-                onShare={() => share(viewing)}
-                onReveal={() => share(viewing, true)}
+                onReveal={() => reveal(viewing)}
                 revealed={isRevealed(viewing)}
               />
+              {(isRevealed(viewing) || viewing.archivedAt) && (
+                <button type="button" className="btn btn--text" onClick={() => setArchived(viewing, !viewing.archivedAt)}>
+                  <Icon name={viewing.archivedAt ? 'unarchive' : 'archive'} /> {viewing.archivedAt ? 'Unarchive' : 'Archive'}
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn--text"
