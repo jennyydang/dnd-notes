@@ -536,62 +536,74 @@ function ManagePlayers({ adminPassword, campaigns, resets, players, memberships,
 
                 {playerCampaigns.length > 0 && (
                   <ul className="player-card__campaigns" aria-label={`${player.username}'s campaigns`}>
-                    {playerCampaigns.map((m) => (
-                      <li key={m.campaignId} className="player-card__campaign">
-                        <span className="player-card__campaign-name">{m.campaignName}</span>
-                        <span className={`player-card__role player-card__role--${m.role}`}>
-                          {m.role === 'dm' ? (m.isCreator ? 'Creator · DM' : 'DM') : m.role}
-                        </span>
-                        <button
-                          type="button"
-                          className="btn btn--text player-card__dm-toggle"
-                          onClick={() =>
-                            run(() =>
-                              setMembershipRole(
-                                player.id,
-                                m.campaignId,
-                                m.role !== 'dm' ? 'dm' : m.isCreator ? 'creator' : 'player',
-                              ),
-                            )
-                          }
-                        >
-                          {m.role === 'dm' ? 'Remove DM' : 'Make DM'}
-                        </button>
-                      </li>
-                    ))}
+                    {playerCampaigns.map((m) => {
+                      const creator = m.isCreator || m.role === 'creator'
+                      const dm = m.role === 'dm'
+                      return (
+                        <li key={m.campaignId} className={`player-card__campaign${dm ? ' is-dm' : ''}`}>
+                          <span className="player-card__campaign-name" title={m.campaignName}>
+                            {m.campaignName}
+                          </span>
+                          {creator && <span className="player-card__tag">Creator</span>}
+                          {/* DM on/off: shows the role and changes it in one tap. */}
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={dm}
+                            className={`dm-switch${dm ? ' is-on' : ''}`}
+                            title={dm ? `${player.username} is a DM here — tap to make them a player` : `Make ${player.username} a DM here`}
+                            aria-label={`${player.username} is DM of ${m.campaignName}`}
+                            onClick={() =>
+                              run(() => setMembershipRole(player.id, m.campaignId, !dm ? 'dm' : creator ? 'creator' : 'player'))
+                            }
+                          >
+                            <span className="dm-switch__track" aria-hidden="true">
+                              <span className="dm-switch__thumb" />
+                            </span>
+                            <span className="dm-switch__label">DM</span>
+                          </button>
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
 
                 {canJoin.length > 0 && (
-                  <select
-                    className="player-card__add-campaign"
-                    value=""
-                    onChange={(e) => e.target.value && run(() => addPlayerToCampaign(player.id, e.target.value))}
-                    aria-label={`Add ${player.username} to a campaign`}
-                  >
-                    <option value="">+ Add to a campaign…</option>
-                    {canJoin.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="player-card__add-campaign">
+                    <Icon name="plus" />
+                    <select
+                      value=""
+                      onChange={(e) => e.target.value && run(() => addPlayerToCampaign(player.id, e.target.value))}
+                      aria-label={`Add ${player.username} to a campaign`}
+                    >
+                      <option value="">Add to a campaign…</option>
+                      {canJoin.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 )}
 
                 <div className="player-card__actions">
                   <button
                     type="button"
-                    className="btn btn--text"
+                    className="player-card__action"
                     onClick={() => makeResetLink(player)}
                     title="A single-use link for them to choose a new password"
                   >
-                    Reset link
+                    <Icon name="link" /> Reset link
                   </button>
-                  <button type="button" className="btn btn--text" onClick={() => openEdit(player)}>
-                    Edit
+                  <button type="button" className="player-card__action" onClick={() => openEdit(player)}>
+                    <Icon name="edit" /> Edit
                   </button>
-                  <button type="button" className="btn btn--danger" onClick={() => removePlayer(player)}>
-                    Delete
+                  <button
+                    type="button"
+                    className="player-card__action player-card__action--danger"
+                    onClick={() => removePlayer(player)}
+                  >
+                    <Icon name="trash" /> Delete
                   </button>
                 </div>
               </li>
