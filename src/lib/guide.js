@@ -313,7 +313,7 @@ export const GUIDE = [
         ],
         tips: [
           'It reads your own recaps and quick notes, so the more you tag, the richer it gets.',
-          'The ⤢ button by its title opens the wiki in its own browser tab — full width, no menus — to keep beside the app.',
+          'It opens in its own browser tab — full width, no menus — to keep beside the app. **Open entry** brings you back to the app with that entry open.',
           'Every screen and entry has its own address, so you can bookmark it or paste the link to someone in the campaign.',
         ],
       },
