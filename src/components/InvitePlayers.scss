@@ -104,7 +104,9 @@
     &--used,
     &--expired,
     &--revoked {
-      opacity: 0.7;
+      .invite-list__who {
+        opacity: 0.7;
+      }
     }
   }
 
@@ -126,6 +128,47 @@
 
   &__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
+    margin-left: auto;
+  }
+
+  // Copy link · Revoke · Delete: icon + label, Delete in red.
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.4rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid transparent;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    cursor: pointer;
+
+    .icon {
+      color: $gold;
+    }
+
+    &:hover {
+      border-color: fade($gold-dim, 0.7);
+      background: fade($gold, 0.08);
+    }
+
+    &--danger {
+      color: $maroon-text;
+
+      .icon {
+        color: $maroon-text;
+      }
+
+      &:hover {
+        border-color: fade($maroon-light, 0.8);
+        background: fade($maroon-light, 0.15);
+      }
+    }
   }
 }

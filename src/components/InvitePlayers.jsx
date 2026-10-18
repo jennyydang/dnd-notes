@@ -9,7 +9,7 @@ const formatDate = (value) =>
 
 function inviteStatus(invite, now) {
   if (invite.used_at) return { id: 'used', label: `Used by ${invite.used_by_username || 'a deleted player'}` }
-  if (invite.revoked_at) return { id: 'revoked', label: 'Cancelled' }
+  if (invite.revoked_at) return { id: 'revoked', label: 'Revoked' }
   if (new Date(invite.expires_at).getTime() < now) return { id: 'expired', label: 'Expired' }
   return { id: 'waiting', label: `Waiting · expires ${formatDate(invite.expires_at)}` }
 }
@@ -162,8 +162,9 @@ export function InviteDialog({ create, campaigns = [], fixedCampaign = null, onC
 }
 
 // A list of invite links: copy a waiting one again, or cancel it.
-// `load()` resolves to the invites; `revoke(id)` cancels one.
-export function InviteList({ load: fetchInvites, revoke: cancelInvite, refreshKey, onChanged, showCampaign = true }) {
+// `load()` resolves to the invites; `revoke(id)` stops a waiting link;
+// `remove(id)` deletes an invite from the list.
+export function InviteList({ load: fetchInvites, revoke: cancelInvite, remove: deleteInvite, refreshKey, onChanged, showCampaign = true }) {
   const [invites, setInvites] = useState([])
   const [error, setError] = useState(null)
   const [showAll, setShowAll] = useState(false)
@@ -185,15 +186,26 @@ export function InviteList({ load: fetchInvites, revoke: cancelInvite, refreshKe
     load()
   }, [load, refreshKey])
 
-  async function revoke(invite) {
-    if (!window.confirm(`Cancel this invite${invite.note ? ` for ${invite.note}` : ''}? The link will stop working.`)) return
+  async function act(fn) {
     try {
-      await cancelInvite(invite.id)
+      await fn()
       await load()
       onChanged?.()
     } catch (err) {
       setError(err.message)
     }
+  }
+
+  function revoke(invite) {
+    if (!window.confirm(`Revoke this invite${invite.note ? ` for ${invite.note}` : ''}? The link will stop working.`)) return
+    act(() => cancelInvite(invite.id))
+  }
+
+  function remove(invite) {
+    const waiting = invite.status.id === 'waiting'
+    const message = `Delete this invite${invite.note ? ` for ${invite.note}` : ''} from the list?${waiting ? ' The link will stop working.' : ''}`
+    if (!window.confirm(message)) return
+    act(() => deleteInvite(invite.id))
   }
 
   const withStatus = invites.map((i) => ({ ...i, status: inviteStatus(i, now) }))
@@ -225,22 +237,34 @@ export function InviteList({ load: fetchInvites, revoke: cancelInvite, refreshKe
                 {invite.status.label}
               </span>
             </div>
-            {invite.status.id === 'waiting' && (
-              <div className="invite-list__actions">
+            <div className="invite-list__actions">
+              {invite.status.id === 'waiting' && (
+                <>
+                  <button
+                    type="button"
+                    className="invite-list__action"
+                    onClick={async () => {
+                      if (await copyText(inviteLink(invite.token))) setCopiedId(invite.id)
+                    }}
+                  >
+                    <Icon name={copiedId === invite.id ? 'check' : 'clipboard'} /> {copiedId === invite.id ? 'Copied!' : 'Copy link'}
+                  </button>
+                  <button type="button" className="invite-list__action" onClick={() => revoke(invite)}>
+                    <Icon name="close" /> Revoke
+                  </button>
+                </>
+              )}
+              {deleteInvite && (
                 <button
                   type="button"
-                  className="btn btn--text"
-                  onClick={async () => {
-                    if (await copyText(inviteLink(invite.token))) setCopiedId(invite.id)
-                  }}
+                  className="invite-list__action invite-list__action--danger"
+                  onClick={() => remove(invite)}
+                  aria-label={`Delete ${invite.note || 'invite'} from the list`}
                 >
-                  {copiedId === invite.id ? 'Copied!' : 'Copy link'}
+                  <Icon name="trash" /> Delete
                 </button>
-                <button type="button" className="btn btn--text" onClick={() => revoke(invite)}>
-                  Cancel
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </li>
         ))}
       </ul>

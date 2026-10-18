@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useCampaignData } from '../hooks/useCampaignData.js'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
-import { createCampaignInvite, listCampaignInvites, revokeCampaignInvite } from '../lib/auth.js'
+import { createCampaignInvite, deleteCampaignInvite, listCampaignInvites, revokeCampaignInvite } from '../lib/auth.js'
 import { listCampaignPlayers, removeFromCampaign } from '../lib/campaigns.js'
 import { usePlayerAvatar } from '../lib/profiles.js'
 import { getPublicUrl } from '../lib/storage.js'
@@ -180,6 +180,7 @@ function DmPlayersTab({ campaignName }) {
         <InviteList
           load={() => listCampaignInvites(playerId, campaignId)}
           revoke={(id) => revokeCampaignInvite(playerId, id)}
+          remove={(id) => deleteCampaignInvite(playerId, id)}
           // A sign-up from one of these links adds a member, so refresh then too.
           refreshKey={`${invitesChanged}|${membershipKey}`}
           showCampaign={false}

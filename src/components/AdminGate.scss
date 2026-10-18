@@ -254,79 +254,198 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.4rem;
   }
 
+  // One campaign: its full name, a Creator tag, and the DM switch.
   &__campaign {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    min-height: 2.5rem;
-    padding: 0.3rem 0.4rem 0.3rem 0.7rem;
+    gap: 0.6rem;
+    min-height: 2.9rem;
+    padding: 0.35rem 0.5rem 0.35rem 0.8rem;
     background: $bg-deep;
     border: 1px solid $ink-soft;
+    border-left: 3px solid $ink-soft;
     border-radius: $radius;
+
+    &.is-dm {
+      border-left-color: $gold;
+    }
   }
 
   &__campaign-name {
     flex: 1;
     min-width: 0;
     color: $text-light;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
   }
 
-  &__role {
+  &__tag {
     flex-shrink: 0;
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.1rem 0.5rem;
+    padding: 0.05rem 0.45rem;
+    border: 1px solid fade($gold, 0.5);
     border-radius: 999px;
-    border: 1px solid $ink-soft;
-    color: $text-muted;
-
-    &--dm,
-    &--creator {
-      border-color: fade($gold, 0.6);
-      color: $gold-light;
-    }
+    color: $gold-light;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
-  &__dm-toggle {
-    flex-shrink: 0;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.72rem;
-  }
-
+  // A dashed "+ Add to a campaign…" with the native picker underneath.
   &__add-campaign {
-    min-height: 2.5rem;
-    background: transparent;
-    border: 1px dashed $gold-dim;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.6rem;
+    padding: 0 0.75rem;
+    border: 1px dashed fade($gold-dim, 0.9);
     border-radius: $radius;
     color: $text-muted;
-    padding: 0.35rem 0.6rem;
-    font-size: 0.9rem;
+    cursor: pointer;
 
-    &:hover,
-    &:focus {
-      border-color: $gold;
-      color: $text-light;
+    .icon {
+      flex-shrink: 0;
+      color: $gold;
+    }
+
+    select {
+      flex: 1;
+      min-width: 0;
+      min-height: 2.5rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.92rem;
+      cursor: pointer;
+      appearance: none;
+
+      &:focus {
+        outline: none;
+      }
     }
 
     option {
       background: $bg-panel;
       color: $text-light;
     }
+
+    &:hover,
+    &:focus-within {
+      border-color: $gold;
+      color: $text-light;
+    }
   }
 
+  // Slim footer: icon + label actions on one line; Delete in red.
   &__actions {
     display: flex;
     justify-content: flex-end;
-    gap: 0.5rem;
-    padding-top: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: auto;
+    padding-top: 0.6rem;
     border-top: 1px solid fade($gold-dim, 0.3);
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.4rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid transparent;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    cursor: pointer;
+
+    .icon {
+      color: $gold;
+    }
+
+    &:hover {
+      border-color: fade($gold-dim, 0.7);
+      background: fade($gold, 0.08);
+    }
+
+    &--danger {
+      color: $maroon-text;
+
+      .icon {
+        color: $maroon-text;
+      }
+
+      &:hover {
+        border-color: fade($maroon-light, 0.8);
+        background: fade($maroon-light, 0.15);
+      }
+    }
+  }
+}
+
+// On/off switch with a label, e.g. the admin's "DM" per campaign.
+.dm-switch {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.2rem;
+  padding: 0.15rem 0.35rem;
+  border: 0;
+  background: transparent;
+  color: $text-muted;
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+
+  &__track {
+    position: relative;
+    width: 2.2rem;
+    height: 1.25rem;
+    border: 1px solid $ink-soft;
+    border-radius: 999px;
+    background: $bg-panel-raised;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  &__thumb {
+    position: absolute;
+    top: 50%;
+    left: 0.15rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 50%;
+    background: $text-muted;
+    transform: translateY(-50%);
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  &.is-on {
+    color: $gold-light;
+
+    .dm-switch__track {
+      border-color: $gold;
+      background: fade($gold, 0.35);
+    }
+
+    .dm-switch__thumb {
+      background: $gold-light;
+      transform: translate(0.95rem, -50%);
+    }
+  }
+
+  &:focus-visible .dm-switch__track {
+    outline: 2px solid $gold-light;
+    outline-offset: 2px;
   }
 }
 
