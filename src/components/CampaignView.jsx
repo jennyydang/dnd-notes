@@ -25,7 +25,9 @@ import GlobalSearch from './GlobalSearch.jsx'
 import EntityDetailModal from './EntityDetailModal.jsx'
 import QuickCreateModal from './QuickCreateModal.jsx'
 import AccountMenu from './AccountMenu.jsx'
-import { PartyPresence, SyncStatus } from './LiveStatus.jsx'
+import { HereToo, PartyPresence, SyncStatus } from './LiveStatus.jsx'
+import { usePartyPresence } from '../hooks/usePartyPresence.js'
+import { usePlayerAvatar } from '../lib/profiles.js'
 import SessionDock from './session/SessionDock.jsx'
 import RecordingBar from './session/RecordingBar.jsx'
 import TurnAlert from './session/TurnAlert.jsx'
@@ -211,6 +213,18 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   const activeArea =
     areas.find((area) => areaTabs(area).some((t) => t.id === knownTab)) || areas[0]
 
+  // Who's here and which page each is on, for the header faces and the
+  // "here too" strip over the page.
+  const myAvatar = usePlayerAvatar(playerId)
+  const people = usePartyPresence(
+    campaignId,
+    playerId,
+    username,
+    myAvatar,
+    knownTab,
+    allTabs.find((t) => t.id === knownTab)?.label || '',
+  )
+
   // Cmd/Ctrl+K opens global search from anywhere in the campaign.
   useEffect(() => {
     function onKeyDown(e) {
@@ -306,7 +320,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
             <div className="campaign-view__topbar-end">
               {roleReady && <CombatBadge target={dmView ? 'dm-combat' : 'session'} />}
               <SyncStatus />
-              <PartyPresence campaignId={campaignId} playerId={playerId} username={username} />
+              <PartyPresence people={people} />
 
               {playerId && roleReady && (
                 <NotificationBell playerId={playerId} campaignId={campaignId} dmShares={!isDm} />
@@ -433,6 +447,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               )}
 
               {!roleReady && <p className="empty-state">Loading…</p>}
+              {roleReady && <HereToo people={people} tab={knownTab} />}
               {/* Keyed per screen so each tab starts fresh. */}
               {roleReady && (
               <div key={knownTab} className="campaign-view__screen">

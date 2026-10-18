@@ -6,8 +6,6 @@ import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ShareStatus from './ShareStatus.jsx'
-import ArchiveToggle from './ArchiveToggle.jsx'
-import { archiveError, archivePatch } from '../lib/archive.js'
 import Icon from './Icon.jsx'
 import './CreaturesTab.scss'
 import './SecretNpcsTab.scss'
@@ -25,7 +23,6 @@ const fromRow = (r) => ({
   description: r.description,
   secrets: r.secrets,
   photos: photoList(r.photos),
-  archivedAt: r.archived_at || null,
   createdAt: r.created_at,
 })
 
@@ -57,23 +54,10 @@ function DmCreaturesTab({ campaignId }) {
   const [sharingId, setSharingId] = useState(null)
   const [actionError, setActionError] = useState(null)
 
-  const [showArchived, setShowArchived] = useState(false)
   // Revealed (or shared before Reveal replaced Share): it's out, so the
-  // card greys out and can be archived.
+  // card greys out.
   const isOut = (c) => statusOf(c) !== 'private' || revealedKeys.has(shareKey('creature', c.id))
-  const archivedCount = items.filter((c) => c.archivedAt).length
-  const visible = items
-    .filter((c) => Boolean(c.archivedAt) === showArchived)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-
-  async function setArchived(c, archive) {
-    setActionError(null)
-    try {
-      await updateItem(c.id, archivePatch(archive))
-    } catch (err) {
-      setActionError(archiveError(archive, c.name, err))
-    }
-  }
+  const visible = [...items].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   function openForm(creature = null) {
     setForm(
@@ -191,7 +175,6 @@ function DmCreaturesTab({ campaignId }) {
       <DmPrivacyNote />
 
       <div className="creatures-tab__toolbar creatures-tab__toolbar--end">
-        <ArchiveToggle count={archivedCount} showing={showArchived} onToggle={() => setShowArchived((v) => !v)} />
         <button type="button" className="btn btn--primary" onClick={() => openForm()}>
           + Add Creature
         </button>
@@ -211,11 +194,7 @@ function DmCreaturesTab({ campaignId }) {
       )}
       {!loading && !error && visible.length === 0 && (
         <p className="empty-state">
-          {showArchived
-            ? 'Nothing archived.'
-            : archivedCount
-              ? 'Everything here has been archived.'
-              : 'No creatures yet. Write them up ahead of time — they stay private until you Reveal them.'}
+          No creatures yet. Write them up ahead of time — they stay private until you Reveal them.
         </p>
       )}
 
@@ -239,6 +218,9 @@ function DmCreaturesTab({ campaignId }) {
                     </div>
                   )}
                   <div className="creature-card__actions">
+                    <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
+                      Edit
+                    </button>
                     <ShareStatus
                       kind="creature"
                       status={status}
@@ -246,14 +228,6 @@ function DmCreaturesTab({ campaignId }) {
                       onReveal={() => reveal(c)}
                       revealed={revealed}
                     />
-                    {(revealed || c.archivedAt) && (
-                      <button type="button" className="btn btn--text" onClick={() => setArchived(c, !c.archivedAt)}>
-                        <Icon name={c.archivedAt ? 'unarchive' : 'archive'} /> {c.archivedAt ? 'Unarchive' : 'Archive'}
-                      </button>
-                    )}
-                    <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
-                      Edit
-                    </button>
                     <button type="button" className="btn btn--danger card-delete" onClick={() => remove(c)}>
                       Delete
                     </button>

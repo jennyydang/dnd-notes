@@ -1863,11 +1863,3 @@ drop policy if exists "anon full access creature-photos bucket" on storage.objec
 create policy "anon full access creature-photos bucket"
   on storage.objects for all to anon
   using (bucket_id = 'creature-photos') with check (bucket_id = 'creature-photos');
-
--- ── Archived DM items ────────────────────────────────────────────────
--- Once something has been revealed, the DM can archive it to clear their
--- own list (null = active). Players' copies aren't affected.
-alter table dm_npcs      add column if not exists archived_at timestamptz;
-alter table dm_creatures add column if not exists archived_at timestamptz;
-alter table dm_maps      add column if not exists archived_at timestamptz;
-alter table campaign_art add column if not exists archived_at timestamptz;

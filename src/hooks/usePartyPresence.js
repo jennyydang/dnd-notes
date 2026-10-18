@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js'
+import { assignColors } from '../lib/presenceColors.js'
 
 const RETRY_MS = 3000
 
@@ -21,30 +22,41 @@ function leave(topic, channel) {
   return done
 }
 
-function othersFrom(state, playerId) {
+// One entry per player (several tabs open count once; the latest-joined
+// tab says which page they're on).
+function peopleFrom(state) {
   const seen = new Map()
   for (const entries of Object.values(state)) {
     for (const entry of entries) {
-      if (entry.playerId && entry.playerId !== playerId && !seen.has(entry.playerId)) {
-        seen.set(entry.playerId, {
-          playerId: entry.playerId,
-          username: entry.username || 'Someone',
-          avatarUrl: entry.avatarUrl || '',
-        })
-      }
+      if (!entry.playerId) continue
+      const prev = seen.get(entry.playerId)
+      if (prev && (prev.onlineAt || '') > (entry.onlineAt || '')) continue
+      seen.set(entry.playerId, {
+        playerId: entry.playerId,
+        username: entry.username || 'Someone',
+        avatarUrl: entry.avatarUrl || '',
+        tab: entry.tab || null,
+        tabLabel: entry.tabLabel || '',
+        onlineAt: entry.onlineAt || '',
+      })
     }
   }
-  return [...seen.values()].sort((a, b) => a.username.localeCompare(b.username))
+  return [...seen.values()]
 }
 
-// Who else has this campaign open right now, via Supabase Realtime
-// presence (nothing is stored). Each device announces its player; the
-// list is everyone else, one entry per player even with several tabs open,
-// and it updates live as people come and go. The admin (no playerId)
-// watches without appearing. `avatarUrl` (the player's profile picture,
-// if any) travels with them so others see it on their face.
-export function usePartyPresence(campaignId, playerId, username, avatarUrl = '') {
-  const [others, setOthers] = useState([])
+// Who has this campaign open right now, via Supabase Realtime presence
+// (nothing is stored). Each device announces its player and the page
+// they're on (`tab` id + `tabLabel`, re-announced as they move around);
+// the list is everyone, you included (`me`), one entry per player even
+// with several tabs open, each with their own `color`. It updates live as
+// people come and go. The admin (no playerId) watches without appearing.
+// `avatarUrl` (the player's profile picture, if any) travels with them.
+export function usePartyPresence(campaignId, playerId, username, avatarUrl = '', tab = null, tabLabel = '') {
+  const [present, setPresent] = useState([])
+  const where = useRef({ tab, tabLabel })
+  where.current = { tab, tabLabel }
+  const announceRef = useRef(() => {})
+  const myOnlineAt = useRef('')
 
   useEffect(() => {
     if (!isSupabaseConfigured || !campaignId) return undefined
@@ -55,9 +67,14 @@ export function usePartyPresence(campaignId, playerId, username, avatarUrl = '')
     let joined = false
     let retryTimer = null
 
+    const onlineAt = new Date().toISOString()
+    myOnlineAt.current = onlineAt
     const announce = () => {
-      if (joined && playerId) channel.track({ playerId, username, avatarUrl }).catch(() => {})
+      if (joined && playerId) {
+        channel.track({ playerId, username, avatarUrl, onlineAt, ...where.current }).catch(() => {})
+      }
     }
+    announceRef.current = announce
 
     async function join() {
       await closing.get(topic)
@@ -67,7 +84,7 @@ export function usePartyPresence(campaignId, playerId, username, avatarUrl = '')
       channel = current
       current
         .on('presence', { event: 'sync' }, () => {
-          if (channel === current) setOthers(othersFrom(current.presenceState(), playerId))
+          if (channel === current) setPresent(peopleFrom(current.presenceState()))
         })
         .subscribe((status) => {
           if (cancelled || channel !== current) return
@@ -99,10 +116,29 @@ export function usePartyPresence(campaignId, playerId, username, avatarUrl = '')
       cancelled = true
       clearTimeout(retryTimer)
       document.removeEventListener('visibilitychange', onVisible)
+      announceRef.current = () => {}
       if (channel) leave(topic, channel)
-      setOthers([])
+      setPresent([])
     }
   }, [campaignId, playerId, username, avatarUrl])
 
-  return others
+  // Moving to another page just updates what this device announces.
+  useEffect(() => {
+    announceRef.current()
+  }, [tab, tabLabel])
+
+  return useMemo(() => {
+    const people = present.some((p) => p.playerId === playerId) || !playerId
+      ? present
+      : [...present, { playerId, username, avatarUrl, tab, tabLabel, onlineAt: myOnlineAt.current }]
+    const colors = assignColors(people)
+    return people
+      // Your own page is known here before the server echoes it back.
+      .map((p) =>
+        p.playerId === playerId
+          ? { ...p, tab, tabLabel, me: true, color: colors.get(p.playerId) }
+          : { ...p, me: false, color: colors.get(p.playerId) },
+      )
+      .sort((a, b) => Number(b.me) - Number(a.me) || a.username.localeCompare(b.username))
+  }, [present, playerId, username, avatarUrl, tab, tabLabel])
 }
