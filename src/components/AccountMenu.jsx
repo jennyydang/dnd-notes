@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import ProfilePictureDialog from './ProfilePictureDialog.jsx'
 import AccountDialog from './AccountDialog.jsx'
 import AppGuide from './AppGuide.jsx'
+import Icon from './Icon.jsx'
 import { usePlayerAvatar } from '../lib/profiles.js'
 import './AccountMenu.scss'
 
@@ -44,70 +45,29 @@ function AccountMenu({ playerId, username, onOpenSettings, onSendFeedback, onLog
       {open && (
         <div className="account-menu__dropdown panel">
           {username && <div className="account-menu__name">{username}</div>}
-          {playerId && (
-            <button
-              type="button"
-              className="btn btn--text"
-              onClick={() => {
-                setOpen(false)
-                setEditingAccount(true)
-              }}
-            >
-              Account
-            </button>
-          )}
-          {playerId && (
-            <button
-              type="button"
-              className="btn btn--text"
-              onClick={() => {
-                setOpen(false)
-                setEditingPicture(true)
-              }}
-            >
-              Profile picture
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn btn--text"
-            onClick={() => {
-              setOpen(false)
-              onOpenSettings?.()
-            }}
-          >
-            Settings
-          </button>
-          <button
-            type="button"
-            className="btn btn--text"
-            onClick={() => {
-              setOpen(false)
-              setGuideOpen(true)
-            }}
-          >
-            App guide
-          </button>
-          <button
-            type="button"
-            className="btn btn--text"
-            onClick={() => {
-              setOpen(false)
-              onSendFeedback?.()
-            }}
-          >
-            Send Feedback
-          </button>
-          <button
-            type="button"
-            className="btn btn--text"
-            onClick={() => {
-              setOpen(false)
-              onLogOut?.()
-            }}
-          >
-            Log Out
-          </button>
+          {[
+            playerId && { label: 'Account', icon: 'user', run: () => setEditingAccount(true) },
+            playerId && { label: 'Profile picture', icon: 'image', run: () => setEditingPicture(true) },
+            { label: 'Settings', icon: 'settings', run: () => onOpenSettings?.() },
+            { label: 'App guide', icon: 'book', run: () => setGuideOpen(true) },
+            { label: 'Send Feedback', icon: 'message', run: () => onSendFeedback?.() },
+            { label: 'Log Out', icon: 'logout', run: () => onLogOut?.(), last: true },
+          ]
+            .filter(Boolean)
+            .map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                className={`btn btn--text account-menu__item${item.last ? ' account-menu__item--last' : ''}`}
+                onClick={() => {
+                  setOpen(false)
+                  item.run()
+                }}
+              >
+                <Icon name={item.icon} />
+                <span>{item.label}</span>
+              </button>
+            ))}
         </div>
       )}
       {guideOpen && <AppGuide onClose={() => setGuideOpen(false)} />}
