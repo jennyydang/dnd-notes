@@ -480,6 +480,14 @@ export const GUIDE = [
       'A DM gets their own menu: Overview, World Wiki, Players, NPCs, Creatures, Art, Maps, Combat and Tools. Everything you write there is private until you reveal it — a campaign can have several DMs, and each one’s notes are their own.',
     topics: [
       {
+        title: 'Switch between DM and player view',
+        where: 'DM | Player switch, top bar',
+        steps: [
+          'If you DM and also play, tap **Player** to see the campaign as your character: Home, Session, Journal, Character and Prep, just like the rest of the party.',
+          'Tap **DM** to go back to your private notes and DM tools. The app remembers which view you were in for each campaign.',
+        ],
+      },
+      {
         title: 'Invite players',
         where: 'Players',
         steps: [
