@@ -219,6 +219,12 @@ export async function revokeInvite(inviteId, adminPassword) {
   if (error) throw new Error(error.message)
 }
 
+// Removes an invite from the list altogether (a waiting link stops working).
+export async function deleteInvite(inviteId, adminPassword) {
+  const { error } = await supabase.rpc('delete_player_invite', { p_admin_password: adminPassword, p_invite_id: inviteId })
+  if (error) throw new Error(missingFn(error) ? 'Run the latest supabase/schema.sql to delete invites.' : error.message)
+}
+
 // DM: invite links for their own campaign (the database checks they're
 // its DM or creator).
 export async function createCampaignInvite(playerId, campaignId, note = '') {
@@ -243,6 +249,11 @@ export async function listCampaignInvites(playerId, campaignId) {
 export async function revokeCampaignInvite(playerId, inviteId) {
   const { error } = await supabase.rpc('revoke_campaign_invite', { p_player_id: playerId, p_invite_id: inviteId })
   if (error) throw new Error(error.message)
+}
+
+export async function deleteCampaignInvite(playerId, inviteId) {
+  const { error } = await supabase.rpc('delete_campaign_invite', { p_player_id: playerId, p_invite_id: inviteId })
+  if (error) throw new Error(missingFn(error) ? 'Run the latest supabase/schema.sql to delete invites.' : error.message)
 }
 
 // Sign-up page: { status: 'ok' | 'used' | 'expired' | 'revoked' | 'invalid', campaignName }.

@@ -1924,3 +1924,34 @@ begin
     execute format('create index if not exists %I on %I (campaign_id, dm_id)', t || '_dm_idx', t);
   end loop;
 end $$;
+
+-- ── Delete invite listings ───────────────────────────────────────────
+-- Removing an invite from the list (used, expired, cancelled or still
+-- waiting — a waiting link stops working). The admin can delete any; a
+-- DM, their own campaign's.
+create or replace function delete_player_invite(p_admin_password text, p_invite_id uuid)
+returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+begin
+  if p_admin_password <> 'dndrules' then
+    raise exception 'Invalid admin password';
+  end if;
+  delete from player_invites where id = p_invite_id;
+end;
+$$;
+grant execute on function delete_player_invite(text, uuid) to anon;
+
+create or replace function delete_campaign_invite(p_player_id uuid, p_invite_id uuid)
+returns void
+language plpgsql security definer set search_path = public, extensions, pg_temp as $$
+declare
+  v_campaign_id uuid;
+begin
+  select campaign_id into v_campaign_id from player_invites where id = p_invite_id;
+  if v_campaign_id is null or not is_campaign_dm(p_player_id, v_campaign_id) then
+    raise exception 'Only this campaign''s DM can delete its invites';
+  end if;
+  delete from player_invites where id = p_invite_id;
+end;
+$$;
+grant execute on function delete_campaign_invite(uuid, uuid) to anon;

@@ -13,6 +13,7 @@ import {
   listResetRequests,
   resetLink,
   revokeInvite,
+  deleteInvite,
   setAdminSession,
   updatePlayer,
   verifyAdminPassword,
@@ -490,6 +491,7 @@ function ManagePlayers({ adminPassword, campaigns, resets, players, memberships,
       <InviteList
         load={() => listInvites(adminPassword)}
         revoke={(id) => revokeInvite(id, adminPassword)}
+        remove={(id) => deleteInvite(id, adminPassword)}
         refreshKey={invitesChanged}
         onChanged={reload}
       />
