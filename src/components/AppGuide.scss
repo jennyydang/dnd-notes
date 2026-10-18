@@ -1,0 +1,250 @@
+@use '../styles/variables' as *;
+
+.modal__panel--guide {
+  max-width: min(70rem, 100%);
+  height: min(92vh, 62rem);
+  max-height: 92vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+.app-guide {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid fade($gold-dim, 0.4);
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: $gold-light;
+    font-size: 1.35rem;
+  }
+
+  &__search {
+    grid-column: 1 / -1;
+    min-height: 2.6rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    background: $bg-deep;
+    color: $text-light;
+
+    &:focus {
+      border-color: $gold;
+    }
+  }
+
+  &__audience {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  &__pill {
+    min-height: 2.2rem;
+    padding: 0.15rem 0.85rem;
+    border: 1px solid fade($gold-dim, 0.7);
+    border-radius: 999px;
+    background: transparent;
+    color: $text-muted;
+    font: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+
+    &:hover,
+    &.is-on {
+      border-color: $gold;
+      background: fade($gold, 0.14);
+      color: $gold-light;
+    }
+  }
+
+  &__layout {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+
+  &__toc {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.75rem 0.5rem;
+    border-right: 1px solid fade($gold-dim, 0.3);
+    overflow-y: auto;
+  }
+
+  &__toc-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.3rem;
+    padding: 0.3rem 0.6rem;
+    border: 0;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    font-size: 0.92rem;
+    text-align: left;
+    cursor: pointer;
+
+    .icon {
+      flex-shrink: 0;
+      color: $gold;
+    }
+
+    &:hover {
+      background: fade($gold, 0.1);
+      color: $gold-light;
+    }
+  }
+
+  &__body {
+    position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1rem 1.75rem 3rem;
+  }
+
+  &__section {
+    padding: 1rem 0 0.5rem;
+
+    & + & {
+      border-top: 1px solid fade($gold-dim, 0.3);
+      margin-top: 1rem;
+    }
+  }
+
+  &__section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.5rem;
+    color: $gold-light;
+    font-size: 1.25rem;
+  }
+
+  &__intro {
+    margin: 0 0 1rem;
+    color: $text-muted;
+    line-height: 1.55;
+  }
+
+  &__topic {
+    margin: 0 0 1.25rem;
+
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0 0 0.3rem;
+      color: $parchment;
+      font-size: 1.05rem;
+    }
+  }
+
+  &__where {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 0 0.45rem;
+    padding: 0.1rem 0.6rem;
+    border: 1px solid fade($gold-dim, 0.5);
+    border-radius: 999px;
+    color: $text-muted;
+    font-size: 0.82rem;
+  }
+
+  &__steps,
+  &__tips {
+    margin: 0;
+    padding-left: 1.35rem;
+    color: $text-light;
+    line-height: 1.55;
+
+    li + li {
+      margin-top: 0.25rem;
+    }
+  }
+
+  &__tips {
+    margin-top: 0.4rem;
+    color: $text-muted;
+    font-size: 0.92rem;
+    list-style: '✦ ';
+
+    li::marker {
+      color: $gold-dim;
+    }
+  }
+
+  &__badge {
+    padding: 0 0.45rem;
+    border: 1px solid fade($maroon-light, 0.8);
+    border-radius: 999px;
+    color: $maroon-text;
+    font-family: $font-body;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+  }
+
+  kbd {
+    padding: 0 0.35rem;
+    border: 1px solid $ink-soft;
+    border-radius: 4px;
+    background: $bg-deep;
+    color: $gold-light;
+    font-family: inherit;
+    font-size: 0.9em;
+  }
+
+  strong {
+    color: $parchment;
+  }
+
+  // Phones: contents become a row of chips above the text.
+  @media (max-width: 720px) {
+    &__head {
+      padding: 1rem;
+    }
+
+    &__layout {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    &__toc {
+      flex-direction: row;
+      gap: 0.3rem;
+      padding: 0.5rem 0.75rem;
+      border-right: 0;
+      border-bottom: 1px solid fade($gold-dim, 0.3);
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    &__toc-item {
+      flex-shrink: 0;
+      border: 1px solid fade($gold-dim, 0.5);
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    &__body {
+      padding: 0.5rem 1rem 2rem;
+    }
+  }
+}
