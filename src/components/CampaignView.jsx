@@ -91,11 +91,11 @@ const AREAS = [
     id: 'journal',
     label: 'Journal',
     icon: 'book',
-    tabs: ['sessions', 'wiki', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
+    tabs: ['sessions', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
     custom: true,
   },
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
-  { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep'] },
+  { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep', 'wiki'] },
   // The admin's view of the DM tools (DMs themselves get DM_AREAS).
   { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-overview', 'dm-players', 'dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
@@ -132,6 +132,7 @@ const fromCustomTabRow = (r) => ({
 })
 
 const lastTabKey = (campaignId) => `dnd-notes-last-tab:${campaignId}`
+const viewAsKey = (campaignId) => `dnd-notes-view-as:${campaignId}`
 
 function CampaignView({ campaignId, campaignName, playerId, username, onBack, onLogOut }) {
   // Reopen where the player left off in this campaign (survives refresh).
@@ -183,10 +184,15 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     orderBy: 'name',
     filters: { id: campaignId, player_id: playerId || NO_PLAYER },
   })
-  const isDm = !playerId || memberships.some((m) => m.role === 'dm')
+  const isDmRole = !playerId || memberships.some((m) => m.role === 'dm')
+  // A DM who also plays can switch to the player's view of the campaign
+  // (remembered per campaign); `isDm` is whichever role they're acting in.
+  const canSwitchView = Boolean(playerId) && isDmRole
+  const [viewAs, setViewAsState] = useState(() => getStored(viewAsKey(campaignId), 'dm'))
+  const isDm = isDmRole && !(canSwitchView && viewAs === 'player')
   // The campaign's creator and its DMs (and the admin) arrange shared
   // things, like the order of a map's pins.
-  const canArrange = isDm || memberships.some((m) => m.role === 'creator' || m.createdBy === playerId)
+  const canArrange = isDmRole || memberships.some((m) => m.role === 'creator' || m.createdBy === playerId)
   const dmView = Boolean(playerId) && isDm
   // Hold the screen until the role is known, so a DM doesn't see the
   // player layout flash first.
@@ -208,6 +214,14 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     },
     [campaignId],
   )
+
+  function switchView(next) {
+    if (next === (isDm ? 'dm' : 'player')) return
+    setViewAsState(next)
+    setStored(viewAsKey(campaignId), next)
+    setDetailStack([])
+    setActiveTab(next === 'dm' ? 'dm-overview' : 'home')
+  }
 
   // Falls back to Home if the remembered tab no longer exists (e.g. a
   // custom tab someone deleted) or isn't this player's to see. While the
@@ -322,6 +336,26 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
             )}
 
             <div className="campaign-view__topbar-end">
+              {canSwitchView && roleReady && (
+                <div className="view-switch" role="group" aria-label="View the campaign as">
+                  {[
+                    { id: 'dm', label: 'DM', icon: 'eye' },
+                    { id: 'player', label: 'Player', icon: 'user' },
+                  ].map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      className={`view-switch__option${(isDm ? 'dm' : 'player') === v.id ? ' is-on' : ''}`}
+                      aria-pressed={(isDm ? 'dm' : 'player') === v.id}
+                      title={v.id === 'dm' ? 'DM view: your private notes and DM tools' : 'Player view: the campaign as your character'}
+                      onClick={() => switchView(v.id)}
+                    >
+                      <Icon name={v.icon} />
+                      <span className="view-switch__label">{v.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               {roleReady && <CombatBadge target={dmView ? 'dm-combat' : 'session'} />}
               <SyncStatus />
               <PartyPresence people={people} />

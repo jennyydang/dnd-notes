@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .campaign-view {
@@ -362,4 +363,53 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+// DM | Player — for a DM who also plays (CampaignView switchView).
+.view-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 2px;
+  border: 1px solid fade($gold-dim, 0.7);
+  border-radius: 999px;
+  background: fade($bg-deep, 0.7);
+
+  &__option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 2.1rem;
+    padding: 0.15rem 0.7rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: $text-muted;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:hover {
+      color: $gold-light;
+    }
+
+    &.is-on {
+      background: linear-gradient(180deg, $gold, color.adjust(raw('gold-dim'), $lightness: 4%));
+      color: $ink;
+    }
+  }
+
+  // Phones: icons only.
+  @media (max-width: 720px) {
+    &__option {
+      padding: 0.15rem 0.55rem;
+    }
+
+    &__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+  }
 }

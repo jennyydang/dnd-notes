@@ -305,7 +305,7 @@ export const GUIDE = [
     topics: [
       {
         title: 'World Wiki',
-        where: 'Journal → World Wiki (DM: World Wiki)',
+        where: 'Prep → World Wiki (DM: World Wiki)',
         steps: [
           'Every NPC, place, lore entry, item, creature and quest as a wiki article, A–Z, with search and type filters.',
           'An article shows its facts, what’s written about it, **First noted in** which session, and every recap and quick note that mentions it, with the lines around it.',
@@ -479,6 +479,14 @@ export const GUIDE = [
     intro:
       'A DM gets their own menu: Overview, World Wiki, Players, NPCs, Creatures, Art, Maps, Combat and Tools. Everything you write there is private until you reveal it — a campaign can have several DMs, and each one’s notes are their own.',
     topics: [
+      {
+        title: 'Switch between DM and player view',
+        where: 'DM | Player switch, top bar',
+        steps: [
+          'If you DM and also play, tap **Player** to see the campaign as your character: Home, Session, Journal, Character and Prep, just like the rest of the party.',
+          'Tap **DM** to go back to your private notes and DM tools. The app remembers which view you were in for each campaign.',
+        ],
+      },
       {
         title: 'Invite players',
         where: 'Players',

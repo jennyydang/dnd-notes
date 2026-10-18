@@ -1,5 +1,5 @@
 import {
-  Backpack, Bell, ChevronLeft, ChevronRight, BookOpen, Brain, Bug, Calendar, ChartBar, CircleHelp, Clipboard, ClipboardList, Coins, Compass,
+  LogOut, Settings, Backpack, Bell, ChevronLeft, ChevronRight, BookOpen, Brain, Bug, Calendar, ChartBar, CircleHelp, Clipboard, ClipboardList, Coins, Compass,
   Crown, Dices, Download, Eye, Feather, File, FileText, Flame, Gem, GripVertical, Handshake, Heart, Hourglass, House, IdCard,
   Image, Inbox, LayoutGrid, Library, Lightbulb, Link, ListTodo, Lock, Map, MapPin, Menu, Maximize, MessageCircle, MessageSquare, Mic, Minus, Bookmark, Move, Square, Undo2, Upload,
   NotebookPen, Pause, PawPrint, Pencil, Pin, Play, Plus, RefreshCw, Rows3, ScrollText, Search, Send, Shield, ShieldCheck, Skull,
@@ -53,6 +53,8 @@ const ICONS = {
   id: IdCard,
   image: Image,
   inbox: Inbox,
+  settings: Settings,
+  logout: LogOut,
   library: Library,
   lightbulb: Lightbulb,
   link: Link,
