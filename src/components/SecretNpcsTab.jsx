@@ -54,7 +54,7 @@ const fromRow = (r) => ({
 const npcFromRow = (r) => ({ id: r.id, dmNpcId: r.dm_npc_id })
 
 // The DM's private NPC workshop: draft NPCs as you invent them (with
-// secrets players never see), then "Share" one when the party meets them.
+// secrets players never see), then "Reveal" one when the party meets them.
 // Players get a notification and can add a player-safe copy to their NPCs
 // tab (see DmSharesInbox).
 function SecretNpcsTab({ campaignId, addRequest }) {
@@ -198,11 +198,9 @@ function SecretNpcsTab({ campaignId, addRequest }) {
     }
   }
 
-  async function share(npc, reveal = false) {
+  async function reveal(npc) {
     const ok = window.confirm(
-      reveal
-        ? `Reveal ${npc.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications. They'll see the name, race, where they're found, description and portrait — never your secret notes.`
-        : `Share ${npc.name} with the players?\n\nEveryone gets a notification and can add them to the NPCs tab. They'll see the name, race, where they're found, description and portrait — never your secret notes.`,
+      `Reveal ${npc.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications, ready to add to the NPCs tab. They'll see the name, race, where they're found, description and portrait — never your secret notes.`,
     )
     if (!ok) return false
     setActionError(null)
@@ -220,7 +218,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
           description: joinNotes([npc.occupation, npc.description]),
           photo_path: npc.photoPath || null,
         },
-        reveal,
+        reveal: true,
       })
       return true
     } catch (err) {
@@ -304,7 +302,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
       {!loading && !error && visible.length === 0 && (
         <p className="empty-state">
           {items.length === 0
-            ? 'No NPCs yet. Jot them down as you invent them — players can’t see this list. When the party meets one, press Share.'
+            ? 'No NPCs yet. Jot them down as you invent them — players can’t see this list. When the party meets one, press Reveal.'
             : needle
               ? `Nothing matches “${query.trim()}”.`
               : filter === 'shared'
@@ -352,8 +350,7 @@ function SecretNpcsTab({ campaignId, addRequest }) {
                     kind="npc"
                     status={status}
                     sharing={sharingId === npc.id}
-                    onShare={() => share(npc)}
-                    onReveal={() => share(npc, true)}
+                    onReveal={() => reveal(npc)}
                     revealed={revealed}
                     className="secret-npc__share"
                   />

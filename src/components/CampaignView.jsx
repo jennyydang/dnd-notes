@@ -97,7 +97,7 @@ const AREAS = [
 ]
 
 // A DM's whole view of the campaign: just their private NPCs, creatures, art and maps,
-// each with a Share button that notifies the players.
+// each with a Reveal button that shows it to the players.
 const DM_AREAS = [
   // What the party has pieced together, so the DM can follow along.
   { id: 'dm-overview', label: 'Overview', icon: 'compass', tabs: ['dm-overview'] },

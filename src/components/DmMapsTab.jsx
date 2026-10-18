@@ -30,7 +30,7 @@ function captionFromFile(name) {
   return base ? base.charAt(0).toUpperCase() + base.slice(1) : 'Untitled map'
 }
 
-// The DM's private maps. Share one and players get a notification; adding
+// The DM's private maps. Reveal one and players get a notification; adding
 // it puts a copy (with its own image file) in the players' Maps tab.
 function DmMapsTab({ campaignId }) {
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_maps', {
@@ -88,7 +88,7 @@ function DmMapsTab({ campaignId }) {
     }
   }
 
-  async function share(map, reveal = false) {
+  async function reveal(map) {
     setSharingId(map.id)
     const ok = await run(() =>
       shareWithPlayers({
@@ -97,7 +97,7 @@ function DmMapsTab({ campaignId }) {
         sourceId: map.id,
         title: map.title || 'Untitled map',
         payload: { caption: map.title, image_path: map.imagePath },
-        reveal,
+        reveal: true,
       }),
     )
     setSharingId(null)
@@ -184,7 +184,7 @@ function DmMapsTab({ campaignId }) {
       )}
       {!loading && !error && maps.length === 0 && (
         <p className="empty-state">
-          No maps yet. Upload the maps you’ve made (several at once is fine). They stay private until you press Share.
+          No maps yet. Upload the maps you’ve made (several at once is fine). They stay private until you Reveal them.
         </p>
       )}
 
@@ -222,8 +222,7 @@ function DmMapsTab({ campaignId }) {
                 kind="map"
                 status={statusOf(viewing)}
                 sharing={sharingId === viewing.id}
-                onShare={() => share(viewing)}
-                onReveal={() => share(viewing, true)}
+                onReveal={() => reveal(viewing)}
                 revealed={isRevealed(viewing)}
               />
               <button

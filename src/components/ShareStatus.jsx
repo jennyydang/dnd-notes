@@ -5,12 +5,12 @@ import './ShareStatus.scss'
 
 const REVEALED_MS = 3000
 
-// The DM's share control on an NPC / art / map / creature card:
-// private → "Share" button; sent → waiting; added → where it went. With
-// `onReveal`, a "Reveal now" button also pops it up full-screen for the
-// players at the table (it resolves true once sent). Once `revealed`, the
-// button gives way to a quiet "Revealed" tag.
-function ShareStatus({ kind, status, onShare, onReveal, revealed = false, sharing = false, className = '' }) {
+// The DM's reveal control on an NPC / art / map / creature card. "Reveal
+// now" pops it up full-screen for the players and puts it in their
+// notifications to add (`onReveal` resolves true once sent). After that it
+// shows where it went: sent → waiting for a player to add; added → which
+// tab it's in. Once `revealed`, the button gives way to a "Revealed" tag.
+function ShareStatus({ kind, status, onReveal, revealed = false, sharing = false, className = '' }) {
   const { tabLabel } = SHARE_KINDS[kind]
   const [revealState, setRevealState] = useState(null) // null | 'sending' | 'done'
 
@@ -26,7 +26,7 @@ function ShareStatus({ kind, status, onShare, onReveal, revealed = false, sharin
     setRevealState(ok ? 'done' : null)
   }
 
-  let main
+  let main = null
   if (status === 'added') {
     main = <span className={`share-status share-status--added ${className}`}>✓ In players’ {tabLabel}</span>
   } else if (status === 'sent') {
@@ -35,18 +35,7 @@ function ShareStatus({ kind, status, onShare, onReveal, revealed = false, sharin
         <Icon name="send" /> Sent — waiting for a player to add
       </span>
     )
-  } else {
-    main = (
-      <button type="button" className={`btn btn--primary share-status__button ${className}`} onClick={onShare} disabled={sharing}>
-        {sharing ? 'Sharing…' : (
-          <>
-            <Icon name="send" /> Share
-          </>
-        )}
-      </button>
-    )
   }
-  if (!onReveal) return main
   if (revealed && revealState !== 'done') {
     return (
       <>
@@ -63,7 +52,7 @@ function ShareStatus({ kind, status, onShare, onReveal, revealed = false, sharin
       {main}
       <button
         type="button"
-        className="btn share-status__reveal"
+        className="btn btn--primary share-status__reveal"
         onClick={reveal}
         disabled={revealState === 'sending' || sharing}
         title="Show it full-screen on every player's device right now"

@@ -29,7 +29,7 @@ const fromRow = (r) => ({
 const partyFromRow = (r) => ({ id: r.id, dmCreatureId: r.dm_creature_id })
 
 // The DM's private bestiary: write creatures up ahead of time (photos,
-// what the party sees, private notes), then Share one when the party
+// what the party sees, private notes), then Reveal one when the party
 // meets it. Players add a copy — photos included — to their Creatures tab.
 function DmCreaturesTab({ campaignId }) {
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_creatures', {
@@ -111,11 +111,8 @@ function DmCreaturesTab({ campaignId }) {
     }
   }
 
-  async function share(c, reveal = false) {
-    const what = 'name, type, photos and description'
-    const message = reveal
-      ? `Reveal ${c.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications. They'll see its ${what}. Never your DM notes.`
-      : `Share ${c.name} with the players?\n\nEveryone gets a notification and can add it to Creatures. They'll see its ${what}. Never your DM notes.`
+  async function reveal(c) {
+    const message = `Reveal ${c.name} to the table now?\n\nIt pops up on every player's screen and lands in their notifications, ready to add to Creatures. They'll see its name, type, photos and description. Never your DM notes.`
     if (!window.confirm(message)) return false
     setActionError(null)
     setSharingId(c.id)
@@ -132,7 +129,7 @@ function DmCreaturesTab({ campaignId }) {
           description: c.description,
           photos: c.photos,
         },
-        reveal,
+        reveal: true,
       })
       return true
     } catch (err) {
@@ -194,7 +191,7 @@ function DmCreaturesTab({ campaignId }) {
       )}
       {!loading && !error && visible.length === 0 && (
         <p className="empty-state">
-          No creatures yet. Write them up ahead of time — they stay private until you press Share.
+          No creatures yet. Write them up ahead of time — they stay private until you Reveal them.
         </p>
       )}
 
@@ -222,8 +219,7 @@ function DmCreaturesTab({ campaignId }) {
                       kind="creature"
                       status={status}
                       sharing={sharingId === c.id}
-                      onShare={() => share(c)}
-                      onReveal={() => share(c, true)}
+                      onReveal={() => reveal(c)}
                       revealed={revealed}
                     />
                     <button type="button" className="btn btn--text" onClick={() => openForm(c)}>

@@ -1,6 +1,6 @@
 @use '../styles/variables' as *;
 
-// The DM's per-item share control (ShareStatus.jsx).
+// The DM's per-item reveal control (ShareStatus.jsx).
 .share-status {
   display: inline-flex;
   align-items: center;
@@ -21,7 +21,6 @@
     gap: 0.3rem;
   }
 
-  &__button,
   &__reveal {
     white-space: nowrap;
   }

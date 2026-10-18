@@ -103,7 +103,7 @@ function ArtGallery({ campaignId, manage = false }) {
     }
   }
 
-  async function share(piece, reveal = false) {
+  async function reveal(piece) {
     setSharingId(piece.id)
     const ok = await run(() =>
       shareWithPlayers({
@@ -112,14 +112,14 @@ function ArtGallery({ campaignId, manage = false }) {
         sourceId: piece.id,
         title: piece.title || 'Untitled',
         payload: { title: piece.title, category: piece.category, notes: piece.notes, image_path: piece.imagePath },
-        reveal,
+        reveal: true,
       }),
     )
     setSharingId(null)
     return ok
   }
 
-  // Takes it back out of the players' Art tab; Share again to re-send.
+  // Takes it back out of the players' Art tab; Reveal again to re-send.
   function unshare(piece) {
     if (!window.confirm(`Remove “${piece.title || 'this art'}” from the players’ Art tab?`)) return
     run(async () => {
@@ -262,8 +262,7 @@ function ArtGallery({ campaignId, manage = false }) {
                   kind="art"
                   status={statusOf(viewing)}
                   sharing={sharingId === viewing.id}
-                  onShare={() => share(viewing)}
-                  onReveal={() => share(viewing, true)}
+                  onReveal={() => reveal(viewing)}
                   revealed={isRevealed(viewing)}
                 />
                 {viewing.shared && (
