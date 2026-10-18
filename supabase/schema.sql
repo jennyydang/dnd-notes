@@ -1873,3 +1873,32 @@ alter table lore_entries drop constraint if exists lore_entries_standing_check;
 alter table lore_entries add constraint lore_entries_standing_check
   check (standing is null or standing between -3 and 3);
 alter table lore_entries add column if not exists standing_log jsonb not null default '[]'::jsonb;
+
+-- ── In-world calendar ────────────────────────────────────────────────
+-- One row per campaign: the in-world day count ("Day 47") and a log of how
+-- it moved ([{ from, to, note, at }], newest last). Quests and party
+-- goals can have a deadline: the day they're due.
+create table if not exists campaign_calendar (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null unique references campaigns(id) on delete cascade,
+  day integer not null default 1 check (day >= 1),
+  log jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+alter table campaign_calendar enable row level security;
+drop policy if exists "anon full access campaign_calendar" on campaign_calendar;
+create policy "anon full access campaign_calendar" on campaign_calendar
+  for all to anon using (true) with check (true);
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') and not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'campaign_calendar'
+  ) then
+    alter publication supabase_realtime add table public.campaign_calendar;
+  end if;
+end $$;
+
+alter table quests      add column if not exists due_day integer;
+alter table party_goals add column if not exists due_day integer;
+alter table personal_goals add column if not exists due_day integer;

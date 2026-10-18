@@ -1,0 +1,141 @@
+@use '../styles/variables' as *;
+
+// "Day 47 · +1 day" on Home.
+.world-calendar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+
+  &__day {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.2rem;
+    padding: 0.2rem 0.8rem;
+    border: 1px solid fade($gold-dim, 0.8);
+    border-radius: 999px;
+    background: fade($bg-deep, 0.6);
+    color: $gold-light;
+    font-family: $font-display;
+    font-size: 0.95rem;
+    cursor: pointer;
+
+    &:hover {
+      border-color: $gold;
+    }
+  }
+
+  &__step {
+    min-height: 2.2rem;
+    font-size: 0.85rem;
+  }
+}
+
+// The "time passes" dialog.
+.time-passes {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.25rem;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: $gold-light;
+    font-size: 1.3rem;
+  }
+
+  &__hint {
+    margin: 0;
+    color: $text-muted;
+    font-size: 0.9rem;
+  }
+
+  &__quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  &__chip {
+    min-height: 2.3rem;
+    padding: 0.2rem 0.9rem;
+    border: 1px solid fade($gold-dim, 0.7);
+    border-radius: 999px;
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+
+    &:hover,
+    &.is-on {
+      border-color: $gold;
+      background: fade($gold, 0.14);
+      color: $gold-light;
+    }
+  }
+
+  &__section {
+    padding-top: 0.75rem;
+    border-top: 1px solid fade($gold-dim, 0.3);
+
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0 0 0.5rem;
+      font-size: 0.85rem;
+      color: $text-muted;
+    }
+  }
+
+  &__due,
+  &__log {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  &__log li {
+    justify-content: flex-start;
+    color: $text-muted;
+
+    em {
+      color: $text-light;
+    }
+  }
+
+  &__step {
+    min-width: 4.2rem;
+    color: $gold-light;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $text-light;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      color: $gold-light;
+      text-decoration: underline;
+    }
+  }
+}

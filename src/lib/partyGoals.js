@@ -8,6 +8,7 @@ export const goalFromRow = (r) => ({
   notes: r.notes || '',
   steps: Array.isArray(r.steps) ? r.steps : [],
   completedAt: r.completed_at || null,
+  dueDay: r.due_day ?? null,
   createdAt: r.created_at,
 })
 

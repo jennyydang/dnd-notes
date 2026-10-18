@@ -18,6 +18,8 @@ import { confirmDelete } from '../lib/confirm.js'
 import { RichText, RichTextEditor } from './RichText.jsx'
 import Icon from './Icon.jsx'
 import './PartyGoals.scss'
+import { DeadlineBadge, DueInField } from './Deadline.jsx'
+import { dueDayFromForm, dueDayFromNow, dueInFromDay } from '../lib/calendar.js'
 
 // The party's goals, shared by the Party tab and the Home / Session strip.
 function usePartyGoals() {
@@ -169,6 +171,7 @@ function GoalCard({ goal, onEdit, onSave, onToggleDone }) {
         </button>
       </header>
 
+      {!done && <DeadlineBadge dueDay={goal.dueDay} className="goal-card__due" />}
       {goal.notes && <RichText className="goal-card__notes" value={goal.notes} />}
 
       <footer className="goal-card__foot">
@@ -200,18 +203,19 @@ function GoalCard({ goal, onEdit, onSave, onToggleDone }) {
 // break it into subtasks. Used for the party's shared goals and for each
 // player's private ones.
 function GoalBoard({ table, kind, title, addLabel, emptyText, note }) {
+  const { calendar } = useCampaignData()
   const { active, achieved } = sortGoals(table.items.map(goalFromRow))
   const { loading, error } = table
   const [editing, setEditing] = useState(null) // goal | 'new' | null
-  const [form, setForm] = useState({ title: '', notes: '', steps: '' })
+  const [form, setForm] = useState({ title: '', notes: '', steps: '', dueIn: '' })
   const [formError, setFormError] = useState(null)
   const [actionError, setActionError] = useState(null)
   const goals = [...active, ...achieved]
 
   function open(goal) {
     setFormError(null)
-    if (goal === 'new') setForm({ title: '', notes: '', steps: '' })
-    else setForm({ title: goal.title, notes: goal.notes, steps: '' })
+    if (goal === 'new') setForm({ title: '', notes: '', steps: '', dueIn: '' })
+    else setForm({ title: goal.title, notes: goal.notes, steps: '', dueIn: dueInFromDay(goal.dueDay, calendar.day) })
     setEditing(goal)
   }
 
@@ -225,9 +229,16 @@ function GoalBoard({ table, kind, title, addLabel, emptyText, note }) {
           .map((s) => s.trim())
           .filter(Boolean)
           .map(newStep)
-        await table.addItem({ title: form.title.trim(), notes: form.notes, steps, status: 'Active' })
+        const due_day = dueDayFromNow(calendar.day, form.dueIn)
+        await table.addItem({ title: form.title.trim(), notes: form.notes, steps, status: 'Active', ...(due_day !== null && { due_day }) })
       } else {
-        await table.updateItem(editing.id, { title: form.title.trim(), notes: form.notes })
+        const due_day = dueDayFromForm(form.dueIn, dueInFromDay(editing.dueDay, calendar.day), editing.dueDay, calendar.day)
+        // (only sent when there is or was a deadline — see QuestsTab)
+        await table.updateItem(editing.id, {
+          title: form.title.trim(),
+          notes: form.notes,
+          ...((due_day !== null || editing.dueDay != null) && { due_day }),
+        })
       }
       setEditing(null)
     } catch (err) {
@@ -321,6 +332,11 @@ function GoalBoard({ table, kind, title, addLabel, emptyText, note }) {
                 />
               </div>
             )}
+            <DueInField
+              id={`goal-due-${kind}`}
+              value={form.dueIn}
+              onChange={(dueIn) => setForm((prev) => ({ ...prev, dueIn }))}
+            />
             <div className="field">
               <label htmlFor={`goal-notes-${kind}`}>Notes</label>
               <RichTextEditor
@@ -379,6 +395,7 @@ export function GoalStrip() {
                 <ProgressRing value={goalProgress(goal)} size={40} stroke={4} />
                 <span className="goal-strip__text">
                   <strong>{goal.title}</strong>
+                  <DeadlineBadge dueDay={goal.dueDay} />
                   <span>
                     {readyToComplete(goal) ? 'Every subtask done!' : next ? `Next: ${next.text}` : 'Add subtasks to track it'}
                   </span>
