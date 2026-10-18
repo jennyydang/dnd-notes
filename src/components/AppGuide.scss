@@ -78,6 +78,7 @@
   }
 
   &__toc {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
@@ -109,6 +110,13 @@
     &:hover {
       background: fade($gold, 0.1);
       color: $gold-light;
+    }
+
+    // The section being read.
+    &.is-active {
+      background: fade($gold, 0.16);
+      color: $gold-light;
+      box-shadow: inset 3px 0 0 $gold;
     }
   }
 
@@ -241,6 +249,11 @@
       border: 1px solid fade($gold-dim, 0.5);
       border-radius: 999px;
       white-space: nowrap;
+
+      &.is-active {
+        border-color: $gold;
+        box-shadow: none;
+      }
     }
 
     &__body {
