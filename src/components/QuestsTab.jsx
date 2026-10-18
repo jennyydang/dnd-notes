@@ -6,6 +6,9 @@ import './QuestsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { RichText, RichTextEditor } from './RichText.jsx'
 import Icon from './Icon.jsx'
+import { useCampaignData } from '../hooks/useCampaignData.js'
+import { DeadlineBadge, DueInField } from './Deadline.jsx'
+import { dueDayFromForm, dueInFromDay } from '../lib/calendar.js'
 
 const QUEST_STATUSES = ['Rumour', 'Active', 'Completed', 'Failed']
 
@@ -136,7 +139,7 @@ function useBoardDrag(onDrop) {
   return { drag, cardProps }
 }
 
-const emptyForm = { name: '', status: 'Active', givenBy: '', notes: '' }
+const emptyForm = { name: '', status: 'Active', givenBy: '', notes: '', dueIn: '' }
 
 const fromRow = (r) => ({
   id: r.id,
@@ -144,9 +147,11 @@ const fromRow = (r) => ({
   status: r.status,
   givenBy: r.given_by,
   notes: r.notes,
+  dueDay: r.due_day ?? null,
 })
 
 function QuestsTab({ campaignId }) {
+  const { calendar } = useCampaignData()
   const { items: quests, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('quests', { fromRow, filters: { campaign_id: campaignId } })
   const [isAdding, setIsAdding] = useState(false)
@@ -167,6 +172,7 @@ function QuestsTab({ campaignId }) {
       status: quest.status,
       givenBy: quest.givenBy,
       notes: quest.notes,
+      dueIn: dueInFromDay(quest.dueDay, calendar.day),
     })
     setIsAdding(false)
     setFormError(null)
@@ -190,6 +196,11 @@ function QuestsTab({ campaignId }) {
       given_by: form.givenBy,
       notes: form.notes,
     }
+    // Only sent when there is (or was) a deadline, so quests still save on
+    // a database that hasn't had the calendar SQL yet.
+    const before = editingId ? quests.find((q) => q.id === editingId)?.dueDay : null
+    const dueDay = dueDayFromForm(form.dueIn, dueInFromDay(before, calendar.day), before, calendar.day)
+    if (dueDay !== null || before != null) payload.due_day = dueDay
 
     try {
       if (editingId) {
@@ -279,6 +290,7 @@ function QuestsTab({ campaignId }) {
               </select>
             </div>
           </div>
+          <DueInField id="quest-due" value={form.dueIn} onChange={(dueIn) => setForm((prev) => ({ ...prev, dueIn }))} />
           <div className="field">
             <label htmlFor="quest-notes">Notes</label>
             <RichTextEditor
@@ -382,6 +394,7 @@ function QuestsTab({ campaignId }) {
                           <span className={`status-badge status-badge--${quest.status.toLowerCase()}`}>{quest.status}</span>
                         </div>
                         {quest.givenBy && <p className="quest-card__given-by">Given by {quest.givenBy}</p>}
+                        {!done && <DeadlineBadge dueDay={quest.dueDay} />}
                         {quest.notes && <RichText className="quest-card__notes" value={quest.notes} />}
                         <div className="quest-card__actions">
                           {/* Move a column left / right (touch and keyboard). */}

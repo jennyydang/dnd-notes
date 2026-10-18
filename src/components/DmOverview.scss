@@ -242,6 +242,50 @@
     font-size: 0.8rem;
   }
 
+  // Faction standing: name, a seven-notch meter, the level.
+  &__factions {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .dm-overview__person {
+      justify-self: start;
+      text-align: left;
+    }
+
+    // Same width for every level, so the meters line up.
+    .dm-overview__attitude {
+      min-width: 6.2rem;
+      text-align: center;
+    }
+  }
+
+  &__meter {
+    display: inline-flex;
+    gap: 2px;
+
+    span {
+      width: 0.55rem;
+      height: 0.4rem;
+      border-radius: 2px;
+      background: fade($gray-light, 0.35);
+
+      &.is-current {
+        background: var(--attitude);
+        box-shadow: 0 0 0.35rem var(--attitude);
+      }
+    }
+  }
+
   &__people {
     display: flex;
     flex-wrap: wrap;

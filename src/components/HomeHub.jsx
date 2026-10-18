@@ -18,6 +18,7 @@ import './HomeHub.scss'
 import AnimatedNumber from './AnimatedNumber.jsx'
 import { GoalStrip } from './PartyGoals.jsx'
 import { noteTagsToPlain } from '../lib/noteTags.js'
+import WorldCalendar from './WorldCalendar.jsx'
 
 const QUICK_ACTIONS = [
   { type: 'npc', label: 'NPC', icon: 'user' },
@@ -191,6 +192,7 @@ function HomeHub({ campaignName }) {
               </button>
             ) : null}
           </p>
+          <WorldCalendar />
           {lastSession && (
             <button type="button" className="btn btn--text home-hub__inline-link" onClick={() => setPreviously('view')}>
               <Icon name="scroll" /> Previously on…

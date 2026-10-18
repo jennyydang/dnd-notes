@@ -7,6 +7,7 @@ import AnimatedNumber from './AnimatedNumber.jsx'
 import { SectionCard } from './ui.jsx'
 import Icon from './Icon.jsx'
 import { ATTITUDES } from '../lib/attitude.js'
+import { STANDINGS, isFaction, standingInfo } from '../lib/standing.js'
 import './DmOverview.scss'
 
 const DISCOVERY_TYPES = ['npc', 'place', 'lore', 'loot', 'quest']
@@ -60,6 +61,10 @@ function DmOverview() {
   const rumours = questsBy('Rumour')
   const doneQuests = [...questsBy('Completed'), ...questsBy('Failed')]
   const clues = by.lore.filter((l) => /^clue$/i.test(l.raw?.category || ''))
+  // Factions the party has a standing with, best first.
+  const factions = by.lore
+    .filter((l) => isFaction(l.raw) && standingInfo(l.raw?.standing))
+    .sort((a, b) => b.raw.standing - a.raw.standing || a.title.localeCompare(b.title))
 
   const discoveries = newestFirst(DISCOVERY_TYPES.flatMap((t) => by[t])).slice(0, 12)
   const { active: goals, achieved: doneGoals } = sortGoals(tables.goal.items.map(goalFromRow))
@@ -163,6 +168,33 @@ function DmOverview() {
               </ul>
             ) : (
               <p className="inline-state">The party hasn’t marked how any NPC feels about them yet.</p>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Faction standing" icon="shield" className="dm-overview__card">
+            {factions.length ? (
+              <ul className="dm-overview__factions">
+                {factions.map((f) => {
+                  const s = standingInfo(f.raw.standing)
+                  return (
+                    <li key={f.id} style={{ '--attitude': s.color }}>
+                      <button type="button" className="dm-overview__person" onClick={() => nav.openEntity('lore', f.id)}>
+                        {f.title}
+                      </button>
+                      <span className="dm-overview__meter" aria-hidden="true">
+                        {STANDINGS.map((n) => (
+                          <span key={n.value} className={n.value === s.value ? 'is-current' : ''} />
+                        ))}
+                      </span>
+                      <span className="dm-overview__attitude">{s.id}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <p className="inline-state">
+                The party hasn’t marked where they stand with any faction yet (Lore entries with the Faction category).
+              </p>
             )}
           </SectionCard>
 

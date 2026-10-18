@@ -1,0 +1,76 @@
+@use '../styles/variables' as *;
+
+// A faction card's standing: seven notches, Hated → Revered, with the
+// current one lit and the ones between it and Neutral filled.
+.standing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.2rem;
+  padding: 0.25rem 0.75rem 0.25rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--attitude, #{$gold-dim}) 60%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--attitude, transparent) 12%, transparent);
+  color: var(--attitude, #{$text-muted});
+  font: inherit;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--attitude, #{$gold}) 24%, transparent);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &--unset {
+    border-style: dashed;
+    border-color: fade($gold-dim, 0.6);
+    font-size: 0.85rem;
+    opacity: 0.8;
+
+    &:hover {
+      opacity: 1;
+      color: $gold-light;
+    }
+  }
+
+  &__track {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  &__notch {
+    width: 0.7rem;
+    height: 0.45rem;
+    border-radius: 2px;
+    background: fade($gray-light, 0.35);
+
+    // The middle notch is Neutral.
+    &:nth-child(4) {
+      width: 0.45rem;
+    }
+
+    &.is-filled {
+      background: color-mix(in srgb, var(--attitude) 55%, transparent);
+    }
+
+    &.is-current {
+      background: var(--attitude);
+      box-shadow: 0 0 0.4rem var(--attitude);
+    }
+  }
+
+  &__label {
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &__value {
+    margin-left: 0.25rem;
+    font-family: $font-body;
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+}
