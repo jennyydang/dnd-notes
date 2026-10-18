@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AdminGate from './components/AdminGate.jsx'
 import PlayerLogin from './components/PlayerLogin.jsx'
 import PlayerDashboard from './components/PlayerDashboard.jsx'
@@ -17,12 +17,17 @@ import { installSelectMenus } from './lib/selectMenu.js'
 import { AI_CONNECTION_EVENT, saveAiConnection } from './lib/aiConnection.js'
 import { finishChatGptSignIn, rememberChatGptSignInError } from './lib/chatgptSignIn.js'
 import { getStored, setStored } from './lib/sessionMode.js'
+import { navigate, usePath } from './lib/router.js'
+import { campaignPath, campaignSlug, findCampaign, parseRoute } from './lib/routes.js'
+import { useSupabaseTable } from './hooks/useSupabaseTable.js'
+import WikiPage from './components/WikiPage.jsx'
 import './App.scss'
 
-const isAdminPath = typeof window !== 'undefined' && window.location.pathname === '/admin'
+const isAdminPath =
+  typeof window !== 'undefined' && (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/'))
 
-// Remembers which campaign is open (per browser) so a refresh mid-session
-// lands back in it instead of on the dashboard.
+// Remembers which campaign was last open (per browser), so opening the app
+// at "/" (say, from the home-screen icon) lands back in it mid-session.
 const OPEN_CAMPAIGN_KEY = `dnd-notes-open-campaign${isAdminPath ? ':admin' : ''}`
 
 function App() {
@@ -30,14 +35,59 @@ function App() {
   // A password reset link (…/?reset=TOKEN) shows its page first, even on
   // a device where someone is logged in.
   const [resetToken, setResetToken] = useState(() => (isAdminPath ? '' : resetFromUrl()))
-  const [selectedCampaign, setSelectedCampaignState] = useState(() =>
-    (isAdminPath ? getAdminSession() : getPlayerSession()) ? getStored(OPEN_CAMPAIGN_KEY, null) : null,
-  )
+  const path = usePath()
+  const route = parseRoute(path)
+  const base = isAdminPath ? '/admin' : '/'
+  const loggedIn = Boolean(isAdminPath ? getAdminSession() : playerSession)
+
+  // Your campaigns, to read the campaign out of an address (/c/anadoss):
+  // a player's memberships, or every campaign for the admin.
+  const playerId = playerSession?.playerId
+  const mine = useSupabaseTable('campaign_memberships', {
+    fromRow: (r) => ({ id: r.id, name: r.name }),
+    filters: { player_id: !isAdminPath && playerId ? playerId : [] },
+  })
+  const all = useSupabaseTable('campaigns', {
+    fromRow: (r) => ({ id: r.id, name: r.name }),
+    filters: isAdminPath ? {} : { id: [] },
+  })
+  const campaigns = isAdminPath ? all.items : mine.items
+  const campaignsLoading = isAdminPath ? all.loading : mine.loading
+
+  // The open campaign comes from the address. While your list loads, the
+  // one you had open last stands in if it matches.
+  const remembered = loggedIn ? getStored(OPEN_CAMPAIGN_KEY, null) : null
+  const selectedCampaign = useMemo(() => {
+    if (!route.campaign) return null
+    const found = findCampaign(route.campaign, campaigns)
+    if (found) return found
+    if (remembered && findCampaign(route.campaign, [remembered])) return remembered
+    return null
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.campaign, campaigns, remembered?.id])
+  useEffect(() => {
+    if (selectedCampaign) setStored(OPEN_CAMPAIGN_KEY, { id: selectedCampaign.id, name: selectedCampaign.name })
+  }, [selectedCampaign])
+
+  // Opening the app at "/" with a campaign still open from last time goes
+  // straight back into it (unless a reset or invite link is in the address).
+  useEffect(() => {
+    if (!route.campaign && remembered && !window.location.search && path === (isAdminPath ? '/admin' : '/')) {
+      navigate(campaignPath(campaignSlug(remembered, campaigns), { admin: isAdminPath }), { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function setSelectedCampaign(campaign) {
-    const value = campaign ? { id: campaign.id, name: campaign.name } : null
-    setStored(OPEN_CAMPAIGN_KEY, value)
-    setSelectedCampaignState(value)
+    if (!campaign) {
+      setStored(OPEN_CAMPAIGN_KEY, null)
+      navigate(base)
+      return
+    }
+    setStored(OPEN_CAMPAIGN_KEY, { id: campaign.id, name: campaign.name })
+    // (A campaign just joined or created may not be in the list yet.)
+    const known = [...campaigns.filter((c) => c.id !== campaign.id), campaign]
+    navigate(campaignPath(campaignSlug(campaign, known), { admin: isAdminPath }))
   }
 
   // Apply a returning visitor's saved background/font/text-size preset
@@ -93,11 +143,37 @@ function App() {
     )
   } else if (resetToken) {
     content = <ResetPassword token={resetToken} onDone={() => setResetToken('')} />
+  } else if (route.campaign && loggedIn && !selectedCampaign) {
+    // An address for a campaign you're not in (or that's gone).
+    content = campaignsLoading ? (
+      <p className="empty-state">Loading…</p>
+    ) : (
+      <div className="setup-notice panel">
+        <h2>Campaign not found</h2>
+        <p>This link is for a campaign you’re not in, or one that no longer exists.</p>
+        <button type="button" className="btn btn--primary" onClick={() => navigate(base)}>
+          Go to your campaigns
+        </button>
+      </div>
+    )
+  } else if (selectedCampaign && route.world) {
+    content = (
+      <WikiPage
+        campaignId={selectedCampaign.id}
+        campaignName={selectedCampaign.name}
+        slug={route.campaign}
+        admin={isAdminPath}
+        playerId={playerSession?.playerId}
+      />
+    )
   } else if (selectedCampaign) {
     content = (
       <CampaignView
+        key={selectedCampaign.id}
         campaignId={selectedCampaign.id}
         campaignName={selectedCampaign.name}
+        slug={route.campaign}
+        admin={isAdminPath}
         playerId={playerSession?.playerId}
         username={playerSession?.username}
         onBack={() => setSelectedCampaign(null)}
@@ -116,6 +192,16 @@ function App() {
         onOpenCampaign={setSelectedCampaign}
         onLogOut={logOut}
       />
+    )
+  }
+
+  // The stand-alone wiki is the whole page: no app header.
+  if (selectedCampaign && route.world && !resetToken) {
+    return (
+      <>
+        <Ambience />
+        <div className="app app--bare">{content}</div>
+      </>
     )
   }
 

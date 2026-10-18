@@ -38,6 +38,23 @@
     margin: 0;
     color: $gold-light;
     font-size: 1.15rem;
+
+    // "Open in its own tab", at the heading's far end.
+    .wiki__own-tab {
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      margin-left: auto;
+      border: 1px solid fade($gold-dim, 0.6);
+      border-radius: $radius;
+      color: $text-muted;
+
+      &:hover {
+        border-color: $gold;
+        color: $gold-light;
+      }
+    }
   }
 
   &__search {

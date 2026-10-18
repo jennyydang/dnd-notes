@@ -1,0 +1,47 @@
+@use '../styles/variables' as *;
+
+// The stand-alone wiki page: a slim bar, then the wiki at full width.
+.app--bare {
+  max-width: 1500px;
+  padding-top: calc(1.25rem + var(--safe-top, 0px));
+}
+
+.wiki-page {
+  display: grid;
+  gap: 1rem;
+
+  &__bar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 0.25rem 0.75rem;
+    border-bottom: 1px solid fade($gold-dim, 0.4);
+  }
+
+  &__eyebrow {
+    margin: 0;
+    color: $text-muted;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__title {
+    margin: 0;
+    color: $gold-light;
+    font-size: 1.6rem;
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+  }
+
+  // The index can use more of the page here.
+  .wiki__index {
+    max-height: calc(100vh - 7rem);
+  }
+}

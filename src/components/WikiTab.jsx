@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { navigate, usePath } from '../lib/router.js'
+import { parseRoute } from '../lib/routes.js'
 import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
 import { ENTITY_TYPES } from '../lib/entities.js'
 import { relatedEntries } from '../lib/related.js'
@@ -88,15 +90,22 @@ function Snippet({ text, terms }) {
 // NPCs, places, lore, items, creatures and quests, each with what's known,
 // the sessions (and quick notes) where it was noted — with the lines
 // around it — and what it came up alongside.
-function WikiTab() {
+// `pathFor(entity | null)` is the wiki's address (with an article open);
+// `ownTabHref`, when given, offers the wiki on a page of its own.
+function WikiTab({ pathFor, ownTabHref = null }) {
   const data = useCampaignData()
   const nav = useCampaignNav()
   const { entities, loading } = data
   const { articles, byKey } = useMemo(() => buildWiki(entities), [entities])
   const [filter, setFilter] = useState('all')
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(null)
-  const article = selected ? byKey.get(selected) : null
+  // The open article is in the address (…/wiki/npc/1a2b3c4d), so back,
+  // refresh and shared links all land on it.
+  const wanted = parseRoute(usePath()).entity
+  const article = wanted
+    ? articles.find((a) => a.entity.type === wanted.type && String(a.entity.id).startsWith(wanted.ref)) || null
+    : null
+  const selected = article?.key || null
 
   const needle = query.trim().toLowerCase()
   const shown = articles.filter(
@@ -113,7 +122,8 @@ function WikiTab() {
   const counts = Object.fromEntries(FILTERS.map((f) => [f.id, f.id === 'all' ? articles.length : articles.filter((a) => a.entity.type === f.id).length]))
 
   function openArticle(key) {
-    setSelected(key)
+    const a = byKey.get(key)
+    if (a) navigate(pathFor({ type: a.entity.type, id: a.entity.id }))
     document.querySelector('.wiki__article')?.scrollTo({ top: 0 })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -125,6 +135,18 @@ function WikiTab() {
           <div className="wiki__index-head">
             <h2 className="wiki__heading">
               <Icon name="library" /> World Wiki
+              {ownTabHref && (
+                <a
+                  className="wiki__own-tab"
+                  href={ownTabHref}
+                  target="_blank"
+                  rel="noopener"
+                  title="Open the wiki on a page of its own, in a new tab"
+                  aria-label="Open the wiki in its own tab"
+                >
+                  <Icon name="maximize" />
+                </a>
+              )}
             </h2>
             <input
               type="search"
@@ -184,7 +206,7 @@ function WikiTab() {
 
         <main className="wiki__article panel">
           {article ? (
-            <Article article={article} byKey={byKey} data={data} onOpen={openArticle} onBack={() => setSelected(null)} nav={nav} />
+            <Article article={article} byKey={byKey} data={data} onOpen={openArticle} onBack={() => navigate(pathFor(null))} nav={nav} />
           ) : (
             <WikiHome articles={articles} onOpen={openArticle} />
           )}

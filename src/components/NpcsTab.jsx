@@ -366,7 +366,16 @@ function NpcsTab({ campaignId }) {
                   {/* Status sits under the name, so the name gets the
                       card's full width instead of sharing it with the pill. */}
                   <div className="npc-card__who">
-                    <h3 className="npc-card__name">{npc.name}</h3>
+                    <h3 className="npc-card__name">
+                      <button
+                        type="button"
+                        className="npc-card__open"
+                        onClick={() => openEntity('npc', npc.id)}
+                        title="Open with links and related entries"
+                      >
+                        {npc.name}
+                      </button>
+                    </h3>
                     <span className="npc-card__badges">
                       <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>
                         {npc.status}

@@ -311,7 +311,11 @@ export const GUIDE = [
           'An article shows its facts, what’s written about it, **First noted in** which session, and every recap and quick note that mentions it, with the lines around it.',
           'Tap a connection at the bottom to jump to that article, or **Open entry** to edit it.',
         ],
-        tips: ['It reads your own recaps and quick notes, so the more you tag, the richer it gets.'],
+        tips: [
+          'It reads your own recaps and quick notes, so the more you tag, the richer it gets.',
+          'The ⤢ button by its title opens the wiki in its own browser tab — full width, no menus — to keep beside the app.',
+          'Every screen and entry has its own address, so you can bookmark it or paste the link to someone in the campaign.',
+        ],
       },
       {
         title: 'Timeline',
