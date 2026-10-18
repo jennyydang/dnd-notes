@@ -202,6 +202,25 @@
     align-items: flex-start;
   }
 
+  // On the full card the name, at its full size, opens the entry too.
+  &__open {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      text-decoration: underline;
+    }
+  }
+
   // The name opens the NPC's detail view (links and related entries).
   &__name-btn {
     max-width: 100%;
