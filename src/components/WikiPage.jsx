@@ -24,7 +24,8 @@ function WikiPage({ campaignId, campaignName, slug, admin = false, playerId }) {
 
   const nav = {
     goTo: (tab) => navigate(appPath(tab)),
-    openEntity: (type, id) => navigate(appPath(ENTITY_TYPES[type]?.tab || 'home', { type, id })),
+    // Opens the entry's own screen with the entry popped up over it.
+    openEntity: (type, id) => navigate(appPath(ENTITY_TYPES[type]?.tab || 'home'), { state: { open: { type, id } } }),
     openSearch: () => {},
     openQuickCreate: () => {},
     tabs: [],
@@ -41,9 +42,9 @@ function WikiPage({ campaignId, campaignName, slug, admin = false, playerId }) {
               <p className="wiki-page__eyebrow">{campaignName}</p>
               <h1 className="wiki-page__title">World Wiki</h1>
             </div>
-            <a className="btn btn--text wiki-page__back" href={appPath('wiki')} onClick={(e) => {
+            <a className="btn btn--text wiki-page__back" href={appPath('home')} onClick={(e) => {
               e.preventDefault()
-              navigate(appPath('wiki'))
+              navigate(appPath('home'))
             }}>
               <Icon name="prev" /> Back to the app
             </a>

@@ -90,9 +90,8 @@ function Snippet({ text, terms }) {
 // NPCs, places, lore, items, creatures and quests, each with what's known,
 // the sessions (and quick notes) where it was noted — with the lines
 // around it — and what it came up alongside.
-// `pathFor(entity | null)` is the wiki's address (with an article open);
-// `ownTabHref`, when given, offers the wiki on a page of its own.
-function WikiTab({ pathFor, ownTabHref = null }) {
+// `pathFor(entity | null)` is the wiki's address (with an article open).
+function WikiTab({ pathFor }) {
   const data = useCampaignData()
   const nav = useCampaignNav()
   const { entities, loading } = data
@@ -135,18 +134,6 @@ function WikiTab({ pathFor, ownTabHref = null }) {
           <div className="wiki__index-head">
             <h2 className="wiki__heading">
               <Icon name="library" /> World Wiki
-              {ownTabHref && (
-                <a
-                  className="wiki__own-tab"
-                  href={ownTabHref}
-                  target="_blank"
-                  rel="noopener"
-                  title="Open the wiki on a page of its own, in a new tab"
-                  aria-label="Open the wiki in its own tab"
-                >
-                  <Icon name="maximize" />
-                </a>
-              )}
             </h2>
             <input
               type="search"
