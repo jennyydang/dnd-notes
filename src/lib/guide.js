@@ -305,7 +305,7 @@ export const GUIDE = [
     topics: [
       {
         title: 'World Wiki',
-        where: 'Journal → World Wiki (DM: World Wiki)',
+        where: 'Prep → World Wiki (DM: World Wiki)',
         steps: [
           'Every NPC, place, lore entry, item, creature and quest as a wiki article, A–Z, with search and type filters.',
           'An article shows its facts, what’s written about it, **First noted in** which session, and every recap and quick note that mentions it, with the lines around it.',

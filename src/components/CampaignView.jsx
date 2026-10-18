@@ -91,11 +91,11 @@ const AREAS = [
     id: 'journal',
     label: 'Journal',
     icon: 'book',
-    tabs: ['sessions', 'wiki', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
+    tabs: ['sessions', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
     custom: true,
   },
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
-  { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep'] },
+  { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep', 'wiki'] },
   // The admin's view of the DM tools (DMs themselves get DM_AREAS).
   { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-overview', 'dm-players', 'dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
