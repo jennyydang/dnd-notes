@@ -26,21 +26,21 @@
   // The same gold as an active tab pill (TabNav.scss), with near-black
   // text for contrast (4.8:1 at the darkest edge, 7.5:1 at the top).
   &--primary {
-    background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
+    background: linear-gradient(180deg, $gold, color.adjust(raw('gold'), $lightness: -10%));
     color: #1c140e;
     border-color: $gold;
 
     &:hover {
-      background: linear-gradient(180deg, color.adjust($gold, $lightness: 6%), color.adjust($gold, $lightness: -4%));
+      background: linear-gradient(180deg, color.adjust(raw('gold'), $lightness: 6%), color.adjust(raw('gold'), $lightness: -4%));
     }
   }
 
   &--danger {
-    border-color: rgba($maroon-light, 0.6);
+    border-color: fade($maroon-light, 0.6);
     color: $maroon-text;
 
     &:hover {
-      background: rgba($maroon, 0.2);
+      background: fade($maroon, 0.2);
     }
   }
 
@@ -66,12 +66,12 @@
   font-style: italic;
   text-align: center;
   padding: 3rem 1rem;
-  border: 1px dashed rgba($gold-dim, 0.5);
+  border: 1px dashed fade($gold-dim, 0.5);
   border-radius: $radius-lg;
 
   &--error {
     color: $maroon-text;
-    border-color: rgba($maroon-light, 0.5);
+    border-color: fade($maroon-light, 0.5);
     font-style: normal;
   }
 }
@@ -231,20 +231,20 @@
   white-space: nowrap;
 
   &--place {
-    background: rgba($green-light, 0.25);
-    border: 1px solid rgba($green-light, 0.8);
+    background: fade($green-light, 0.25);
+    border: 1px solid fade($green-light, 0.8);
     color: $green-text;
   }
 
   &--lore {
-    background: rgba($gray-light, 0.3);
-    border: 1px solid rgba($gray-light, 0.9);
+    background: fade($gray-light, 0.3);
+    border: 1px solid fade($gray-light, 0.9);
     color: $gray-text;
   }
 
   &--loot {
-    background: rgba($gold, 0.18);
-    border: 1px solid rgba($gold, 0.8);
+    background: fade($gold, 0.18);
+    border: 1px solid fade($gold, 0.8);
     color: $gold-light;
   }
 }
@@ -310,7 +310,7 @@
   min-height: 2.5rem;
   padding: 0.35rem 0.85rem;
   border-radius: 999px;
-  border: 1px solid rgba($gold-dim, 0.6);
+  border: 1px solid fade($gold-dim, 0.6);
   background: $bg-deep;
   color: $text-light;
   font-size: 0.9rem;
@@ -320,7 +320,7 @@
   }
 
   &--active {
-    background: rgba($gold, 0.2);
+    background: fade($gold, 0.2);
     border-color: $gold;
     color: $gold-light;
     font-weight: 600;
@@ -354,7 +354,7 @@
 
     &:hover:not(:disabled) {
       border-color: $gold;
-      background: rgba($gold, 0.12);
+      background: fade($gold, 0.12);
     }
 
     &:disabled {
@@ -413,7 +413,7 @@
   align-items: center;
   gap: 0.25rem;
   max-width: 100%;
-  border: 1px solid rgba($gold-dim, 0.6);
+  border: 1px solid fade($gold-dim, 0.6);
   border-radius: $radius;
   background: $bg-deep;
 
@@ -470,7 +470,7 @@
 
   &:hover {
     color: $gold-light;
-    border-color: rgba($gold-dim, 0.6);
+    border-color: fade($gold-dim, 0.6);
   }
 }
 
@@ -479,7 +479,7 @@
   padding: 0.2rem;
   gap: 0.2rem;
   border-radius: 999px;
-  border: 1px solid rgba($gold-dim, 0.5);
+  border: 1px solid fade($gold-dim, 0.5);
   background: $bg-deep;
 
   &__btn {
@@ -503,7 +503,7 @@
     &--active {
       background: $bg-panel-raised;
       color: $gold-light;
-      box-shadow: inset 0 0 0 1px rgba($gold, 0.55);
+      box-shadow: inset 0 0 0 1px fade($gold, 0.55);
     }
   }
 
@@ -528,7 +528,7 @@
 
   .icon-btn--danger:hover {
     color: $maroon-text;
-    border-color: rgba($maroon-light, 0.6);
+    border-color: fade($maroon-light, 0.6);
   }
 }
 
@@ -580,7 +580,7 @@
     &:hover,
     &:focus-visible {
       border-color: $gold-dim;
-      background: rgba($gold, 0.08);
+      background: fade($gold, 0.08);
     }
   }
 }
@@ -686,7 +686,7 @@ input[type='checkbox'] {
     border-color: $gold;
     background-color: $gold;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23171210' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    box-shadow: 0 0 0.5rem rgba($gold, 0.35);
+    box-shadow: 0 0 0.5rem fade($gold, 0.35);
   }
 
   &:focus-visible {
@@ -732,7 +732,7 @@ input[type='checkbox'] {
   align-items: center;
   max-width: 100%;
   min-height: 2.6rem;
-  border: 1px solid rgba($gold-dim, 0.5);
+  border: 1px solid fade($gold-dim, 0.5);
   border-radius: 999px;
   background: $bg-deep;
   color: $text-muted;
@@ -806,18 +806,18 @@ input[type='checkbox'] {
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: rgba($gold, 0.15);
+    background: fade($gold, 0.15);
     color: $gold-light;
     font-size: 0.8rem;
 
     &:hover {
-      background: rgba($gold, 0.3);
+      background: fade($gold, 0.3);
     }
   }
 
   &--active {
-    border-color: rgba($gold, 0.8);
-    background: rgba($gold, 0.1);
+    border-color: fade($gold, 0.8);
+    background: fade($gold, 0.1);
 
     select {
       color: $gold-light;
@@ -862,7 +862,7 @@ input[type='checkbox'] {
     cursor: pointer;
 
     &--active {
-      background: rgba($gold, 0.16);
+      background: fade($gold, 0.16);
       color: $gold-light;
     }
 

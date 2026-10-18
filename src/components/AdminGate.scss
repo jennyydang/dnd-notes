@@ -42,7 +42,7 @@
     align-items: flex-end;
     gap: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid fade($gold-dim, 0.4);
   }
 
   &__subtitle {
@@ -115,7 +115,7 @@
   padding: 1rem 1.15rem;
   text-align: left;
   color: $text-light;
-  border: 1px solid rgba($gold-dim, 0.45);
+  border: 1px solid fade($gold-dim, 0.45);
   transition:
     border-color 0.18s ease,
     transform 0.18s ease,
@@ -129,7 +129,7 @@
 
   &.admin-stat--active {
     border-color: $gold;
-    background: linear-gradient(rgba($gold, 0.1), rgba($gold, 0.1)), $bg-panel;
+    background: linear-gradient(fade($gold, 0.1), fade($gold, 0.1)), $bg-panel;
     box-shadow: inset 0 -3px 0 $gold;
   }
 
@@ -289,7 +289,7 @@
 
     &--dm,
     &--creator {
-      border-color: rgba($gold, 0.6);
+      border-color: fade($gold, 0.6);
       color: $gold-light;
     }
   }
@@ -326,7 +326,7 @@
     justify-content: flex-end;
     gap: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 }
 
@@ -411,21 +411,21 @@
     padding: 0.25rem 0.6rem;
     border-radius: 999px;
     white-space: nowrap;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     color: $text-light;
 
     &--issue {
-      border-color: rgba($maroon-light, 0.6);
+      border-color: fade($maroon-light, 0.6);
       color: $maroon-text;
     }
 
     &--suggestion {
-      border-color: rgba($green, 0.5);
+      border-color: fade($green, 0.5);
       color: $green-text;
     }
 
     &--solved {
-      border-color: rgba($gold, 0.6);
+      border-color: fade($gold, 0.6);
       color: $gold-light;
     }
   }
@@ -455,7 +455,7 @@
 .reset-requests {
   margin-bottom: 1.25rem;
   padding: 1rem 1.15rem;
-  border-color: rgba($gold, 0.7);
+  border-color: fade($gold, 0.7);
 
   &__title {
     display: flex;

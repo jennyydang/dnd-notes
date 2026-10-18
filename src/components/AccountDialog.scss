@@ -9,7 +9,7 @@
 
   &__current {
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 
   &__error,

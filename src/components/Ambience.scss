@@ -14,7 +14,7 @@
     width: 140vmax;
     height: 70vmax;
     border-radius: 50%;
-    background: radial-gradient(ellipse at center, rgba($parchment, 0.07), transparent 65%);
+    background: radial-gradient(ellipse at center, fade($parchment, 0.07), transparent 65%);
     filter: blur(2rem);
     will-change: transform;
 
@@ -41,7 +41,7 @@
     border-radius: 50%;
     background: $gold-light;
     box-shadow:
-      0 0 6px 1px rgba($gold, 0.8),
+      0 0 6px 1px fade($gold, 0.8),
       0 0 14px 2px rgba(#e8823a, 0.35);
     opacity: 0;
     will-change: transform, opacity;
@@ -53,7 +53,7 @@
     inset: 0;
     opacity: 0;
     transition: opacity 0.8s ease;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba($maroon, 0.45) 100%);
+    background: radial-gradient(ellipse at center, transparent 55%, fade($maroon, 0.45) 100%);
   }
 }
 
@@ -63,12 +63,12 @@ html[data-combat] .ambience {
     background: #ff8a5c;
     box-shadow:
       0 0 6px 1px rgba(#ff5a3c, 0.9),
-      0 0 16px 3px rgba($maroon-light, 0.6);
+      0 0 16px 3px fade($maroon-light, 0.6);
     animation-duration: calc(var(--duration) * 0.45);
   }
 
   &__fog {
-    background: radial-gradient(ellipse at center, rgba($maroon-light, 0.12), transparent 65%);
+    background: radial-gradient(ellipse at center, fade($maroon-light, 0.12), transparent 65%);
   }
 
   &__vignette {

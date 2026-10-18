@@ -23,8 +23,8 @@
     margin: 0;
     padding: 0.6rem 0.75rem;
     border-radius: $radius;
-    border: 1px solid rgba($maroon-light, 0.6);
-    background: rgba($maroon, 0.25);
+    border: 1px solid fade($maroon-light, 0.6);
+    background: fade($maroon, 0.25);
     color: $maroon-text;
   }
 

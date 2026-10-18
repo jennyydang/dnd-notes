@@ -10,13 +10,13 @@
 
   &--good {
     color: $green-text;
-    text-shadow: 0 0 0.6em rgba($green-light, 0.7);
+    text-shadow: 0 0 0.6em fade($green-light, 0.7);
     animation: number-bump 0.5s ease-out;
   }
 
   &--bad {
     color: $maroon-text;
-    text-shadow: 0 0 0.6em rgba($maroon-light, 0.8);
+    text-shadow: 0 0 0.6em fade($maroon-light, 0.8);
     animation: number-shake 0.45s ease-out;
   }
 }

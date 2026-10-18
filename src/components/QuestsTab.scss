@@ -56,9 +56,9 @@
     gap: 0.75rem;
     min-height: 10rem;
     padding: 0.85rem;
-    border: 1px solid rgba($gold-dim, 0.3);
+    border: 1px solid fade($gold-dim, 0.3);
     border-radius: $radius-lg;
-    background: rgba($bg-deep, 0.45);
+    background: fade($bg-deep, 0.45);
     transition:
       border-color 0.15s ease,
       background 0.15s ease,
@@ -66,8 +66,8 @@
 
     &.is-over {
       border-color: $gold;
-      background: rgba($gold, 0.08);
-      box-shadow: inset 0 0 0 1px rgba($gold, 0.4);
+      background: fade($gold, 0.08);
+      box-shadow: inset 0 0 0 1px fade($gold, 0.4);
     }
 
     @media (max-width: 720px) {
@@ -96,7 +96,7 @@
     min-width: 1.4rem;
     padding: 0 0.4rem;
     border-radius: 999px;
-    background: rgba($gold, 0.15);
+    background: fade($gold, 0.15);
     color: $gold-light;
     font-size: 0.75rem;
     text-align: center;
@@ -111,7 +111,7 @@
   &__empty {
     margin: 0;
     padding: 1.25rem 0.5rem;
-    border: 1px dashed rgba($gold-dim, 0.4);
+    border: 1px dashed fade($gold-dim, 0.4);
     border-radius: $radius;
     color: $text-muted;
     font-size: 0.85rem;
@@ -168,7 +168,7 @@
     padding: 0.1rem 0.5rem;
     border: 3px double currentColor;
     border-radius: 6px;
-    color: rgba($green-light, 0.85);
+    color: fade($green-light, 0.85);
     font-family: $font-display;
     font-size: 1rem;
     font-weight: 700;
@@ -180,7 +180,7 @@
     mix-blend-mode: screen;
 
     .quest-card--failed & {
-      color: rgba($maroon-light, 0.9);
+      color: fade($maroon-light, 0.9);
     }
 
     &.is-new {
@@ -239,33 +239,33 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 }
 
 .status-badge {
   &--rumour {
-    background: rgba($parchment, 0.08);
+    background: fade($parchment, 0.08);
     color: $parchment;
-    border: 1px dashed rgba($parchment, 0.45);
+    border: 1px dashed fade($parchment, 0.45);
   }
 
   &--active {
-    background: rgba($gold-light, 0.15);
+    background: fade($gold-light, 0.15);
     color: $gold-light;
-    border: 1px solid rgba($gold-light, 0.4);
+    border: 1px solid fade($gold-light, 0.4);
   }
 
   &--completed {
-    background: rgba($green-light, 0.18);
+    background: fade($green-light, 0.18);
     color: $green-text;
-    border: 1px solid rgba($green-light, 0.4);
+    border: 1px solid fade($green-light, 0.4);
   }
 
   &--failed {
-    background: rgba($maroon-light, 0.18);
+    background: fade($maroon-light, 0.18);
     color: $maroon-text;
-    border: 1px solid rgba($maroon-light, 0.4);
+    border: 1px solid fade($maroon-light, 0.4);
   }
 }
 

@@ -127,7 +127,7 @@
     width: 2.4rem;
     height: 2.4rem;
     border-radius: $radius;
-    background: linear-gradient(180deg, $maroon-light, color.adjust($maroon, $lightness: -6%));
+    background: linear-gradient(180deg, $maroon-light, color.adjust(raw('maroon'), $lightness: -6%));
     color: $parchment;
     display: flex;
     align-items: center;
@@ -196,7 +196,7 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
 
     // With a recording: the player takes the left, Export / Edit the right.
     &--audio {
@@ -278,7 +278,7 @@
     width: 3rem;
     height: 3rem;
     border-radius: $radius;
-    background: linear-gradient(180deg, $maroon-light, color.adjust($maroon, $lightness: -6%));
+    background: linear-gradient(180deg, $maroon-light, color.adjust(raw('maroon'), $lightness: -6%));
     color: $parchment;
     display: flex;
     align-items: center;
@@ -311,7 +311,7 @@
       position: absolute;
       top: 50%;
       width: calc(50% - 1rem);
-      border-top: 1px solid rgba($gold-dim, 0.4);
+      border-top: 1px solid fade($gold-dim, 0.4);
     }
 
     &::before {
@@ -333,7 +333,7 @@
     gap: 0.5rem;
     margin-top: 1.25rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 
   &__side {
@@ -414,7 +414,7 @@
     height: 2rem;
     border-radius: 50%;
     background: $bg-panel-raised;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     color: $gold-light;
     display: flex;
     align-items: center;
@@ -449,9 +449,9 @@
   gap: 0.6rem;
   margin-top: 1.25rem;
   padding: 0.9rem 1rem;
-  border: 1px solid rgba($gold-dim, 0.35);
+  border: 1px solid fade($gold-dim, 0.35);
   border-radius: $radius;
-  background: rgba($bg-deep, 0.45);
+  background: fade($bg-deep, 0.45);
 
   &__title {
     display: flex;
@@ -584,7 +584,7 @@
     gap: 0.3rem;
     min-width: 4.6rem;
     padding: 0.25rem 0.55rem;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid fade($gold-dim, 0.6);
     border-radius: 999px;
     background: transparent;
     color: $gold-light;
@@ -594,7 +594,7 @@
 
     &:hover,
     &:focus-visible {
-      background: rgba($gold, 0.12);
+      background: fade($gold, 0.12);
     }
 
     svg {
@@ -615,7 +615,7 @@
     font-size: 0.9rem;
 
     &:hover {
-      border-color: rgba($gold-dim, 0.4);
+      border-color: fade($gold-dim, 0.4);
     }
 
     &:focus {

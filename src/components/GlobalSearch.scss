@@ -112,8 +112,8 @@
     cursor: pointer;
 
     &--active {
-      background: rgba($gold, 0.12);
-      border-color: rgba($gold, 0.5);
+      background: fade($gold, 0.12);
+      border-color: fade($gold, 0.5);
     }
   }
 

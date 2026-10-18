@@ -11,7 +11,7 @@
     gap: 1rem;
     padding-bottom: 1.25rem;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid fade($gold-dim, 0.4);
   }
 
   &__combat {
@@ -38,7 +38,7 @@
   &__hamburger {
     flex-shrink: 0;
     background: $bg-panel-raised;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     border-radius: $radius;
     color: $text-muted;
     font-size: 1.2rem;
@@ -98,7 +98,7 @@
     font-size: 0.7rem;
     color: $text-muted;
     background: $bg-panel-raised;
-    border: 1px solid rgba($gold-dim, 0.4);
+    border: 1px solid fade($gold-dim, 0.4);
     border-radius: $radius;
     padding: 0.1rem 0.4rem;
   }
@@ -151,7 +151,7 @@
     flex-direction: column;
     gap: 0.2rem;
     padding-bottom: 0.85rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid fade($gold-dim, 0.4);
   }
 
   &__name {
@@ -347,7 +347,7 @@
     &--active {
       color: $gold-light;
       border-top-color: $gold;
-      background: rgba($gold, 0.08);
+      background: fade($gold, 0.08);
     }
   }
 

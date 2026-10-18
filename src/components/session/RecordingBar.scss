@@ -14,7 +14,7 @@
   padding: 0.35rem 0.4rem 0.35rem 0.85rem;
   border: 1px solid rgba(#e0574a, 0.6);
   border-radius: 999px;
-  background: rgba($bg-deep, 0.94);
+  background: fade($bg-deep, 0.94);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   color: $text-light;
   font-size: 0.85rem;
@@ -26,7 +26,7 @@
   }
 
   &.is-paused {
-    border-color: rgba($gold, 0.55);
+    border-color: fade($gold, 0.55);
   }
 
   &--error {
@@ -67,7 +67,7 @@
     width: 2.25rem;
     height: 2.25rem;
     padding: 0;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid fade($gold-dim, 0.6);
     border-radius: 50%;
     background: transparent;
     color: $gold-light;
@@ -75,7 +75,7 @@
 
     &:hover,
     &:focus-visible {
-      background: rgba($gold, 0.12);
+      background: fade($gold, 0.12);
     }
 
     &--mark {
@@ -113,7 +113,7 @@
   &__spinner {
     width: 0.9rem;
     height: 0.9rem;
-    border: 2px solid rgba($gold, 0.3);
+    border: 2px solid fade($gold, 0.3);
     border-top-color: $gold-light;
     border-radius: 50%;
     animation: recording-spin 0.8s linear infinite;

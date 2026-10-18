@@ -9,14 +9,14 @@
     width: 2.4rem;
     height: 2.4rem;
     border-radius: 50%;
-    background: linear-gradient(180deg, $gold-dim, color.adjust($gold-dim, $lightness: -8%));
+    background: linear-gradient(180deg, $gold-dim, color.adjust(raw('gold-dim'), $lightness: -8%));
     border: $border-gold;
     color: $ink;
     font-family: $font-display;
     font-size: 1.05rem;
 
     &:hover {
-      background: linear-gradient(180deg, $gold, color.adjust($gold-dim, $lightness: -4%));
+      background: linear-gradient(180deg, $gold, color.adjust(raw('gold-dim'), $lightness: -4%));
     }
 
     &--photo {
@@ -52,6 +52,6 @@
     color: $gold-light;
     font-size: 0.9rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid fade($gold-dim, 0.4);
   }
 }

@@ -25,7 +25,7 @@
     position: relative;
     aspect-ratio: 1;
     overflow: hidden;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     border-radius: $radius;
 
     img {
@@ -42,7 +42,7 @@
     bottom: 0.3rem;
     padding: 0 0.35rem;
     border-radius: 4px;
-    background: rgba($bg-deep, 0.8);
+    background: fade($bg-deep, 0.8);
     color: $gold-light;
     font-size: 0.68rem;
     letter-spacing: 0.06em;
@@ -60,7 +60,7 @@
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: rgba($bg-deep, 0.85);
+    background: fade($bg-deep, 0.85);
     color: $parchment;
     cursor: pointer;
 
@@ -76,9 +76,9 @@
     gap: 0.25rem;
     width: 100%;
     aspect-ratio: 1;
-    border: 1.5px dashed rgba($gold-dim, 0.8);
+    border: 1.5px dashed fade($gold-dim, 0.8);
     border-radius: $radius;
-    background: rgba($bg-deep, 0.4);
+    background: fade($bg-deep, 0.4);
     color: $text-muted;
     font: inherit;
     font-size: 0.8rem;
@@ -96,7 +96,7 @@
   display: grid;
   gap: 2px;
   background: $bg-deep;
-  border-bottom: 1px solid rgba($gold-dim, 0.45);
+  border-bottom: 1px solid fade($gold-dim, 0.45);
 
   button {
     display: block;
@@ -141,7 +141,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba($bg-deep, 0.92) 0%, rgba($bg-deep, 0.55) 30%, transparent 62%);
+      background: linear-gradient(to top, fade($bg-deep, 0.92) 0%, fade($bg-deep, 0.55) 30%, transparent 62%);
       pointer-events: none;
     }
 
@@ -174,9 +174,9 @@
 
   &__type {
     padding: 0.05rem 0.55rem;
-    border: 1px solid rgba($gold, 0.6);
+    border: 1px solid fade($gold, 0.6);
     border-radius: 999px;
-    background: rgba($bg-deep, 0.65);
+    background: fade($bg-deep, 0.65);
     color: $gold-light;
     font-size: 0.72rem;
     letter-spacing: 0.08em;
@@ -193,7 +193,7 @@
     gap: 0.3rem;
     padding: 0.1rem 0.5rem;
     border-radius: 999px;
-    background: rgba($bg-deep, 0.8);
+    background: fade($bg-deep, 0.8);
     color: $parchment;
     font-size: 0.75rem;
   }
@@ -228,7 +228,7 @@
     inset: 0;
     display: grid;
     place-items: center;
-    background: rgba($bg-deep, 0.65);
+    background: fade($bg-deep, 0.65);
     color: $parchment;
     font-family: $font-display;
   }
@@ -239,7 +239,7 @@
     align-items: center;
     gap: 0.85rem;
     padding: 1rem 1.25rem;
-    background: linear-gradient(135deg, rgba($gold-dim, 0.22), rgba($bg-deep, 0.55) 70%);
+    background: linear-gradient(135deg, fade($gold-dim, 0.22), fade($bg-deep, 0.55) 70%);
   }
 
   &__mark {
@@ -247,9 +247,9 @@
     place-items: center;
     width: 2.75rem;
     height: 2.75rem;
-    border: 1px solid rgba($gold, 0.5);
+    border: 1px solid fade($gold, 0.5);
     border-radius: 50%;
-    background: rgba($bg-deep, 0.6);
+    background: fade($bg-deep, 0.6);
     color: $gold-light;
     font-size: 1.25rem;
   }
@@ -283,9 +283,9 @@
     place-items: center;
     width: 2.75rem;
     height: 2.75rem;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid fade($gold-dim, 0.6);
     border-radius: 50%;
-    background: rgba($bg-deep, 0.75);
+    background: fade($bg-deep, 0.75);
     color: $parchment;
     transform: translateY(-50%);
     cursor: pointer;

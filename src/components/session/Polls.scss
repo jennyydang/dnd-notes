@@ -4,9 +4,9 @@
   display: grid;
   gap: 0.6rem;
   padding: 0.85rem 0.9rem;
-  border: 1px solid rgba($gold, 0.3);
+  border: 1px solid fade($gold, 0.3);
   border-radius: $radius;
-  background: rgba($bg-deep, 0.35);
+  background: fade($bg-deep, 0.35);
 
   & + & {
     margin-top: 0.75rem;
@@ -46,9 +46,9 @@
     min-height: 2.75rem;
     padding: 0.45rem 0.8rem;
     overflow: hidden;
-    border: 1px solid rgba($gold, 0.35);
+    border: 1px solid fade($gold, 0.35);
     border-radius: $radius;
-    background: rgba($bg-panel-raised, 0.8);
+    background: fade($bg-panel-raised, 0.8);
     color: $text-light;
     font: inherit;
     text-align: left;
@@ -72,7 +72,7 @@
 
     &.is-mine {
       border-color: $gold-light;
-      box-shadow: 0 0 0 2px rgba($gold, 0.25);
+      box-shadow: 0 0 0 2px fade($gold, 0.25);
     }
 
     &.is-winner {
@@ -80,7 +80,7 @@
       animation: poll-winner 1.6s ease-in-out 2;
 
       .poll__bar {
-        background: linear-gradient(90deg, rgba($gold, 0.55), rgba($gold-light, 0.35));
+        background: linear-gradient(90deg, fade($gold, 0.55), fade($gold-light, 0.35));
       }
     }
   }
@@ -90,7 +90,7 @@
     position: absolute;
     inset: 0;
     z-index: 0;
-    background: linear-gradient(90deg, rgba($gold, 0.32), rgba($gold, 0.16));
+    background: linear-gradient(90deg, fade($gold, 0.32), fade($gold, 0.16));
     transform-origin: left center;
     transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: none;
@@ -223,7 +223,7 @@
   border-color: $gold-light;
   box-shadow:
     $shadow-panel,
-    0 0 0 3px rgba($gold, 0.2);
+    0 0 0 3px fade($gold, 0.2);
   animation: poll-popup-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 
   &__top {
@@ -260,7 +260,7 @@
 
 @keyframes poll-winner {
   50% {
-    box-shadow: 0 0 1.1rem rgba($gold, 0.55);
+    box-shadow: 0 0 1.1rem fade($gold, 0.55);
   }
 }
 

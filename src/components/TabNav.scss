@@ -93,7 +93,7 @@
     padding: 0;
     border: none;
     border-radius: 50%;
-    background: rgba($bg-deep, 0.85);
+    background: fade($bg-deep, 0.85);
     color: $gold-light;
     font-size: 0.95rem;
     cursor: pointer;
@@ -159,7 +159,7 @@
       &--active {
         border-bottom-color: transparent;
         border-left-color: $gold;
-        background: rgba($gold, 0.1);
+        background: fade($gold, 0.1);
       }
     }
 
@@ -182,7 +182,7 @@
     width: fit-content;
     border-bottom: none;
     background: $bg-deep;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     border-radius: 999px;
     padding: 0.3rem;
     margin-bottom: 1.25rem;
@@ -216,7 +216,7 @@
 
       &--active {
         color: $ink;
-        background: linear-gradient(180deg, $gold, color.adjust($gold, $lightness: -10%));
+        background: linear-gradient(180deg, $gold, color.adjust(raw('gold'), $lightness: -10%));
       }
     }
   }

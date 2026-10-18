@@ -10,7 +10,7 @@
   &__edge {
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba($maroon, 0.55) 85%, rgba(#3a0505, 0.85) 100%);
+    background: radial-gradient(ellipse at center, transparent 50%, fade($maroon, 0.55) 85%, rgba(#3a0505, 0.85) 100%);
     animation: heartbeat 1.15s ease-in-out infinite;
   }
 
@@ -24,13 +24,13 @@
     padding: 0.35rem 0.9rem;
     border-radius: 999px;
     background: #2a0808;
-    border: 1px solid rgba($maroon-light, 0.9);
+    border: 1px solid fade($maroon-light, 0.9);
     color: $maroon-text;
     font-size: 0.85rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    box-shadow: 0 0 1rem rgba($maroon-light, 0.45);
+    box-shadow: 0 0 1rem fade($maroon-light, 0.45);
   }
 
   &__heart {

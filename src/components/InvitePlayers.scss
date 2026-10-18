@@ -14,8 +14,8 @@
     margin: 0;
     padding: 0.6rem 0.75rem;
     border-radius: $radius;
-    border: 1px solid rgba($maroon-light, 0.6);
-    background: rgba($maroon, 0.25);
+    border: 1px solid fade($maroon-light, 0.6);
+    background: fade($maroon, 0.25);
     color: $maroon-text;
   }
 
@@ -70,7 +70,7 @@
     margin-left: 0.5rem;
     padding: 0.1rem 0.55rem;
     border-radius: 999px;
-    background: rgba($gold, 0.15);
+    background: fade($gold, 0.15);
     font-family: $font-body;
     font-size: 0.8rem;
     color: $gold-light;
