@@ -36,14 +36,14 @@ function ShareStatus({ kind, status, onReveal, revealed = false, sharing = false
       </span>
     )
   }
+  // Once it's out, one tag says so: where it went, or just "Revealed".
   if (revealed && revealState !== 'done') {
     return (
-      <>
-        {main}
+      main || (
         <span className="share-status share-status--revealed">
           <Icon name="eye" /> Revealed
         </span>
-      </>
+      )
     )
   }
 

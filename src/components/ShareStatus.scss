@@ -26,8 +26,29 @@
   }
 }
 
-// A card or tile the DM has already revealed to the table fades back,
-// like used loot, so what's still unrevealed stands out.
+// A DM card or tile that's been revealed looks spent: greyed out and
+// dimmed, with a grey border, so what's still to reveal stands out. Its
+// buttons (Archive, Edit, Delete) and status tag stay at full strength.
 .dm-revealed {
-  opacity: 0.5;
+  // (doubled to outrank .panel's gold border, whichever loads first)
+  &.dm-revealed {
+    border-color: fade($gray-light, 0.55);
+    box-shadow: none;
+  }
+
+  > :not([class*='__actions'], [class*='__body'], [class*='__share']),
+  > [class*='__body'] > :not([class*='__actions']) {
+    filter: grayscale(0.9);
+    opacity: 0.5;
+    transition:
+      opacity 0.2s ease,
+      filter 0.2s ease;
+  }
+
+  // Hovering brings it back, to read it properly.
+  &:hover > :not([class*='__actions'], [class*='__body'], [class*='__share']),
+  &:hover > [class*='__body'] > :not([class*='__actions']) {
+    filter: grayscale(0.5);
+    opacity: 0.8;
+  }
 }
