@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { useDmShares } from '../hooks/useDmShares.js'
+import { useCampaignData } from '../hooks/useCampaignData.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
@@ -32,9 +33,11 @@ const partyFromRow = (r) => ({ id: r.id, dmCreatureId: r.dm_creature_id })
 // what the party sees, private notes), then Reveal one when the party
 // meets it. Players add a copy — photos included — to their Creatures tab.
 function DmCreaturesTab({ campaignId }) {
+  const { playerId } = useCampaignData()
+  // Each DM's creatures are their own (dm_id); the admin (no player) sees all.
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_creatures', {
     fromRow,
-    filters: { campaign_id: campaignId },
+    filters: playerId ? { campaign_id: campaignId, dm_id: playerId } : { campaign_id: campaignId },
   })
   const { items: party } = useSupabaseTable('creatures', {
     fromRow: partyFromRow,
@@ -189,7 +192,7 @@ function DmCreaturesTab({ campaignId }) {
       {error && (
         <p className="empty-state empty-state--error">
           {error}
-          {/dm_creatures|photos/.test(error) && ' — run the latest supabase/schema.sql to update the DM creatures table.'}
+          {/dm_creatures|photos|dm_id/.test(error) && ' — run the latest supabase/schema.sql to update the DM creatures table.'}
         </p>
       )}
       {!loading && !error && visible.length === 0 && (

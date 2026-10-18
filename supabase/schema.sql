@@ -1902,3 +1902,25 @@ end $$;
 alter table quests      add column if not exists due_day integer;
 alter table party_goals add column if not exists due_day integer;
 alter table personal_goals add column if not exists due_day integer;
+
+-- ── Each DM's own notes ──────────────────────────────────────────────
+-- A campaign can have several DMs; each one's private NPCs, creatures,
+-- maps and art are theirs alone (dm_id). Players still see whatever any
+-- DM reveals. Rows from before this go to the campaign's first DM (or,
+-- with no DM, its creator). The admin sees everything.
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['dm_npcs', 'dm_creatures', 'dm_maps', 'campaign_art'] loop
+    execute format('alter table %I add column if not exists dm_id uuid references players(id) on delete set null', t);
+    execute format(
+      'update %I x set dm_id = coalesce(
+         (select m.player_id from campaign_members m
+           where m.campaign_id = x.campaign_id and m.role = ''dm''
+           order by m.created_at limit 1),
+         (select c.created_by from campaigns c where c.id = x.campaign_id))
+       where x.dm_id is null', t);
+    execute format('create index if not exists %I on %I (campaign_id, dm_id)', t || '_dm_idx', t);
+  end loop;
+end $$;

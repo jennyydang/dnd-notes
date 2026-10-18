@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { useDmShares } from '../hooks/useDmShares.js'
+import { useCampaignData } from '../hooks/useCampaignData.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import { confirmDelete } from '../lib/confirm.js'
@@ -33,9 +34,11 @@ function captionFromFile(name) {
 // The DM's private maps. Reveal one and players get a notification; adding
 // it puts a copy (with its own image file) in the players' Maps tab.
 function DmMapsTab({ campaignId }) {
+  const { playerId } = useCampaignData()
+  // Each DM's maps are their own (dm_id); the admin (no player) sees all.
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_maps', {
     fromRow,
-    filters: { campaign_id: campaignId },
+    filters: playerId ? { campaign_id: campaignId, dm_id: playerId } : { campaign_id: campaignId },
   })
   const { items: partyMaps } = useSupabaseTable('maps', {
     fromRow: partyMapFromRow,
@@ -181,7 +184,7 @@ function DmMapsTab({ campaignId }) {
       {error && (
         <p className="empty-state empty-state--error">
           {error}
-          {/dm_maps/.test(error) && ' — run the latest supabase/schema.sql to add the DM maps table.'}
+          {/dm_maps|dm_id/.test(error) && ' — run the latest supabase/schema.sql to update the DM maps table.'}
         </p>
       )}
       {!loading && !error && maps.length === 0 && (

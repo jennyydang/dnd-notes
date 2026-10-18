@@ -8,6 +8,7 @@ import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ArtViewer from './ArtViewer.jsx'
 import ShareStatus from './ShareStatus.jsx'
 import { useDmShares } from '../hooks/useDmShares.js'
+import { useCampaignData } from '../hooks/useCampaignData.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import Icon from './Icon.jsx'
 import './ArtGallery.scss'
@@ -38,9 +39,12 @@ function titleFromFile(name) {
 // and one of them adds it to the players' Art tab (which shows only those).
 // Both open pieces in a full-screen viewer, handy for showing at the table.
 function ArtGallery({ campaignId, manage = false }) {
+  const { playerId } = useCampaignData()
+  // A DM manages only their own art (dm_id); players see every DM's shared
+  // pieces, and the admin sees all.
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('campaign_art', {
     fromRow,
-    filters: { campaign_id: campaignId },
+    filters: manage && playerId ? { campaign_id: campaignId, dm_id: playerId } : { campaign_id: campaignId },
   })
   const [category, setCategory] = useState('all')
   const [viewingId, setViewingId] = useState(null)
@@ -219,7 +223,7 @@ function ArtGallery({ campaignId, manage = false }) {
       {error && (
         <p className="empty-state empty-state--error">
           {error}
-          {/campaign_art/.test(error) && ' — run the latest supabase/schema.sql to add the art gallery table.'}
+          {/campaign_art|dm_id/.test(error) && ' — run the latest supabase/schema.sql to add the art gallery table.'}
         </p>
       )}
       {!loading && !error && pieces.length === 0 && (
