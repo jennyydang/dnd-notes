@@ -6,6 +6,8 @@ import { TAG_GROUPS, matchKind } from '../lib/tags.js'
 import './LoreTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { RichText, RichTextEditor } from './RichText.jsx'
+import FactionStanding from './FactionStanding.jsx'
+import { isFaction } from '../lib/standing.js'
 
 const emptyForm = { title: '', category: '', notes: '' }
 
@@ -14,6 +16,8 @@ const fromRow = (r) => ({
   title: r.title,
   category: r.category,
   notes: r.notes,
+  standing: r.standing ?? null,
+  standingLog: r.standing_log,
 })
 
 function LoreTab({ campaignId }) {
@@ -191,6 +195,11 @@ function LoreTab({ campaignId }) {
                   entry.category && <span className="lore-card__category">{entry.category}</span>
                 )}
               </div>
+              {isFaction(entry) && (
+                <div className="lore-card__standing">
+                  <FactionStanding faction={entry} onSave={(patch) => updateItem(entry.id, patch)} />
+                </div>
+              )}
               {entry.notes && <RichText className="lore-card__notes" value={entry.notes} />}
               <div className="lore-card__actions">
                 <button

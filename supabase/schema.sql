@@ -1863,3 +1863,13 @@ drop policy if exists "anon full access creature-photos bucket" on storage.objec
 create policy "anon full access creature-photos bucket"
   on storage.objects for all to anon
   using (bucket_id = 'creature-photos') with check (bucket_id = 'creature-photos');
+
+-- ── Faction standing ─────────────────────────────────────────────────
+-- The party's reputation with a faction (a lore entry whose category is
+-- "Faction"): −3 Hated … 0 Neutral … +3 Revered, null = not set yet, and
+-- the history of how it moved: [{ from, to, note, at }].
+alter table lore_entries add column if not exists standing smallint;
+alter table lore_entries drop constraint if exists lore_entries_standing_check;
+alter table lore_entries add constraint lore_entries_standing_check
+  check (standing is null or standing between -3 and 3);
+alter table lore_entries add column if not exists standing_log jsonb not null default '[]'::jsonb;
