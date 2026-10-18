@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listCampaignMembers } from '../lib/campaigns.js'
-import { supabase } from '../lib/supabaseClient.js'
+import { supabase } from '../lib/supabaseClient.ts'
 import './ManageMembers.scss'
 
 function ManageMembers({ campaignId, campaignName, joinCode, createdBy, onClose }) {

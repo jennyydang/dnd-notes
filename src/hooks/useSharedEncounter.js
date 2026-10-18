@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { notifyTableChanged, useSupabaseTable } from './useSupabaseTable.js'
-import { supabase } from '../lib/supabaseClient.js'
+import { supabase } from '../lib/supabaseClient.ts'
 import { emptyEncounter, normalizeEncounter } from '../lib/initiative.js'
 import { getEncounter, setEncounter } from '../lib/sessionMode.js'
 import { isNetworkError } from '../lib/offline.js'

@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react'
-import { supabase, isSupabaseConfigured } from './supabaseClient.js'
+import { supabase, isSupabaseConfigured } from './supabaseClient.ts'
 import { getPublicUrl, removeImage, uploadImage } from './storage.js'
 
 // Players' profile pictures (player_profiles + the "player-avatars"

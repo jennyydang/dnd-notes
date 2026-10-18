@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js'
+import { supabase } from './supabaseClient.ts'
 
 const EXCERPT_CHARS = 160
 

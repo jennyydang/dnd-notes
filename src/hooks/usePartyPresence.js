@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.js'
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient.ts'
 
 const RETRY_MS = 3000
 

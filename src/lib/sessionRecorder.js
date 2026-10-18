@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js'
+import { supabase } from './supabaseClient.ts'
 
 // One audio recording at a time, kept outside React so it carries on
 // while the player moves between tabs (a component's own MediaRecorder

@@ -276,11 +276,24 @@ so your whole party can share one set of notes from any browser.
 ## Scripts
 
 - `npm run dev` — start the development server
-- `npm run build` — build for production
+- `npm run build` — type-check, then build for production
+- `npm run typecheck` — run the TypeScript checker on its own
 - `npm run preview` — preview the production build
 - `npm run lint` — run Oxlint
 - `npm test` — run the unit tests (Vitest) for search, character rules,
   initiative, recap building, the roleplay helpers and the offline queue
+- `npm run db:types` — regenerate `src/types/database.ts` from your Supabase
+  project after a schema change (needs `SUPABASE_PROJECT_ID` set, and
+  `npx supabase login` once)
+
+### TypeScript
+
+The app is moving to TypeScript a file at a time. New and converted files
+are `.ts` / `.tsx` and are checked strictly; existing `.js` / `.jsx` files
+still work alongside them and aren't checked yet. The Supabase client is
+typed from `src/types/database.ts`, so in TypeScript files table names,
+columns and RPC arguments are checked — regenerate that file whenever
+`supabase/schema.sql` changes.
 
 ## Upgrading an existing database
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
-import { supabase } from '../lib/supabaseClient.js'
+import { supabase } from '../lib/supabaseClient.ts'
 import NewOrJoinCampaign from './NewOrJoinCampaign.jsx'
 import ManageMembers from './ManageMembers.jsx'
 import FeedbackForm from './FeedbackForm.jsx'

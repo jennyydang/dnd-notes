@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js'
+import { supabase } from './supabaseClient.ts'
 
 const PLAYER_SESSION_KEY = 'dnd-notes-player-session'
 const ADMIN_SESSION_KEY = 'dnd-notes-admin-session'

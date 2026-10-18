@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabaseClient.js'
+import { supabase } from '../lib/supabaseClient.ts'
 import './FeedbackForm.scss'
 
 const KINDS = [

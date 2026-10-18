@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { supabase } from '../lib/supabaseClient.js'
+import { supabase } from '../lib/supabaseClient.ts'
 import { subscribeToTable } from '../lib/realtime.js'
 import {
   RESYNC_EVENT,

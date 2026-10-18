@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js'
+import { supabase } from './supabaseClient.ts'
 
 // Tables scoped to the whole campaign.
 const CAMPAIGN_TABLES = [

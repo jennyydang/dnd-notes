@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from './supabaseClient.js'
+import { supabase, isSupabaseConfigured } from './supabaseClient.ts'
 
 // Live updates from other devices via Supabase Realtime. Many screens read
 // the same table with the same filters (the campaign index and the open tab

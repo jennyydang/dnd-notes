@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js'
+import { supabase } from './supabaseClient.ts'
 
 // Generous for a portrait/cover photo, but without this an oversized file
 // (an unconverted high-res phone photo, say) has no fast failure path — it

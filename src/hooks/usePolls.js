@@ -3,7 +3,7 @@ import { useCampaignData, useCampaignNav } from './useCampaignData.js'
 import { notifyTableChanged, useSupabaseTable } from './useSupabaseTable.js'
 import { getPlayerSession } from '../lib/auth.js'
 import { cleanOptions, pollDecision, tallyPoll } from '../lib/polls.js'
-import { supabase } from '../lib/supabaseClient.js'
+import { supabase } from '../lib/supabaseClient.ts'
 
 const pollFromRow = (r) => ({
   id: r.id,

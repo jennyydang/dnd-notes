@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js'
+import { supabase } from './supabaseClient.ts'
 import { notifyTableChanged } from '../hooks/useSupabaseTable.js'
 
 export async function createCampaign(playerId, { name, description, coverImagePath }) {

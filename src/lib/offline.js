@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient.js'
+import { supabase } from './supabaseClient.ts'
 import { getPlayerSession } from './auth.js'
 
 // Offline support for everything that goes through useSupabaseTable:
