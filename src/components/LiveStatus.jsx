@@ -1,20 +1,28 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Icon from './Icon.jsx'
-import { usePartyPresence } from '../hooks/usePartyPresence.js'
 import { dismissFailed, getSyncStatus, subscribeSyncStatus } from '../lib/offline.js'
-import { usePlayerAvatar } from '../lib/profiles.js'
 import './LiveStatus.scss'
 
 const MAX_FACES = 3
 
 const initial = (name) => (name.trim()[0] || '?').toUpperCase()
 
-// Who else is in the campaign right now, as a row of initials. Hovering
-// or focusing a face shows that player's name; clicking opens the full
+// One person's face: their photo or initial, ringed in their own colour.
+function Face({ person, className = '' }) {
+  return (
+    <span className={`presence-face ${className}`} style={{ '--who': person.color }} aria-hidden="true">
+      {person.avatarUrl ? <img src={person.avatarUrl} alt="" /> : initial(person.username)}
+    </span>
+  )
+}
+
+// Who else is in the campaign right now (`people` from usePartyPresence),
+// as a row of faces, each in that person's colour. Hovering or focusing a
+// face shows their name and the page they're on; clicking opens the full
 // list. Faces pop in as people arrive, no reload needed.
-export function PartyPresence({ campaignId, playerId, username }) {
-  const myAvatar = usePlayerAvatar(playerId)
-  const others = usePartyPresence(campaignId, playerId, username, myAvatar)
+export function PartyPresence({ people }) {
+  const others = people.filter((p) => !p.me)
+  const me = people.find((p) => p.me)
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
 
@@ -49,15 +57,12 @@ export function PartyPresence({ campaignId, playerId, username }) {
             className="party-presence__face"
             onClick={toggle}
             aria-expanded={open}
-            aria-label={`${o.username} is here now`}
+            aria-label={`${o.username} is here now${o.tabLabel ? `, on ${o.tabLabel}` : ''}`}
           >
-            {o.avatarUrl ? (
-              <img className="party-presence__photo" src={o.avatarUrl} alt="" />
-            ) : (
-              <span aria-hidden="true">{initial(o.username)}</span>
-            )}
+            <Face person={o} />
             <span className="party-presence__tip" aria-hidden="true">
               {o.username}
+              {o.tabLabel && <span className="party-presence__where">{o.tabLabel}</span>}
             </span>
           </button>
         ))}
@@ -75,21 +80,45 @@ export function PartyPresence({ campaignId, playerId, username }) {
       </div>
       {open && (
         <div className="party-presence__list" role="dialog" aria-label="Here now">
-          <div className="party-presence__list-title">Here now</div>
+          <div className="party-presence__list-title">Here now · {people.length}</div>
           <ul>
-            {others.map((o) => (
+            {[...(me ? [me] : []), ...others].map((o) => (
               <li key={o.playerId}>
-                {o.avatarUrl ? (
-                  <img className="party-presence__mini" src={o.avatarUrl} alt="" />
-                ) : (
-                  <span className="party-presence__dot" aria-hidden="true" />
-                )}
-                {o.username}
+                <Face person={o} className="presence-face--mini" />
+                <span className="party-presence__who">
+                  {o.me ? 'You' : o.username}
+                  {o.tabLabel && <span className="party-presence__where">{o.tabLabel}</span>}
+                </span>
               </li>
             ))}
           </ul>
         </div>
       )}
+    </div>
+  )
+}
+
+// "Aria and Bram are here too" over the page you're on, when others in
+// the campaign have the same page open — each in their own colour.
+export function HereToo({ people, tab }) {
+  const here = people.filter((p) => !p.me && p.tab === tab)
+  if (here.length === 0) return null
+  return (
+    <div className="here-too" role="status">
+      <span className="here-too__faces">
+        {here.slice(0, 4).map((p) => (
+          <Face key={p.playerId} person={p} className="presence-face--small" />
+        ))}
+      </span>
+      <span>
+        {here.map((p, i) => (
+          <span key={p.playerId}>
+            {i > 0 && (i === here.length - 1 ? ' and ' : ', ')}
+            <strong style={{ color: p.color }}>{p.username}</strong>
+          </span>
+        ))}{' '}
+        {here.length === 1 ? 'is' : 'are'} here too
+      </span>
     </div>
   )
 }
