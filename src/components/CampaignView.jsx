@@ -23,7 +23,8 @@ import SessionMode from './SessionMode.jsx'
 import CharacterTab from './CharacterTab.jsx'
 import PrepTab from './PrepTab.jsx'
 import GlobalSearch from './GlobalSearch.jsx'
-import EntityDetailModal from './EntityDetailModal.jsx'
+import RoutedEntry from './RoutedEntry.jsx'
+import { ENTITY_TYPES } from '../lib/entities.js'
 import QuickCreateModal from './QuickCreateModal.jsx'
 import AccountMenu from './AccountMenu.jsx'
 import { HereToo, PartyPresence, SyncStatus } from './LiveStatus.jsx'
@@ -50,6 +51,8 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { CampaignNavContext } from '../hooks/useCampaignData.js'
 import CampaignDataProvider from './CampaignDataProvider.jsx'
 import { getStored, setStored } from '../lib/sessionMode.js'
+import { navigate, usePath } from '../lib/router.js'
+import { campaignPath, parseRoute } from '../lib/routes.js'
 import Icon from './Icon.jsx'
 import './CampaignView.scss'
 
@@ -134,9 +137,12 @@ const fromCustomTabRow = (r) => ({
 const lastTabKey = (campaignId) => `dnd-notes-last-tab:${campaignId}`
 const viewAsKey = (campaignId) => `dnd-notes-view-as:${campaignId}`
 
-function CampaignView({ campaignId, campaignName, playerId, username, onBack, onLogOut }) {
-  // Reopen where the player left off in this campaign (survives refresh).
-  const [activeTab, setActiveTabState] = useState(() => getStored(lastTabKey(campaignId), 'home'))
+function CampaignView({ campaignId, campaignName, slug, admin = false, playerId, username, onBack, onLogOut }) {
+  // The screen comes from the address (/c/anadoss/quests); without one,
+  // reopen where the player left off in this campaign.
+  const route = parseRoute(usePath())
+  const [lastTab] = useState(() => getStored(lastTabKey(campaignId), 'home'))
+  const activeTab = route.tab || lastTab
   const [sidebarOpen, setSidebarOpen] = useState(true)
   // Sidebar groups (Session, Journal, Character…) folded away, remembered.
   const [foldedGroups, setFoldedGroups] = useState(() => getStored('dnd-notes-sidebar-folded', []))
@@ -150,7 +156,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   const [showFeedback, setShowFeedback] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-  const [detailStack, setDetailStack] = useState([])
   const [quickCreate, setQuickCreate] = useState(null)
   const [addRequest, setAddRequest] = useState(null)
 
@@ -206,20 +211,20 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   ]
   const allTabs = areas.flatMap(areaTabs)
 
+  const pathFor = useCallback((tab, entity = null) => campaignPath(slug, { admin, tab, entity }), [slug, admin])
   const setActiveTab = useCallback(
     (tab) => {
-      setActiveTabState(tab)
       setStored(lastTabKey(campaignId), tab)
+      navigate(pathFor(tab))
       window.scrollTo({ top: 0 })
     },
-    [campaignId],
+    [campaignId, pathFor],
   )
 
   function switchView(next) {
     if (next === (isDm ? 'dm' : 'player')) return
     setViewAsState(next)
     setStored(viewAsKey(campaignId), next)
-    setDetailStack([])
     setActiveTab(next === 'dm' ? 'dm-overview' : 'home')
   }
 
@@ -230,6 +235,17 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     allTabs.some((t) => t.id === activeTab) || (roleLoading && TAB_DEFS[activeTab]) ? activeTab : homeTab
   const activeArea =
     areas.find((area) => areaTabs(area).some((t) => t.id === knownTab)) || areas[0]
+
+  // Keep the address on the screen actually shown: fill it in when it has
+  // none, and correct it when it names one that isn't there (once the
+  // role is known, so a DM's link isn't lost while it loads).
+  useEffect(() => {
+    if (roleReady && route.tab !== knownTab) navigate(pathFor(knownTab), { replace: true })
+  }, [roleReady, route.tab, knownTab, pathFor])
+  const closeEntry = useCallback((options) => navigate(pathFor(knownTab), options), [pathFor, knownTab])
+  useEffect(() => {
+    if (roleReady && route.tab === knownTab) setStored(lastTabKey(campaignId), knownTab)
+  }, [roleReady, route.tab, knownTab, campaignId])
 
   // Who's here and which page each is on, for the header faces and the
   // "here too" strip over the page.
@@ -271,12 +287,19 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
   const nav = {
     goTo: (tab, options = {}) => {
-      setDetailStack([])
       setSearchOpen(false)
       setActiveTab(tab)
       if (options.add) setAddRequest({ tab, at: Date.now() })
     },
-    openEntity: (type, id) => setDetailStack((stack) => [...stack, { type, id }]),
+    // An entry opens over the current screen, with its own address, so the
+    // back button (or a shared link) gets back to it.
+    // (From the wiki, whose addresses name articles, it opens over the
+    // entry's own screen — or this view's home if that isn't one of yours.)
+    openEntity: (type, id) => {
+      const own = ENTITY_TYPES[type]?.tab
+      const tab = knownTab !== 'wiki' ? knownTab : allTabs.some((t) => t.id === own) ? own : homeTab
+      navigate(pathFor(tab, { type, id }), { state: { fromEntry: Boolean(route.entity) && knownTab !== 'wiki' } })
+    },
     openSearch: () => setSearchOpen(true),
     openQuickCreate: (type = 'npc', initial = {}) => setQuickCreate({ type, initial }),
     tabs: allTabs,
@@ -284,8 +307,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     canArrange,
   }
   const addRequestFor = (tab) => (addRequest?.tab === tab ? addRequest.at : null)
-
-  const topDetail = detailStack[detailStack.length - 1]
 
   return (
     <CampaignDataProvider campaignId={campaignId} playerId={playerId}>
@@ -388,16 +409,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
           {searchOpen && !dmView && <GlobalSearch onClose={() => setSearchOpen(false)} />}
 
-          {topDetail && (
-            <EntityDetailModal
-              key={`${topDetail.type}:${topDetail.id}`}
-              type={topDetail.type}
-              id={topDetail.id}
-              canGoBack={detailStack.length > 1}
-              onBack={() => setDetailStack((stack) => stack.slice(0, -1))}
-              onClose={() => setDetailStack([])}
-            />
-          )}
+          {route.entity && knownTab !== 'wiki' && <RoutedEntry entity={route.entity} onClose={closeEntry} />}
 
           {quickCreate && (
             <QuickCreateModal
@@ -490,7 +502,12 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {roleReady && (
               <div key={knownTab} className="campaign-view__screen">
               {knownTab === 'home' && <HomeHub campaignName={campaignName} />}
-              {knownTab === 'wiki' && <WikiTab />}
+              {knownTab === 'wiki' && (
+                <WikiTab
+                  pathFor={(entity) => pathFor('wiki', entity)}
+                  ownTabHref={campaignPath(slug, { admin, world: true })}
+                />
+              )}
               {knownTab === 'session' && <SessionMode campaignName={campaignName} />}
               {knownTab === 'prep' && <PrepTab />}
               {knownTab === 'character' && <CharacterTab />}
