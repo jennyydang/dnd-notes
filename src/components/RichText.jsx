@@ -3,11 +3,13 @@ import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { toEditorContent } from '../lib/richNotes.js'
+import { ListShortcuts } from '../lib/listShortcuts.js'
 import './RichText.scss'
 
 // Simple formatting for the notes on cards (NPCs, loot, creatures, places,
 // quests, lore, party…): bold, italic, underline, bulleted and numbered
-// lists. Stored as a small HTML subset; older plain-text notes still read
+// lists. Return starts a new paragraph (with a blank line's gap),
+// Shift+Return a new line right under; "- " or "•" starts a bullet. Stored as a small HTML subset; older plain-text notes still read
 // and edit fine. RichText shows them without running any stored HTML —
 // it's rebuilt from an allow-list of tags as React elements.
 
@@ -22,6 +24,7 @@ const extensions = (placeholder) => [
     strike: false,
   }),
   Placeholder.configure({ placeholder }),
+  ListShortcuts,
 ]
 
 export function RichTextEditor({ id, value, onChange, placeholder = '', ariaLabel, minHeight, disabled = false }) {

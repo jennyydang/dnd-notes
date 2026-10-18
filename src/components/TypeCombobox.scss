@@ -1,0 +1,70 @@
+@use '../styles/variables' as *;
+
+.type-combo {
+  position: relative;
+
+  input {
+    width: 100%;
+    padding-right: 2.5rem;
+  }
+
+  &__toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+
+    svg {
+      transform: rotate(90deg);
+      transition: transform 0.15s;
+    }
+
+    .is-open & svg {
+      transform: rotate(-90deg);
+    }
+  }
+
+  &__list {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 15rem;
+    margin: 0;
+    padding: 0.3rem;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid rgba($gold-dim, 0.7);
+    border-radius: $radius;
+    background: $bg-panel-raised;
+    box-shadow: $shadow-panel;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 2.5rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: $radius;
+    color: $text-light;
+    cursor: pointer;
+
+    &.is-active {
+      background: rgba($gold, 0.14);
+    }
+
+    &.is-chosen {
+      color: $gold-light;
+    }
+  }
+}

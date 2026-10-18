@@ -4,7 +4,9 @@ import { confirmDelete } from '../lib/confirm.js'
 import Modal from './Modal.jsx'
 import './CreaturesTab.scss'
 import { RichText, RichTextEditor } from './RichText.jsx'
-import { CreatureGallery, PhotoPicker } from './CreaturePhotos.jsx'
+import { CreatureHero, PhotoPicker } from './CreaturePhotos.jsx'
+import Icon from './Icon.jsx'
+import TypeCombobox from './TypeCombobox.jsx'
 import { CREATURE_TYPES, deletePhotos, photoList, savePickerItems, toPickerItems } from '../lib/creatures.js'
 
 const emptyForm = { name: '', creatureType: '', encounteredAt: '', notes: '', photos: [] }
@@ -142,19 +144,13 @@ function CreaturesTab({ campaignId }) {
               </div>
               <div className="field">
                 <label htmlFor="creature-type">Type</label>
-                <input
+                <TypeCombobox
                   id="creature-type"
-                  type="text"
-                  list="creature-type-options"
                   value={form.creatureType}
-                  onChange={set('creatureType')}
+                  onChange={(creatureType) => setForm((prev) => ({ ...prev, creatureType }))}
+                  options={CREATURE_TYPES}
                   placeholder="Beast, Undead…"
                 />
-                <datalist id="creature-type-options">
-                  {CREATURE_TYPES.map((t) => (
-                    <option key={t} value={t} />
-                  ))}
-                </datalist>
               </div>
             </div>
 
@@ -215,20 +211,22 @@ function CreaturesTab({ campaignId }) {
         <div className="creature-list">
           {visible.map((c) => (
             <article className="creature-card panel" key={c.id}>
-              <CreatureGallery photos={c.photos} name={c.name} />
-              <header className="creature-card__header">
-                <h3 className="creature-card__name">{c.name}</h3>
-              </header>
-              {c.creatureType && <p className="creature-card__meta">{c.creatureType}</p>}
-              {c.encounteredAt && <p className="creature-card__where">Met: {c.encounteredAt}</p>}
-              {c.notes && <RichText className="creature-card__notes" value={c.notes} />}
-              <div className="creature-card__actions">
-                <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
-                  Edit
-                </button>
-                <button type="button" className="btn btn--danger card-delete" onClick={() => removeCreature(c)}>
-                  Delete
-                </button>
+              <CreatureHero photos={c.photos} name={c.name} type={c.creatureType} />
+              <div className="creature-card__body">
+                {c.encounteredAt && (
+                  <p className="creature-card__where">
+                    <Icon name="pin" /> {c.encounteredAt}
+                  </p>
+                )}
+                {c.notes && <RichText className="creature-card__notes" value={c.notes} />}
+                <div className="creature-card__actions">
+                  <button type="button" className="btn btn--text" onClick={() => openForm(c)}>
+                    Edit
+                  </button>
+                  <button type="button" className="btn btn--danger card-delete" onClick={() => removeCreature(c)}>
+                    Delete
+                  </button>
+                </div>
               </div>
             </article>
           ))}

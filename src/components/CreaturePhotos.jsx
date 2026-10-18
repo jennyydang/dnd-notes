@@ -68,28 +68,50 @@ export function PhotoPicker({ items, onChange, id = 'creature-photos' }) {
   )
 }
 
-// On a card: the first photo large, the rest as a strip; tap any to open
-// them full size and step through.
-export function CreatureGallery({ photos, name }) {
+// The top of a creature card: the cover photo edge to edge with the name
+// and type laid over it, and any more photos as a strip underneath. Tap a
+// photo to see them full size. Without photos, a quiet paw-print banner.
+export function CreatureHero({ photos, name, type }) {
   const list = photoList(photos)
   const [open, setOpen] = useState(null)
-  if (!list.length) return null
   const url = (p) => getPublicUrl(CREATURE_BUCKET, p)
+  const title = (
+    <span className="creature-hero__title">
+      <span className="creature-hero__name">{name}</span>
+      {type && <span className="creature-hero__type">{type}</span>}
+    </span>
+  )
+
+  if (!list.length) {
+    return (
+      <div className="creature-hero creature-hero--empty">
+        <span className="creature-hero__mark" aria-hidden="true">
+          <Icon name="creature" />
+        </span>
+        {title}
+      </div>
+    )
+  }
 
   return (
     <>
-      <div className={`creature-gallery${list.length > 1 ? ' creature-gallery--many' : ''}`}>
-        <button type="button" className="creature-gallery__cover" onClick={() => setOpen(0)} aria-label={`View photos of ${name}`}>
-          <img src={url(list[0])} alt={name} loading="lazy" />
-          {list.length > 1 && <span className="creature-gallery__count">{list.length} photos</span>}
+      <div className="creature-hero">
+        <button type="button" className="creature-hero__cover" onClick={() => setOpen(0)} aria-label={`View photos of ${name}`}>
+          <img src={url(list[0])} alt="" loading="lazy" />
+          {list.length > 1 && (
+            <span className="creature-hero__count">
+              <Icon name="image" /> {list.length}
+            </span>
+          )}
+          {title}
         </button>
         {list.length > 1 && (
-          <ul className="creature-gallery__thumbs">
+          <ul className="creature-hero__thumbs">
             {list.slice(1, 5).map((p, i) => (
               <li key={p}>
                 <button type="button" onClick={() => setOpen(i + 1)} aria-label={`Photo ${i + 2} of ${name}`}>
                   <img src={url(p)} alt="" loading="lazy" />
-                  {i === 3 && list.length > 5 && <span className="creature-gallery__more">+{list.length - 5}</span>}
+                  {i === 3 && list.length > 5 && <span className="creature-hero__more">+{list.length - 5}</span>}
                 </button>
               </li>
             ))}

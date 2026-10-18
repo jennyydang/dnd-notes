@@ -16,13 +16,15 @@
       margin-bottom: 0;
     }
 
+    // Return = a new paragraph with a blank line's gap; Shift+Return = a
+    // <br>, the next line right underneath.
     p {
-      margin: 0 0 0.45em;
+      margin: 0 0 1em;
     }
 
     ul,
     ol {
-      margin: 0.2em 0 0.45em;
+      margin: 0 0 1em;
       padding-left: 1.3em;
     }
 
