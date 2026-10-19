@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
 import { EXTRA_LABELS, QUICK_TYPES, payloadFor } from '../lib/quickTypes.js'
+import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
+import { useActiveSession } from '../hooks/useActiveSession.js'
+import { sessionLabel } from '../lib/mysteries.js'
 import Modal from './Modal.jsx'
 import LinkPicker from './LinkPicker.jsx'
 import Icon from './Icon.jsx'
@@ -27,6 +30,13 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
   const [created, setCreated] = useState(null)
 
   const def = QUICK_TYPES[type]
+  // A clue can go straight onto a mystery, and is stamped with the
+  // running session.
+  const [active] = useActiveSession(data.campaignId, data.playerId)
+  const session = sessionLabel(data.tables.session.items.length, active)
+  const openMysteries = useSupabaseTable('mysteries', {
+    filters: { campaign_id: type === 'clue' ? data.campaignId : [] },
+  }).items.filter((m) => !m.solved_at)
 
   async function submit(event) {
     event.preventDefault()
@@ -45,7 +55,7 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
     setError(null)
     try {
       const row = await data.tables[def.entity].addItem(
-        payloadFor(type, { name: trimmed, kind, notes: notes.trim(), extra: extra.trim() }),
+        payloadFor(type, { name: trimmed, kind, notes: notes.trim(), extra: extra.trim(), session }),
       )
       const entity = { type: def.entity, id: row.id }
       if (link) await data.linkEntities(entity, link, relation.trim())
@@ -118,6 +128,7 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
               onClick={() => {
                 setType(id)
                 setKind('')
+                if (id === 'clue' || type === 'clue') setExtra('')
               }}
             >
               <Icon name={t.icon} /> {t.label}
@@ -144,6 +155,20 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
             </p>
           )}
         </div>
+
+        {type === 'clue' && openMysteries.length > 0 && (
+          <div className="field">
+            <label htmlFor="quick-create-mystery">Belongs to</label>
+            <select id="quick-create-mystery" value={extra} onChange={(e) => setExtra(e.target.value)}>
+              <option value="">Loose for now</option>
+              {openMysteries.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.question}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {(def.kinds || EXTRA_LABELS[type]) && (
           <div className="form-row">
