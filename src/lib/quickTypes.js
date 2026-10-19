@@ -1,7 +1,8 @@
 import { TAG_GROUPS } from './tags.js'
 
 // The kinds of entry that can be created in one step. Each maps onto an
-// existing table/tab — a "clue" is a Lore entry with category Clue.
+// existing table/tab — a "clue" is a Lore entry with category Clue,
+// optionally on a mystery (`extra`) and stamped with the running session.
 export const QUICK_TYPES = {
   npc: { label: 'NPC', icon: 'user', entity: 'npc', nameLabel: 'Name', placeholder: 'Elandra Voss' },
   place: {
@@ -32,7 +33,7 @@ export const QUICK_TYPES = {
   },
 }
 
-export function payloadFor(type, { name, kind, notes, extra }) {
+export function payloadFor(type, { name, kind, notes, extra, session = '' }) {
   switch (type) {
     case 'npc':
       return { name, description: notes, met_at: extra }
@@ -41,7 +42,15 @@ export function payloadFor(type, { name, kind, notes, extra }) {
     case 'quest':
       return { name, status: 'Active', given_by: extra, notes }
     case 'clue':
-      return { title: name, category: 'Clue', notes }
+      // Only send the newer columns when there's something in them, so a
+      // database without the Mysteries update can still take a clue.
+      return {
+        title: name,
+        category: 'Clue',
+        notes,
+        ...(extra ? { mystery_id: extra } : {}),
+        ...(session ? { found_in: session } : {}),
+      }
     case 'lore':
       return { title: name, category: kind, notes }
     case 'loot':

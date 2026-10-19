@@ -1955,3 +1955,75 @@ begin
 end;
 $$;
 grant execute on function delete_campaign_invite(uuid, uuid) to anon;
+
+-- ── Mysteries, clues and theories ─────────────────────────────────────
+-- The Lore & Clues board. A clue is still a lore entry with category
+-- "Clue" (so search, links and the wiki keep working); it can now belong
+-- to a mystery, carry a status (lead / confirmed / herring) and say which
+-- session it turned up in. A clue with no mystery is a "loose clue".
+-- Solving a mystery writes its answer into a new lore entry (lore_id).
+create table if not exists mysteries (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  question text not null,
+  answer text not null default '',
+  solved_in text not null default '',
+  solved_at timestamptz,
+  lore_id uuid references lore_entries(id) on delete set null,
+  created_by uuid references players(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists mysteries_campaign_idx on mysteries (campaign_id, created_at);
+
+alter table lore_entries add column if not exists mystery_id uuid references mysteries(id) on delete set null;
+alter table lore_entries add column if not exists clue_status text not null default 'lead';
+alter table lore_entries add column if not exists found_in text not null default '';
+
+-- A theory: the party's guess at a mystery's answer, the clues for and
+-- against it (lore_entries ids), and one vote per player.
+create table if not exists theories (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  mystery_id uuid not null references mysteries(id) on delete cascade,
+  text text not null,
+  supports uuid[] not null default '{}',
+  against uuid[] not null default '{}',
+  created_by uuid references players(id) on delete set null,
+  author_name text not null default '',
+  found_in text not null default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists theories_campaign_idx on theories (campaign_id);
+
+create table if not exists theory_votes (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  theory_id uuid not null references theories(id) on delete cascade,
+  player_id uuid not null references players(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (theory_id, player_id)
+);
+create index if not exists theory_votes_campaign_idx on theory_votes (campaign_id);
+
+alter table mysteries enable row level security;
+alter table theories enable row level security;
+alter table theory_votes enable row level security;
+drop policy if exists "anon full access mysteries" on mysteries;
+drop policy if exists "anon full access theories" on theories;
+drop policy if exists "anon full access theory_votes" on theory_votes;
+create policy "anon full access mysteries" on mysteries for all to anon using (true) with check (true);
+create policy "anon full access theories" on theories for all to anon using (true) with check (true);
+create policy "anon full access theory_votes" on theory_votes for all to anon using (true) with check (true);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['mysteries', 'theories', 'theory_votes'] loop
+    if exists (select 1 from pg_publication where pubname = 'supabase_realtime') and not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;

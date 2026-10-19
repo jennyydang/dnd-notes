@@ -1,10 +1,87 @@
 @use '../styles/variables' as *;
 
 .lore-tab {
+  display: grid;
+  gap: 1.25rem;
+
+  &__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  // Mysteries | Lore
+  &__switch {
+    display: inline-flex;
+    padding: 0.25rem;
+    border: 1px solid $ink-soft;
+    border-radius: 999px;
+    background: $bg-panel;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 2.5rem;
+      padding: 0 1.1rem;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: $text-light;
+      font-family: $font-display;
+      font-size: 0.9rem;
+      cursor: pointer;
+
+      span {
+        color: $text-muted;
+        font-family: $font-body;
+        font-size: 0.8rem;
+      }
+
+      &.is-on {
+        background: $gold;
+        color: $bg-deep;
+        font-weight: 700;
+
+        span {
+          color: fade($bg-deep, 0.75);
+        }
+      }
+    }
+  }
+
   &__toolbar {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: flex-end;
+    gap: 0.75rem;
     margin-bottom: 1.25rem;
+  }
+}
+
+.lore-codex {
+  &__filters {
+    margin-right: auto;
+
+    .chip span {
+      color: $text-muted;
+      font-size: 0.8em;
+    }
+  }
+
+  &__group + &__group {
+    margin-top: 1.75rem;
+  }
+
+  &__heading {
+    margin: 0 0 0.75rem;
+    color: $gold;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
 }
 
@@ -81,5 +158,31 @@
     margin-top: auto;
     padding-top: 0.5rem;
     border-top: 1px solid fade($gold-dim, 0.3);
+  }
+}
+
+.lore-card--highlight {
+  border-color: $gold;
+  box-shadow: 0 0 0 2px fade($gold, 0.35);
+}
+
+// A lore entry that came from a solved mystery links back to it.
+.lore-card__mystery {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-self: start;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid $green;
+  border-radius: $radius;
+  background: fade($green, 0.12);
+  color: $green-text;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $green-light;
   }
 }

@@ -268,11 +268,24 @@ export const GUIDE = [
         ],
       },
       {
-        title: 'Lore, clues and factions',
-        where: 'Journal → Lore & Clues',
+        title: 'Mysteries and clues',
+        where: 'Journal → Lore & Clues → Mysteries',
         steps: [
-          '**+ Add Lore**: history, religions, factions and clues.',
+          '**+ Mystery** is a question the party wants answered: “Who hired the assassins?”',
+          '**+ Clue** jots down what you noticed. During a session it’s stamped with the session number; from the session dock it’s one tap.',
+          'Clues without a mystery wait in **Loose clues**. Drag one onto a mystery, or pick one from **Belongs to…**.',
+          'Open a mystery to mark each clue a **Lead**, **Confirmed** or a **Red herring**, and to pitch **theories**: say which clues support or argue against each one, and vote for the one you believe. The most-voted is the party’s best guess.',
+          '**Mark solved** and write the answer: the mystery gets a solved stamp, and the answer is saved to Lore.',
+        ],
+        tips: ['A mystery nobody has added to in four weeks says so, which is a good prompt for the DM.'],
+      },
+      {
+        title: 'Lore and factions',
+        where: 'Journal → Lore & Clues → Lore',
+        steps: [
+          '**+ Add Lore**: history, religions, factions and places, grouped by category.',
           'Give an entry the **Faction** category and its card gets a standing track. Tap **+ Standing** to set where the party stands, from Hated to Revered, and why.',
+          'A solved mystery’s answer shows here too, with a link back to its clues.',
         ],
       },
       {
