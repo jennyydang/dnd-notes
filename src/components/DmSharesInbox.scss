@@ -6,20 +6,30 @@
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid $gold-dim;
   background: $bg-panel;
+  // Its own colour, not the browser's button default (black on a Mac,
+  // blue on iOS), so the bell stands out on the dark button.
+  color: $gold-light;
   font-size: 1.15rem;
   line-height: 1;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover,
   &:focus-visible {
     border-color: $gold;
+    color: $parchment;
   }
 
   &--unread {
     border-color: $gold;
-    box-shadow: 0 0 0 3px rgba($gold, 0.18);
+    box-shadow: 0 0 0 3px fade($gold, 0.18);
   }
 
   &__count {
@@ -41,11 +51,64 @@
 }
 
 .dm-inbox {
-  padding: 1.5rem;
-  width: min(100%, 34rem);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__close {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.5rem -0.5rem -0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-muted;
+    font-size: 1.25rem;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      background: $bg-panel-raised;
+    }
+  }
+
+  &__empty {
+    padding: 1.25rem 1rem;
+    border-radius: $radius-lg;
+    background: $bg-deep;
+    text-align: center;
+    color: $text-muted;
+
+    p {
+      margin: 0;
+      text-wrap: balance;
+    }
+
+    p + p {
+      margin-top: 0.25rem;
+    }
+  }
+
+  &__empty-title {
+    font-family: $font-display;
+    color: $text-light;
+  }
 
   &__list {
     list-style: none;
@@ -156,5 +219,92 @@
 
   &__dismiss {
     margin-left: auto;
+  }
+}
+
+.dm-inbox__section {
+  margin: 0.25rem 0 -0.25rem;
+  font-family: $font-display;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $gold-light;
+}
+
+// A general notification (e.g. "Your suggestion was solved").
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.8rem 0.5rem 0.8rem 0.9rem;
+  background: $bg-deep;
+  border: 1px solid $ink-soft;
+  border-radius: $radius-lg;
+
+  &--unread {
+    border-color: fade($gold, 0.6);
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: fade($green, 0.35);
+    color: $green-text;
+    font-size: 1.1rem;
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  &__title {
+    font-family: $font-display;
+    color: $parchment;
+    overflow-wrap: anywhere;
+  }
+
+  &__text {
+    font-size: 0.92rem;
+    color: $text-light;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: pre-wrap;
+  }
+
+  &__time {
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+
+  &__dismiss {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: -0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      background: $bg-panel-raised;
+    }
   }
 }

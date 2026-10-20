@@ -1,0 +1,358 @@
+@use 'variables' as *;
+
+// ── Phones ────────────────────────────────────────────────────────────
+// Kept together so the mobile rules are easy to find. `:root` in front
+// gives these a little extra weight over the component styles they
+// adjust, whatever order the CSS loads in.
+
+// The notch, rounded corners and home bar. index.html asks for the page
+// to run edge to edge (viewport-fit=cover); these keep content clear of
+// them. They're 0 on devices without one.
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+@mixin safe-padding($y, $x: $y) {
+  padding: calc(#{$y} + var(--safe-top)) calc(#{$x} + var(--safe-right)) calc(#{$y} + var(--safe-bottom))
+    calc(#{$x} + var(--safe-left));
+}
+
+:root .app {
+  padding-top: calc(2rem + var(--safe-top));
+  padding-left: calc(1.5rem + var(--safe-left));
+  padding-right: calc(1.5rem + var(--safe-right));
+  padding-bottom: calc(4rem + var(--safe-bottom));
+}
+
+// Banners pinned to the top of the screen.
+:root .turn-alert,
+:root .level-up-banner,
+:root .downed-pulse__label {
+  top: calc(0.75rem + var(--safe-top));
+}
+
+// Full-screen overlays and dialog backdrops.
+:root .modal__backdrop,
+:root .lightbox,
+:root .spell-flavor-modal__backdrop,
+:root .world-map-viewer__form-backdrop,
+:root .world-map-viewer__details-backdrop {
+  @include safe-padding(2rem);
+}
+
+:root .reveal,
+:root .level-up {
+  @include safe-padding(1.5rem);
+}
+
+:root .previously {
+  @include safe-padding(1.5rem, 1rem);
+}
+
+:root .global-search {
+  padding-top: calc(4vh + var(--safe-top));
+  padding-left: calc(1rem + var(--safe-left));
+  padding-right: calc(1rem + var(--safe-right));
+}
+
+:root .lightbox__close {
+  top: calc(1.5rem + var(--safe-top));
+  right: calc(1.5rem + var(--safe-right));
+}
+
+// Full-screen viewers with a toolbar along the top.
+:root .art-viewer__bar {
+  padding-top: calc(0.6rem + var(--safe-top));
+  padding-left: calc(1rem + var(--safe-left));
+  padding-right: calc(1rem + var(--safe-right));
+}
+
+:root .world-map-viewer__toolbar {
+  padding-top: calc(0.85rem + var(--safe-top));
+  padding-left: calc(1.25rem + var(--safe-left));
+  padding-right: calc(1.25rem + var(--safe-right));
+}
+
+:root .world-map-viewer__viewport {
+  margin-bottom: var(--safe-bottom);
+}
+
+// Phones zoom the page in when you tap a text field set smaller than
+// 16px, and don't zoom back out. On touch screens every field is at least
+// 16px. (!important: it has to beat each form's own smaller sizes, and
+// it only applies to touch screens.)
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+  select,
+  textarea,
+  [contenteditable='true'] {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+// Fingers need about 44×44px to hit something reliably (Apple and
+// Google both recommend it). On touch screens the small controls grow to
+// that, without changing how they look on a desktop.
+@media (hover: none) and (pointer: coarse) {
+  :root {
+    .btn,
+    .view-toggle__btn,
+    .tab-nav__item,
+    .chip,
+    .entity-chip__open,
+    .account-menu__dropdown .btn {
+      min-height: 44px;
+    }
+
+    .icon-btn,
+    .stepper__btn,
+    .password-input__toggle,
+    .account-menu__avatar {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .rich-text__tool,
+    .rich-notes__tool {
+      min-width: 40px;
+      min-height: 40px;
+    }
+
+    // Text-only links in sentences ("Log in", "Forgot password?") get a
+    // taller hit area without moving the text.
+    .player-login__link {
+      padding-block: 0.6rem;
+    }
+
+    input[type='checkbox'] {
+      width: 1.35em;
+      height: 1.35em;
+    }
+  }
+}
+
+// ── On-screen keyboard (src/lib/keyboard.js) ──
+:root {
+  --keyboard-inset: 0px;
+}
+
+// Dialogs stop where the keyboard starts, so a form's fields and its
+// Save button can be scrolled into the part you can see.
+:root .modal__backdrop {
+  padding-bottom: calc(2rem + max(var(--safe-bottom), var(--keyboard-inset)));
+}
+
+:root .modal__panel {
+  max-height: min(80vh, calc(100dvh - var(--keyboard-inset) - 3rem - var(--safe-top)));
+}
+
+// Phones: the dialog sits in the middle of whatever's visible — clear
+// of the notch and home bar, and above the keyboard when it's open.
+@media (max-width: 720px) {
+  :root .modal__backdrop {
+    padding: calc(1rem + var(--safe-top)) calc(0.75rem + var(--safe-right))
+      calc(1rem + max(var(--safe-bottom), var(--keyboard-inset))) calc(0.75rem + var(--safe-left));
+  }
+
+  :root .modal__panel {
+    max-height: calc(100dvh - var(--keyboard-inset) - 2rem - var(--safe-top) - var(--safe-bottom));
+  }
+}
+
+// The page itself gets room to scroll the last field above the keyboard.
+:root.keyboard-open .app {
+  padding-bottom: calc(4rem + var(--keyboard-inset));
+}
+
+// The bottom bar and floating buttons would sit on top of the keyboard
+// and hide the field — they step aside while you type.
+:root.keyboard-open {
+  .bottom-nav,
+  .session-dock {
+    display: none;
+  }
+}
+
+// ── Swipe a card left for Edit / Delete (src/lib/swipeActions.js) ──
+// Phones only: tablets and desktops keep the buttons on the card. Keep
+// in step with PHONE_TOUCH in swipeActions.js.
+@media (max-width: 720px) and (hover: none) and (pointer: coarse) {
+  :root {
+    .npc-card,
+    .loot-card,
+    .creature-card,
+    .place-card,
+    .quest-card,
+    .lore-card,
+    .custom-entry-card,
+    .goal-card {
+      // Sideways drags belong to the swipe; up and down still scroll.
+      touch-action: pan-y;
+      transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    // On phones a card's Edit and Delete live behind the swipe.
+    .swipe-hidden {
+      display: none;
+    }
+
+    // …and an actions row with nothing else left in it goes too.
+    .swipeable [class*='__actions']:not(:has(> :not(.swipe-hidden))),
+    .swipeable .compact-actions:not(:has(> :not(.swipe-hidden))) {
+      display: none;
+    }
+  }
+}
+
+.swipe-tray {
+  position: absolute;
+  z-index: 50;
+  display: flex;
+  // Matches GAP in swipeActions.js, so card · Edit · Delete are evenly spaced.
+  gap: 6px;
+  padding: 0;
+  align-items: stretch;
+  opacity: 0;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.22s ease;
+
+  &__btn {
+    flex: 1;
+    border-radius: $radius-lg;
+    font-family: $font-display;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    border: 1px solid $gold-dim;
+    background: $bg-panel-raised;
+    color: $gold-light;
+
+    &--delete {
+      border-color: $maroon-light;
+      background: $maroon;
+      color: $maroon-text;
+    }
+  }
+}
+
+// While a finger is dragging, the card and tray follow it exactly.
+:root .swipe-moving {
+  transition: none;
+}
+
+// ── Pull to refresh (src/lib/pullToRefresh.js) ──
+// Chrome on Android has its own pull-to-reload that would restart the
+// whole app; ours refreshes the data in place instead.
+html,
+body {
+  overscroll-behavior-y: contain;
+}
+
+.pull-refresh {
+  --pull: 0px;
+  --progress: 0;
+  position: fixed;
+  top: calc(var(--safe-top) - 2.75rem);
+  left: 50%;
+  z-index: 70;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-left: -1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: $bg-panel-raised;
+  border: 1px solid $gold-dim;
+  box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translateY(var(--pull));
+  transition:
+    transform 0.25s ease,
+    opacity 0.2s ease;
+  pointer-events: none;
+
+  &--visible {
+    opacity: 1;
+    transition: opacity 0.1s ease;
+  }
+
+  &--ready {
+    border-color: $gold;
+    box-shadow:
+      0 0.35rem 1rem rgba(0, 0, 0, 0.55),
+      0 0 0.75rem fade($gold, 0.4);
+  }
+
+  &__ring {
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 50%;
+    border: 2.5px solid fade($gold-light, 0.25);
+    border-top-color: $gold-light;
+    transform: rotate(calc(var(--progress) * 300deg));
+  }
+
+  &--spinning {
+    transition: transform 0.2s ease;
+  }
+
+  &--spinning &__ring {
+    animation: pull-spin 0.7s linear infinite;
+  }
+}
+
+@keyframes pull-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ── Forms fit the screen ──
+// Text fields have a built-in minimum width; inside flex and grid
+// layouts that pushed them past the edge of narrow dialogs. Let every
+// field shrink to its container.
+.field,
+.field > * {
+  min-width: 0;
+}
+
+.field input,
+.field select,
+.field textarea,
+.field .password-input,
+.field .rich-text {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+// Photo-beside-fields layouts stack on phones: photo on top, fields
+// full width below.
+@media (max-width: 560px) {
+  :root {
+    .npc-form__layout,
+    .party-form__layout,
+    .campaign-form__layout,
+    .new-or-join__layout {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .npc-form__photo,
+    .party-form__photo,
+    .campaign-form__photo,
+    .new-or-join__photo {
+      align-self: center;
+    }
+
+    .npc-form__grid,
+    .party-form__grid {
+      grid-template-columns: 1fr;
+      width: 100%;
+    }
+  }
+}

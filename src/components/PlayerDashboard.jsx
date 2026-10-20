@@ -7,7 +7,9 @@ import ManageMembers from './ManageMembers.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import AccountMenu from './AccountMenu.jsx'
+import { NotificationBell } from './DmSharesInbox.jsx'
 import Modal from './Modal.jsx'
+import InviteBanner from './InviteBanner.jsx'
 import './Dashboard.scss'
 import CampaignSearch from './CampaignSearch.jsx'
 import { matchesCampaign } from '../lib/search.js'
@@ -89,7 +91,7 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 16 / 9, shape: 'rect', onCropped: applyPhoto })
+  const photoCrop = useImageCrop({ aspect: 16 / 9, shape: 'rect', onCropped: applyPhoto, onRemove: removePhoto })
 
   function applyPhoto(file) {
 
@@ -184,14 +186,9 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
               onChange={photoCrop.fromInput}
             />
             {form.photoPreview && (
-              <>
-                <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
-                  Adjust
-                </button>
-                <button type="button" className="btn btn--text" onClick={removePhoto}>
-                  Remove cover
-                </button>
-              </>
+              <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                Edit cover
+              </button>
             )}
             {photoCrop.dialog}
           </div>
@@ -253,25 +250,33 @@ function PlayerDashboard({ playerId, username, onOpenCampaign, onLogOut }) {
             + Campaign
           </button>
         </div>
-        <AccountMenu
-          username={username}
-          onOpenSettings={() => setShowSettings(true)}
-          onSendFeedback={() => setShowFeedback(true)}
-          onLogOut={onLogOut}
-        />
+        <div className="dashboard__toolbar-account">
+          <NotificationBell playerId={playerId} />
+          <AccountMenu
+            playerId={playerId}
+            username={username}
+            onOpenSettings={() => setShowSettings(true)}
+            onSendFeedback={() => setShowFeedback(true)}
+            onLogOut={onLogOut}
+          />
+        </div>
       </div>
 
+      <InviteBanner playerId={playerId} onJoined={onOpenCampaign} />
+
       {showChooser && (
-        <NewOrJoinCampaign
-          playerId={playerId}
-          onDone={handleCampaignReady}
-          onCancel={() => setShowChooser(false)}
-        />
+        <Modal onClose={() => setShowChooser(false)} label="Add a Campaign">
+          <NewOrJoinCampaign
+            playerId={playerId}
+            onDone={handleCampaignReady}
+            onCancel={() => setShowChooser(false)}
+          />
+        </Modal>
       )}
 
       {showFeedback && (
         <Modal onClose={() => setShowFeedback(false)} label="Send Feedback">
-          <FeedbackForm onDone={() => setShowFeedback(false)} />
+          <FeedbackForm playerId={playerId} onDone={() => setShowFeedback(false)} />
         </Modal>
       )}
 

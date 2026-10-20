@@ -28,12 +28,29 @@
     height: 0.7rem;
     border-radius: 50%;
     background: $green-light;
-    box-shadow: 0 0 0 3px rgba($green-light, 0.25);
+    box-shadow: 0 0 0 3px fade($green-light, 0.25);
 
     &--paused {
       background: $gray-light;
       box-shadow: none;
     }
+  }
+
+  // Record audio: a red dot and the running time while it records.
+  &__rec.is-on {
+    border-color: rgba(#e0574a, 0.7);
+    color: $text-light;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__rec-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin-right: 0.15rem;
+    border-radius: 50%;
+    background: #e0574a;
+    animation: session-mode-rec 1.2s ease-in-out infinite alternate;
   }
 
   &__status-actions {
@@ -89,12 +106,16 @@
       order: 1;
     }
 
-    &--initiative {
+    &--polls {
       order: 2;
     }
 
-    &--reference {
+    &--initiative {
       order: 3;
+    }
+
+    &--reference {
+      order: 4;
     }
   }
 
@@ -105,13 +126,16 @@
       margin-bottom: 0;
       width: 100%;
 
+      .tab-nav__scroll,
       .tab-nav__list {
         width: 100%;
         flex-wrap: nowrap;
       }
 
+      // Equal-width segments, labels centred like every other tab pill.
       .tab-nav__item {
         flex: 1;
+        justify-content: center;
         padding-left: 0.4rem;
         padding-right: 0.4rem;
         min-height: 2.75rem;
@@ -233,7 +257,7 @@
     font-size: 0.8rem;
     padding: 0.1rem 0.5rem;
     border-radius: 999px;
-    border: 1px solid rgba($maroon-light, 0.8);
+    border: 1px solid fade($maroon-light, 0.8);
     color: $maroon-text;
   }
 
@@ -246,18 +270,18 @@
     animation: vitals-flash 0.6s ease-out forwards;
 
     &--damage {
-      background: rgba($maroon-light, 0.45);
+      background: fade($maroon-light, 0.45);
     }
 
     &--heal {
-      background: rgba($green-light, 0.35);
+      background: fade($green-light, 0.35);
     }
   }
 
   &__hp-bar {
     height: 0.5rem;
     border-radius: 999px;
-    background: rgba($ink-soft, 0.8);
+    background: fade($ink-soft, 0.8);
     overflow: hidden;
 
     span {
@@ -329,7 +353,7 @@
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.75rem;
-    border: 1px dashed rgba($maroon-light, 0.8);
+    border: 1px dashed fade($maroon-light, 0.8);
     border-radius: $radius;
   }
 
@@ -351,7 +375,7 @@
     flex-direction: column;
     gap: 0.5rem;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 
   &__row-head {
@@ -415,7 +439,7 @@
     }
 
     border-radius: $radius;
-    border: 1px solid rgba($gold-dim, 0.6);
+    border: 1px solid fade($gold-dim, 0.6);
     background: $bg-deep;
     color: $text-muted;
     font-size: 1.1rem;
@@ -423,7 +447,7 @@
     &--available {
       color: $gold-light;
       border-color: $gold;
-      background: rgba($gold, 0.12);
+      background: fade($gold, 0.12);
     }
   }
 
@@ -435,7 +459,7 @@
   &__rests {
     justify-content: flex-start;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 }
 
@@ -540,7 +564,7 @@
 
       &:hover,
       &:focus-visible {
-        background: rgba($gold, 0.12);
+        background: fade($gold, 0.12);
         color: $gold-light;
       }
     }
@@ -586,15 +610,291 @@
     gap: 0.35rem;
   }
 
+  // Two classes so it outranks the shared .btn colours.
+  &__call.btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    min-height: 3.5rem;
+    padding: 0.7rem 1rem;
+    border-color: #e2735c;
+    background: linear-gradient(180deg, #a3301f, #6e1a12);
+    color: #fff3ef;
+    font-size: 1.1rem;
+
+    &:hover {
+      background: linear-gradient(180deg, #b93a26, #6e1a12);
+    }
+  }
+
+  &__call-sub {
+    font-family: $font-body;
+    font-size: 0.8rem;
+    letter-spacing: 0;
+    color: #f4d6cd;
+  }
+
+  &__call-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    border-radius: $radius-lg;
+    border: 1px solid rgba(#e2735c, 0.45);
+    background: rgba(#6e1a12, 0.18);
+  }
+
+  &__dice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  &__dice-size {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: $text-muted;
+    font-size: 0.9rem;
+
+    select {
+      min-height: 2.5rem;
+      padding: 0 0.6rem;
+      border-radius: $radius;
+      border: 1px solid $ink-soft;
+      background: $bg-deep;
+      color: $text-light;
+      font-family: $font-display;
+    }
+  }
+
+  &__modes {
+    display: inline-flex;
+    padding: 0.2rem;
+    gap: 0.2rem;
+    border-radius: 999px;
+    border: 1px solid fade($gold-dim, 0.5);
+    background: $bg-deep;
+  }
+
+  &__mode {
+    min-height: 2.3rem;
+    padding: 0 0.8rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: $text-muted;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &--on {
+      background: $bg-panel-raised;
+      color: $gold-light;
+      box-shadow: inset 0 0 0 1px fade($gold, 0.55);
+    }
+  }
+
+  &__grip {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.5rem;
+    margin-left: -0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-muted;
+    cursor: grab;
+    touch-action: none;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      background: $bg-panel-raised;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &__rolling {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: $radius;
+    border: 1px solid rgba(#e2735c, 0.6);
+    background: rgba(#6e1a12, 0.35);
+
+    p {
+      margin: 0;
+      color: $text-light;
+    }
+
+    strong {
+      color: #f4b3a3;
+    }
+  }
+
+  &__shared {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__live-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: $green-light;
+  }
+
+  &__party {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  &__chip {
+    min-height: 2.25rem;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    border: 1px dashed fade($gold-dim, 0.8);
+    background: transparent;
+    color: $gold-light;
+    font-size: 0.88rem;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-style: solid;
+      background: $bg-panel-raised;
+    }
+  }
+
+  &__expired {
+    margin: 0;
+    padding: 0.45rem 0.7rem;
+    border-radius: $radius;
+    background: fade($gold, 0.1);
+    border: 1px solid fade($gold, 0.35);
+    color: $gold-light;
+    font-size: 0.9rem;
+  }
+
+  &__you {
+    margin-left: 0.45rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: fade($green, 0.4);
+    color: $green-text;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    vertical-align: middle;
+  }
+
+  &__line {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  &__conditions {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0.15rem 2.6rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  &__condition {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.15rem 0.1rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid fade($maroon-light, 0.55);
+    background: fade($maroon, 0.25);
+    color: $maroon-text;
+    font-size: 0.8rem;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6rem;
+      height: 1.6rem;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+
+      &:hover,
+      &:focus-visible {
+        background: fade($maroon-light, 0.35);
+      }
+    }
+  }
+
+  &__cond-left {
+    min-width: 1.2rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: $maroon-light;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-align: center;
+  }
+
+  &__cond-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding-left: 2.6rem;
+
+    input {
+      flex: 1 1 8rem;
+      min-height: 2.5rem;
+    }
+  }
+
+  &__cond-rounds {
+    flex: 0 1 4.5rem !important;
+  }
+
   &__row {
     transition:
       background 0.25s ease,
       border-color 0.25s ease,
-      box-shadow 0.25s ease;
+      box-shadow 0.25s ease,
+      transform 0.15s ease;
+
+    &--dragging {
+      border-color: $gold;
+      box-shadow: $shadow-panel;
+      opacity: 0.95;
+    }
+
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
+    flex-direction: column;
+    gap: 0.35rem;
     min-height: 2.75rem;
+    justify-content: center;
     padding: 0.3rem 0.4rem 0.3rem 0.6rem;
     background: $bg-deep;
     border: 1px solid $ink-soft;
@@ -606,16 +906,34 @@
 
     &--current {
       border-color: $gold;
-      background: rgba($gold, 0.14);
-      box-shadow: 0 0 0 1px rgba($gold, 0.4);
+      background: fade($gold, 0.14);
+      box-shadow: 0 0 0 1px fade($gold, 0.4);
     }
   }
 
+  // A small caption over a row's numbers ("INIT", "HP") so it's clear
+  // what each one is.
+  &__label {
+    font-family: $font-body;
+    font-size: 0.62rem;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
   &__score {
-    min-width: 2rem;
-    text-align: center;
+    min-width: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  &__value {
     font-family: $font-display;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
+    line-height: 1;
     color: $parchment;
   }
 
@@ -632,8 +950,9 @@
 
   &__hp {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.15rem;
     font-size: 0.8rem;
     color: $text-muted;
 
@@ -664,15 +983,6 @@
 }
 
 .reference {
-  .tab-nav--pill {
-    max-width: 100%;
-    overflow-x: auto;
-
-    .tab-nav__list {
-      flex-wrap: nowrap;
-    }
-  }
-
   &__spells,
   &__inventory {
     list-style: none;
@@ -756,7 +1066,7 @@
     li {
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px dotted rgba($gold-dim, 0.3);
+      border-bottom: 1px dotted fade($gold-dim, 0.3);
       padding: 0.15rem 0;
     }
   }
@@ -819,14 +1129,22 @@
   }
 }
 
+@keyframes session-mode-rec {
+  to {
+    opacity: 0.35;
+  }
+}
+
 // ── Injuries (session/InjuriesPanel.jsx) ─────────────────────────────────
 // Pain 1 → 5 runs candle-gold → blood-red; the number is always drawn too.
+// A fixed scale (build-time hex, not the themeable custom properties) so
+// the shades can be lightened and tinted below.
 $pain-colors: (
-  1: color.adjust($gold, $lightness: 8%),
-  2: $gold,
+  1: color.adjust(raw('gold'), $lightness: 8%),
+  2: raw('gold'),
   3: #c9772a,
-  4: $maroon-light,
-  5: $maroon,
+  4: raw('maroon-light'),
+  5: raw('maroon'),
 );
 
 .session-mode__panel--vitals {

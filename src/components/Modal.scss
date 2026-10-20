@@ -1,3 +1,5 @@
+@use '../styles/variables' as *;
+
 .modal {
   &__backdrop {
     position: fixed;
@@ -9,6 +11,9 @@
     justify-content: center;
     padding: 2rem;
     overflow-y: auto;
+    // Scrolling that reaches a dialog's end stops there, never passing on
+    // to the page behind.
+    overscroll-behavior: contain;
   }
 
   &__panel {
@@ -17,6 +22,7 @@
     max-width: 42rem;
     max-height: 80vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 1.5rem;
 
     // Forms rendered here (via the shared renderXForm(false) pattern) no
@@ -26,17 +32,47 @@
     form {
       margin: 0;
     }
+
+    &--narrow {
+      max-width: 30rem;
+    }
+
+    // A form's Cancel / Save row stays pinned to the bottom of the dialog
+    // while a long form scrolls under it.
+    --pad: 1.5rem;
+
+    [class*='form__actions'] {
+      position: sticky;
+      bottom: calc(-1 * var(--pad));
+      z-index: 3;
+      margin: 0 calc(-1 * var(--pad)) calc(-1 * var(--pad));
+      padding: 1.25rem var(--pad) var(--pad);
+      background: linear-gradient(fade($bg-panel, 0), $bg-panel 1.1rem);
+    }
   }
 }
 
-// Phones: use nearly the whole screen for the dialog.
+// Phones: still centred, using nearly the whole width with an even
+// margin all round (safe-area and keyboard spacing are in
+// styles/_mobile.scss).
 @media (max-width: 720px) {
-  .modal__backdrop {
-    padding: 0.75rem;
-  }
-
   .modal__panel {
-    max-height: 92vh;
+    max-width: none;
     padding: 1.1rem;
+    --pad: 1.1rem;
+
+    &--narrow {
+      max-width: none;
+    }
   }
+}
+
+// A form that brings its own panel styling shouldn't draw a second box
+// inside the dialog's.
+.modal__panel > .panel {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }

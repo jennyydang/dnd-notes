@@ -1,0 +1,371 @@
+@use '../styles/variables' as *;
+
+.web {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+
+  &__toolbar {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  &__search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 1 1 14rem;
+    max-width: 22rem;
+    padding: 0 0.8rem;
+    border: 1px solid fade($gold-dim, 0.6);
+    border-radius: 999px;
+    background: $bg-deep;
+    color: $text-muted;
+
+    input {
+      flex: 1;
+      min-width: 0;
+      min-height: 2.5rem;
+      border: 0;
+      background: transparent;
+      color: $text-light;
+      outline: none;
+    }
+  }
+
+  &__matches {
+    font-size: 0.8rem;
+    color: $gold;
+  }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+
+    // Phones: one row that scrolls sideways, so the web keeps the screen.
+    @media (max-width: 720px) {
+      flex-wrap: nowrap;
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+
+      .chip {
+        flex: none;
+      }
+    }
+  }
+
+  &__chip:not(.chip--active) {
+    opacity: 0.55;
+  }
+
+  &__dot {
+    display: inline-block;
+    flex: none;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+
+    &--big {
+      width: 1rem;
+      height: 1rem;
+      margin-top: 0.35rem;
+    }
+  }
+
+  &__canvas {
+    position: relative;
+    height: clamp(26rem, calc(100dvh - 17rem), 52rem);
+    padding: 0;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+    background:
+      radial-gradient(circle at 50% 45%, fade($gold, 0.07), transparent 65%),
+      $bg-panel;
+
+    &.is-dragging {
+      cursor: grabbing;
+    }
+  }
+
+  &__svg {
+    display: block;
+  }
+
+  &__edge {
+    stroke: fade($gold-light, 0.28);
+    stroke-linecap: round;
+    transition:
+      stroke 0.2s,
+      opacity 0.2s;
+
+    &.is-lit {
+      stroke: fade($gold-light, 0.85);
+    }
+
+    &.is-dim {
+      opacity: 0.12;
+    }
+  }
+
+  &__node {
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &.is-dim {
+      opacity: 0.18;
+    }
+  }
+
+  &__dot-node {
+    stroke: fade($bg-deep, 0.9);
+    stroke-width: 2;
+    transition: transform 0.2s;
+  }
+
+  &__attitude {
+    fill: none;
+    stroke-width: 2.5;
+  }
+
+  &__halo {
+    fill: transparent;
+    stroke: transparent;
+    stroke-width: 2;
+  }
+
+  &__node:hover &__dot-node {
+    transform: scale(1.15);
+  }
+
+  &__node.is-selected &__halo {
+    stroke: $gold-light;
+    animation: web-pulse 1.8s ease-in-out infinite;
+  }
+
+  // The party hub: a gold coin the members gather round.
+  &__node--hub &__dot-node {
+    stroke: $gold-light;
+    stroke-width: 3;
+  }
+
+  &__node--hub &__label {
+    font-family: $font-display;
+    fill: $gold-light;
+  }
+
+  &__node.is-match &__halo {
+    stroke: fade($gold-light, 0.7);
+    stroke-dasharray: 3 3;
+  }
+
+  &__label {
+    fill: $text-light;
+    font-family: $font-body;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: fade($bg-deep, 0.9);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+
+  &__zoom {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    display: grid;
+    gap: 0.35rem;
+
+    .icon-btn {
+      border: 1px solid fade($gold-dim, 0.6);
+      background: fade($bg-deep, 0.85);
+    }
+  }
+
+  &__empty {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 0.75rem;
+    height: 100%;
+    padding: 2rem;
+    color: $text-muted;
+    text-align: center;
+
+    svg {
+      width: 2.5rem;
+      height: 2.5rem;
+      color: $gold-dim;
+    }
+
+    p {
+      max-width: 30rem;
+    }
+
+    kbd {
+      padding: 0 0.3rem;
+      border: 1px solid fade($gold-dim, 0.6);
+      border-radius: 4px;
+      color: $gold-light;
+    }
+  }
+
+  // Right-hand panel; a sheet along the bottom on phones.
+  &__panel {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    width: min(19rem, calc(100% - 1.5rem));
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.9rem;
+    overflow: hidden;
+    cursor: default;
+    box-shadow: $shadow-panel;
+    animation: web-panel-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+
+    @media (max-width: 720px) {
+      top: auto;
+      left: 0.5rem;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      width: auto;
+      max-height: 48%;
+      animation-name: web-sheet-in;
+    }
+  }
+
+  &__panel-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+
+    > div {
+      flex: 1;
+      min-width: 0;
+    }
+
+    h3 {
+      margin: 0;
+      font-family: $font-display;
+      font-size: 1.2rem;
+      color: $gold-light;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__panel-kind {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
+  &__open {
+    flex: none;
+    min-height: 2.5rem;
+    padding: 0.3rem 0.9rem;
+  }
+
+  &__panel-count {
+    margin: 0;
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__connections {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  &__connection {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.4rem 0.3rem;
+    border: 0;
+    border-bottom: 1px solid fade($gold-dim, 0.25);
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: fade($gold, 0.08);
+    }
+  }
+
+  &__connection-text {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+
+    strong {
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    span {
+      font-size: 0.8rem;
+      color: $text-muted;
+    }
+  }
+
+  &__weight {
+    font-family: $font-display;
+    font-size: 0.85rem;
+    color: $gold;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: $text-muted;
+    text-align: center;
+  }
+}
+
+@keyframes web-pulse {
+  50% {
+    stroke-width: 5;
+    stroke-opacity: 0.5;
+  }
+}
+
+@keyframes web-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+}
+
+@keyframes web-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web__node.is-selected .web__halo,
+  .web__panel {
+    animation: none;
+  }
+}

@@ -9,7 +9,7 @@ import SecretNpcsTab from './SecretNpcsTab.jsx'
 import ArtGallery from './ArtGallery.jsx'
 import DmMapsTab from './DmMapsTab.jsx'
 import DmCreaturesTab from './DmCreaturesTab.jsx'
-import { DmSharesBell } from './DmSharesInbox.jsx'
+import { NotificationBell } from './DmSharesInbox.jsx'
 import LootTab from './LootTab.jsx'
 import QuestsTab from './QuestsTab.jsx'
 import SessionNotesTab from './SessionNotesTab.jsx'
@@ -25,6 +25,23 @@ import GlobalSearch from './GlobalSearch.jsx'
 import EntityDetailModal from './EntityDetailModal.jsx'
 import QuickCreateModal from './QuickCreateModal.jsx'
 import AccountMenu from './AccountMenu.jsx'
+import { HereToo, PartyPresence, SyncStatus } from './LiveStatus.jsx'
+import { usePartyPresence } from '../hooks/usePartyPresence.js'
+import { usePlayerAvatar } from '../lib/profiles.js'
+import SessionDock from './session/SessionDock.jsx'
+import RecordingBar from './session/RecordingBar.jsx'
+import TurnAlert from './session/TurnAlert.jsx'
+import { PollPopup } from './session/Polls.jsx'
+import RelationshipWeb from './RelationshipWeb.jsx'
+import DmOverview from './DmOverview.jsx'
+import { CombatBadge, CombatMode } from './session/CombatMode.jsx'
+import RevealOverlay from './RevealOverlay.jsx'
+import ShardAlert from './ShardAlert.jsx'
+import DownedPulse from './session/DownedPulse.jsx'
+import LevelUp from './session/LevelUp.jsx'
+import PartyLevelUp from './session/PartyLevelUp.jsx'
+import InitiativeTracker from './session/InitiativeTracker.jsx'
+import DmPlayersTab from './DmPlayersTab.jsx'
 import FeedbackForm from './FeedbackForm.jsx'
 import SettingsPanel from './SettingsPanel.jsx'
 import Modal from './Modal.jsx'
@@ -32,6 +49,8 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { CampaignNavContext } from '../hooks/useCampaignData.js'
 import CampaignDataProvider from './CampaignDataProvider.jsx'
 import { getStored, setStored } from '../lib/sessionMode.js'
+import { navigate, usePath } from '../lib/router.js'
+import { campaignPath, parseRoute } from '../lib/routes.js'
 import Icon from './Icon.jsx'
 import './CampaignView.scss'
 
@@ -43,9 +62,11 @@ const TAB_DEFS = {
   session: { label: 'Session Mode', icon: 'dice' },
   tools: { label: 'Tools', icon: 'tools' },
   sessions: { label: 'Session Notes', icon: 'book' },
+  wiki: { label: 'World Wiki', icon: 'library' },
   timeline: { label: 'Timeline', icon: 'hourglass' },
+  web: { label: 'Connections', icon: 'network' },
   npcs: { label: 'NPCs', icon: 'users' },
-  creatures: { label: 'Monsters & Creatures', icon: 'monster' },
+  creatures: { label: 'Creatures', icon: 'creature' },
   art: { label: 'Art', icon: 'image' },
   maps: { label: 'Maps & Places', icon: 'map' },
   quests: { label: 'Quests', icon: 'quest' },
@@ -58,7 +79,10 @@ const TAB_DEFS = {
   'dm-npcs': { label: 'NPCs', icon: 'users' },
   'dm-art': { label: 'Art', icon: 'image' },
   'dm-maps': { label: 'Maps', icon: 'map' },
-  'dm-creatures': { label: 'Monsters', icon: 'monster' },
+  'dm-creatures': { label: 'Creatures', icon: 'creature' },
+  'dm-combat': { label: 'Combat', icon: 'quest' },
+  'dm-overview': { label: 'Party Overview', icon: 'compass' },
+  'dm-players': { label: 'Players', icon: 'shield' },
 }
 
 const AREAS = [
@@ -68,26 +92,36 @@ const AREAS = [
     id: 'journal',
     label: 'Journal',
     icon: 'book',
-    tabs: ['sessions', 'timeline', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
+    tabs: ['sessions', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
     custom: true,
   },
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
-  { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep'] },
+  { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep', 'wiki'] },
   // The admin's view of the DM tools (DMs themselves get DM_AREAS).
-  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
+  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-overview', 'dm-players', 'dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
 
-// A DM's whole view of the campaign: just their private NPCs, monsters, art and maps,
-// each with a Share button that notifies the players.
+// A DM's whole view of the campaign: just their private NPCs, creatures, art and maps,
+// each with a Reveal button that shows it to the players.
 const DM_AREAS = [
+  // What the party has pieced together, so the DM can follow along.
+  { id: 'dm-overview', label: 'Overview', icon: 'compass', tabs: ['dm-overview'] },
+  // Everything the party has written about the world, as a wiki.
+  { id: 'dm-wiki', label: 'World Wiki', icon: 'library', tabs: ['wiki'] },
+  // Who's in the campaign, their characters, and sign-up invite links.
+  { id: 'dm-players', label: 'Players', icon: 'shield', tabs: ['dm-players'] },
   { id: 'dm-npcs', label: 'NPCs', icon: 'users', tabs: ['dm-npcs'] },
-  { id: 'dm-creatures', label: 'Monsters', icon: 'monster', tabs: ['dm-creatures'] },
+  { id: 'dm-creatures', label: 'Creatures', icon: 'creature', tabs: ['dm-creatures'] },
   { id: 'dm-art', label: 'Art', icon: 'image', tabs: ['dm-art'] },
   { id: 'dm-maps', label: 'Maps', icon: 'map', tabs: ['dm-maps'] },
+  // The shared initiative tracker, so the DM can run turn order.
+  { id: 'dm-combat', label: 'Combat', icon: 'quest', tabs: ['dm-combat'] },
+  // Party votes, plus the shared calculators and trackers.
+  { id: 'dm-tools', label: 'Tools', icon: 'tools', tabs: ['tools'] },
 ]
 
 const NO_PLAYER = '00000000-0000-0000-0000-000000000000'
-const membershipFromRow = (r) => ({ id: r.id, role: r.role })
+const membershipFromRow = (r) => ({ id: r.id, role: r.role, createdBy: r.created_by })
 
 const customTabPrefix = 'custom:'
 
@@ -99,21 +133,36 @@ const fromCustomTabRow = (r) => ({
 })
 
 const lastTabKey = (campaignId) => `dnd-notes-last-tab:${campaignId}`
+const viewAsKey = (campaignId) => `dnd-notes-view-as:${campaignId}`
 
-function CampaignView({ campaignId, campaignName, playerId, username, onBack, onLogOut }) {
-  // Reopen where the player left off in this campaign (survives refresh).
-  const [activeTab, setActiveTabState] = useState(() => getStored(lastTabKey(campaignId), 'home'))
+function CampaignView({ campaignId, campaignName, slug, admin = false, playerId, username, onBack, onLogOut }) {
+  // The screen comes from the address (/c/anadoss/quests); without one,
+  // reopen where the player left off in this campaign.
+  const route = parseRoute(usePath())
+  // (The wiki opens in a tab of its own now, so it's never reopened here.)
+  const [lastTab] = useState(() => {
+    const stored = getStored(lastTabKey(campaignId), 'home')
+    return stored === 'wiki' ? 'home' : stored
+  })
+  const activeTab = route.tab || lastTab
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  // Sidebar groups (Session, Journal, Character…) folded away, remembered.
+  const [foldedGroups, setFoldedGroups] = useState(() => getStored('dnd-notes-sidebar-folded', []))
+  function toggleGroup(id) {
+    setFoldedGroups((all) => {
+      const next = all.includes(id) ? all.filter((g) => g !== id) : [...all, id]
+      setStored('dnd-notes-sidebar-folded', next)
+      return next
+    })
+  }
   const [showFeedback, setShowFeedback] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-  const [detailStack, setDetailStack] = useState([])
   const [quickCreate, setQuickCreate] = useState(null)
   const [addRequest, setAddRequest] = useState(null)
 
   const {
     items: customTabs,
-    addItem: addCustomTab,
     updateItem: updateCustomTab,
     removeItem: removeCustomTab,
   } = useSupabaseTable('custom_tabs', {
@@ -142,13 +191,21 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     orderBy: 'name',
     filters: { id: campaignId, player_id: playerId || NO_PLAYER },
   })
-  const isDm = !playerId || memberships.some((m) => m.role === 'dm')
+  const isDmRole = !playerId || memberships.some((m) => m.role === 'dm')
+  // A DM who also plays can switch to the player's view of the campaign
+  // (remembered per campaign); `isDm` is whichever role they're acting in.
+  const canSwitchView = Boolean(playerId) && isDmRole
+  const [viewAs, setViewAsState] = useState(() => getStored(viewAsKey(campaignId), 'dm'))
+  const isDm = isDmRole && !(canSwitchView && viewAs === 'player')
+  // The campaign's creator and its DMs (and the admin) arrange shared
+  // things, like the order of a map's pins.
+  const canArrange = isDmRole || memberships.some((m) => m.role === 'creator' || m.createdBy === playerId)
   const dmView = Boolean(playerId) && isDm
   // Hold the screen until the role is known, so a DM doesn't see the
   // player layout flash first.
   const roleReady = !playerId || !roleLoading
   const areas = dmView ? DM_AREAS : AREAS.filter((area) => !area.dmOnly || isDm)
-  const homeTab = dmView ? 'dm-npcs' : 'home'
+  const homeTab = dmView ? 'dm-overview' : 'home'
 
   const areaTabs = (area) => [
     ...area.tabs.map((id) => ({ id, ...TAB_DEFS[id] })),
@@ -156,14 +213,38 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
   ]
   const allTabs = areas.flatMap(areaTabs)
 
+  const pathFor = useCallback((tab, entity = null) => campaignPath(slug, { admin, tab, entity }), [slug, admin])
+  // Entries open in a pop-up over the screen they were opened on, without
+  // touching the address. Opening one from another stacks it, so Back
+  // returns to the first. (The standalone wiki's "Open entry" hands one
+  // over in the history state.)
+  const [detail, setDetail] = useState(() => {
+    const open = window.history.state?.open
+    return open ? { tab: '*', stack: [open] } : { tab: null, stack: [] }
+  })
+  useEffect(() => {
+    if (window.history.state?.open) window.history.replaceState(null, '')
+  }, [])
   const setActiveTab = useCallback(
     (tab) => {
-      setActiveTabState(tab)
+      // The World Wiki has a page of its own, in a new browser tab.
+      if (tab === 'wiki') {
+        window.open(campaignPath(slug, { admin, world: true }), '_blank', 'noopener')
+        return
+      }
       setStored(lastTabKey(campaignId), tab)
+      navigate(pathFor(tab))
       window.scrollTo({ top: 0 })
     },
-    [campaignId],
+    [campaignId, pathFor, slug, admin],
   )
+
+  function switchView(next) {
+    if (next === (isDm ? 'dm' : 'player')) return
+    setViewAsState(next)
+    setStored(viewAsKey(campaignId), next)
+    setActiveTab(next === 'dm' ? 'dm-overview' : 'home')
+  }
 
   // Falls back to Home if the remembered tab no longer exists (e.g. a
   // custom tab someone deleted) or isn't this player's to see. While the
@@ -172,6 +253,35 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     allTabs.some((t) => t.id === activeTab) || (roleLoading && TAB_DEFS[activeTab]) ? activeTab : homeTab
   const activeArea =
     areas.find((area) => areaTabs(area).some((t) => t.id === knownTab)) || areas[0]
+
+  // Keep the address on the screen actually shown: fill it in when it has
+  // none, and correct it when it names one that isn't there (once the
+  // role is known, so a DM's link isn't lost while it loads).
+  useEffect(() => {
+    // An address for the in-app wiki now goes to the wiki's own page.
+    if (knownTab === 'wiki') {
+      const ref = route.entity && { type: route.entity.type, id: route.entity.ref }
+      navigate(campaignPath(slug, { admin, world: true, entity: ref }), { replace: true })
+      return
+    }
+    const stray = route.entity
+    if (roleReady && (route.tab !== knownTab || stray)) navigate(pathFor(knownTab), { replace: true })
+  }, [roleReady, route.tab, route.entity, knownTab, pathFor, slug, admin])
+  useEffect(() => {
+    if (roleReady && route.tab === knownTab) setStored(lastTabKey(campaignId), knownTab)
+  }, [roleReady, route.tab, knownTab, campaignId])
+
+  // Who's here and which page each is on, for the header faces and the
+  // "here too" strip over the page.
+  const myAvatar = usePlayerAvatar(playerId)
+  const people = usePartyPresence(
+    campaignId,
+    playerId,
+    username,
+    myAvatar,
+    knownTab,
+    allTabs.find((t) => t.id === knownTab)?.label || '',
+  )
 
   // Cmd/Ctrl+K opens global search from anywhere in the campaign.
   useEffect(() => {
@@ -184,15 +294,6 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
-
-  async function handleAddTab(name, isPrivate) {
-    const created = await addCustomTab({
-      name,
-      is_private: isPrivate,
-      created_by: playerId || null,
-    })
-    setActiveTab(`${customTabPrefix}${created.id}`)
-  }
 
   async function handleRenameTab(tabId, name) {
     await updateCustomTab(tabId, { name })
@@ -210,42 +311,50 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
 
   const nav = {
     goTo: (tab, options = {}) => {
-      setDetailStack([])
       setSearchOpen(false)
       setActiveTab(tab)
       if (options.add) setAddRequest({ tab, at: Date.now() })
     },
-    openEntity: (type, id) => setDetailStack((stack) => [...stack, { type, id }]),
+    openEntity: (type, id) =>
+      setDetail((d) => ({ tab: knownTab, stack: [...(d.tab === knownTab || d.tab === '*' ? d.stack : []), { type, id }] })),
     openSearch: () => setSearchOpen(true),
     openQuickCreate: (type = 'npc', initial = {}) => setQuickCreate({ type, initial }),
     tabs: allTabs,
     isDm,
+    canArrange,
   }
   const addRequestFor = (tab) => (addRequest?.tab === tab ? addRequest.at : null)
-
-  const topDetail = detailStack[detailStack.length - 1]
+  // Leaving the screen (a tab, or the back button) leaves its pop-up behind.
+  const topDetail = detail.tab === knownTab || detail.tab === '*' ? detail.stack[detail.stack.length - 1] : null
 
   return (
     <CampaignDataProvider campaignId={campaignId} playerId={playerId}>
       <CampaignNavContext.Provider value={nav}>
         <div className="campaign-view">
+          {/* Back to the campaign list, in the page's top-left corner (phones
+              have theirs in the top bar instead). */}
+          <button type="button" className="btn btn--text campaign-view__back" onClick={onBack}>
+            &larr; <span className="campaign-view__back-all">All </span>Campaigns
+          </button>
           <div className="campaign-view__topbar">
-            <button
-              type="button"
-              className="campaign-view__hamburger"
-              onClick={() => setSidebarOpen((v) => !v)}
-              aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-              aria-pressed={sidebarOpen}
-            >
-              <Icon name="menu" />
-            </button>
-            <button
-              type="button"
-              className="btn btn--text campaign-view__mobile-back"
-              onClick={onBack}
-            >
-              &larr; Campaigns
-            </button>
+            <div className="campaign-view__topbar-start">
+              <button
+                type="button"
+                className="campaign-view__hamburger"
+                onClick={() => setSidebarOpen((v) => !v)}
+                aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+                aria-pressed={sidebarOpen}
+              >
+                <Icon name="menu" />
+              </button>
+              <button
+                type="button"
+                className="btn btn--text campaign-view__mobile-back"
+                onClick={onBack}
+              >
+                &larr; Campaigns
+              </button>
+            </div>
 
             {dmView ? (
               <span className="campaign-view__search-spacer" />
@@ -266,19 +375,48 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               </button>
             )}
 
-            {playerId && roleReady && !isDm && <DmSharesBell campaignId={campaignId} playerId={playerId} />}
+            <div className="campaign-view__topbar-end">
+              {canSwitchView && roleReady && (
+                <div className="view-switch" role="group" aria-label="View the campaign as">
+                  {[
+                    { id: 'dm', label: 'DM', icon: 'eye' },
+                    { id: 'player', label: 'Player', icon: 'user' },
+                  ].map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      className={`view-switch__option${(isDm ? 'dm' : 'player') === v.id ? ' is-on' : ''}`}
+                      aria-pressed={(isDm ? 'dm' : 'player') === v.id}
+                      title={v.id === 'dm' ? 'DM view: your private notes and DM tools' : 'Player view: the campaign as your character'}
+                      onClick={() => switchView(v.id)}
+                    >
+                      <Icon name={v.icon} />
+                      <span className="view-switch__label">{v.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {roleReady && <CombatBadge target={dmView ? 'dm-combat' : 'session'} />}
+              <SyncStatus />
+              <PartyPresence people={people} />
 
-            <AccountMenu
-              username={username}
-              onOpenSettings={() => setShowSettings(true)}
-              onSendFeedback={() => setShowFeedback(true)}
-              onLogOut={onLogOut}
-            />
+              {playerId && roleReady && (
+                <NotificationBell playerId={playerId} campaignId={campaignId} dmShares={!isDm} />
+              )}
+
+              <AccountMenu
+                playerId={playerId}
+                username={username}
+                onOpenSettings={() => setShowSettings(true)}
+                onSendFeedback={() => setShowFeedback(true)}
+                onLogOut={onLogOut}
+              />
+            </div>
           </div>
 
           {showFeedback && (
             <Modal onClose={() => setShowFeedback(false)} label="Send Feedback">
-              <FeedbackForm onDone={() => setShowFeedback(false)} />
+              <FeedbackForm playerId={playerId} onDone={() => setShowFeedback(false)} />
             </Modal>
           )}
 
@@ -295,9 +433,9 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               key={`${topDetail.type}:${topDetail.id}`}
               type={topDetail.type}
               id={topDetail.id}
-              canGoBack={detailStack.length > 1}
-              onBack={() => setDetailStack((stack) => stack.slice(0, -1))}
-              onClose={() => setDetailStack([])}
+              canGoBack={detail.stack.length > 1}
+              onBack={() => setDetail((d) => ({ ...d, stack: d.stack.slice(0, -1) }))}
+              onClose={() => setDetail({ tab: null, stack: [] })}
             />
           )}
 
@@ -309,34 +447,68 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
             />
           )}
 
+          {/* Home and Session Mode have their own quick add and session controls. */}
+          {!dmView && <SessionDock hidden={knownTab === 'home' || knownTab === 'session'} />}
+          {/* While a session is being recorded (any tab). */}
+          <RecordingBar />
+          {roleReady && <TurnAlert />}
+          {/* A new party vote pops up wherever you are (Session Mode shows it in place). */}
+          {playerId && roleReady && <PollPopup onSessionTab={knownTab === (isDm ? 'tools' : 'session')} />}
+          {/* Combat theme for everyone; the shake-and-roll alert is for players. */}
+          {roleReady && <CombatMode showAlert={Boolean(playerId) && !isDm} />}
+          {/* Players see the DM's live reveals; the DM is the one sending them. */}
+          {playerId && roleReady && !isDm && <RevealOverlay campaignId={campaignId} />}
+          {playerId && roleReady && !isDm && <ShardAlert campaignId={campaignId} playerId={playerId} />}
+          {/* A heartbeat at the screen edges while your character is dying. */}
+          {playerId && roleReady && !isDm && <DownedPulse />}
+          {/* Celebrates a party member's level going up, for everyone. */}
+          {roleReady && <LevelUp />}
+
           <div
             className={`campaign-view__body${sidebarOpen ? '' : ' campaign-view__body--sidebar-collapsed'}`}
           >
             {sidebarOpen && (
               <aside className="campaign-view__sidebar" aria-label="Campaign navigation">
-                <button type="button" className="btn btn--text campaign-view__back" onClick={onBack}>
-                  &larr; All Campaigns
-                </button>
-
                 <div className="campaign-view__title-block">
                   <h2 className="campaign-view__name">{campaignName}</h2>
                 </div>
 
-                {roleReady && areas.map((area) => (
-                  <div className="campaign-view__group" key={area.id}>
-                    {area.tabs.length > 1 && (
-                      <h3 className="campaign-view__group-label">{area.label}</h3>
-                    )}
-                    <TabNav
-                      tabs={areaTabs(area)}
-                      activeTab={knownTab}
-                      onSelect={setActiveTab}
-                      className="tab-nav--sidebar"
-                      label={`${area.label} sections`}
-                      vertical
-                    />
-                  </div>
-                ))}
+                {roleReady && areas.map((area) => {
+                  const foldable = area.tabs.length > 1
+                  const folded = foldable && foldedGroups.includes(area.id)
+                  const holdsActive = areaTabs(area).some((t) => t.id === knownTab)
+                  return (
+                    <div className={`campaign-view__group${folded ? ' is-folded' : ''}`} key={area.id}>
+                      {foldable && (
+                        <h3 className="campaign-view__group-label">
+                          <button
+                            type="button"
+                            className="campaign-view__group-toggle"
+                            aria-expanded={!folded}
+                            aria-controls={`sidebar-group-${area.id}`}
+                            onClick={() => toggleGroup(area.id)}
+                          >
+                            <Icon name="next" className="campaign-view__group-chevron" />
+                            {area.label}
+                            {folded && holdsActive && <span className="campaign-view__group-dot" aria-label="(current page)" />}
+                          </button>
+                        </h3>
+                      )}
+                      <div className="campaign-view__group-body" id={`sidebar-group-${area.id}`} inert={folded || undefined}>
+                        <div className="campaign-view__group-inner">
+                          <TabNav
+                            tabs={areaTabs(area)}
+                            activeTab={knownTab}
+                            onSelect={setActiveTab}
+                            className="tab-nav--sidebar"
+                            label={`${area.label} sections`}
+                            vertical
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </aside>
             )}
 
@@ -347,18 +519,18 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                   tabs={areaTabs(activeArea)}
                   activeTab={knownTab}
                   onSelect={setActiveTab}
-                  onAddTab={activeArea.custom ? handleAddTab : undefined}
                   className="tab-nav--pill campaign-view__subnav"
                   label={`${activeArea.label} sections`}
                 />
               )}
 
               {!roleReady && <p className="empty-state">Loading…</p>}
-              {/* Keyed per screen so each one fades in when you switch to it. */}
+              {roleReady && <HereToo people={people} tab={knownTab} />}
+              {/* Keyed per screen so each tab starts fresh. */}
               {roleReady && (
               <div key={knownTab} className="campaign-view__screen">
               {knownTab === 'home' && <HomeHub campaignName={campaignName} />}
-              {knownTab === 'session' && <SessionMode />}
+              {knownTab === 'session' && <SessionMode campaignName={campaignName} />}
               {knownTab === 'prep' && <PrepTab />}
               {knownTab === 'character' && <CharacterTab />}
               {knownTab === 'sessions' && (
@@ -371,6 +543,7 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
                 />
               )}
               {knownTab === 'timeline' && <TimelineTab campaignId={campaignId} playerId={playerId} />}
+              {knownTab === 'web' && <RelationshipWeb />}
               {knownTab === 'spells' && <SpellsTab campaignId={campaignId} playerId={playerId} />}
               {knownTab === 'party' && <PartyTab campaignId={campaignId} playerId={playerId} />}
               {knownTab === 'maps' && <MapsTab campaignId={campaignId} />}
@@ -386,7 +559,15 @@ function CampaignView({ campaignId, campaignName, playerId, username, onBack, on
               {isDm && knownTab === 'dm-art' && <ArtGallery campaignId={campaignId} manage />}
               {isDm && knownTab === 'dm-maps' && <DmMapsTab campaignId={campaignId} />}
               {isDm && knownTab === 'dm-creatures' && <DmCreaturesTab campaignId={campaignId} />}
-              {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} />}
+              {isDm && knownTab === 'dm-overview' && <DmOverview />}
+              {isDm && knownTab === 'dm-players' && <DmPlayersTab campaignName={campaignName} />}
+              {isDm && knownTab === 'dm-combat' && (
+                <div className="campaign-view__combat">
+                  <InitiativeTracker />
+                  <PartyLevelUp />
+                </div>
+              )}
+              {knownTab === 'tools' && <ToolsTab campaignId={campaignId} playerId={playerId} isDm={isDm} />}
               {activeCustomTab && (
                 <CustomTab
                   key={activeCustomTab.id}

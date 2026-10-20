@@ -5,6 +5,12 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 1.5rem;
+
+  &__polls {
+    flex: 1 1 420px;
+    max-width: 560px;
+    min-width: 0;
+  }
 }
 
 .currency-calculator {
@@ -39,7 +45,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
     padding-top: 1rem;
   }
 
@@ -134,7 +140,7 @@
     flex-direction: column;
     gap: 0.75rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 
   &__purchase-title {
@@ -210,7 +216,7 @@
 
     &:hover:not(:disabled) {
       border-color: $gold;
-      background: rgba($gold, 0.12);
+      background: fade($gold, 0.12);
     }
 
     &:disabled {
@@ -220,6 +226,7 @@
   }
 
   &__count {
+    align-self: center;
     min-width: 6rem;
     text-align: center;
     font-family: $font-display;
@@ -233,7 +240,7 @@
     align-items: flex-end;
     gap: 0.75rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
 
     .field {
       flex: 1;
@@ -241,7 +248,8 @@
     }
   }
 
-  &__admin-list {
+  // The DM's list: one row per player, count and give/take controls.
+  &__players {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -250,20 +258,100 @@
     gap: 0.6rem;
   }
 
-  &__admin-row {
-    display: flex;
+  &__player {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
     background: $bg-deep;
     border: 1px solid $ink-soft;
     border-radius: $radius;
-    padding: 0.6rem 0.9rem;
+    padding: 0.5rem 0.6rem 0.5rem 0.9rem;
     color: $text-light;
   }
 
-  &__admin-count {
+  &__who {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__player-count {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 3.5rem;
     color: $gold-light;
+    font-family: $font-display;
+    font-size: 1.1rem;
+  }
+
+  // "+3" / "−2" floats up off the count when the DM changes it.
+  &__flash {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    font-size: 0.9rem;
+    pointer-events: none;
+    animation: shard-flash 1.1s ease-out forwards;
+
+    &--gain {
+      color: $green-text;
+    }
+
+    &--loss {
+      color: $maroon-text;
+    }
+  }
+
+  &__give {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    .shard-tracker__step {
+      width: 2.4rem;
+      height: 2.4rem;
+      font-size: 1.25rem;
+    }
+  }
+
+  &__amount-input {
+    width: 3.2rem;
+    min-height: 2.4rem;
+    padding: 0.2rem 0.3rem;
+    text-align: center;
+    background: $bg-panel;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    color: $text-light;
+
+    &:focus {
+      border-color: $gold;
+    }
+  }
+
+  @media (max-width: 480px) {
+    &__player {
+      grid-template-columns: 1fr auto;
+    }
+
+    &__give {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
+    }
+  }
+}
+
+@keyframes shard-flash {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0.4rem);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -0.9rem);
   }
 }
 
@@ -325,7 +413,7 @@
     list-style: none;
     margin: 0;
     padding: 1rem 0 0;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 0.75rem;

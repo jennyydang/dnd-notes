@@ -1,0 +1,277 @@
+@use '../../styles/variables' as *;
+
+.poll {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid fade($gold, 0.3);
+  border-radius: $radius;
+  background: fade($bg-deep, 0.35);
+
+  & + & {
+    margin-top: 0.75rem;
+  }
+
+  &__head {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  &__question {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 1.1rem;
+    color: $gold-light;
+  }
+
+  &__meta {
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__options {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.45rem 0.8rem;
+    overflow: hidden;
+    border: 1px solid fade($gold, 0.35);
+    border-radius: $radius;
+    background: fade($bg-panel-raised, 0.8);
+    color: $text-light;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s,
+      transform 0.12s;
+
+    &:hover:not(:disabled) {
+      border-color: $gold;
+    }
+
+    &:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+
+    &.is-mine {
+      border-color: $gold-light;
+      box-shadow: 0 0 0 2px fade($gold, 0.25);
+    }
+
+    &.is-winner {
+      border-color: $gold-light;
+      animation: poll-winner 1.6s ease-in-out 2;
+
+      .poll__bar {
+        background: linear-gradient(90deg, fade($gold, 0.55), fade($gold-light, 0.35));
+      }
+    }
+  }
+
+  // Fills from the left as votes arrive (scaleX, so it animates smoothly).
+  &__bar {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(90deg, fade($gold, 0.32), fade($gold, 0.16));
+    transform-origin: left center;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  &__label,
+  &__count {
+    position: relative;
+    z-index: 1;
+  }
+
+  &__label {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    overflow-wrap: anywhere;
+
+    svg {
+      flex: none;
+      color: $gold-light;
+    }
+  }
+
+  &__count {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-family: $font-display;
+    font-size: 1.1rem;
+    color: $gold-light;
+  }
+
+  &__share {
+    min-width: 2.6rem;
+    font-family: $font-body;
+    font-size: 0.8rem;
+    color: $text-muted;
+    text-align: right;
+  }
+
+  &__voters {
+    margin: 0.2rem 0 0 0.8rem;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: $text-muted;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__delete {
+    margin-left: auto;
+  }
+
+  &__saved {
+    margin: 0;
+    font-size: 0.8rem;
+    color: $green-light;
+  }
+
+  &--closed &__option:not(.is-winner) {
+    opacity: 0.75;
+  }
+
+  &--compact {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+}
+
+.poll-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  &__options {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    legend {
+      margin-bottom: 0.35rem;
+      font-size: 0.9rem;
+      color: $text-muted;
+    }
+
+    > .btn {
+      justify-self: start;
+    }
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}
+
+.polls-panel__past {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+
+  > .btn {
+    justify-self: start;
+  }
+}
+
+// Bottom-right on wide screens, above the bottom tabs on phones.
+.poll-popup {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  z-index: 94;
+  width: min(23rem, calc(100vw - 2rem));
+  padding: 0.75rem 0.9rem 0.9rem;
+  border-color: $gold-light;
+  box-shadow:
+    $shadow-panel,
+    0 0 0 3px fade($gold, 0.2);
+  animation: poll-popup-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+  }
+
+  &__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $gold;
+  }
+
+  @media (max-width: 720px) {
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes poll-popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.96);
+  }
+}
+
+@keyframes poll-winner {
+  50% {
+    box-shadow: 0 0 1.1rem fade($gold, 0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poll__bar,
+  .poll__option {
+    transition: none;
+  }
+
+  .poll__option.is-winner,
+  .poll-popup {
+    animation: none;
+  }
+}

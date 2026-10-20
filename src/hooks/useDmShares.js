@@ -12,7 +12,8 @@ const shareFromRow = (r) => ({
 })
 
 // Everything the DM has shared in this campaign, newest first, plus a
-// lookup of the latest share per item ("npc:<id>" → share).
+// lookup of the latest share per item ("npc:<id>" → share) and the keys
+// of items the DM has revealed to the table.
 export function useDmShares(campaignId) {
   const { items, loading, error, refetch } = useSupabaseTable('dm_shares', {
     fromRow: shareFromRow,
@@ -27,5 +28,9 @@ export function useDmShares(campaignId) {
     }
     return map
   }, [items])
-  return { shares: items, byKey, loading, error, refetch }
+  const revealedKeys = useMemo(
+    () => new Set(items.filter((s) => s.payload.reveal).map((s) => shareKey(s.kind, s.sourceId))),
+    [items],
+  )
+  return { shares: items, byKey, revealedKeys, loading, error, refetch }
 }

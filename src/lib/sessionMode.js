@@ -1,3 +1,4 @@
+import { noteToRecapHtml } from './noteTags.js'
 // Live-session helpers: the "session in progress" marker, per-device UI
 // state kept in localStorage (never user content — that lives in Supabase),
 // and turning quick notes into a session recap without retyping them.
@@ -24,9 +25,24 @@ function write(key, value) {
 const activeKey = (campaignId, playerId) => `dnd-notes-active-session:${campaignId}:${playerId || 'admin'}`
 const encounterKey = (campaignId) => `dnd-notes-encounter:${campaignId}`
 
+// Fired on this page whenever the active session changes, so Home, Session
+// Mode and the floating session dock stay in step.
+export const ACTIVE_SESSION_EVENT = 'dnd-notes-active-session'
+
 // { startedAt: ISO string, paused: bool } or null.
 export const getActiveSession = (campaignId, playerId) => read(activeKey(campaignId, playerId), null)
-export const setActiveSession = (campaignId, playerId, value) => write(activeKey(campaignId, playerId), value)
+export function setActiveSession(campaignId, playerId, value) {
+  write(activeKey(campaignId, playerId), value)
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(ACTIVE_SESSION_EVENT))
+}
+// The stored JSON as-is (a stable snapshot for useSyncExternalStore).
+export function getActiveSessionRaw(campaignId, playerId) {
+  try {
+    return localStorage.getItem(activeKey(campaignId, playerId))
+  } catch {
+    return null
+  }
+}
 
 export const getEncounter = (campaignId) => read(encounterKey(campaignId), null)
 export const setEncounter = (campaignId, value) => write(encounterKey(campaignId), value)
@@ -56,13 +72,6 @@ export function todayIso(date = new Date()) {
   return new Date(date.getTime() - offset).toISOString().slice(0, 10)
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
-
 // Oldest first, one bullet per note, prefixed with its time — the same
 // HTML shape the recap editor produces, so it opens ready to edit.
 export function quickNotesToRecapHtml(notes) {
@@ -71,7 +80,8 @@ export function quickNotesToRecapHtml(notes) {
   const items = sorted
     .map((note) => {
       const time = formatTime(note.createdAt)
-      const lines = escapeHtml(note.content.trim()).split('\n').join('<br>')
+      // Tags in a note (e.g. an NPC added from a DM share) become real recap tags.
+      const lines = noteToRecapHtml(note.content.trim()).split('\n').join('<br>')
       return `<li><p>${time ? `<strong>${time}</strong> — ` : ''}${lines}</p></li>`
     })
     .join('')

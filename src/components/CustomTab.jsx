@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Modal from './Modal.jsx'
 import './CustomTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const emptyForm = { title: '', notes: '' }
 
@@ -106,15 +107,22 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
       </div>
       <div className="field">
         <label htmlFor="custom-entry-notes">Notes</label>
-        <textarea
+        <RichTextEditor
           id="custom-entry-notes"
           value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+          ariaLabel="Notes"
           placeholder="Write your notes here..."
         />
       </div>
       {formError && <p className="empty-state empty-state--error">{formError}</p>}
       <div className="custom-entry-form__actions">
+        {/* Delete lives here, away from Save — not on the card. */}
+        {editingId && (
+          <button type="button" className="btn btn--danger form-delete" onClick={() => removeEntry(editingId)}>
+            Delete
+          </button>
+        )}
         <button type="button" className="btn btn--text" onClick={cancelForm}>
           Cancel
         </button>
@@ -166,7 +174,15 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
         </Modal>
       )}
 
-      {isAdding && renderEntryForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Entry">
+
+          {renderEntryForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit Entry">
@@ -186,7 +202,7 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
           {entries.map((entry) => (
             <article className="custom-entry-card panel" key={entry.id}>
               <h3 className="custom-entry-card__title">{entry.title}</h3>
-              {entry.notes && <p className="custom-entry-card__notes">{entry.notes}</p>}
+              {entry.notes && <RichText className="custom-entry-card__notes" value={entry.notes} />}
               <div className="custom-entry-card__actions">
                 <button
                   type="button"
@@ -197,7 +213,7 @@ function CustomTab({ tabId, tabName, onRename, onDelete }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="btn btn--danger card-delete"
                   onClick={() => removeEntry(entry.id)}
                 >
                   Delete

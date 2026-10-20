@@ -4,11 +4,17 @@ import { useActiveCharacter } from '../hooks/useActiveCharacter.js'
 import { useCharacterSheet } from '../hooks/useCharacterSheet.js'
 import { useQuickNotes } from '../hooks/useQuickNotes.js'
 import { initiativeBonus } from '../lib/character.js'
-import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessionMode.js'
+import { formatDateTime } from '../lib/sessionMode.js'
+import { useActiveSession } from '../hooks/useActiveSession.js'
+import { useSessionRecorder } from '../hooks/useSessionRecorder.js'
+import { addRecordingMark, formatDuration, recordingSupported, startRecording, stopRecording } from '../lib/sessionRecorder.js'
+import PreviouslyOn from './session/PreviouslyOn.jsx'
 import TabNav from './TabNav.jsx'
 import VitalsPanel from './session/VitalsPanel.jsx'
 import InjuriesPanel from './session/InjuriesPanel.jsx'
 import QuickNotesPanel from './session/QuickNotesPanel.jsx'
+import { PollsPanel } from './session/Polls.jsx'
+import { GoalStrip } from './PartyGoals.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import ReferencePanel from './session/ReferencePanel.jsx'
 import EndSessionModal from './session/EndSessionModal.jsx'
@@ -23,6 +29,10 @@ const PANELS = [
   { id: 'initiative', label: 'Initiative' },
   { id: 'reference', label: 'Reference' },
 ]
+// Players follow combat through the turn banner and roll prompt; the
+// initiative tracker itself is the DM's (and the admin's). Players vote
+// here; the DM runs votes from Tools.
+const PLAYER_PANELS = [...PANELS.filter((p) => p.id !== 'initiative' && p.id !== 'reference'), { id: 'polls', label: 'Vote' }, { id: 'reference', label: 'Reference' }]
 
 const QUICK_ADD = [
   { type: 'npc', label: 'NPC', icon: 'user' },
@@ -33,7 +43,7 @@ const QUICK_ADD = [
 
 // Needs the sheet, so it only renders once a character is chosen; keyed
 // by character so switching characters starts a fresh autosave.
-function CharacterPanels({ campaignId, character, nav, panelClass }) {
+function CharacterPanels({ campaignId, character, nav, panelClass, showInitiative }) {
   const sheetApi = useCharacterSheet(campaignId, character.id)
   return (
     <>
@@ -41,13 +51,15 @@ function CharacterPanels({ campaignId, character, nav, panelClass }) {
         <VitalsPanel character={character} sheetApi={sheetApi} onEditSheet={() => nav.goTo('character')} />
         <InjuriesPanel sheetApi={sheetApi} />
       </div>
-      <div className={panelClass('initiative')}>
-        <InitiativeTracker
-          campaignId={campaignId}
-          characterName={character.name}
-          characterInitBonus={sheetApi.sheet ? initiativeBonus(sheetApi.sheet.mechanics) : null}
-        />
-      </div>
+      {showInitiative && (
+        <div className={panelClass('initiative')}>
+          <InitiativeTracker
+            campaignId={campaignId}
+            characterName={character.name}
+            characterInitBonus={sheetApi.sheet ? initiativeBonus(sheetApi.sheet.mechanics) : null}
+          />
+        </div>
+      )}
       <div className={panelClass('reference')}>
         {sheetApi.sheet && (
           <ReferencePanel
@@ -65,24 +77,29 @@ function CharacterPanels({ campaignId, character, nav, panelClass }) {
 // Low-distraction live-game screen. On phones one panel shows at a time
 // (switcher at the top, big touch targets); wider screens show them all
 // side by side. Nothing here requires leaving the screen to record a note.
-function SessionMode() {
-  const { campaignId, playerId } = useCampaignData()
+function SessionMode({ campaignName }) {
+  const { campaignId, playerId, entities } = useCampaignData()
   const nav = useCampaignNav()
   const { character, party, isAdmin, pick, loading } = useActiveCharacter()
   const quickNotes = useQuickNotes()
-  const [active, setActive] = useState(() => getActiveSession(campaignId, playerId))
+  const [active, save] = useActiveSession(campaignId, playerId)
   const [panel, setPanel] = useState('vitals')
   const [ending, setEnding] = useState(false)
   const [endedMessage, setEndedMessage] = useState(null)
+  const [showPreviously, setShowPreviously] = useState(false)
+  const hasStory = entities.some((e) => e.type === 'session' || e.open)
 
-  function save(next) {
-    setActiveSession(campaignId, playerId, next)
-    setActive(next)
+  function begin() {
+    setShowPreviously(false)
+    save({ startedAt: new Date().toISOString(), paused: false })
   }
 
   const sessionNotes = active
     ? quickNotes.notes.filter((n) => !n.sessionNoteId && new Date(n.createdAt) >= new Date(active.startedAt))
     : []
+
+  const rec = useSessionRecorder()
+  const recording = !rec.target && (rec.status === 'recording' || rec.status === 'paused')
 
   const panelClass = (id) => `session-mode__panel session-mode__panel--${id}${panel === id ? ' session-mode__panel--active' : ''}`
 
@@ -99,6 +116,28 @@ function SessionMode() {
               <button type="button" className="btn" onClick={() => save({ ...active, paused: !active.paused })}>
                 <Icon name={active.paused ? 'play' : 'pause'} /> {active.paused ? 'Resume' : 'Pause'}
               </button>
+              {/* Record the table; it's saved with the recap at End session. */}
+              {recordingSupported() &&
+                (recording ? (
+                  <>
+                    <button type="button" className="btn" onClick={() => addRecordingMark()} title="Bookmark this moment">
+                      <Icon name="bookmark" /> Mark{rec.marks.length ? ` (${rec.marks.length})` : ''}
+                    </button>
+                    <button type="button" className="btn session-mode__rec is-on" onClick={() => stopRecording()}>
+                      <span className="session-mode__rec-dot" aria-hidden="true" /> {formatDuration(rec.seconds)} · Stop
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn session-mode__rec"
+                    onClick={() => startRecording(null)}
+                    disabled={rec.status !== 'idle' || Boolean(rec.pending && !rec.target)}
+                    title={rec.pending && !rec.target ? 'A recording is waiting to be saved with the recap' : undefined}
+                  >
+                    <Icon name="mic" /> Record audio
+                  </button>
+                ))}
               <button type="button" className="btn btn--danger" onClick={() => setEnding(true)}>
                 ■ End session
               </button>
@@ -112,7 +151,8 @@ function SessionMode() {
               className="btn btn--primary"
               onClick={() => {
                 setEndedMessage(null)
-                save({ startedAt: new Date().toISOString(), paused: false })
+                if (hasStory) setShowPreviously(true)
+                else begin()
               }}
             >
               <Icon name="play" /> Start session
@@ -134,7 +174,9 @@ function SessionMode() {
         ))}
       </div>
 
-      <TabNav tabs={PANELS} activeTab={panel} onSelect={setPanel} className="tab-nav--pill session-mode__switcher" label="Session panels" />
+      <GoalStrip />
+
+      <TabNav tabs={nav.isDm ? PANELS : PLAYER_PANELS} activeTab={panel} onSelect={setPanel} className="tab-nav--pill session-mode__switcher" label="Session panels" />
 
       {isAdmin && (
         <CharacterPicker party={party} value={character?.id || ''} onChange={pick} />
@@ -142,7 +184,14 @@ function SessionMode() {
 
       <div className="session-mode__grid">
         {character ? (
-          <CharacterPanels key={character.id} campaignId={campaignId} character={character} nav={nav} panelClass={panelClass} />
+          <CharacterPanels
+            key={character.id}
+            campaignId={campaignId}
+            character={character}
+            nav={nav}
+            panelClass={panelClass}
+            showInitiative={nav.isDm}
+          />
         ) : (
           <div className={panelClass('vitals')}>
             <SectionCard title="Character" icon="heart">
@@ -164,11 +213,18 @@ function SessionMode() {
         <div className={panelClass('notes')}>
           <QuickNotesPanel quickNotes={quickNotes} since={active?.startedAt} />
         </div>
+        {!nav.isDm && (
+          <div className={panelClass('polls')}>
+            <PollsPanel />
+          </div>
+        )}
         {!character && (
           <>
-            <div className={panelClass('initiative')}>
-              <InitiativeTracker campaignId={campaignId} />
-            </div>
+            {nav.isDm && (
+              <div className={panelClass('initiative')}>
+                <InitiativeTracker campaignId={campaignId} />
+              </div>
+            )}
             <div className={panelClass('reference')}>
               <SectionCard title="Reference" icon="library">
                 <p className="inline-state">Pick a character to see their spells, inventory and skills.</p>
@@ -177,6 +233,10 @@ function SessionMode() {
           </>
         )}
       </div>
+
+      {showPreviously && (
+        <PreviouslyOn campaignName={campaignName} onClose={() => setShowPreviously(false)} onBegin={begin} />
+      )}
 
       {ending && (
         <EndSessionModal

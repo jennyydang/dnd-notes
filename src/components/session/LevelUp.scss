@@ -1,0 +1,182 @@
+@use '../../styles/variables' as *;
+
+// LevelUp.jsx — your own character: a burst of light.
+.level-up {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at center, fade($gold, 0.28), transparent 60%),
+    rgba(8, 6, 4, 0.96);
+  animation: fade-in 0.3s ease-out;
+  cursor: pointer;
+
+  &__rays {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    animation: rays-spin 12s linear infinite;
+
+    span {
+      position: absolute;
+      left: -0.6rem;
+      bottom: 0;
+      width: 1.2rem;
+      height: 75vmax;
+      transform-origin: 50% 100%;
+      transform: rotate(calc(var(--i) * 30deg)) scaleY(0);
+      background: linear-gradient(to top, fade($gold-light, 0.5), transparent 70%);
+      clip-path: polygon(50% 100%, 0 0, 100% 0);
+      animation: ray-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--i) * 0.03s) forwards;
+    }
+  }
+
+  &__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    text-align: center;
+    animation: level-pop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) 0.15s backwards;
+  }
+
+  &__portrait {
+    width: 7rem;
+    height: 7rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid $gold-light;
+    box-shadow:
+      0 0 0 0.4rem fade($gold, 0.25),
+      0 0 3rem fade($gold-light, 0.6);
+    margin-bottom: 0.5rem;
+
+    &--initial {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: $bg-panel-raised;
+      color: $gold-light;
+      font-family: $font-display;
+      font-size: 3rem;
+    }
+  }
+
+  &__eyebrow {
+    margin: 0;
+    font-family: $font-display;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: $gold-light;
+  }
+
+  &__level {
+    margin: 0;
+    font-family: $font-display;
+    font-size: clamp(2.6rem, 12vw, 4.5rem);
+    line-height: 1;
+    color: $parchment;
+    text-shadow:
+      0 0 1.2rem fade($gold-light, 0.8),
+      0 0.15rem 0 $gold-dim;
+  }
+
+  &__name {
+    margin: 0.25rem 0 0;
+    color: $text-light;
+    font-size: 1.1rem;
+  }
+
+  &__hint {
+    margin: 1rem 0 0;
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+}
+
+// Someone else's character: a banner that drops in at the top.
+.level-up-banner {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  z-index: 125;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid $gold;
+  background: linear-gradient(180deg, $bg-panel-raised, $bg-panel);
+  color: $text-light;
+  font: inherit;
+  box-shadow:
+    0 0.5rem 1.5rem rgba(0, 0, 0, 0.5),
+    0 0 1.5rem fade($gold, 0.35);
+  transform: translateX(-50%);
+  animation: banner-drop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
+  cursor: pointer;
+
+  strong {
+    color: $gold-light;
+  }
+
+  &__star {
+    color: $gold-light;
+    font-size: 1.2rem;
+    animation: star-spin 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes ray-grow {
+  to {
+    transform: rotate(calc(var(--i) * 30deg)) scaleY(1);
+  }
+}
+
+@keyframes rays-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes level-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes banner-drop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -150%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes star-spin {
+  50% {
+    transform: rotate(180deg) scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .level-up__rays {
+    display: none;
+  }
+}

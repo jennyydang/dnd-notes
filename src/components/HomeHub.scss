@@ -10,8 +10,8 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 1.25rem;
-    padding: 1.4rem 1.5rem;
+    gap: 1rem;
+    padding: 1.1rem 1.5rem;
   }
 
   &__eyebrow {
@@ -42,20 +42,28 @@
   }
 
   // The one action that matters most, big enough to hit mid-conversation.
+  // Sized like a primary button, not a banner: the hero's main action
+  // without dominating it.
   &__start {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem;
-    min-height: 3.5rem;
-    min-width: min(100%, 16rem);
-    font-size: 1.15rem;
-    padding: 0.8rem 1.6rem;
+    justify-content: center;
+    gap: 0.1rem;
+    min-height: 2.75rem;
+    font-size: 1rem;
+    padding: 0.5rem 1.25rem;
+
+    > span:first-child {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
   }
 
   &__start-meta {
     font-family: $font-body;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     letter-spacing: 0;
   }
 
@@ -108,7 +116,7 @@
 
     &:hover,
     &:focus-visible {
-      background: linear-gradient(rgba($gold, 0.08), rgba($gold, 0.08)), $bg-panel;
+      background: linear-gradient(fade($gold, 0.08), fade($gold, 0.08)), $bg-panel;
     }
   }
 

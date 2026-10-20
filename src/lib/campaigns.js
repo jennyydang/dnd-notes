@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js'
+import { notifyTableChanged } from '../hooks/useSupabaseTable.js'
 
 export async function createCampaign(playerId, { name, description, coverImagePath }) {
   const { data, error } = await supabase.rpc('create_campaign', {
@@ -78,4 +79,47 @@ export async function listAllMemberships() {
     joinCode: r.join_code,
     isCreator: Boolean(r.created_by) && r.created_by === r.player_id,
   }))
+}
+
+// Who's in a campaign, with display names (DM's Players tab). Falls back
+// to usernames only on a database without the "DM invites" SQL.
+export async function listCampaignPlayers(campaignId) {
+  const { data, error } = await supabase.rpc('list_campaign_players', { p_campaign_id: campaignId })
+  if (!error) {
+    return data.map((r) => ({ playerId: r.player_id, username: r.username, displayName: r.display_name || '', role: r.role }))
+  }
+  if (!/could not find the function|does not exist/i.test(error.message)) throw new Error(error.message)
+  const members = await listCampaignMembers(campaignId)
+  return members.map((m) => ({ playerId: m.playerId, username: m.username, displayName: '', role: m.role }))
+}
+
+// The DM taking a player out of their campaign. Only the membership goes
+// (the account and their other campaigns stay); any character they'd
+// claimed here stays in the party, unclaimed. They can come back with the
+// join code or a new invite link. Removing the campaign's creator hands
+// the creator spot to `newCreatorId` (the DM doing it) first, so the
+// campaign is never left without one.
+export async function removeFromCampaign(campaignId, playerId, { newCreatorId } = {}) {
+  if (newCreatorId) {
+    const { error: transferError } = await supabase
+      .from('campaigns')
+      .update({ created_by: newCreatorId })
+      .eq('id', campaignId)
+    if (transferError) throw new Error(transferError.message)
+    notifyTableChanged('campaigns')
+  }
+  const { error } = await supabase
+    .from('campaign_members')
+    .delete()
+    .eq('campaign_id', campaignId)
+    .eq('player_id', playerId)
+    .in('role', ['player', 'creator'])
+  if (error) throw new Error(error.message)
+  notifyTableChanged('campaign_members')
+  const { error: unclaimError } = await supabase
+    .from('party_members')
+    .update({ claimed_by: null })
+    .eq('campaign_id', campaignId)
+    .eq('claimed_by', playerId)
+  if (!unclaimError) notifyTableChanged('party_members')
 }

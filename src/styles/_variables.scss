@@ -1,38 +1,91 @@
-// Color palette — worn leather, parchment & candlelight gold
-$bg-deep: #171210;
-$bg-panel: #241c17;
-$bg-panel-raised: #2e241d;
+@use 'sass:map';
+@use 'sass:math';
 
-$parchment: #f2e6c9;
-$parchment-dark: #e4d4a8;
-$parchment-shadow: #d9c795;
+// Color palette — worn leather, parchment & candlelight gold.
+//
+// The colours live in CSS custom properties (written onto :root by
+// _tokens.scss), so they can change while the app runs — a theme, a
+// campaign's accent — without rebuilding. `$gold` and friends below are
+// just `var(--gold)`; use `fade($gold, 0.5)` for a see-through shade and
+// `raw(gold)` where a build-time colour function needs the hex.
+$palette: (
+  'bg-deep': #171210,
+  'bg-panel': #241c17,
+  'bg-panel-raised': #2e241d,
 
-$ink: #2b2118;
-$ink-soft: #4a3c2e;
+  'parchment': #f2e6c9,
+  'parchment-dark': #e4d4a8,
+  'parchment-shadow': #d9c795,
 
-$gold: #c9a227;
-$gold-light: #e8c766;
-$gold-dim: #8a6f22;
+  'ink': #2b2118,
+  'ink-soft': #4a3c2e,
 
-$maroon: #7a2323;
-$maroon-light: #9c3a3a;
+  'gold': #c9a227,
+  'gold-light': #e8c766,
+  'gold-dim': #8a6f22,
 
-$green: #3f6b3f;
-$green-light: #5c8f5c;
+  'maroon': #7a2323,
+  'maroon-light': #9c3a3a,
 
-$gray: #5a564f;
-$gray-light: #7d786e;
+  'green': #3f6b3f,
+  'green-light': #5c8f5c,
 
-// WCAG AAA (7:1) text-safe variants of the three colors above. -light is
-// tuned for borders/tinted backgrounds and fails 7:1 as text on our dark
-// panels; these exist only to be used as `color`, never as a background
-// or border tint (which would look washed out at these lightness levels).
-$maroon-text: #e1afaf;
-$green-text: #b1cdb1;
-$gray-text: #c5c3be;
+  'gray': #5a564f,
+  'gray-light': #7d786e,
 
-$text-light: #f4ecd8;
-$text-muted: #bbb094; // nudged from #b7ab8e for 7:1 AAA contrast on the lightest panel bg
+  // WCAG AAA (7:1) text-safe variants of the three colors above. -light is
+  // tuned for borders/tinted backgrounds and fails 7:1 as text on our dark
+  // panels; these exist only to be used as `color`, never as a background
+  // or border tint (which would look washed out at these lightness levels).
+  'maroon-text': #e1afaf,
+  'green-text': #b1cdb1,
+  'gray-text': #c5c3be,
+
+  'text-light': #f4ecd8,
+  'text-muted': #bbb094, // nudged from #b7ab8e for 7:1 AAA contrast on the lightest panel bg
+);
+
+$bg-deep: var(--bg-deep);
+$bg-panel: var(--bg-panel);
+$bg-panel-raised: var(--bg-panel-raised);
+
+$parchment: var(--parchment);
+$parchment-dark: var(--parchment-dark);
+$parchment-shadow: var(--parchment-shadow);
+
+$ink: var(--ink);
+$ink-soft: var(--ink-soft);
+
+$gold: var(--gold);
+$gold-light: var(--gold-light);
+$gold-dim: var(--gold-dim);
+
+$maroon: var(--maroon);
+$maroon-light: var(--maroon-light);
+
+$green: var(--green);
+$green-light: var(--green-light);
+
+$gray: var(--gray);
+$gray-light: var(--gray-light);
+
+$maroon-text: var(--maroon-text);
+$green-text: var(--green-text);
+$gray-text: var(--gray-text);
+
+$text-light: var(--text-light);
+$text-muted: var(--text-muted);
+
+// A palette hex value, for build-time colour maths (color.adjust).
+@function raw($name) {
+  @return map.get($palette, $name);
+}
+
+// A colour at partial opacity — `fade($gold-dim, 0.4)` is 40% gold-dim.
+// Works on custom properties, which Sass's rgba() can't.
+@function fade($color, $alpha) {
+  @return color-mix(in srgb, $color math.percentage($alpha), transparent);
+}
 
 // Type
 $font-display: 'Cinzel', 'Georgia', serif;
@@ -43,4 +96,4 @@ $radius: 6px;
 $radius-lg: 10px;
 $card-max-height: 500px;
 $shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.45);
-$border-gold: 1px solid rgba($gold, 0.5);
+$border-gold: 1px solid fade($gold, 0.5);

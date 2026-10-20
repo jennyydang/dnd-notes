@@ -5,7 +5,7 @@ import Modal from './Modal.jsx'
 import TagBadge from './TagBadge.jsx'
 import './PlacesSection.scss'
 import { confirmDelete } from '../lib/confirm.js'
-import { useCampaignNav } from '../hooks/useCampaignData.js'
+import { RichText, RichTextEditor } from './RichText.jsx'
 
 const PLACE_KINDS = TAG_GROUPS.place.kinds
 
@@ -17,7 +17,6 @@ const fromRow = (r) => ({ id: r.id, name: r.name, kind: r.kind, notes: r.notes }
 // Mostly filled in from session notes, where tagging "#city Waterdeep"
 // creates the card here — this is where the player adds details later.
 function PlacesSection({ campaignId }) {
-  const { openEntity } = useCampaignNav()
   const { items: places, loading, error, addItem, updateItem, removeItem } = useSupabaseTable(
     'places',
     { fromRow, orderBy: 'name', filters: { campaign_id: campaignId } },
@@ -112,15 +111,22 @@ function PlacesSection({ campaignId }) {
             </div>
             <div className="field">
               <label htmlFor="place-notes">Notes</label>
-              <textarea
+              <RichTextEditor
                 id="place-notes"
                 value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+                ariaLabel="Notes"
                 placeholder="Walled port city, the harbour district smells of fish and trouble..."
               />
             </div>
             {formError && <p className="empty-state empty-state--error">{formError}</p>}
             <div className="place-form__actions">
+              {/* Delete lives here, away from Save — not on the card. */}
+              {editingId && (
+                <button type="button" className="btn btn--danger form-delete" onClick={() => removePlace(editingId)}>
+                  Delete
+                </button>
+              )}
               <button type="button" className="btn btn--text" onClick={closeForm}>
                 Cancel
               </button>
@@ -138,7 +144,8 @@ function PlacesSection({ campaignId }) {
       {!loading && !error && places.length === 0 && (
         <p className="empty-state">
           No places yet. Tag one in your session notes with <strong>#city</strong>,{' '}
-          <strong>#dungeon</strong>, <strong>#region</strong> or <strong>#location</strong>, or
+          <strong>#dungeon</strong>, <strong>#region</strong>, <strong>#campsite</strong> or{' '}
+          <strong>#location</strong>, or
           add it here.
         </p>
       )}
@@ -151,22 +158,14 @@ function PlacesSection({ campaignId }) {
                 <h3 className="place-card__name">{place.name}</h3>
                 <TagBadge group="place" kind={place.kind} />
               </div>
-              {place.notes && <p className="place-card__notes">{place.notes}</p>}
+              {place.notes && <RichText className="place-card__notes" value={place.notes} />}
               <div className="place-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => openEntity('place', place.id)}
-                  aria-label={`Links and related entries for ${place.name}`}
-                >
-                  Links
-                </button>
                 <button type="button" className="btn btn--text" onClick={() => startEditing(place)}>
                   Edit
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="btn btn--danger card-delete"
                   onClick={() => removePlace(place.id)}
                 >
                   Delete

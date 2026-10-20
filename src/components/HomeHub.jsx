@@ -7,12 +7,18 @@ import { useQuickNotes } from '../hooks/useQuickNotes.js'
 import { OPEN_DM_INBOX, useDmInbox } from '../hooks/useDmInbox.js'
 import { getPublicUrl } from '../lib/storage.js'
 import { formatSessionDate, sessionDateTimestamp } from '../lib/sessionNotes.js'
-import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessionMode.js'
+import { formatDateTime } from '../lib/sessionMode.js'
+import { useActiveSession } from '../hooks/useActiveSession.js'
 import { exportCampaign } from '../lib/exportCampaign.js'
 import QuickNoteInput from './QuickNoteInput.jsx'
+import PreviouslyOn from './session/PreviouslyOn.jsx'
 import { SectionCard, StatusMessage } from './ui.jsx'
 import Icon from './Icon.jsx'
 import './HomeHub.scss'
+import AnimatedNumber from './AnimatedNumber.jsx'
+import { GoalStrip } from './PartyGoals.jsx'
+import { noteTagsToPlain } from '../lib/noteTags.js'
+import WorldCalendar from './WorldCalendar.jsx'
 
 const QUICK_ACTIONS = [
   { type: 'npc', label: 'NPC', icon: 'user' },
@@ -76,7 +82,7 @@ function CharacterSummary({ campaignId, character }) {
             {hasHp && (
               <div className="home-hub__hp">
                 <span className="home-hub__hp-text mechanics">
-                  HP {hp.current} / {hp.max}
+                  HP <AnimatedNumber value={hp.current} /> / {hp.max}
                   {hp.temp ? ` (+${hp.temp})` : ''}
                 </span>
                 <span
@@ -112,17 +118,23 @@ function HomeHub({ campaignName }) {
   const { character, isAdmin } = useActiveCharacter()
   const prep = usePrep(campaignId, playerId)
   const quickNotes = useQuickNotes()
-  const [active, setActive] = useState(() => getActiveSession(campaignId, playerId))
+  const [active, setActive] = useActiveSession(campaignId, playerId)
   const [exporting, setExporting] = useState(false)
   const [exportMessage, setExportMessage] = useState(null)
 
-  function startSession() {
-    if (!active) {
-      const session = { startedAt: new Date().toISOString(), paused: false }
-      setActiveSession(campaignId, playerId, session)
-      setActive(session)
-    }
+  const [previously, setPreviously] = useState(null) // null | 'start' | 'view'
+
+  function beginSession() {
+    if (!active) setActive({ startedAt: new Date().toISOString(), paused: false })
+    setPreviously(null)
     nav.goTo('session')
+  }
+
+  // Starting a new session opens "Previously on…" first (once there's a
+  // story to recap); resuming goes straight in.
+  function startSession() {
+    if (!active && hasStory) setPreviously('start')
+    else beginSession()
   }
 
   const sessions = entities
@@ -133,6 +145,7 @@ function HomeHub({ campaignName }) {
         new Date(b.createdAt) - new Date(a.createdAt),
     )
   const [lastSession, ...olderSessions] = sessions
+  const hasStory = sessions.length > 0 || entities.some((e) => e.open)
   const earlierSessions = olderSessions.slice(0, EARLIER_LIMIT)
   const openThreads = entities.filter((e) => e.open)
   // Same inbox as the top-bar bell; the admin (no player) never has one.
@@ -179,6 +192,12 @@ function HomeHub({ campaignName }) {
               </button>
             ) : null}
           </p>
+          <WorldCalendar />
+          {lastSession && (
+            <button type="button" className="btn btn--text home-hub__inline-link" onClick={() => setPreviously('view')}>
+              <Icon name="scroll" /> Previously on…
+            </button>
+          )}
         </div>
         <button type="button" className="btn btn--primary home-hub__start" onClick={startSession}>
           <span>
@@ -191,6 +210,16 @@ function HomeHub({ campaignName }) {
           )}
         </button>
       </section>
+
+      <GoalStrip />
+
+      {previously && (
+        <PreviouslyOn
+          campaignName={campaignName}
+          onClose={() => setPreviously(null)}
+          onBegin={previously === 'start' ? beginSession : undefined}
+        />
+      )}
 
       {dmNews.length > 0 && (
         <button
@@ -370,7 +399,7 @@ function HomeHub({ campaignName }) {
                     <MiniCard
                       icon="edit"
                       type="Quick note"
-                      title={n.content}
+                      title={noteTagsToPlain(n.content)}
                       meta={formatDateTime(n.createdAt)}
                       onClick={() => nav.openEntity('note', n.id)}
                     />

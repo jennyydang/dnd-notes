@@ -16,6 +16,14 @@
     gap: 0.75rem;
   }
 
+  // Bell and account menu sit together on the right, as in a campaign.
+  &__toolbar-account {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+  }
+
   &__filter {
     margin-bottom: 0;
   }
@@ -53,7 +61,7 @@
     width: 120px;
     height: 90px;
     border-radius: $radius-lg;
-    border: 2px dashed rgba($gold-dim, 0.6);
+    border: 2px dashed fade($gold-dim, 0.6);
     background: $bg-deep;
     padding: 0;
     overflow: hidden;
@@ -100,8 +108,9 @@
 
 .campaign-card {
   padding: 0;
-  // overflow-y is left to the shared card rule (max height + scroll).
-  overflow-x: hidden;
+  // A campaign card never scrolls inside itself (on a phone that swallowed
+  // the page's scroll); a long description is cut to a few lines instead.
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 
@@ -116,9 +125,14 @@
     text-align: left;
   }
 
+  // Every cover is the same 16:9 window; the picture is scaled to fill it
+  // and cropped round its centre. (overflow: hidden stops a tall picture
+  // from stretching the box past 16:9, which aspect-ratio otherwise allows.)
   &__cover {
+    flex-shrink: 0;
     width: 100%;
     aspect-ratio: 16 / 9;
+    overflow: hidden;
     background: $bg-deep;
     display: flex;
     align-items: center;
@@ -126,12 +140,15 @@
     font-family: $font-display;
     font-size: 2rem;
     color: $gold-light;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid fade($gold-dim, 0.4);
 
     img {
+      display: block;
       width: 100%;
       height: 100%;
+      min-height: 0;
       object-fit: cover;
+      object-position: center;
     }
   }
 
@@ -153,8 +170,8 @@
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     color: $gold-light;
-    background: rgba($gold, 0.12);
-    border: 1px solid rgba($gold-light, 0.4);
+    background: fade($gold, 0.12);
+    border: 1px solid fade($gold-light, 0.4);
     border-radius: $radius;
     padding: 0.1rem 0.45rem;
   }
@@ -164,6 +181,10 @@
     color: $text-muted;
     font-size: 0.9rem;
     line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   &__actions {

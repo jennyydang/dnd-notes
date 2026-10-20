@@ -1,0 +1,699 @@
+@use '../styles/variables' as *;
+
+// Lore & Clues → Mysteries: a tray of loose clues beside a grid of open
+// mysteries, solved ones below; one mystery opens to its clues and theories.
+
+.mystery__eyebrow {
+  margin: 0;
+  color: $gold;
+  font-family: $font-display;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.clue-found {
+  color: $text-muted;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+// Lead / Confirmed / Red herring: told apart by fill and border as well
+// as colour.
+.clue-chip {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  font-family: $font-display;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &--lead {
+    border: 1px solid $gold-dim;
+    color: $gold-light;
+  }
+
+  &--confirmed {
+    background: $green;
+    color: #e6f0e6;
+  }
+
+  &--herring {
+    border: 1px dashed $maroon-light;
+    color: $maroon-text;
+  }
+}
+
+.mystery-board {
+  display: grid;
+  gap: 1.75rem;
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: -0.5rem;
+  }
+
+  &__layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+}
+
+.loose-tray {
+  flex: 1 1 16rem;
+  max-width: 21rem;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px dashed $gold-dim;
+  border-radius: $radius;
+  background: fade($bg-deep, 0.6);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h3 {
+      margin: 0;
+      color: $gold-light;
+      font-size: 1rem;
+    }
+  }
+
+  &__count {
+    min-width: 1.5rem;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    background: $gold-dim;
+    color: $text-light;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  &__hint {
+    margin: 0;
+    color: $text-muted;
+    font-size: 0.9rem;
+  }
+
+  &__add {
+    justify-self: start;
+  }
+}
+
+.loose-clue {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: $radius;
+  background: $bg-panel-raised;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  cursor: grab;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+
+  &.is-dragging {
+    opacity: 0.55;
+    transform: rotate(-1.5deg);
+    outline: 2px solid $gold;
+  }
+
+  &__text {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $text-light;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      color: $gold-light;
+    }
+  }
+
+  &__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  &__file select {
+    max-width: 11rem;
+    min-height: 2.25rem;
+    padding: 0 0.5rem;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    background: $bg-deep;
+    color: $text-light;
+    font: inherit;
+    font-size: 0.9rem;
+  }
+}
+
+.mystery-grid {
+  flex: 999 1 36rem;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.mystery-empty {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+  padding: 1.5rem;
+
+  h3,
+  p {
+    margin: 0;
+  }
+
+  p {
+    color: $text-muted;
+  }
+}
+
+.mystery-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.1rem 1.25rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &.is-target {
+    border-style: dashed;
+  }
+
+  &.is-drop {
+    border: 2px dashed $gold;
+    background: fade($gold, 0.08);
+  }
+
+  &__question {
+    margin: 0;
+    font-size: 1.2rem;
+    line-height: 1.25;
+
+    button {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: $parchment;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover {
+        color: $gold-light;
+      }
+    }
+  }
+
+  &__clues {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__clue {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+
+    &--herring .mystery-card__clue-text {
+      color: $text-muted;
+      text-decoration: line-through;
+      text-decoration-color: $maroon-light;
+    }
+  }
+
+  &__more {
+    color: $text-muted;
+    font-size: 0.9rem;
+  }
+
+  &__drop {
+    margin: 0;
+    padding: 0.6rem;
+    border-radius: $radius;
+    background: fade($gold, 0.16);
+    color: $parchment;
+    text-align: center;
+  }
+
+  &__leading {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    border-radius: $radius;
+    background: $bg-panel-raised;
+
+    .icon {
+      color: $gold-light;
+    }
+
+    span:nth-child(2) {
+      flex: 1;
+    }
+
+    strong {
+      color: $parchment;
+      font-weight: 600;
+    }
+  }
+
+  &__quiet {
+    margin: 0;
+    color: $text-muted;
+    font-style: italic;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}
+
+.mystery-solved {
+  display: grid;
+  gap: 0.75rem;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    color: $gold-light;
+    font-size: 1rem;
+
+    span {
+      padding: 0 0.5rem;
+      border-radius: 999px;
+      background: $green;
+      color: #e6f0e6;
+      font-size: 0.8rem;
+    }
+  }
+
+  &__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: 0.75rem;
+  }
+}
+
+.solved-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid $green;
+  border-radius: $radius;
+  background: fade($green, 0.12);
+  color: $text-light;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $green-light;
+  }
+
+  &__stamp {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 2px solid $green-light;
+    border-radius: 50%;
+    color: $green-text;
+    font-family: $font-display;
+    font-size: 0.75rem;
+    font-weight: 700;
+    transform: rotate(-12deg);
+  }
+
+  &__body {
+    display: grid;
+    min-width: 0;
+  }
+
+  &__question {
+    color: $parchment;
+    font-family: $font-display;
+  }
+
+  &__answer {
+    color: $green-text;
+    font-size: 0.95rem;
+  }
+}
+
+// One mystery, opened.
+.mystery-detail {
+  display: grid;
+  gap: 1.25rem;
+
+  &__back {
+    justify-self: start;
+  }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid fade($gold-dim, 0.5);
+
+    > div:first-child {
+      flex: 1 1 22rem;
+      min-width: 0;
+    }
+  }
+
+  &__title {
+    margin: 0.3rem 0 0;
+    color: $parchment;
+    font-size: 1.8rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__cols {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.75rem;
+  }
+
+  &__clues {
+    flex: 999 1 30rem;
+    min-width: 0;
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  &__theories {
+    flex: 1 1 20rem;
+    max-width: 28rem;
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  &__theories-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h3 {
+      margin: 0;
+      color: $parchment;
+    }
+  }
+}
+
+.mystery-answer {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid $green;
+  border-radius: $radius;
+  background: fade($green, 0.12);
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    color: $green-text;
+    font-size: 1rem;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+.mystery-group {
+  display: grid;
+  gap: 0.6rem;
+
+  &__title {
+    margin: 0;
+    font-size: 0.95rem;
+
+    span {
+      color: $text-muted;
+      font-size: 0.8rem;
+    }
+
+    &--confirmed {
+      color: $green-text;
+    }
+
+    &--lead {
+      color: $gold-light;
+    }
+
+    &--herring {
+      color: $maroon-text;
+    }
+  }
+}
+
+.clue-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid $ink-soft;
+  border-radius: $radius;
+  background: $bg-panel;
+  scroll-margin: 6rem;
+
+  &--confirmed {
+    border-color: $green;
+    background: fade($green, 0.1);
+  }
+
+  &--herring {
+    background: fade($bg-deep, 0.7);
+
+    .clue-card__text {
+      color: $text-muted;
+      text-decoration: line-through;
+      text-decoration-color: $maroon-light;
+    }
+  }
+
+  &__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__text {
+    margin: 0;
+  }
+
+  &__status select {
+    min-height: 2.25rem;
+    padding: 0 0.5rem;
+    border: 1px solid $gold-dim;
+    border-radius: $radius;
+    background: $bg-deep;
+    color: $gold-light;
+    font: inherit;
+    font-size: 0.9rem;
+  }
+
+  &__notes {
+    color: $text-muted;
+    font-size: 0.95rem;
+  }
+
+  &__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  &__tools {
+    display: flex;
+    gap: 0.25rem;
+  }
+}
+
+.theory {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid $ink-soft;
+  border-radius: $radius;
+  background: $bg-panel;
+
+  &--leading {
+    border-color: $gold;
+    background: fade($gold, 0.07);
+  }
+
+  &__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__text {
+    margin: 0.15rem 0 0;
+    color: $parchment;
+    font-size: 1.05rem;
+  }
+
+  &__by {
+    margin: 0.2rem 0 0;
+    color: $text-muted;
+    font-size: 0.85rem;
+  }
+
+  // One vote per player; pressed when it's yours.
+  &__vote {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    min-width: 3rem;
+    min-height: 3rem;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-light;
+    font-family: $font-display;
+    font-weight: 700;
+    cursor: pointer;
+
+    .icon {
+      transform: rotate(-90deg);
+    }
+
+    &.is-on {
+      border-color: $gold;
+      background: fade($gold, 0.18);
+      color: $gold-light;
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+  }
+
+  &__evidence {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.92rem;
+
+    em {
+      color: $text-muted;
+    }
+
+    a {
+      color: $gold-light;
+    }
+  }
+
+  &__evidence-label {
+    flex-shrink: 0;
+    min-width: 5rem;
+    font-weight: 600;
+  }
+
+  &__evidence--for &__evidence-label {
+    color: $green-text;
+  }
+
+  &__evidence--against &__evidence-label {
+    color: $maroon-text;
+  }
+
+  &__edit {
+    justify-self: end;
+  }
+}
+
+.theory-form__clues {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid $ink-soft;
+  border-radius: $radius;
+
+  legend {
+    padding: 0 0.3rem;
+    color: $text-muted;
+  }
+}
+
+.theory-form__clue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  span {
+    flex: 1 1 12rem;
+  }
+}
+
+.mystery-form__question {
+  margin: 0;
+  color: $parchment;
+  font-family: $font-display;
+}
+
+// Phones: the tray sits above the mysteries, full width.
+@media (max-width: 640px) {
+  .loose-tray {
+    max-width: none;
+  }
+
+  .mystery-detail__theories {
+    max-width: none;
+  }
+
+  .mystery-detail__title {
+    font-size: 1.45rem;
+  }
+}

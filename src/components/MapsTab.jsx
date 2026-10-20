@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import WorldMapViewer from './WorldMapViewer.jsx'
@@ -6,6 +6,8 @@ import PlacesSection from './PlacesSection.jsx'
 import Icon from './Icon.jsx'
 import './MapsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
+import { onMapFocus, takeMapFocus } from '../lib/mapFocus.js'
+import { CampaignDataContext } from '../hooks/useCampaignData.js'
 
 const BUCKET = 'maps'
 
@@ -26,11 +28,34 @@ function MapsTab({ campaignId }) {
   const [lightboxMap, setLightboxMap] = useState(null)
   const [activeWorldMapId, setActiveWorldMapId] = useState(null)
   const [uploadError, setUploadError] = useState(null)
-  // Rename on a card: { id, value } while editing that map's name.
+  // Rename (from the open map): { id, value } while editing its name.
   const [renaming, setRenaming] = useState(null)
   const [renameError, setRenameError] = useState(null)
   const fileInputRef = useRef(null)
   const activeWorldMap = maps.find((m) => m.id === activeWorldMapId) || null
+  // "Show on map" from a card: { mapId, markerId } until the maps load.
+  const campaignData = useContext(CampaignDataContext)
+  const [focus, setFocus] = useState(() => takeMapFocus())
+  const [focusMarkerId, setFocusMarkerId] = useState(null)
+  useEffect(() => onMapFocus(() => setFocus(takeMapFocus())), [])
+  useEffect(() => {
+    if (!focus || loading) return
+    // A pin on a zoom area's map: climb to the top-level map and fly to
+    // the zoom area that leads there instead.
+    const markersById = new Map((campaignData?.mapMarkers || []).map((m) => [m.id, m]))
+    let mapRow = maps.find((m) => m.id === focus.mapId)
+    let markerId = focus.markerId
+    for (let guard = 0; mapRow?.sourceMarkerId && guard < 10; guard += 1) {
+      const doorway = markersById.get(mapRow.sourceMarkerId)
+      if (!doorway) break
+      markerId = doorway.id
+      mapRow = maps.find((m) => m.id === doorway.map_id)
+    }
+    setFocus(null)
+    if (!mapRow) return
+    setActiveWorldMapId(mapRow.id)
+    setFocusMarkerId(markerId)
+  }, [focus, loading, maps, campaignData?.mapMarkers])
   // Zoom-area maps (nested under a 'zoom' marker on another map) aren't
   // top-level campaign maps — they're only reachable by clicking that
   // marker, not from this flat grid.
@@ -53,6 +78,11 @@ function MapsTab({ campaignId }) {
     } catch (err) {
       setUploadError(err.message)
     }
+  }
+
+  function closeLightbox() {
+    setLightboxMap(null)
+    setRenaming(null)
   }
 
   function startRename(map) {
@@ -93,12 +123,8 @@ function MapsTab({ campaignId }) {
     }
   }
 
-  // Only one map per campaign may be the interactive World Map — clear
-  // the old flag before setting the new one, since the DB's partial
-  // unique index rejects two true rows at once.
+  // Any number of maps can be interactive (pins, markers, zoom areas).
   async function setWorldMap(map) {
-    const current = maps.find((m) => m.isWorldMap && m.id !== map.id)
-    if (current) await updateItem(current.id, { is_world_map: false })
     await updateItem(map.id, { is_world_map: true })
   }
 
@@ -149,49 +175,18 @@ function MapsTab({ campaignId }) {
               >
                 <img src={map.src} alt={map.caption || 'Campaign map'} />
               </button>
-              {map.isWorldMap && <span className="map-card__world-badge">World Map</span>}
-              {renaming?.id === map.id ? (
-                <form className="map-card__rename" onSubmit={saveRename}>
-                  <input
-                    type="text"
-                    value={renaming.value}
-                    onChange={(e) => setRenaming({ ...renaming, value: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Escape' && setRenaming(null)}
-                    placeholder="Map name"
-                    aria-label="Map name"
-                    autoFocus
-                  />
-                  <div className="map-card__rename-actions">
-                    <button type="button" className="btn btn--text" onClick={() => setRenaming(null)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn--primary">
-                      Save
-                    </button>
-                  </div>
-                  {renameError && <p className="field-error">{renameError}</p>}
-                </form>
-              ) : (
-                <div className="map-card__name-row">
-                  <span className={`map-card__name${map.caption ? '' : ' map-card__name--empty'}`}>
-                    {map.caption || 'Untitled map'}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn--text map-card__rename-btn"
-                    onClick={() => startRename(map)}
-                    aria-label={`Rename ${map.caption || 'this map'}`}
-                  >
-                    <Icon name="edit" /> Rename
-                  </button>
-                </div>
-              )}
+              {map.isWorldMap && <span className="map-card__world-badge">Interactive</span>}
+              <div className="map-card__name-row">
+                <span className={`map-card__name${map.caption ? '' : ' map-card__name--empty'}`}>
+                  {map.caption || 'Untitled map'}
+                </span>
+              </div>
               <button
                 type="button"
                 className="map-card__world-toggle btn btn--text"
                 onClick={() => (map.isWorldMap ? unsetWorldMap(map) : setWorldMap(map))}
               >
-                {map.isWorldMap ? 'Unset World Map' : 'Set as World Map'}
+                {map.isWorldMap ? 'Unset Interactive Map' : 'Set as Interactive Map'}
               </button>
               <button
                 type="button"
@@ -213,14 +208,44 @@ function MapsTab({ campaignId }) {
           className="lightbox"
           role="dialog"
           aria-modal="true"
-          onClick={() => setLightboxMap(null)}
+          onClick={() => closeLightbox()}
         >
           <img src={lightboxMap.src} alt={lightboxMap.caption} />
-          <p className="lightbox__caption">{lightboxMap.caption}</p>
+          {/* Rename lives here, on the open map (not on its card). */}
+          {(() => {
+            const current = maps.find((m) => m.id === lightboxMap.id) || lightboxMap
+            return renaming?.id === current.id ? (
+              <form className="lightbox__rename" onSubmit={saveRename} onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="text"
+                  value={renaming.value}
+                  onChange={(e) => setRenaming({ ...renaming, value: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Escape' && setRenaming(null)}
+                  placeholder="Map name"
+                  aria-label="Map name"
+                  autoFocus
+                />
+                <button type="button" className="btn btn--text" onClick={() => setRenaming(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn--primary">
+                  Save
+                </button>
+                {renameError && <p className="field-error">{renameError}</p>}
+              </form>
+            ) : (
+              <div className="lightbox__caption-row" onClick={(e) => e.stopPropagation()}>
+                <p className="lightbox__caption">{current.caption || 'Untitled map'}</p>
+                <button type="button" className="btn btn--text" onClick={() => startRename(current)}>
+                  <Icon name="edit" /> Rename Map
+                </button>
+              </div>
+            )
+          })()}
           <button
             type="button"
             className="lightbox__close"
-            onClick={() => setLightboxMap(null)}
+            onClick={() => closeLightbox()}
             aria-label="Close"
           >
             &times;
@@ -232,7 +257,11 @@ function MapsTab({ campaignId }) {
         <WorldMapViewer
           map={activeWorldMap}
           campaignId={campaignId}
-          onClose={() => setActiveWorldMapId(null)}
+          focusMarkerId={focusMarkerId}
+          onClose={() => {
+            setActiveWorldMapId(null)
+            setFocusMarkerId(null)
+          }}
           onRenameMap={(caption) => renameMap(activeWorldMap.id, caption)}
         />
       )}

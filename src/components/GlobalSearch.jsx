@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useCampaignData, useCampaignNav } from '../hooks/useCampaignData.js'
 import { ENTITY_TYPES, ENTITY_TYPE_ORDER } from '../lib/entities.js'
 import { normalizeText, searchEntities, snippet } from '../lib/search.js'
+import { lockScroll } from '../lib/scrollLock.js'
 import { Chip } from './ui.jsx'
 import Icon from './Icon.jsx'
 import './GlobalSearch.scss'
@@ -30,11 +31,7 @@ function GlobalSearch({ onClose }) {
 
   useEffect(() => {
     inputRef.current?.focus()
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
+    return lockScroll()
   }, [])
 
   const results = useMemo(

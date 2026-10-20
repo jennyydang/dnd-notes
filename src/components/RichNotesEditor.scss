@@ -21,7 +21,7 @@
     width: 1px;
     align-self: stretch;
     margin: 0 0.2rem;
-    background: rgba($gold-dim, 0.5);
+    background: fade($gold-dim, 0.5);
   }
 
   &__tool {
@@ -40,7 +40,7 @@
 
     &--active {
       border-color: $gold;
-      background: rgba($gold, 0.15);
+      background: fade($gold, 0.15);
       color: $gold-light;
     }
   }
@@ -62,17 +62,23 @@
       border-color: $gold;
     }
 
+    // Return = a new paragraph with a blank line's gap; Shift+Return = a
+    // <br>, the next line right underneath.
     p {
-      margin: 0 0 0.5rem;
+      margin: 0 0 1em;
 
       &:last-child {
         margin-bottom: 0;
       }
     }
 
+    li > p {
+      margin: 0;
+    }
+
     ul,
     ol {
-      margin: 0 0 0.5rem;
+      margin: 0 0 1em;
       padding-left: 1.4rem;
     }
 
@@ -102,7 +108,7 @@
 
     kbd {
       font-family: inherit;
-      border: 1px solid rgba($gold-dim, 0.6);
+      border: 1px solid fade($gold-dim, 0.6);
       border-radius: 3px;
       padding: 0 0.25rem;
       color: $gold-light;
@@ -133,7 +139,7 @@
     font-size: 0.9rem;
 
     &--active {
-      background: rgba($gold, 0.15);
+      background: fade($gold, 0.15);
       color: $gold-light;
     }
 
@@ -162,8 +168,8 @@
   white-space: nowrap;
 
   &--person {
-    background: rgba($maroon-light, 0.35);
-    border: 1px solid rgba($maroon-light, 0.8);
+    background: fade($maroon-light, 0.35);
+    border: 1px solid fade($maroon-light, 0.8);
     color: $maroon-text;
 
     &::before {
@@ -172,8 +178,8 @@
   }
 
   &--place {
-    background: rgba($green-light, 0.25);
-    border: 1px solid rgba($green-light, 0.8);
+    background: fade($green-light, 0.25);
+    border: 1px solid fade($green-light, 0.8);
     color: $green-text;
 
     &::before {
@@ -182,8 +188,8 @@
   }
 
   &--lore {
-    background: rgba($gray-light, 0.3);
-    border: 1px solid rgba($gray-light, 0.9);
+    background: fade($gray-light, 0.3);
+    border: 1px solid fade($gray-light, 0.9);
     color: $gray-text;
 
     &::before {
@@ -192,12 +198,22 @@
   }
 
   &--loot {
-    background: rgba($gold, 0.18);
-    border: 1px solid rgba($gold, 0.8);
+    background: fade($gold, 0.18);
+    border: 1px solid fade($gold, 0.8);
     color: $gold-light;
 
     &::before {
       @include line-icon('coins');
+    }
+  }
+
+  &--creature {
+    background: rgba(#7d5ba6, 0.3);
+    border: 1px solid rgba(#a98bd3, 0.85);
+    color: #e5d9f7;
+
+    &::before {
+      @include line-icon('paw');
     }
   }
 
@@ -206,8 +222,8 @@
   &--event {
     display: inline;
     white-space: normal;
-    background: rgba($maroon, 0.25);
-    border: 1px dashed rgba($gold, 0.7);
+    background: fade($maroon, 0.25);
+    border: 1px dashed fade($gold, 0.7);
     color: $parchment;
     font-style: italic;
     box-decoration-break: clone;

@@ -20,6 +20,28 @@
     font-style: italic;
   }
 
+  &__notify {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    cursor: pointer;
+    color: $text-light;
+
+    input {
+      width: 1.15rem;
+      height: 1.15rem;
+      margin-top: 0.2rem;
+      flex-shrink: 0;
+      accent-color: $gold;
+    }
+
+    small {
+      display: block;
+      color: $text-muted;
+      font-size: 0.82rem;
+    }
+  }
+
   &__actions {
     display: flex;
     justify-content: flex-end;

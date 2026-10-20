@@ -71,6 +71,92 @@ request/response contract is documented in `src/lib/roleplayAssistant.js`.
 Without it the assistant says so plainly and offers **Copy prompt**, built
 only from the character's recorded notes, for use in any assistant.
 
+Players can also connect **their own** AI account (Settings → AI Assistant,
+or the assistant itself), kept on their device only — never in Supabase:
+
+- **Claude or ChatGPT API key** — works now (`src/lib/aiConnection.js`).
+- **Sign in with ChatGPT** — runs on the player's ChatGPT plan, no API key.
+  It's built but **switched off**: OpenAI offers it to websites as a
+  limited trial for approved partners
+  ([developers.openai.com/siwc/website](https://developers.openai.com/siwc/website)).
+  Once OpenAI approves the app and issues a client ID:
+  1. Register `https://dnd-notes.vercel.app/` as the redirect URI.
+  2. Deploy the token exchange (it holds any client secret server-side):
+     ```sh
+     supabase secrets set CHATGPT_CLIENT_ID=… CHATGPT_CLIENT_SECRET=… \
+       ALLOWED_ORIGINS=https://dnd-notes.vercel.app
+     supabase functions deploy chatgpt-auth --no-verify-jwt
+     ```
+  3. Set `VITE_CHATGPT_CLIENT_ID` (the same client ID) on Vercel and redeploy.
+  The **Sign in with ChatGPT** button then appears. The flow
+  (`src/lib/chatgptSignIn.js`, `supabase/functions/chatgpt-auth`) hasn't been
+  run against OpenAI's live sign-in yet, so check it once it's on.
+
+### Live sync and offline play
+
+- **Live updates.** When anyone in the party adds or edits something, every
+  other open screen updates within a moment; no reload needed. Faces at the
+  top of the campaign show who else has it open right now. This uses
+  Supabase Realtime: the block at the end of `supabase/schema.sql` adds the
+  campaign tables to the `supabase_realtime` publication (re-run it on an
+  existing database). Without it, everything works as before, but
+  changes only show up after a refresh.
+- **Works offline.** The app installs to a phone's home screen and opens
+  with no connection. Anything you've opened on the device before is still
+  there, and notes, HP and other edits made offline are saved on the device
+  and sent once you reconnect. The top bar shows *Offline · N to sync*
+  while that happens. If the server turns a queued change down (say, the
+  entry was deleted by someone else), the bar says so instead of dropping
+  it silently. Picture uploads and DM sharing still need a connection.
+  The read cache and write queue live in `src/lib/offline.js`, the service
+  worker in `public/sw.js` (production builds only).
+
+### At the table
+
+- **Shared initiative.** The DM's **Combat** tab (and the admin's Session
+  Mode) runs one live encounter for the whole campaign. Players don't
+  see the tracker; they follow along through the turn banners and the
+  roll prompt (the red combat badge reopens it until they've rolled). Party members added
+  to the fight (type their name or tap their chip) are linked to their
+  player, who gets a **"Your turn"** banner — and a buzz on phones that
+  support it — on any screen, plus **"You're up next"** a turn ahead.
+  Conditions can be added per combatant with an optional number of
+  rounds; they count down at the start of that combatant's turn and the
+  tracker says when one ends. Stored in the `encounters` table.
+- **Roll for initiative.** On the Combat tab the DM picks the dice (d20
+  by default, or d12/d10/d8/d6/d4; normal, advantage or disadvantage)
+  and presses **Call for initiative!**: every player's screen shakes
+  (phones buzz) under a "Roll for initiative!" alert with that roll plus
+  their sheet's bonus, and the whole app switches to a red combat theme
+  with a round badge. **Roll for me** rolls it in the app and drops the
+  player straight into the order; anyone rolling real dice tells the DM,
+  who types it in. Adding anyone re-sorts the order by initiative
+  (highest first); the DM can drag rows (or use ↑/↓ on the handle), which
+  is handy for breaking ties. **End combat** returns
+  everyone to normal. Saves re-read the latest order first, so rolls
+  arriving together can't overwrite each other. Uses the same
+  `encounters` table — no extra SQL.
+- **Live reveals.** Next to **Share**, the DM has **Reveal now**: the NPC,
+  monster, art or map pops up full-screen on every player's open app (and
+  lands in their bell as usual), with **Add to …** right there.
+- **"Previously on…"** Starting a session opens a parchment recap card to
+  read out: the opening of last session's recap, the people and places it
+  tagged, and what's still unresolved — with **Read it aloud** on devices
+  with speech. Home's **Previously on…** link opens it any time.
+
+Run the "Shared initiative" block at the end of `supabase/schema.sql` for
+the shared tracker; until then it works on each device on its own.
+
+### Profile pictures
+
+Players add, change or remove a profile picture from the account menu
+(their initial at the top right) → **Profile picture**. It's cropped to a
+circle and shows on their account button and, to the rest of the party,
+on their face in the "here now" row while they're in a campaign. Pictures
+live in the `player-avatars` bucket and the `player_profiles` table, from
+the "Profile pictures" block at the end of `supabase/schema.sql` (run it
+on an existing database first; until then the dialog says so).
+
 ## Original features
 
 A D&D campaign notes app built with React and SCSS. Players log in and see
@@ -141,7 +227,33 @@ so your whole party can share one set of notes from any browser.
   and replace both occurrences, then re-run the script, if you want to
   change it). The admin can create player accounts and sees every
   campaign, unrestricted.
-- **Players**: created only by the admin — there's no self-signup. A
+- **Players**: accounts are **by invite only**. The admin either creates
+  an account directly (**+ Add Player**) or uses **Invite by link** on the
+  Players screen: optionally pick a campaign the new player joins on
+  sign-up (or none — they join one later with its join code), then copy or
+  share the link (`https://your-app/?invite=…`). Each link works once,
+  expires after 30 days and can be cancelled from the invite list. The
+  login screen has no sign-up of its own; an invite link opens the
+  sign-up form (username, name, email, password). A campaign's **DM** can
+  send invite links too, from the new **Players** tab in their view —
+  always for their own campaign. That tab also lists who's in the
+  campaign with the character(s) each has claimed, and characters nobody
+  has claimed yet; **Remove from campaign** takes a player out of that
+  campaign only (their account and other campaigns stay, and their
+  character stays in the party, unclaimed). Players can be in **any number of campaigns**: someone
+  who already has an account can open a campaign's invite link (or log in
+  from it) and their dashboard offers **Join campaign**, or they can use
+  **+ Campaign → Join Existing** with a join code. Run the "Sign-up by
+  invite link", "DM invites and the DM's Players tab", "Existing
+  players can use invite links" and "Account settings and password
+  resets" blocks at the end of `supabase/schema.sql` first. Players change
+  their own username, name, email and password under **Account** in the
+  avatar menu (confirmed with their current password). There's no email
+  sending, so **Forgot password?** on the login sends the admin a request;
+  the admin makes a single-use **reset link** (24 hours) from the Players
+  screen and sends it. Passwords are bcrypt-hashed, so nobody — the admin
+  included — can read them; the admin can only reset them.
+  Emails are only visible to the admin; DMs see names. A
   player logs in at the normal app URL and sees a personal dashboard of
   just the campaigns they created or joined. Creating a campaign gives it
   a short join code to share with your group; anyone who enters that code
@@ -168,7 +280,7 @@ so your whole party can share one set of notes from any browser.
 - `npm run preview` — preview the production build
 - `npm run lint` — run Oxlint
 - `npm test` — run the unit tests (Vitest) for search, character rules,
-  initiative, recap building and the roleplay helpers
+  initiative, recap building, the roleplay helpers and the offline queue
 
 ## Upgrading an existing database
 
@@ -180,4 +292,5 @@ and those screens explain what's missing instead of failing.
 
 Per-device state that isn't campaign content — the open campaign and tab,
 whether a session is in progress, the current initiative order, unsent
-quick-note drafts — lives in `localStorage`.
+quick-note drafts, the offline copy of loaded rows and the queue of
+changes waiting to sync — lives in `localStorage`.

@@ -14,6 +14,8 @@ function SessionNoteForm({
   submitLabel,
   submitting = false,
   onCancel,
+  // Editing an existing session: shows Delete on the left of the buttons.
+  onDelete,
 }) {
   return (
     <form className="session-form panel" onSubmit={onSubmit}>
@@ -57,6 +59,11 @@ function SessionNoteForm({
       </div>
       {formError && <p className="empty-state empty-state--error">{formError}</p>}
       <div className="session-form__actions">
+        {onDelete && (
+          <button type="button" className="btn btn--danger form-delete" onClick={onDelete} disabled={submitting}>
+            Delete
+          </button>
+        )}
         {onCancel && (
           <button type="button" className="btn btn--text" onClick={onCancel} disabled={submitting}>
             Cancel

@@ -1,21 +1,54 @@
 @use '../styles/variables' as *;
 
-// The DM's per-item share control (ShareStatus.jsx).
+// The DM's per-item reveal control (ShareStatus.jsx).
 .share-status {
   display: inline-flex;
   align-items: center;
   font-size: 0.85rem;
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid rgba($gold-dim, 0.7);
+  border: 1px solid fade($gold-dim, 0.7);
   color: $gold-light;
 
   &--added {
-    border-color: rgba($green-light, 0.8);
+    border-color: fade($green-light, 0.8);
     color: $green-text;
   }
 
-  &__button {
+  &--revealed {
+    color: $text-muted;
+    border-style: dashed;
+    gap: 0.3rem;
+  }
+
+  &__reveal {
     white-space: nowrap;
+  }
+}
+
+// A DM card or tile that's been revealed looks spent: greyed out and
+// dimmed, with a grey border, so what's still to reveal stands out. Its
+// buttons (Archive, Edit, Delete) and status tag stay at full strength.
+.dm-revealed {
+  // (doubled to outrank .panel's gold border, whichever loads first)
+  &.dm-revealed {
+    border-color: fade($gray-light, 0.55);
+    box-shadow: none;
+  }
+
+  > :not([class*='__actions'], [class*='__body'], [class*='__share']),
+  > [class*='__body'] > :not([class*='__actions']) {
+    filter: grayscale(0.9);
+    opacity: 0.5;
+    transition:
+      opacity 0.2s ease,
+      filter 0.2s ease;
+  }
+
+  // Hovering brings it back, to read it properly.
+  &:hover > :not([class*='__actions'], [class*='__body'], [class*='__share']),
+  &:hover > [class*='__body'] > :not([class*='__actions']) {
+    filter: grayscale(0.5);
+    opacity: 0.8;
   }
 }

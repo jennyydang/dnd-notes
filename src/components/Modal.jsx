@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import './Modal.scss'
+import { lockScroll } from '../lib/scrollLock.js'
 
 // Open modals, innermost last — so Escape closes only the top one when a
 // dialog opens another (e.g. the image cropper over an edit form).
@@ -9,7 +11,10 @@ const openModals = []
 // Escape or by clicking outside the panel. Content (typically a form) is
 // passed as children — this component only owns the overlay/positioning,
 // same visual pattern as the existing spell flavor-text popup.
-function Modal({ onClose, label, children }) {
+// `size="narrow"` suits short dialogs (a notice, a confirm) that would
+// otherwise sit in a mostly empty panel.
+
+function Modal({ onClose, label, size, children }) {
   const idRef = useRef(null)
   if (!idRef.current) idRef.current = {}
 
@@ -27,18 +32,13 @@ function Modal({ onClose, label, children }) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
-  // Lock the page underneath from scrolling while the modal is open —
-  // restore whatever overflow value was already there (rather than
-  // assuming it was blank) so this can't clobber a style set elsewhere.
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previousOverflow
-    }
-  }, [])
+  // The page underneath stays put while the modal is open (scrollLock.js).
+  useEffect(() => lockScroll(), [])
 
-  return (
+  // Rendered at the top of the page, not where it's used: a dialog opened
+  // from inside another (the photo cropper from an edit form) would
+  // otherwise be trapped — and clipped — inside the outer dialog's box.
+  return createPortal(
     <div
       className="modal__backdrop"
       role="dialog"
@@ -46,10 +46,14 @@ function Modal({ onClose, label, children }) {
       aria-label={label}
       onClick={onClose}
     >
-      <div className="modal__panel panel" onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`modal__panel panel${size ? ` modal__panel--${size}` : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

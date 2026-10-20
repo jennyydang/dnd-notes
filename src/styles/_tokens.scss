@@ -1,0 +1,9 @@
+@use 'variables' as *;
+
+// The palette as CSS custom properties — the single place the app's
+// colours are set at runtime (see _variables.scss).
+:root {
+  @each $name, $value in $palette {
+    --#{$name}: #{$value};
+  }
+}

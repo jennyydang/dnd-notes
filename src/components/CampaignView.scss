@@ -1,19 +1,45 @@
+@use 'sass:color';
 @use '../styles/variables' as *;
 
 .campaign-view {
+  // Three columns with equal outer tracks, so the search box sits in the
+  // true centre however much is on either side of it.
   &__topbar {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 32rem) minmax(0, 1fr);
+    grid-template-areas: 'start search end';
     align-items: center;
     gap: 1rem;
     padding-bottom: 1.25rem;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid fade($gold-dim, 0.4);
+  }
+
+  &__combat {
+    max-width: 44rem;
+  }
+
+  &__topbar-start {
+    grid-area: start;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  &__topbar-end {
+    grid-area: end;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    min-width: 0;
   }
 
   &__hamburger {
     flex-shrink: 0;
     background: $bg-panel-raised;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     border-radius: $radius;
     color: $text-muted;
     font-size: 1.2rem;
@@ -28,21 +54,16 @@
 
   // Takes the search box's place in a DM's top bar (no search there).
   &__search-spacer {
-    flex: 1;
+    grid-area: search;
   }
 
   &__search {
+    grid-area: search;
     position: relative;
-    flex: 1;
+    width: 100%;
     text-align: left;
     cursor: pointer;
     min-height: 2.75rem;
-    max-width: 24rem;
-    // Grows to its cap and then no further — this margin absorbs whatever
-    // free space is left over past that, pushing the search box (and the
-    // avatar right after it) flush to the top bar's right edge instead of
-    // leaving them stranded next to the hamburger with dead space after.
-    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -78,7 +99,7 @@
     font-size: 0.7rem;
     color: $text-muted;
     background: $bg-panel-raised;
-    border: 1px solid rgba($gold-dim, 0.4);
+    border: 1px solid fade($gold-dim, 0.4);
     border-radius: $radius;
     padding: 0.1rem 0.4rem;
   }
@@ -109,9 +130,21 @@
     padding: 1.25rem 1rem;
   }
 
+  // Pinned to the page's top-left corner, level with the app title
+  // (.app is the positioned box; its padding matches _mobile.scss).
   &__back {
-    align-self: flex-start;
+    position: absolute;
+    top: calc(2rem + env(safe-area-inset-top));
+    left: calc(1.5rem + env(safe-area-inset-left));
+    z-index: 2;
     padding-left: 0;
+  }
+
+  // Narrower screens: "← Campaigns", clear of the centred title.
+  @media (max-width: 1100px) {
+    &__back-all {
+      display: none;
+    }
   }
 
   &__title-block {
@@ -119,7 +152,7 @@
     flex-direction: column;
     gap: 0.2rem;
     padding-bottom: 0.85rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    border-bottom: 1px solid fade($gold-dim, 0.4);
   }
 
   &__name {
@@ -134,12 +167,65 @@
   }
 
   &__group-label {
+    margin: 0.25rem 0 0;
+  }
+
+  // The group heading folds its pages away (and back).
+  &__group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.2rem 0.25rem;
+    border: 0;
+    border-radius: $radius;
+    background: transparent;
+    color: $text-muted;
     font-family: $font-body;
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: $text-muted;
-    margin: 0.25rem 0 0 0.25rem;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      color: $gold-light;
+    }
+  }
+
+  &__group-chevron {
+    width: 0.85rem;
+    height: 0.85rem;
+    transform: rotate(90deg);
+    transition: transform 0.2s ease;
+
+    .is-folded & {
+      transform: rotate(0deg);
+    }
+  }
+
+  &__group-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-left: 0.15rem;
+    border-radius: 50%;
+    background: $gold;
+  }
+
+  &__group-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.25s ease;
+
+    .is-folded & {
+      grid-template-rows: 0fr;
+    }
+  }
+
+  &__group-inner {
+    min-height: 0;
+    overflow: hidden;
   }
 
   // Phone-only chrome (the sidebar carries these on wider screens).
@@ -175,16 +261,25 @@
     // Leaves room for the fixed bottom bar (+ iOS home-indicator inset).
     padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
 
+    // Back link and icons on one row, full-width search below.
     &__topbar {
-      flex-wrap: wrap;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'start end'
+        'search search';
       gap: 0.5rem;
       margin-bottom: 1rem;
       padding-bottom: 0.75rem;
     }
 
+    &__topbar-end {
+      gap: 0.5rem;
+    }
+
     &__hamburger,
     &__sidebar,
-    &__search-hint {
+    &__search-hint,
+    &__back {
       display: none;
     }
 
@@ -202,12 +297,6 @@
       display: none;
     }
 
-    &__search {
-      order: 1;
-      max-width: none;
-      flex-basis: 100%;
-      margin-left: 0;
-    }
 
     // Stretch (not flex-start) so the content column is exactly the
     // screen's width — otherwise wide content (a swipeable row, the
@@ -221,20 +310,6 @@
       display: flex;
     }
 
-    &__subnav {
-      max-width: 100%;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
-
-      .tab-nav__list {
-        flex-wrap: nowrap;
-      }
-
-      .tab-nav__item {
-        white-space: nowrap;
-      }
-    }
   }
 }
 
@@ -273,12 +348,68 @@
     &--active {
       color: $gold-light;
       border-top-color: $gold;
-      background: rgba($gold, 0.08);
+      background: fade($gold, 0.08);
     }
   }
 
   &__icon {
     font-size: 1.25rem;
     line-height: 1;
+  }
+}
+
+// The DM's Combat tab: initiative, then levelling up the party.
+.campaign-view__combat {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+// DM | Player — for a DM who also plays (CampaignView switchView).
+.view-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 2px;
+  border: 1px solid fade($gold-dim, 0.7);
+  border-radius: 999px;
+  background: fade($bg-deep, 0.7);
+
+  &__option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 2.1rem;
+    padding: 0.15rem 0.7rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: $text-muted;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:hover {
+      color: $gold-light;
+    }
+
+    &.is-on {
+      background: linear-gradient(180deg, $gold, color.adjust(raw('gold-dim'), $lightness: 4%));
+      color: $ink;
+    }
+  }
+
+  // Phones: icons only.
+  @media (max-width: 720px) {
+    &__option {
+      padding: 0.15rem 0.55rem;
+    }
+
+    &__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
   }
 }

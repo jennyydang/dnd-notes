@@ -6,7 +6,7 @@
     font-size: 1.1rem;
     margin-bottom: 1.25rem;
     padding-bottom: 0.4rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.3);
+    border-bottom: 1px solid fade($gold-dim, 0.3);
   }
 
   &__toolbar {
@@ -47,7 +47,7 @@
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    border: 2px dashed rgba($gold-dim, 0.6);
+    border: 2px dashed fade($gold-dim, 0.6);
     background: $bg-deep;
     padding: 0;
     overflow: hidden;
@@ -70,7 +70,7 @@
       cursor: not-allowed;
 
       &:hover {
-        border-color: rgba($gold-dim, 0.6);
+        border-color: fade($gold-dim, 0.6);
       }
     }
   }
@@ -108,7 +108,10 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     overscroll-behavior-x: contain;
-    padding-bottom: 0.5rem;
+    // Room for the cards' drop shadow, so it isn't sliced off flat by the
+    // scrolling row's bottom edge.
+    padding-bottom: 1.25rem;
+    margin-bottom: -0.75rem;
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
@@ -159,7 +162,7 @@
     height: 44px;
     border-radius: 50%;
     background: $bg-deep;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -273,14 +276,14 @@
 
 .status-badge {
   &--player {
-    background: rgba($gold-light, 0.15);
+    background: fade($gold-light, 0.15);
     color: $gold-light;
-    border: 1px solid rgba($gold-light, 0.4);
+    border: 1px solid fade($gold-light, 0.4);
   }
 
   &--npc {
-    background: rgba($gray-light, 0.18);
+    background: fade($gray-light, 0.18);
     color: $gray-text;
-    border: 1px solid rgba($gray-light, 0.4);
+    border: 1px solid fade($gray-light, 0.4);
   }
 }

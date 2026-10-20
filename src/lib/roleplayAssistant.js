@@ -1,12 +1,16 @@
 // Roleplay assistant service. This app has no AI model of its own, and a
 // model API key must never ship in client code — so suggestions come from
-// an optional server endpoint (e.g. a Supabase Edge Function holding the
-// key) configured via VITE_ROLEPLAY_ASSISTANT_URL. Without one, the UI says
-// so plainly and offers the same prompt to copy into any assistant.
+// either the player's own connected Claude / ChatGPT account (their API
+// key, kept on their device: lib/aiConnection.js) or an optional server
+// endpoint (e.g. a Supabase Edge Function holding a key) configured via
+// VITE_ROLEPLAY_ASSISTANT_URL. Without either, the UI says so plainly and
+// offers the same prompt to copy into any assistant.
 //
 // Endpoint contract (POST, JSON):
 //   request:  { prompt, character: { name, summary }, scene, tones }
 //   response: { suggestions: [{ tone, dialogue, action, thought }] }
+
+import { askModel, extractJson, getAiConnection } from './aiConnection.js'
 
 export const TONES = [
   { id: 'gentle', label: 'Gentle' },
@@ -91,6 +95,9 @@ export function parseSuggestions(payload) {
 
 export async function requestSuggestions({ prompt, character, scene, tones, signal }) {
   const url = assistantEndpoint()
+  // The player's own account comes first; the app-wide endpoint after.
+  const connection = getAiConnection()
+  if (connection) return parseSuggestions(extractJson(await askModel(connection, prompt, { signal })))
   if (!url) throw new Error('No roleplay assistant is connected.')
   const response = await fetch(url, {
     method: 'POST',

@@ -50,7 +50,7 @@
 
 @keyframes flash-damage {
   0% {
-    background-color: rgba($maroon-light, 0.45);
+    background-color: fade($maroon-light, 0.45);
   }
   100% {
     background-color: $bg-deep;
@@ -59,7 +59,7 @@
 
 @keyframes flash-heal {
   0% {
-    background-color: rgba($green-light, 0.4);
+    background-color: fade($green-light, 0.4);
   }
   100% {
     background-color: $bg-deep;
@@ -80,11 +80,6 @@
 }
 
 // ── Screens & dialogs ───────────────────────────────────────────────────
-
-// Each screen fades up when you switch to it (keyed per tab in CampaignView).
-.campaign-view__screen {
-  animation: rise-in 0.25s ease-out backwards;
-}
 
 .modal__backdrop {
   animation: fade-in 0.18s ease-out both;
@@ -136,14 +131,29 @@ $cards: '.npc-card', '.loot-card', '.quest-card', '.lore-card', '.party-card', '
   }
 }
 
-// Lift only where there's a real hover (not on touch screens, where a
-// lifted card would stay stuck after a tap).
-@media (hover: hover) {
+@mixin card-lift {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+  border-color: $gold;
+}
+
+// Lift on hover wherever a mouse, trackpad or pen can hover — including
+// a tablet with one attached.
+@media (any-hover: hover) {
   @each $card in $cards {
     #{$card}:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
-      border-color: $gold;
+      @include card-lift;
+    }
+  }
+}
+
+// Touch-only tablets: the card lifts while a finger presses it
+// (tapFeedback.js sets .is-pressed; not :hover, which would leave a
+// tapped card stuck lifted). Phones skip it; their cards swipe instead.
+@media (any-hover: none) and (min-width: 721px) {
+  @each $card in $cards {
+    #{$card}.is-pressed {
+      @include card-lift;
     }
   }
 }
@@ -205,4 +215,28 @@ $cards: '.npc-card', '.loot-card', '.quest-card', '.lore-card', '.party-card', '
 // Invalid input gives a brief shake so the error is noticed.
 [aria-invalid='true'] {
   animation: shake 0.25s ease-in-out;
+}
+
+// ── Tap feedback (src/lib/tapFeedback.js) ──
+.tap-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tap-ripple__dot {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, fade($gold-light, 0.45) 0%, fade($gold, 0.18) 45%, transparent 70%);
+  transform: scale(0);
+  animation: tap-ripple 0.6s ease-out forwards;
+}
+
+@keyframes tap-ripple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
 }

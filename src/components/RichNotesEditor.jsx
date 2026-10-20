@@ -11,8 +11,9 @@ import { toEditorContent } from '../lib/richNotes.js'
 import { TAG_GROUPS, groupForChar, matchKind, tagSlug, tagText } from '../lib/tags.js'
 import Icon from './Icon.jsx'
 import './RichNotesEditor.scss'
+import { ListShortcuts } from '../lib/listShortcuts.js'
 
-const GROUP_ORDER = ['person', 'place', 'lore', 'loot', 'event']
+const GROUP_ORDER = ['person', 'place', 'lore', 'loot', 'creature', 'event']
 
 const MAX_SUGGESTIONS = 6
 // Names can have spaces ("Elandra Voss"), so the suggestion stays open
@@ -26,6 +27,7 @@ const npcFromRow = (r) => ({ id: r.id, label: r.name, kind: null })
 const placeFromRow = (r) => ({ id: r.id, label: r.name, kind: matchKind('place', r.kind) })
 const loreFromRow = (r) => ({ id: r.id, label: r.title, kind: matchKind('lore', r.category) })
 const lootFromRow = (r) => ({ id: r.id, label: r.item, kind: matchKind('loot', r.kind) })
+const creatureFromRow = (r) => ({ id: r.id, label: r.name, kind: matchKind('creature', r.kind) })
 
 // Mention plus a `kind` attribute, so a chip remembers which tag it was
 // made with (e.g. "#dungeon") rather than just which trigger character.
@@ -54,6 +56,7 @@ function baseExtensions(mentionOptions = {}) {
       horizontalRule: false,
       link: false,
     }),
+    ListShortcuts,
     TaggedMention.configure({
       renderText: ({ node }) => node.attrs.label ?? '',
       renderHTML: ({ options, node }) => {
@@ -137,6 +140,7 @@ export function RichNotesEditor({
     place: useSupabaseTable('places', { fromRow: placeFromRow, orderBy: 'name', filters }),
     lore: useSupabaseTable('lore_entries', { fromRow: loreFromRow, orderBy: 'title', filters }),
     loot: useSupabaseTable('loot', { fromRow: lootFromRow, orderBy: 'item', filters }),
+    creature: useSupabaseTable('creatures', { fromRow: creatureFromRow, orderBy: 'name', filters }),
   }
 
   // The editor and its suggestion plugins are built once, so everything
@@ -155,6 +159,7 @@ export function RichNotesEditor({
       place: { name, kind, notes: '' },
       lore: { title: name, category: kind, notes: '' },
       loot: { item: name, kind, found_at: origin, holder: '', notes: '' },
+      creature: { name, kind: 'Creature', notes: '' },
     }[group]
     // addItem broadcasts the change, so the target tab updates too.
     return tables[group].addItem(payload)
@@ -335,7 +340,7 @@ export function RichNotesEditor({
         <span className="rich-notes__toolbar-divider" aria-hidden="true" />
         {GROUP_ORDER.map((group) => {
           const { icon, noun, char, keyword } = TAG_GROUPS[group]
-          const article = { person: 'a ', place: 'a ', event: 'an ' }[noun] ?? ''
+          const article = { person: 'a ', place: 'a ', creature: 'a ', event: 'an ' }[noun] ?? ''
           return toolbarButton(
             group,
             <>
@@ -348,10 +353,10 @@ export function RichNotesEditor({
         })}
       </div>
 
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="rich-notes__body" />
 
       <p className="rich-notes__hint">
-        Tag with <kbd>@</kbd> person, <kbd>#</kbd> place, <kbd>~</kbd> lore, <kbd>$</kbd> loot —
+        Tag with <kbd>@</kbd> person, <kbd>#</kbd> place, <kbd>~</kbd> lore, <kbd>$</kbd> loot, <kbd>%</kbd> creature —
         e.g. <kbd>#city Waterdeep</kbd>. New ones are added to their tab automatically.{' '}
         <kbd>!event</kbd> adds a moment to the Timeline.
       </p>

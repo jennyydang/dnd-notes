@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, uploadImage } from '../lib/storage.js'
 import { listCampaignMembers } from '../lib/campaigns.js'
-import PartyGoals from './PartyGoals.jsx'
+import PartyGoals, { PersonalGoals } from './PartyGoals.jsx'
 import Modal from './Modal.jsx'
 import './PartyTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import { useEdgeFades } from '../hooks/useEdgeFades.js'
+import { RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'party-portraits'
 const MEMBER_TYPES = ['Player', 'NPC']
@@ -60,6 +62,8 @@ function PartyTab({ campaignId, playerId }) {
     fromRow: fromNoteRow,
     filters: { author_player_id: playerId || ZERO_UUID },
   })
+  // The party row scrolls sideways on phones; it fades at the ends.
+  const [partyRowRef, partyRowFade] = useEdgeFades()
   const [isAdding, setIsAdding] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState(null)
@@ -158,7 +162,7 @@ function PartyTab({ campaignId, playerId }) {
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto })
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto, onRemove: removePhoto })
 
   function applyPhoto(file) {
 
@@ -312,14 +316,9 @@ function PartyTab({ campaignId, playerId }) {
                 onChange={photoCrop.fromInput}
               />
               {!readOnly && form.photoPreview && (
-                <>
-                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
-                    Adjust
-                  </button>
-                  <button type="button" className="btn btn--text" onClick={removePhoto}>
-                    Remove photo
-                  </button>
-                </>
+                <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                  Edit photo
+                </button>
               )}
               {photoCrop.dialog}
             </div>
@@ -404,10 +403,11 @@ function PartyTab({ campaignId, playerId }) {
           </div>
           <div className="field">
             <label htmlFor="party-notes">Notes</label>
-            <textarea
+            <RichTextEditor
               id="party-notes"
               value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              onChange={(html) => setForm((prev) => ({ ...prev, notes: html }))}
+              ariaLabel="Notes"
               placeholder="Joined the party after the battle at Redstone Bridge..."
               disabled={readOnly}
             />
@@ -416,22 +416,23 @@ function PartyTab({ campaignId, playerId }) {
           <div className="party-form__actions">
             {mode === 'view' ? (
               canManageMember(member) && (
-                <>
+                <button key="edit" type="button" className="btn btn--primary" onClick={startEditingDetails}>
+                  Edit
+                </button>
+              )
+            ) : (
+              <>
+                {/* Delete lives in edit mode, on the left, away from Save. */}
+                {mode === 'edit' && canManageMember(member) && (
                   <button
                     key="delete"
                     type="button"
-                    className="btn btn--danger"
+                    className="btn btn--danger form-delete"
                     onClick={() => removeMember(member.id)}
                   >
                     Delete
                   </button>
-                  <button key="edit" type="button" className="btn btn--primary" onClick={startEditingDetails}>
-                    Edit
-                  </button>
-                </>
-              )
-            ) : (
-              <>
+                )}
                 {/* Distinct keys so React never reuses the view-mode Edit
                     button as this submit button mid-click. */}
                 <button
@@ -504,7 +505,8 @@ function PartyTab({ campaignId, playerId }) {
 
   return (
     <section className="party-tab">
-      <PartyGoals campaignId={campaignId} />
+      <PartyGoals />
+      <PersonalGoals />
 
       <h3 className="party-tab__section-title">Party Members</h3>
       <div className="party-tab__toolbar">
@@ -515,7 +517,15 @@ function PartyTab({ campaignId, playerId }) {
 
       {claimError && <p className="empty-state empty-state--error">{claimError}</p>}
 
-      {isAdding && renderPartyForm('add')}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add Party Member">
+
+          {renderPartyForm('add')}
+
+        </Modal>
+
+      )}
 
       {viewingMember && (
         <Modal onClose={closeViewing} label={`${viewingMember.name} — Party Member`}>
@@ -542,7 +552,7 @@ function PartyTab({ campaignId, playerId }) {
         </p>
       )}
       {!loading && !error && party.length > 0 && (
-        <div className="party-list">
+        <div ref={partyRowRef} className={`party-list ${partyRowFade}`}>
           {party.map((member) => (
             <article className="party-card panel" key={member.id}>
               <div className="party-card__main">

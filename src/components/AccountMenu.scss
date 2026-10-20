@@ -9,14 +9,30 @@
     width: 2.4rem;
     height: 2.4rem;
     border-radius: 50%;
-    background: linear-gradient(180deg, $gold-dim, color.adjust($gold-dim, $lightness: -8%));
+    background: linear-gradient(180deg, $gold-dim, color.adjust(raw('gold-dim'), $lightness: -8%));
     border: $border-gold;
     color: $ink;
     font-family: $font-display;
     font-size: 1.05rem;
 
     &:hover {
-      background: linear-gradient(180deg, $gold, color.adjust($gold-dim, $lightness: -4%));
+      background: linear-gradient(180deg, $gold, color.adjust(raw('gold-dim'), $lightness: -4%));
+    }
+
+    &--photo {
+      padding: 0;
+      overflow: hidden;
+
+      &:hover {
+        border-color: $gold-light;
+      }
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
   }
 
@@ -24,18 +40,48 @@
     position: absolute;
     top: calc(100% + 0.5rem);
     right: 0;
-    min-width: 10rem;
-    padding: 0.75rem;
+    min-width: 13rem;
+    padding: 0.75rem 0.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.15rem;
     z-index: 10;
+  }
+
+  // One row per item: icon, then the label, left-aligned on one line.
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    white-space: nowrap;
+
+    .icon {
+      flex-shrink: 0;
+      color: $gold;
+    }
+
+    &:hover {
+      background: fade($gold, 0.1);
+    }
+
+    // Log Out sits apart from the rest.
+    &--last {
+      margin-top: 0.25rem;
+      border-top: 1px solid fade($gold-dim, 0.3);
+      border-radius: 0;
+      padding-top: 0.75rem;
+    }
   }
 
   &__name {
     color: $gold-light;
     font-size: 0.9rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba($gold-dim, 0.4);
+    padding: 0 0.75rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid fade($gold-dim, 0.4);
   }
 }

@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
-import { getPublicUrl } from '../lib/storage.js'
+import { getPublicUrl, removeImage } from '../lib/storage.js'
+import { AUDIO_BUCKET } from '../lib/sessionRecorder.js'
+import SessionAudio from './SessionAudio.jsx'
+import SessionReel from './SessionReel.jsx'
+import AudioPlayer from './AudioPlayer.jsx'
 import { formatSessionDate, sortSessionsByDate } from '../lib/sessionNotes.js'
 import { extractMentions, notesToPlainText } from '../lib/richNotes.js'
 import { TAG_GROUPS } from '../lib/tags.js'
@@ -22,6 +26,9 @@ const fromRow = (r) => ({
   sessionDate: r.session_date,
   notes: r.notes,
   createdAt: r.created_at,
+  audioPath: r.audio_path || null,
+  audioSeconds: r.audio_seconds ?? null,
+  audioMarks: Array.isArray(r.audio_marks) ? r.audio_marks : [],
 })
 
 const partyFromRow = (r) => ({
@@ -67,6 +74,7 @@ const MENTION_SECTIONS = [
   { group: 'place', title: 'Places Visited', tabLabel: 'Maps' },
   { group: 'lore', title: 'Lore', tabLabel: 'Lore' },
   { group: 'loot', title: 'Loot Found', tabLabel: 'Loot' },
+  { group: 'creature', title: 'Creatures', tabLabel: 'Creatures' },
   { group: 'event', title: 'Events', tabLabel: 'Timeline' },
 ]
 
@@ -111,7 +119,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
     ? { campaign_id: campaignId, player_id: playerId }
     : { campaign_id: campaignId }
 
-  const { items: sessions, loading, error, addItem, updateItem, removeItem } =
+  const { items: sessions, loading, error, addItem, updateItem, removeItem, refetch } =
     useSupabaseTable('session_notes', {
       fromRow,
       orderBy: 'session_date',
@@ -201,6 +209,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
     const session = sessions.find((s) => s.id === id)
     if (!confirmDelete(`the session “${session?.title || 'Untitled Session'}”`)) return
     await removeItem(id)
+    if (session?.audioPath) await removeImage(AUDIO_BUCKET, session.audioPath)
     if (editingId === id) cancelForm()
     if (viewingId === id) setViewingId(null)
   }
@@ -215,6 +224,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
         onSubmit={submitForm}
         formError={formError}
         onCancel={cancelForm}
+        onDelete={editingId ? () => removeSession(editingId) : undefined}
         submitting={submitting}
         submitLabel={submitting ? 'Saving…' : editingId ? 'Save Changes' : 'Add Session Notes'}
       />
@@ -295,19 +305,14 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
               ◆
             </div>
             <RichNotesView value={viewingSession.notes} className="session-detail__notes" />
+            <SessionAudio session={viewingSession} onChanged={() => refetch({ silent: true })} />
+            <SessionReel session={viewingSession} />
             <div className="session-detail__actions">
               <button type="button" className="btn btn--text" onClick={() => setExportTarget(viewingSession.id)}>
                 Export
               </button>
               <button type="button" className="btn btn--text" onClick={() => startEditing(viewingSession)}>
                 Edit
-              </button>
-              <button
-                type="button"
-                className="btn btn--danger"
-                onClick={() => removeSession(viewingSession.id)}
-              >
-                Delete
               </button>
             </div>
           </article>
@@ -322,7 +327,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
       {!loading && !error && !viewingSession && sortedSessions.length > 0 && (
         <div className="session-list">
           {sortedSessions.map((session) => (
-            <article className="session-card panel" key={session.id}>
+            <article className={`session-card panel${session.sessionDate ? '' : ' session-card--no-date'}`} key={session.id}>
               <span className="session-card__badge" aria-hidden="true">
                 <Icon name="scroll" />
               </span>
@@ -340,28 +345,37 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
                   )}
                 </div>
                 <p className="session-card__notes">{notesToPlainText(session.notes)}</p>
-                <div className="session-card__actions">
+                <div className={`session-card__actions${session.audioPath ? ' session-card__actions--audio' : ''}`}>
+                  {/* Listen without opening the recap: bottom-left, by the actions. */}
+                  {session.audioPath && (
+                    <AudioPlayer
+                      key={session.audioPath}
+                      src={getPublicUrl(AUDIO_BUCKET, session.audioPath)}
+                      seconds={session.audioSeconds}
+                      label={`${session.title || 'Untitled Session'} recording`}
+                      marks={session.audioMarks}
+                      compact
+                    />
+                  )}
                   <button
                     type="button"
-                    className="btn btn--text"
+                    className="btn btn--text session-card__export"
                     onClick={() => setExportTarget(session.id)}
                     aria-label={`Export ${session.title || 'Untitled Session'}`}
+                    title="Export"
                   >
-                    Export
+                    <Icon name="download" />
+                    <span className="session-card__export-label">Export</span>
                   </button>
                   <button
                     type="button"
-                    className="btn btn--text"
+                    className="btn btn--text session-card__export"
                     onClick={() => startEditing(session)}
+                    aria-label={`Edit ${session.title || 'Untitled Session'}`}
+                    title="Edit"
                   >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--danger"
-                    onClick={() => removeSession(session.id)}
-                  >
-                    Delete
+                    {session.audioPath && <Icon name="edit" className="session-card__edit-icon" />}
+                    <span className="session-card__export-label">Edit</span>
                   </button>
                 </div>
               </div>

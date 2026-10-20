@@ -1,8 +1,9 @@
 @use '../styles/variables' as *;
 
 .image-crop {
-  padding: 1.5rem;
+  // The dialog panel already pads it.
   width: min(100%, 36rem);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -49,7 +50,7 @@
     inset: 0;
     border-radius: 50%;
     box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55);
-    border: 2px solid rgba($gold-light, 0.8);
+    border: 2px solid fade($gold-light, 0.8);
     pointer-events: none;
   }
 
@@ -121,4 +122,9 @@
   &__actions {
     align-self: stretch;
   }
+}
+
+// Full width, so "Remove image" can sit at the far left.
+.image-crop__actions {
+  align-self: stretch;
 }

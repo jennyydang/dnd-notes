@@ -9,6 +9,8 @@ import {
 } from '../../lib/roleplayAssistant.js'
 import { sessionDateTimestamp } from '../../lib/sessionNotes.js'
 import { Chip, SectionCard } from '../ui.jsx'
+import { useAiConnection } from '../../hooks/useAiConnection.js'
+import AiConnectionPanel from '../AiConnectionPanel.jsx'
 
 // Recorded campaign context the player can opt into sending: the latest
 // session recap and open quests — facts they wrote, nothing inferred.
@@ -87,7 +89,9 @@ function RoleplayAssistant({ character, narrative }) {
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
   const abortRef = useRef(null)
-  const configured = isAssistantConfigured()
+  // The player's own Claude / ChatGPT account, or the app's endpoint.
+  const connection = useAiConnection()
+  const configured = Boolean(connection) || isAssistantConfigured()
 
   const prompt = scene.trim()
     ? buildAssistantPrompt({
@@ -128,11 +132,13 @@ function RoleplayAssistant({ character, narrative }) {
     <SectionCard title="Roleplay assistant" icon="message" className="assistant narrative">
       {!configured && (
         <p className="assistant__notice" role="note">
-          <strong>No AI model is connected</strong>, so this won&apos;t generate replies. You can
+          <strong>No AI model is connected</strong>, so this won&apos;t generate replies yet. You can
           still copy a ready-made prompt (built from {character.name}&apos;s roleplay notes) into any
           assistant, and see which of {character.name}&apos;s own quirks fit the scene.
         </p>
       )}
+      {/* Connect (or show) the player's own Claude / ChatGPT account. */}
+      {(connection || !isAssistantConfigured()) && <AiConnectionPanel compact />}
 
       <form className="form-stack" onSubmit={ask}>
         <div className="field">

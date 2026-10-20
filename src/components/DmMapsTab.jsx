@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { useDmShares } from '../hooks/useDmShares.js'
+import { useCampaignData } from '../hooks/useCampaignData.js'
 import { getPublicUrl, removeImage, uploadImage } from '../lib/storage.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import { confirmDelete } from '../lib/confirm.js'
@@ -10,6 +11,7 @@ import ShareStatus from './ShareStatus.jsx'
 import DmPrivacyNote from './DmPrivacyNote.jsx'
 import Icon from './Icon.jsx'
 import './ArtGallery.scss'
+import { RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'maps'
 
@@ -29,21 +31,26 @@ function captionFromFile(name) {
   return base ? base.charAt(0).toUpperCase() + base.slice(1) : 'Untitled map'
 }
 
-// The DM's private maps. Share one and players get a notification; adding
+// The DM's private maps. Reveal one and players get a notification; adding
 // it puts a copy (with its own image file) in the players' Maps tab.
 function DmMapsTab({ campaignId }) {
+  const { playerId } = useCampaignData()
+  // Each DM's maps are their own (dm_id); the admin (no player) sees all.
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('dm_maps', {
     fromRow,
-    filters: { campaign_id: campaignId },
+    filters: playerId ? { campaign_id: campaignId, dm_id: playerId } : { campaign_id: campaignId },
   })
   const { items: partyMaps } = useSupabaseTable('maps', {
     fromRow: partyMapFromRow,
     filters: { campaign_id: campaignId },
   })
-  const { byKey } = useDmShares(campaignId)
+  const { byKey, revealedKeys } = useDmShares(campaignId)
   const addedIds = useMemo(() => new Set(partyMaps.map((m) => m.dmMapId).filter(Boolean)), [partyMaps])
   const statusOf = (map) =>
     addedIds.has(map.id) ? 'added' : byKey.has(shareKey('map', map.id)) ? 'sent' : 'private'
+  // Revealed (or shared before Reveal replaced Share): it's out, so the
+  // tile greys out.
+  const isRevealed = (map) => statusOf(map) !== 'private' || revealedKeys.has(shareKey('map', map.id))
 
   const [viewingId, setViewingId] = useState(null)
   const [editing, setEditing] = useState(null)
@@ -79,23 +86,27 @@ function DmMapsTab({ campaignId }) {
     setActionError(null)
     try {
       await action()
+      return true
     } catch (err) {
       setActionError(err.message)
+      return false
     }
   }
 
-  async function share(map) {
+  async function reveal(map) {
     setSharingId(map.id)
-    await run(() =>
+    const ok = await run(() =>
       shareWithPlayers({
         campaignId,
         kind: 'map',
         sourceId: map.id,
         title: map.title || 'Untitled map',
         payload: { caption: map.title, image_path: map.imagePath },
+        reveal: true,
       }),
     )
     setSharingId(null)
+    return ok
   }
 
   async function remove(map) {
@@ -151,7 +162,7 @@ function DmMapsTab({ campaignId }) {
 
       {maps.length > 0 && (
         <p className="art-gallery__summary">
-          {added} of {maps.length} in the players’ Maps tab. Tap a map to view, share or edit it.
+          {added} of {maps.length} in the players’ Maps tab. Tap a map to view, reveal or edit it.
         </p>
       )}
       {uploadErrors.length > 0 && (
@@ -173,12 +184,12 @@ function DmMapsTab({ campaignId }) {
       {error && (
         <p className="empty-state empty-state--error">
           {error}
-          {/dm_maps/.test(error) && ' — run the latest supabase/schema.sql to add the DM maps table.'}
+          {/dm_maps|dm_id/.test(error) && ' — run the latest supabase/schema.sql to update the DM maps table.'}
         </p>
       )}
       {!loading && !error && maps.length === 0 && (
         <p className="empty-state">
-          No maps yet. Upload the maps you’ve made (several at once is fine). They stay private until you press Share.
+          No maps yet. Upload the maps you’ve made (several at once is fine). They stay private until you Reveal them.
         </p>
       )}
 
@@ -187,7 +198,7 @@ function DmMapsTab({ campaignId }) {
           {maps.map((map) => {
             const status = statusOf(map)
             return (
-              <li key={map.id} className="art-tile">
+              <li key={map.id} className={`art-tile${isRevealed(map) ? ' dm-revealed' : ''}`}>
                 <button type="button" className="art-tile__open" onClick={() => setViewingId(map.id)}>
                   <img src={map.url} alt={map.title || 'Map'} loading="lazy" />
                   <span className="art-tile__caption">
@@ -212,7 +223,6 @@ function DmMapsTab({ campaignId }) {
           onClose={() => setViewingId(null)}
           actions={
             <>
-              <ShareStatus kind="map" status={statusOf(viewing)} sharing={sharingId === viewing.id} onShare={() => share(viewing)} />
               <button
                 type="button"
                 className="btn btn--text"
@@ -220,6 +230,13 @@ function DmMapsTab({ campaignId }) {
               >
                 Edit details
               </button>
+              <ShareStatus
+                kind="map"
+                status={statusOf(viewing)}
+                sharing={sharingId === viewing.id}
+                onReveal={() => reveal(viewing)}
+                revealed={isRevealed(viewing)}
+              />
               <button type="button" className="btn btn--danger" onClick={() => remove(viewing)}>
                 Delete
               </button>
@@ -244,11 +261,11 @@ function DmMapsTab({ campaignId }) {
             </div>
             <div className="field">
               <label htmlFor="dm-map-notes"><Icon name="lock" /> DM notes (never shared)</label>
-              <textarea
+              <RichTextEditor
                 id="dm-map-notes"
-                rows={3}
                 value={editing.notes}
-                onChange={(e) => setEditing({ ...editing, notes: e.target.value })}
+                onChange={(html) => setEditing((prev) => ({ ...prev, notes: html }))}
+                ariaLabel="notes"
                 placeholder="Traps, secret doors, what's really in the cellar…"
               />
             </div>

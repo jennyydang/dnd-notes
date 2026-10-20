@@ -3,9 +3,23 @@
 .npcs-tab {
   &__toolbar {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
     margin-bottom: 1.25rem;
+
+    .view-toggle {
+      margin-right: auto;
+    }
   }
+}
+
+// Compact view: one tight row per NPC, more of them per screen.
+.npc-list--compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 0.6rem;
 }
 
 .npc-form {
@@ -24,6 +38,11 @@
     align-items: flex-start;
   }
 
+  // The description sits below the photo + fields block.
+  &__layout + .field {
+    margin-top: 1rem;
+  }
+
   &__photo {
     flex-shrink: 0;
     display: flex;
@@ -36,7 +55,7 @@
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    border: 2px dashed rgba($gold-dim, 0.6);
+    border: 2px dashed fade($gold-dim, 0.6);
     background: $bg-deep;
     padding: 0;
     overflow: hidden;
@@ -87,6 +106,20 @@
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  transition:
+    filter 1.6s ease,
+    opacity 1.6s ease,
+    box-shadow 1.6s ease;
+
+  // Marked Deceased: the card slowly drains to grey and darkens at the
+  // edges (the status badge still says it in words).
+  &--deceased {
+    filter: grayscale(1) brightness(0.78);
+    opacity: 0.8;
+    box-shadow:
+      $shadow-panel,
+      inset 0 0 2.5rem rgba(0, 0, 0, 0.75);
+  }
 
   &__main {
     display: flex;
@@ -108,7 +141,7 @@
     height: 44px;
     border-radius: 50%;
     background: $bg-deep;
-    border: 1px solid rgba($gold-dim, 0.5);
+    border: 1px solid fade($gold-dim, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -123,9 +156,111 @@
     }
   }
 
+  &__who {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  // Life status and rapport, side by side under the name.
+  &__badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  // Wraps between words; only a word too long for the whole card breaks.
   &__name {
+    min-width: 0;
     font-size: 1.15rem;
+    line-height: 1.25;
     color: $parchment;
+    overflow-wrap: break-word;
+  }
+
+  &--compact {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0.6rem 0.55rem 0.75rem;
+  }
+
+  &__avatar--small {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+  }
+
+  &__summary {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  // On the full card the name, at its full size, opens the entry too.
+  &__open {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      text-decoration: underline;
+    }
+  }
+
+  // The name opens the NPC's detail view (links and related entries).
+  &__name-btn {
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: $font-display;
+    font-size: 1rem;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $gold-light;
+      text-decoration: underline;
+    }
+  }
+
+  &__meta {
+    max-width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    .status-badge {
+      padding: 0.1rem 0.45rem;
+      font-size: 0.66rem;
+    }
+  }
+
+  &__meta-text {
+    font-size: 0.85rem;
+    color: $text-muted;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__details {
@@ -160,27 +295,27 @@
     gap: 0.5rem;
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid rgba($gold-dim, 0.3);
+    border-top: 1px solid fade($gold-dim, 0.3);
   }
 }
 
 .status-badge {
   &--alive {
-    background: rgba($green-light, 0.18);
+    background: fade($green-light, 0.18);
     color: $green-text;
-    border: 1px solid rgba($green-light, 0.4);
+    border: 1px solid fade($green-light, 0.4);
   }
 
   &--deceased {
-    background: rgba($maroon-light, 0.18);
+    background: fade($maroon-light, 0.18);
     color: $maroon-text;
-    border: 1px solid rgba($maroon-light, 0.4);
+    border: 1px solid fade($maroon-light, 0.4);
   }
 
   &--unknown,
   &--missing {
-    background: rgba($gold-light, 0.15);
+    background: fade($gold-light, 0.15);
     color: $gold-light;
-    border: 1px solid rgba($gold-light, 0.4);
+    border: 1px solid fade($gold-light, 0.4);
   }
 }

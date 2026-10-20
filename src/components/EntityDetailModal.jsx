@@ -8,6 +8,7 @@ import LinkPicker from './LinkPicker.jsx'
 import { RichNotesView } from './RichNotesEditor.jsx'
 import { EntityChip } from './ui.jsx'
 import Icon from './Icon.jsx'
+import { requestMapFocus } from '../lib/mapFocus.js'
 import './EntityDetailModal.scss'
 
 // Read view of any campaign entry with everything related to it — links
@@ -23,6 +24,8 @@ function EntityDetailModal({ type, id, canGoBack, onBack, onClose }) {
   const [linkError, setLinkError] = useState(null)
   const [savingLink, setSavingLink] = useState(false)
   const [removed, setRemoved] = useState(null)
+
+  const mapPin = (data.mapMarkers || []).find((m) => m.entity_type === type && m.entity_id === id) || null
 
   const related = useMemo(
     () => (entity ? relatedEntries(entity, data) : []),
@@ -207,6 +210,20 @@ function EntityDetailModal({ type, id, canGoBack, onBack, onClose }) {
         </section>
 
         <div className="form-actions entity-detail__footer">
+          {/* A pin on a map is about this entry: jump there. */}
+          {mapPin && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                requestMapFocus({ mapId: mapPin.map_id, markerId: mapPin.id })
+                onClose()
+                nav.goTo('maps')
+              }}
+            >
+              <Icon name="map" /> Show on map
+            </button>
+          )}
           <button type="button" className="btn" onClick={() => nav.goTo(entity.tab)}>
             Open in {nav.tabs.find((t) => t.id === entity.tab)?.label || 'its tab'} to edit
           </button>

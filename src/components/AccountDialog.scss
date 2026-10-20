@@ -1,0 +1,28 @@
+@use '../styles/variables' as *;
+
+// A player's own account settings (AccountDialog.jsx).
+.account-dialog {
+  &__hint {
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+
+  &__current {
+    padding-top: 0.75rem;
+    border-top: 1px solid fade($gold-dim, 0.3);
+  }
+
+  &__error,
+  &__saved {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  &__error {
+    color: $maroon-text;
+  }
+
+  &__saved {
+    color: $green-text;
+  }
+}

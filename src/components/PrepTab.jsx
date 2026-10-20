@@ -10,6 +10,9 @@ import { EntityChip, SaveStatus, SectionCard, StatusMessage } from './ui.jsx'
 import Icon from './Icon.jsx'
 import './PrepTab.scss'
 
+// "Came up recently" shows this many before a "+N more".
+const RECENT_LIMIT = 12
+
 const LISTS = [
   { key: 'objectives', title: 'Planned scenes & objectives', icon: 'target', placeholder: 'Confront Elandra about the ledger' },
   { key: 'questions', title: 'Questions for the DM', icon: 'help', placeholder: 'Can I cast Speak with Dead on the courier?' },
@@ -81,7 +84,7 @@ function PrepItem({ item, onChange, onRemove, onOpen }) {
   )
 }
 
-function PrepList({ def, items, onChange, onOpen }) {
+function PrepList({ def, items, onChange, onOpen, className = '' }) {
   const [draft, setDraft] = useState('')
   const inputId = useId()
   const done = items.filter((i) => i.done).length
@@ -89,6 +92,7 @@ function PrepList({ def, items, onChange, onOpen }) {
     <SectionCard
       title={def.title}
       icon={def.icon}
+      className={className}
       action={items.length > 0 && <span className="field-hint">{done}/{items.length} done</span>}
     >
       {items.length > 0 && (
@@ -132,6 +136,7 @@ function PrepTab() {
   const nav = useCampaignNav()
   const { campaignId, playerId, entities, loading } = data
   const prep = usePrep(campaignId, playerId)
+  const [showAllRecent, setShowAllRecent] = useState(false)
   const open = (e) => nav.openEntity(e.type, e.id)
 
   if (!playerId) {
@@ -154,6 +159,13 @@ function PrepTab() {
   const openThreads = entities.filter((e) => e.open)
   const doc = prep.doc
   const setList = (key) => (items) => prep.update((d) => ({ ...d, [key]: items }))
+  const recentShown = showAllRecent ? recentlyMentioned : recentlyMentioned.slice(0, RECENT_LIMIT)
+  const listCard = (key, className) => {
+    const def = LISTS.find((l) => l.key === key)
+    return doc ? (
+      <PrepList def={def} items={doc[key]} onChange={setList(key)} onOpen={open} className={className} />
+    ) : null
+  }
 
   function addThreadAsObjective(entity) {
     prep.update((d) => ({
@@ -184,85 +196,105 @@ function PrepTab() {
         </p>
       )}
 
+      {/* Three columns that stack on their own (no row gaps): what
+          happened, what to do, who's involved. On a phone they become one
+          list, in the order below. */}
       <div className="prep__grid">
-        <SectionCard
-          title="Last session"
-          icon="book"
-          className="prep__recap"
-          action={
-            last && (
-              <button type="button" className="btn btn--text" onClick={() => open(last)}>
-                Details
-              </button>
-            )
-          }
-        >
-          <StatusMessage loading={loading && !entities.length} empty={!last}>
-            No recap yet — it will appear here after your first session.
-          </StatusMessage>
-          {last && (
-            <>
-              <p className="prep__recap-title">
-                <strong>{last.title}</strong>
-                {last.raw.session_date && ` · ${formatSessionDate(last.raw.session_date)}`}
-              </p>
-              <div className="prep__recap-body">
-                <RichNotesView value={last.raw.notes} />
-              </div>
-            </>
-          )}
-        </SectionCard>
+        <div className="prep__col">
+          <SectionCard
+            title="Last session"
+            icon="book"
+            className="prep__recap prep__card--1"
+            action={
+              last && (
+                <button type="button" className="btn btn--text" onClick={() => open(last)}>
+                  Details
+                </button>
+              )
+            }
+          >
+            <StatusMessage loading={loading && !entities.length} empty={!last}>
+              No recap yet — it will appear here after your first session.
+            </StatusMessage>
+            {last && (
+              <>
+                <p className="prep__recap-title">
+                  <strong>{last.title}</strong>
+                  {last.raw.session_date && ` · ${formatSessionDate(last.raw.session_date)}`}
+                </p>
+                <div className="prep__recap-body">
+                  <RichNotesView value={last.raw.notes} />
+                </div>
+              </>
+            )}
+          </SectionCard>
 
-        <SectionCard title="Open threads" icon="threads">
-          <StatusMessage loading={loading && !entities.length} empty={!openThreads.length}>
-            No active quests or party goals.
-          </StatusMessage>
-          {openThreads.length > 0 && (
-            <ul className="prep__chips">
-              {openThreads.map((e) => (
-                <li key={`${e.type}-${e.id}`}>
-                  <EntityChip
-                    entity={e}
-                    onOpen={open}
-                    suffix={
-                      <button
-                        type="button"
-                        className="icon-btn"
-                        onClick={() => addThreadAsObjective(e)}
-                        aria-label={`Add “${e.title}” to objectives`}
-                        disabled={!doc}
-                      >
-                        ＋
-                      </button>
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </SectionCard>
+          {listCard('checklist', 'prep__card--7')}
+        </div>
+        <div className="prep__col">
+          <SectionCard title="Open threads" icon="threads" className="prep__card--2">
+            <StatusMessage loading={loading && !entities.length} empty={!openThreads.length}>
+              No active quests or party goals.
+            </StatusMessage>
+            {openThreads.length > 0 && (
+              <ul className="prep__chips">
+                {openThreads.map((e) => (
+                  <li key={`${e.type}-${e.id}`}>
+                    <EntityChip
+                      entity={e}
+                      onOpen={open}
+                      suffix={
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          onClick={() => addThreadAsObjective(e)}
+                          aria-label={`Add “${e.title}” to objectives`}
+                          disabled={!doc}
+                        >
+                          ＋
+                        </button>
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </SectionCard>
 
-        <SectionCard title="Came up recently" icon="users">
-          <StatusMessage loading={loading && !entities.length} empty={!recentlyMentioned.length}>
-            NPCs and places tagged in your last two recaps show up here.
-          </StatusMessage>
-          {recentlyMentioned.length > 0 && (
-            <ul className="prep__chips">
-              {recentlyMentioned.map((e) => (
-                <li key={`${e.type}-${e.id}`}>
-                  <EntityChip entity={e} onOpen={open} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </SectionCard>
+          {listCard('objectives', 'prep__card--4')}
+          {listCard('prepare', 'prep__card--6')}
+        </div>
+        <div className="prep__col">
+          <SectionCard
+            title="Came up recently"
+            icon="users"
+            className="prep__card--3"
+            action={
+              recentlyMentioned.length > RECENT_LIMIT && (
+                <button type="button" className="btn btn--text" onClick={() => setShowAllRecent((v) => !v)}>
+                  {showAllRecent ? 'Fewer' : `+${recentlyMentioned.length - RECENT_LIMIT} more`}
+                </button>
+              )
+            }
+          >
+            <StatusMessage loading={loading && !entities.length} empty={!recentlyMentioned.length}>
+              NPCs and places tagged in your last two recaps show up here.
+            </StatusMessage>
+            {recentlyMentioned.length > 0 && (
+              <ul className="prep__chips prep__chips--wrap">
+                {recentShown.map((e) => (
+                  <li key={`${e.type}-${e.id}`}>
+                    <EntityChip entity={e} onOpen={open} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </SectionCard>
 
-        {doc
-          ? LISTS.map((def) => (
-              <PrepList key={def.key} def={def} items={doc[def.key]} onChange={setList(def.key)} onOpen={open} />
-            ))
-          : !prep.error && <p className="inline-state">Loading your prep…</p>}
+          {listCard('questions', 'prep__card--5')}
+        </div>
       </div>
+      {!doc && !prep.error && <p className="inline-state">Loading your prep…</p>}
     </div>
   )
 }

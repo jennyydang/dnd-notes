@@ -1,0 +1,104 @@
+@use '../styles/variables' as *;
+
+.ai-connect {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  a {
+    color: $gold-light;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  &__providers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  &__lead {
+    margin: 0;
+    color: $text-light;
+  }
+
+  &--compact {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.9rem;
+    border: 1px dashed fade($gold, 0.45);
+    border-radius: $radius;
+    background: fade($gold, 0.05);
+  }
+
+  &--on {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    color: $text-light;
+
+    svg {
+      color: $gold-light;
+    }
+  }
+
+  &__meta {
+    flex-basis: 100%;
+    color: $text-muted;
+    font-size: 0.8rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  &__disconnect {
+    color: #f08a7e;
+  }
+
+  &__signin {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    .field-hint {
+      margin: 0;
+    }
+  }
+
+  &__or {
+    margin: 0;
+    color: $text-muted;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  &__privacy {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin: 0;
+    color: $text-muted;
+    font-size: 0.82rem;
+
+    svg {
+      flex: 0 0 auto;
+      margin-top: 0.15rem;
+      color: $gold-light;
+    }
+  }
+}

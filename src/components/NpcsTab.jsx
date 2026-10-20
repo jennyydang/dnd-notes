@@ -6,6 +6,11 @@ import './NpcsTab.scss'
 import { confirmDelete } from '../lib/confirm.js'
 import { useCampaignNav } from '../hooks/useCampaignData.js'
 import { useImageCrop } from '../hooks/useImageCrop.jsx'
+import { ViewToggle } from './ui.jsx'
+import { useViewMode } from '../hooks/useViewMode.js'
+import Icon from './Icon.jsx'
+import { RichText, RichTextEditor } from './RichText.jsx'
+import AttitudeMeter from './AttitudeMeter.jsx'
 
 const BUCKET = 'npc-portraits'
 const LIFE_STATUSES = ['Alive', 'Deceased', 'Unknown', 'Missing']
@@ -29,12 +34,15 @@ const fromRow = (r) => ({
   status: r.status,
   description: r.description,
   photo: getPublicUrl(BUCKET, r.photo_path),
+  attitude: r.attitude || null,
+  attitudeLog: Array.isArray(r.attitude_log) ? r.attitude_log : [],
 })
 
 function NpcsTab({ campaignId }) {
   const { openEntity } = useCampaignNav()
   const { items: npcs, loading, error, addItem, updateItem, removeItem } =
     useSupabaseTable('npcs', { fromRow, orderBy: 'met_at', filters: { campaign_id: campaignId } })
+  const [view, setView] = useViewMode('npcs')
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -91,7 +99,7 @@ function NpcsTab({ campaignId }) {
   }
 
   // Every picked photo goes through the crop/zoom/move step first.
-  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto })
+  const photoCrop = useImageCrop({ aspect: 1, shape: 'circle', onCropped: applyPhoto, onRemove: removePhoto })
 
   function applyPhoto(file) {
 
@@ -175,14 +183,9 @@ function NpcsTab({ campaignId }) {
                 onChange={photoCrop.fromInput}
               />
               {form.photoPreview && (
-                <>
-                  <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
-                    Adjust
-                  </button>
-                  <button type="button" className="btn btn--text" onClick={removePhoto}>
-                    Remove photo
-                  </button>
-                </>
+                <button type="button" className="btn btn--text" onClick={() => photoCrop.adjust(form.photoFile, form.photoPreview)}>
+                  Edit photo
+                </button>
               )}
               {photoCrop.dialog}
             </div>
@@ -237,15 +240,22 @@ function NpcsTab({ campaignId }) {
           </div>
           <div className="field">
             <label htmlFor="npc-description">Description</label>
-            <textarea
+            <RichTextEditor
               id="npc-description"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(html) => setForm((prev) => ({ ...prev, description: html }))}
+              ariaLabel="Description"
               placeholder="What they look like, how they talk, anything worth remembering..."
             />
           </div>
           {formError && <p className="empty-state empty-state--error">{formError}</p>}
           <div className="npc-form__actions">
+            {/* Delete lives here, away from Save — not on the card. */}
+            {editingId && (
+              <button type="button" className="btn btn--danger form-delete" onClick={() => removeNpc(editingId)}>
+                Delete
+              </button>
+            )}
             <button type="button" className="btn btn--text" onClick={cancelForm} disabled={submitting}>
               Cancel
             </button>
@@ -260,12 +270,21 @@ function NpcsTab({ campaignId }) {
   return (
     <section className="npcs-tab">
       <div className="npcs-tab__toolbar">
+        {npcs.length > 0 && <ViewToggle value={view} onChange={setView} label="NPC card size" />}
         <button type="button" className="btn btn--primary" onClick={startAdding}>
           + Add NPC
         </button>
       </div>
 
-      {isAdding && renderNpcForm(true)}
+      {isAdding && (
+
+        <Modal onClose={cancelForm} label="Add NPC">
+
+          {renderNpcForm(false)}
+
+        </Modal>
+
+      )}
 
       {editingId && (
         <Modal onClose={cancelForm} label="Edit NPC">
@@ -282,10 +301,59 @@ function NpcsTab({ campaignId }) {
         </p>
       )}
 
-      {!loading && !error && npcs.length > 0 && (
+      {!loading && !error && npcs.length > 0 && view === 'compact' && (
+        <div className="npc-list npc-list--compact">
+          {npcs.map((npc) => (
+            <article
+              className={`npc-card npc-card--compact panel${npc.status === 'Deceased' ? ' npc-card--deceased' : ''}`}
+              key={npc.id}
+            >
+              <div className="npc-card__avatar npc-card__avatar--small">
+                {npc.photo ? (
+                  <img src={npc.photo} alt="" />
+                ) : (
+                  <span aria-hidden="true">{npc.name.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="npc-card__summary">
+                <button
+                  type="button"
+                  className="npc-card__name npc-card__name-btn"
+                  onClick={() => openEntity('npc', npc.id)}
+                  title="Open with links and related entries"
+                >
+                  {npc.name}
+                </button>
+                <span className="npc-card__meta">
+                  <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>{npc.status}</span>
+                  <AttitudeMeter npc={npc} onSave={(patch) => updateItem(npc.id, patch)} />
+                  {(npc.race || npc.metAt) && (
+                    <span className="npc-card__meta-text">{[npc.race, npc.metAt].filter(Boolean).join(' · ')}</span>
+                  )}
+                </span>
+              </div>
+              <div className="compact-actions">
+                <button type="button" className="icon-btn" onClick={() => startEditing(npc)} aria-label={`Edit ${npc.name}`}>
+                  <Icon name="edit" />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--danger card-delete"
+                  onClick={() => removeNpc(npc.id)}
+                  aria-label={`Delete ${npc.name}`}
+                >
+                  <Icon name="trash" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {!loading && !error && npcs.length > 0 && view === 'cards' && (
         <div className="npc-list">
           {npcs.map((npc) => (
-            <article className="npc-card panel" key={npc.id}>
+            <article className={`npc-card panel${npc.status === 'Deceased' ? ' npc-card--deceased' : ''}`} key={npc.id}>
               <div className="npc-card__main">
                 <div className="npc-card__identity">
                   <div className="npc-card__avatar">
@@ -295,13 +363,27 @@ function NpcsTab({ campaignId }) {
                       <span>{npc.name.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  <h3 className="npc-card__name">{npc.name}</h3>
+                  {/* Status sits under the name, so the name gets the
+                      card's full width instead of sharing it with the pill. */}
+                  <div className="npc-card__who">
+                    <h3 className="npc-card__name">
+                      <button
+                        type="button"
+                        className="npc-card__open"
+                        onClick={() => openEntity('npc', npc.id)}
+                        title="Open with links and related entries"
+                      >
+                        {npc.name}
+                      </button>
+                    </h3>
+                    <span className="npc-card__badges">
+                      <span className={`status-badge status-badge--${npc.status.toLowerCase()}`}>
+                        {npc.status}
+                      </span>
+                      <AttitudeMeter npc={npc} onSave={(patch) => updateItem(npc.id, patch)} />
+                    </span>
+                  </div>
                 </div>
-                <span
-                  className={`status-badge status-badge--${npc.status.toLowerCase()}`}
-                >
-                  {npc.status}
-                </span>
               </div>
               <dl className="npc-card__details">
                 <div>
@@ -313,16 +395,8 @@ function NpcsTab({ campaignId }) {
                   <dd>{npc.metAt || '—'}</dd>
                 </div>
               </dl>
-              {npc.description && <p className="npc-card__description">{npc.description}</p>}
+              {npc.description && <RichText className="npc-card__description" value={npc.description} />}
               <div className="npc-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--text"
-                  onClick={() => openEntity('npc', npc.id)}
-                  aria-label={`Links and related entries for ${npc.name}`}
-                >
-                  Links
-                </button>
                 <button
                   type="button"
                   className="btn btn--text"
@@ -332,7 +406,7 @@ function NpcsTab({ campaignId }) {
                 </button>
                 <button
                   type="button"
-                  className="btn btn--danger"
+                  className="btn btn--danger card-delete"
                   onClick={() => removeNpc(npc.id)}
                 >
                   Delete

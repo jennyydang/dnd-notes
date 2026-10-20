@@ -9,7 +9,7 @@ export const TAG_GROUPS = {
     tab: 'maps',
     noun: 'place',
     icon: 'pin',
-    kinds: ['Location', 'City', 'Dungeon', 'Region'],
+    kinds: ['Location', 'City', 'Dungeon', 'Region', 'Campsite'],
   },
   lore: {
     char: '~',
@@ -25,6 +25,8 @@ export const TAG_GROUPS = {
     icon: 'coins',
     kinds: ['Item', 'Artifact', 'Magic Item'],
   },
+  // "%Kraken" — a creature from the Creatures tab.
+  creature: { char: '%', tab: 'creatures', noun: 'creature', icon: 'creature', kinds: [] },
   // "!event The dragon attacks" — not backed by a table: an event lives
   // only as a chip in its session's recap, and the Timeline tab reads
   // them back out of the notes (so editing the recap edits the timeline).

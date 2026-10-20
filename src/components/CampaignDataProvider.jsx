@@ -3,6 +3,7 @@ import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { CampaignDataContext } from '../hooks/useCampaignData.js'
 import { ENTITY_TYPES, entityKey, normalizeEntity } from '../lib/entities.js'
 import { extractMentions } from '../lib/richNotes.js'
+import { FIRST_DAY, advanceDays } from '../lib/calendar.js'
 
 const identity = (row) => row
 
@@ -34,6 +35,8 @@ function CampaignDataProvider({ campaignId, playerId, children }) {
     creature: useSupabaseTable('creatures', opts('creature')),
   }
   const links = useSupabaseTable('entity_links', { fromRow: identity, filters: shared })
+  // The in-world calendar: one row per campaign, made on first use.
+  const calendarTable = useSupabaseTable('campaign_calendar', { fromRow: identity, filters: shared })
 
   // Rows keyed by a parent rather than the campaign: pins on this
   // campaign's maps, and entries in the custom tabs this player can see
@@ -107,6 +110,27 @@ function CampaignDataProvider({ campaignId, playerId, children }) {
     [addLink],
   )
 
+  const calendarRow = calendarTable.items[0] || null
+  const addCalendar = calendarTable.addItem
+  const updateCalendar = calendarTable.updateItem
+  const advanceCalendar = useCallback(
+    async (days, note = '') => {
+      const patch = advanceDays(calendarRow, days, note)
+      if (!patch) return
+      if (calendarRow) await updateCalendar(calendarRow.id, patch)
+      else await addCalendar(patch)
+    },
+    [calendarRow, addCalendar, updateCalendar],
+  )
+  const calendar = {
+    day: calendarRow?.day ?? FIRST_DAY,
+    log: Array.isArray(calendarRow?.log) ? calendarRow.log : [],
+    started: Boolean(calendarRow),
+    loading: calendarTable.loading,
+    error: calendarTable.error,
+    advance: advanceCalendar,
+  }
+
   const value = {
     campaignId,
     playerId,
@@ -115,8 +139,11 @@ function CampaignDataProvider({ campaignId, playerId, children }) {
     byKey,
     getEntity: (type, id) => byKey.get(entityKey(type, id)) || null,
     links: links.items,
+    // Pins on this campaign's maps (raw rows) — for "Show on map".
+    mapMarkers: markers.items,
     linkEntities,
     removeLink,
+    calendar,
     loading,
     errors,
   }

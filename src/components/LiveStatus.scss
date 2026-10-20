@@ -1,0 +1,275 @@
+@use '../styles/variables' as *;
+
+.party-presence {
+  position: relative;
+  flex-shrink: 0;
+
+  &__faces {
+    display: flex;
+    align-items: center;
+  }
+
+  &__face {
+    position: relative;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border-radius: 50%;
+    border: 2px solid $bg-deep;
+    background: $bg-deep;
+    color: $text-light;
+    font-family: $font-display;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    animation: presence-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    & + & {
+      margin-left: -0.5rem;
+    }
+
+    &:hover,
+    &:focus-visible {
+      z-index: 1;
+      border-color: $gold;
+    }
+
+    &:hover .party-presence__tip,
+    &:focus-visible .party-presence__tip {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    &--more {
+      background: $bg-panel-raised;
+      color: $text-muted;
+    }
+  }
+
+  // The open list already names everyone.
+  &--open &__tip {
+    display: none;
+  }
+
+  // Name label under a face, shown on hover / keyboard focus.
+  &__tip {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 50%;
+    z-index: 60;
+    transform: translate(-50%, -0.25rem);
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    padding: 0.2rem 0.55rem;
+    border-radius: $radius;
+    border: $border-gold;
+    background: $bg-panel-raised;
+    box-shadow: $shadow-panel;
+    color: $text-light;
+    font-family: $font-body;
+    font-size: 0.9rem;
+    font-weight: 400;
+    transition:
+      opacity 0.12s ease,
+      transform 0.12s ease;
+  }
+
+  &__list {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    min-width: 12rem;
+    padding: 0.75rem 1rem;
+    border-radius: $radius-lg;
+    border: $border-gold;
+    background: $bg-panel-raised;
+    box-shadow: $shadow-panel;
+    color: $text-light;
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  &__list-title {
+    font-family: $font-display;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $gold-light;
+    margin-bottom: 0.5rem;
+  }
+
+  &__who {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+
+  // The page someone's on, under their name.
+  &__where {
+    display: block;
+    font-size: 0.78rem;
+    color: $text-muted;
+  }
+}
+
+// A person's face in their own presence colour (--who): a tinted disc
+// with their initial, or their photo, ringed in that colour.
+.presence-face {
+  --who: #{$green-light};
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 2px solid var(--who);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--who) 55%, #{$bg-deep});
+  color: $text-light;
+  font-family: $font-display;
+  font-weight: 700;
+  line-height: 1;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &--mini,
+  &--small {
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.72rem;
+  }
+
+  &--small + &--small {
+    margin-left: -0.45rem;
+    box-shadow: 0 0 0 2px $bg-panel;
+  }
+}
+
+// "Aria and Bram are here too", over the page they share with you.
+.here-too {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 0.85rem auto;
+  padding: 0.3rem 0.85rem 0.3rem 0.35rem;
+  border: 1px solid fade($gold-dim, 0.5);
+  border-radius: 999px;
+  background: fade($bg-panel, 0.85);
+  color: $text-muted;
+  font-size: 0.88rem;
+  animation: fade-in 0.3s ease-out;
+
+  &__faces {
+    display: flex;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+@keyframes presence-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sync-status {
+  position: relative;
+  flex-shrink: 0;
+
+  &:empty {
+    display: none;
+  }
+
+  &__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    padding: 0 0.85rem;
+    border-radius: 999px;
+    border: 1px solid fade($gold-dim, 0.6);
+    background: $bg-panel;
+    color: $text-muted;
+    font-size: 0.95rem;
+    white-space: nowrap;
+
+    &--offline {
+      border-color: $gold;
+      color: $gold-light;
+    }
+
+    &--error {
+      border-color: $maroon-light;
+      color: $maroon-text;
+      cursor: pointer;
+    }
+  }
+
+  &__spin {
+    animation: sync-spin 1.2s linear infinite;
+  }
+
+  &__panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    width: min(22rem, 90vw);
+    padding: 1rem;
+    border-radius: $radius-lg;
+    border: $border-gold;
+    background: $bg-panel-raised;
+    box-shadow: $shadow-panel;
+    color: $text-light;
+
+    p {
+      margin: 0 0 0.5rem;
+      color: $text-muted;
+    }
+
+    ul {
+      margin: 0 0 0.75rem;
+      padding-left: 1.1rem;
+    }
+  }
+}
+
+@keyframes sync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

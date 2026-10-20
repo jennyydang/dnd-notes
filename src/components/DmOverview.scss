@@ -1,0 +1,337 @@
+@use '../styles/variables' as *;
+
+.dm-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+
+  &__hero {
+    padding: 1.5rem 1.6rem;
+    background:
+      radial-gradient(circle at 85% 0%, fade($gold, 0.14), transparent 55%),
+      $bg-panel;
+  }
+
+  &__eyebrow {
+    margin: 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: $gold;
+  }
+
+  &__title {
+    margin: 0.2rem 0 0.4rem;
+    font-size: clamp(1.35rem, 3vw, 1.8rem);
+    color: $gold-light;
+  }
+
+  &__lead {
+    max-width: 44rem;
+    margin: 0 0 1.25rem;
+    color: $text-muted;
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__stat {
+    display: grid;
+    justify-items: start;
+    gap: 0.1rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid fade($gold-dim, 0.45);
+    border-radius: $radius;
+    background: fade($bg-deep, 0.55);
+
+    > svg {
+      color: $gold;
+    }
+  }
+
+  &__stat-value {
+    font-family: $font-display;
+    font-size: 1.6rem;
+    color: $parchment;
+  }
+
+  &__stat-label {
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    align-items: start;
+
+    @media (max-width: 860px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  &__card--wide {
+    grid-column: 1 / -1;
+  }
+
+  &__sub {
+    margin: 0.25rem 0 0.35rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $text-muted;
+  }
+
+  &__list {
+    display: grid;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    list-style: none;
+
+    &--columns {
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+      column-gap: 1rem;
+    }
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    min-height: 2.9rem;
+    padding: 0.35rem 0.3rem;
+    border: 0;
+    border-bottom: 1px solid fade($gold-dim, 0.2);
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: fade($gold, 0.07);
+    }
+  }
+
+  &__icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: fade($gold, 0.14);
+    color: $gold-light;
+
+    &--npc {
+      background: rgba(#d98b5f, 0.2);
+      color: #e9a882;
+    }
+
+    &--place {
+      background: rgba(#6fae8f, 0.2);
+      color: #8fcaa9;
+    }
+
+    &--lore {
+      background: rgba(#9b8fd6, 0.2);
+      color: #b8aef0;
+    }
+
+    &--loot {
+      background: rgba(#7fb3c8, 0.2);
+      color: #9fcadb;
+    }
+
+    &--quest {
+      background: rgba(#d0708f, 0.2);
+      color: #e68fab;
+    }
+  }
+
+  &__row-text {
+    min-width: 0;
+    display: grid;
+
+    strong {
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    span {
+      overflow: hidden;
+      font-size: 0.82rem;
+      color: $text-muted;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+
+  &__foot {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__goals,
+  &__party,
+  &__decisions {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__goals li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+
+    &.is-done {
+      opacity: 0.65;
+    }
+  }
+
+  &__party li,
+  &__decisions li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid fade($gold-dim, 0.2);
+
+    span {
+      font-size: 0.82rem;
+      color: $text-muted;
+    }
+  }
+
+  &__attitudes {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: 5.5rem 1fr;
+      align-items: start;
+      gap: 0.6rem;
+    }
+  }
+
+  &__attitude {
+    justify-self: start;
+    padding: 0.1rem 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--attitude) 70%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--attitude) 18%, transparent);
+    color: var(--attitude);
+    font-size: 0.8rem;
+  }
+
+  // Faction standing: name, a seven-notch meter, the level.
+  &__factions {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .dm-overview__person {
+      justify-self: start;
+      text-align: left;
+    }
+
+    // Same width for every level, so the meters line up.
+    .dm-overview__attitude {
+      min-width: 6.2rem;
+      text-align: center;
+    }
+  }
+
+  &__meter {
+    display: inline-flex;
+    gap: 2px;
+
+    span {
+      width: 0.55rem;
+      height: 0.4rem;
+      border-radius: 2px;
+      background: fade($gray-light, 0.35);
+
+      &.is-current {
+        background: var(--attitude);
+        box-shadow: 0 0 0.35rem var(--attitude);
+      }
+    }
+  }
+
+  &__people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+  }
+
+  &__person {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+      color: $gold-light;
+      text-decoration: underline;
+    }
+  }
+
+  &__live {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.75rem;
+    color: $gold-light;
+    font-size: 0.9rem;
+  }
+
+  &__pulse {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: $gold;
+    animation: dm-overview-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes dm-overview-pulse {
+  50% {
+    box-shadow: 0 0 0 0.35rem fade($gold, 0.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dm-overview__pulse {
+    animation: none;
+  }
+}

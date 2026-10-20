@@ -1,0 +1,469 @@
+@use '../styles/variables' as *;
+
+// The World Wiki: an A–Z index beside the open article. On narrow
+// screens one shows at a time — the index, or the article with a back
+// button.
+.wiki-shell {
+  container-type: inline-size;
+}
+
+.wiki {
+  display: grid;
+  grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+
+  &__index {
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 2rem);
+    padding: 1rem 0.75rem 0.5rem 1rem;
+    overflow: hidden;
+  }
+
+  &__index-head {
+    display: grid;
+    gap: 0.6rem;
+    padding-right: 0.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid fade($gold-dim, 0.3);
+  }
+
+  &__heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: $gold-light;
+    font-size: 1.15rem;
+  }
+
+  &__search {
+    min-height: 2.5rem;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    background: $bg-deep;
+    color: $text-light;
+
+    &:focus {
+      border-color: $gold;
+    }
+  }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  &__filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 2rem;
+    padding: 0.1rem 0.6rem;
+    border: 1px solid fade($gold-dim, 0.6);
+    border-radius: 999px;
+    background: transparent;
+    color: $text-muted;
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+
+    span {
+      color: $text-muted;
+      font-size: 0.75rem;
+    }
+
+    &:hover,
+    &.is-on {
+      border-color: $gold;
+      color: $gold-light;
+      background: fade($gold, 0.12);
+    }
+  }
+
+  &__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.25rem 0.25rem 0.5rem 0;
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+  }
+
+  &__letter {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    margin: 0;
+    padding: 0.6rem 0 0.2rem;
+    background: $bg-panel;
+    color: $gold;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+  }
+
+  &__entry {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 2.4rem;
+    padding: 0.3rem 0.5rem;
+    border: 0;
+    border-left: 2px solid transparent;
+    border-radius: 0 $radius $radius 0;
+    background: transparent;
+    color: $text-light;
+    font: inherit;
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+
+    .icon {
+      flex-shrink: 0;
+      color: $text-muted;
+    }
+
+    &:hover {
+      background: fade($gold, 0.08);
+    }
+
+    &.is-current {
+      border-left-color: $gold;
+      background: fade($gold, 0.14);
+      color: $gold-light;
+    }
+  }
+
+  &__entry-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__entry-count {
+    flex-shrink: 0;
+    min-width: 1.4rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: fade($gold-dim, 0.35);
+    color: $text-light;
+    font-size: 0.72rem;
+    text-align: center;
+  }
+
+  &__article {
+    min-width: 0;
+    padding: 1.5rem 1.75rem 2rem;
+  }
+
+  &__title {
+    margin: 0;
+    color: $parchment;
+    font-size: 1.9rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  &__lede {
+    margin: 0.5rem 0 1.25rem;
+    color: $text-muted;
+  }
+
+  &__section {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid fade($gold-dim, 0.35);
+    color: $gold-light;
+    font-size: 1.05rem;
+  }
+
+  &__plain {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+  }
+
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $text-light;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      color: $gold-light;
+      text-decoration: underline;
+    }
+  }
+
+  &__meta {
+    color: $text-muted;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+}
+
+// One at a time on narrow screens.
+@container (max-width: 760px) {
+  .wiki {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wiki__index {
+    position: static;
+    max-height: none;
+  }
+
+  .wiki--reading .wiki__index,
+  .wiki:not(.wiki--reading) .wiki__article {
+    display: none;
+  }
+
+  .wiki__article {
+    padding: 1.1rem 1.1rem 1.5rem;
+  }
+}
+
+.wiki-home__cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1.5rem;
+}
+
+.wiki-article {
+  display: grid;
+  gap: 1.5rem;
+
+  // Only needed when the index is hidden (narrow screens).
+  &__back {
+    display: none;
+    justify-self: start;
+    margin: -0.5rem 0 -0.75rem -0.5rem;
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid fade($gold-dim, 0.4);
+  }
+
+  &__kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 0 0.3rem;
+    color: $gold;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__first {
+    margin: 0.4rem 0 0;
+    color: $text-muted;
+    font-size: 0.92rem;
+
+    strong {
+      color: $text-light;
+      font-weight: 600;
+    }
+  }
+
+  // Text on the left, a wiki-style infobox floated right.
+  &__body {
+    display: flow-root;
+  }
+
+  &__infobox {
+    float: right;
+    width: min(16rem, 40%);
+    margin: 0 0 1rem 1.25rem;
+    border: 1px solid fade($gold-dim, 0.5);
+    border-radius: $radius;
+    background: fade($bg-deep, 0.6);
+    overflow: hidden;
+
+    img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-bottom: 1px solid fade($gold-dim, 0.4);
+    }
+
+    dl {
+      display: grid;
+      gap: 0.35rem;
+      margin: 0;
+      padding: 0.7rem 0.85rem;
+      font-size: 0.9rem;
+
+      div {
+        display: grid;
+        grid-template-columns: 5.5rem 1fr;
+        gap: 0.5rem;
+      }
+    }
+
+    dt {
+      color: $text-muted;
+    }
+
+    dd {
+      margin: 0;
+      color: $text-light;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__text {
+    color: $text-light;
+    line-height: 1.6;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @container (max-width: 760px) {
+    &__back {
+      display: inline-flex;
+    }
+
+    &__head {
+      flex-direction: column;
+    }
+
+    &__infobox {
+      float: none;
+      width: 100%;
+      margin: 0 0 1rem;
+
+      img {
+        aspect-ratio: 16 / 10;
+      }
+    }
+  }
+}
+
+// Where it was noted: a timeline of sessions, each with the lines around it.
+.wiki-timeline {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0 0 0 1rem;
+  list-style: none;
+  border-left: 2px solid fade($gold-dim, 0.5);
+
+  li {
+    position: relative;
+    display: grid;
+    gap: 0.4rem;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0.45rem;
+      left: calc(-1rem - 6px);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: $gold;
+      box-shadow: 0 0 0 3px $bg-panel;
+    }
+  }
+
+  &__when {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
+
+    .wiki__link {
+      font-family: $font-display;
+      color: $parchment;
+    }
+  }
+
+  &__quote {
+    margin: 0;
+    padding: 0.45rem 0.75rem;
+    border-left: 3px solid fade($gold-dim, 0.7);
+    border-radius: 0 $radius $radius 0;
+    background: fade($bg-deep, 0.55);
+    color: $text-light;
+    font-style: italic;
+    line-height: 1.55;
+
+    mark {
+      padding: 0 0.1em;
+      border-radius: 3px;
+      background: fade($gold, 0.25);
+      color: $gold-light;
+      font-style: normal;
+    }
+  }
+}
+
+.wiki-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.2rem;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid fade($gold-dim, 0.6);
+  border-radius: 999px;
+  background: $bg-deep;
+  color: $text-light;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+
+  span {
+    color: $text-muted;
+    font-size: 0.78rem;
+  }
+
+  &:hover {
+    border-color: $gold;
+  }
+}

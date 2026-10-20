@@ -8,9 +8,11 @@ import DmPrivacyNote from './DmPrivacyNote.jsx'
 import ArtViewer from './ArtViewer.jsx'
 import ShareStatus from './ShareStatus.jsx'
 import { useDmShares } from '../hooks/useDmShares.js'
+import { useCampaignData } from '../hooks/useCampaignData.js'
 import { removeSharesFor, shareKey, shareWithPlayers } from '../lib/dmShares.js'
 import Icon from './Icon.jsx'
 import './ArtGallery.scss'
+import { RichTextEditor } from './RichText.jsx'
 
 const BUCKET = 'campaign-art'
 const ART_CATEGORIES = ['NPC', 'Location', 'Map', 'Creature', 'Item', 'Scene', 'Handout', 'Other']
@@ -33,13 +35,16 @@ function titleFromFile(name) {
 }
 
 // Every piece of art used in the campaign. The DM view (`manage`) uploads
-// and labels it privately, then Shares a piece: players get a notification
+// and labels it privately, then Reveals a piece: players get a notification
 // and one of them adds it to the players' Art tab (which shows only those).
 // Both open pieces in a full-screen viewer, handy for showing at the table.
 function ArtGallery({ campaignId, manage = false }) {
+  const { playerId } = useCampaignData()
+  // A DM manages only their own art (dm_id); players see every DM's shared
+  // pieces, and the admin sees all.
   const { items, loading, error, addItem, updateItem, removeItem } = useSupabaseTable('campaign_art', {
     fromRow,
-    filters: { campaign_id: campaignId },
+    filters: manage && playerId ? { campaign_id: campaignId, dm_id: playerId } : { campaign_id: campaignId },
   })
   const [category, setCategory] = useState('all')
   const [viewingId, setViewingId] = useState(null)
@@ -59,11 +64,14 @@ function ArtGallery({ campaignId, manage = false }) {
   const usedCategories = ART_CATEGORIES.filter((c) => pieces.some((a) => a.category === c))
   const visible = pieces.filter((a) => category === 'all' || a.category === category)
   const sharedCount = pieces.filter((a) => a.shared).length
-  const { byKey } = useDmShares(campaignId)
+  const { byKey, revealedKeys } = useDmShares(campaignId)
   const [sharingId, setSharingId] = useState(null)
   // 'added' (in the players' Art tab), 'sent' (notification out), 'private'.
   const statusOf = (piece) =>
     piece.shared ? 'added' : byKey.has(shareKey('art', piece.id)) ? 'sent' : 'private'
+  // Revealed (or shared before Reveal replaced Share): it's out, so the
+  // tile greys out.
+  const isRevealed = (piece) => statusOf(piece) !== 'private' || revealedKeys.has(shareKey('art', piece.id))
 
   async function uploadFiles(event) {
     const files = [...(event.target.files || [])]
@@ -94,26 +102,30 @@ function ArtGallery({ campaignId, manage = false }) {
     setActionError(null)
     try {
       await action()
+      return true
     } catch (err) {
       setActionError(err.message)
+      return false
     }
   }
 
-  async function share(piece) {
+  async function reveal(piece) {
     setSharingId(piece.id)
-    await run(() =>
+    const ok = await run(() =>
       shareWithPlayers({
         campaignId,
         kind: 'art',
         sourceId: piece.id,
         title: piece.title || 'Untitled',
         payload: { title: piece.title, category: piece.category, notes: piece.notes, image_path: piece.imagePath },
+        reveal: true,
       }),
     )
     setSharingId(null)
+    return ok
   }
 
-  // Takes it back out of the players' Art tab; Share again to re-send.
+  // Takes it back out of the players' Art tab; Reveal again to re-send.
   function unshare(piece) {
     if (!window.confirm(`Remove “${piece.title || 'this art'}” from the players’ Art tab?`)) return
     run(async () => {
@@ -188,7 +200,7 @@ function ArtGallery({ campaignId, manage = false }) {
 
       {manage && pieces.length > 0 && (
         <p className="art-gallery__summary">
-          {sharedCount} of {pieces.length} in the players’ Art tab. Tap a piece to view, share or edit it.
+          {sharedCount} of {pieces.length} in the players’ Art tab. Tap a piece to view, reveal or edit it.
         </p>
       )}
 
@@ -211,7 +223,7 @@ function ArtGallery({ campaignId, manage = false }) {
       {error && (
         <p className="empty-state empty-state--error">
           {error}
-          {/campaign_art/.test(error) && ' — run the latest supabase/schema.sql to add the art gallery table.'}
+          {/campaign_art|dm_id/.test(error) && ' — run the latest supabase/schema.sql to add the art gallery table.'}
         </p>
       )}
       {!loading && !error && pieces.length === 0 && (
@@ -225,7 +237,7 @@ function ArtGallery({ campaignId, manage = false }) {
       {!loading && !error && visible.length > 0 && (
         <ul className="art-grid">
           {visible.map((piece) => (
-            <li key={piece.id} className="art-tile">
+            <li key={piece.id} className={`art-tile${manage && isRevealed(piece) ? ' dm-revealed' : ''}`}>
               <button type="button" className="art-tile__open" onClick={() => setViewingId(piece.id)}>
                 <img src={piece.url} alt={piece.title || 'Campaign art'} loading="lazy" />
                 <span className="art-tile__caption">
@@ -252,12 +264,6 @@ function ArtGallery({ campaignId, manage = false }) {
           actions={
             manage && (
               <>
-                <ShareStatus
-                  kind="art"
-                  status={statusOf(viewing)}
-                  sharing={sharingId === viewing.id}
-                  onShare={() => share(viewing)}
-                />
                 {viewing.shared && (
                   <button type="button" className="btn btn--text" onClick={() => unshare(viewing)}>
                     Remove from players
@@ -270,6 +276,13 @@ function ArtGallery({ campaignId, manage = false }) {
                 >
                   Edit details
                 </button>
+                <ShareStatus
+                  kind="art"
+                  status={statusOf(viewing)}
+                  sharing={sharingId === viewing.id}
+                  onReveal={() => reveal(viewing)}
+                  revealed={isRevealed(viewing)}
+                />
                 <button type="button" className="btn btn--danger" onClick={() => remove(viewing)}>
                   Delete
                 </button>
@@ -309,11 +322,11 @@ function ArtGallery({ campaignId, manage = false }) {
             </div>
             <div className="field">
               <label htmlFor="art-notes">Notes</label>
-              <textarea
+              <RichTextEditor
                 id="art-notes"
-                rows={3}
                 value={editing.notes}
-                onChange={(e) => setEditing({ ...editing, notes: e.target.value })}
+                onChange={(html) => setEditing((prev) => ({ ...prev, notes: html }))}
+                ariaLabel="Notes"
                 placeholder="Which session, who it shows, where it came from…"
               />
             </div>
