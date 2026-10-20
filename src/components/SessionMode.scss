@@ -818,3 +818,222 @@
     opacity: 0;
   }
 }
+
+// ── Injuries (session/InjuriesPanel.jsx) ─────────────────────────────────
+// Pain 1 → 5 runs candle-gold → blood-red; the number is always drawn too.
+$pain-colors: (
+  1: color.adjust($gold, $lightness: 8%),
+  2: $gold,
+  3: #c9772a,
+  4: $maroon-light,
+  5: $maroon,
+);
+
+.session-mode__panel--vitals {
+  .injuries {
+    margin-top: 1.25rem;
+  }
+}
+
+.injuries {
+  &__layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+
+  &__figure-wrap {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 9.5rem;
+  }
+
+  &__figure {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  &__region {
+    cursor: pointer;
+
+    path {
+      fill: $bg-deep;
+      stroke: $gold-dim;
+      stroke-width: 1.5;
+      stroke-linejoin: round;
+      transition: fill 0.15s ease;
+    }
+
+    text {
+      font-family: $font-body;
+      font-size: 13px;
+      font-weight: 700;
+      fill: $parchment;
+      paint-order: stroke;
+      stroke: rgba(0, 0, 0, 0.55);
+      stroke-width: 3px;
+      pointer-events: none;
+    }
+
+    &:hover path,
+    &:focus-visible path {
+      stroke: $gold-light;
+      stroke-width: 2.5;
+    }
+
+    &:focus-visible {
+      outline: none;
+    }
+
+    @each $level, $color in $pain-colors {
+      &--pain-#{$level} path {
+        fill: $color;
+        stroke: color.adjust($color, $lightness: 12%);
+      }
+    }
+  }
+
+  &__back {
+    @each $level, $color in $pain-colors {
+      &--pain-#{$level} {
+        background: rgba($color, 0.35);
+        border-color: $color;
+      }
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: $text-muted;
+    text-align: center;
+  }
+
+  &__list-wrap {
+    flex: 1 1 14rem;
+    min-width: 0;
+  }
+
+  &__worst {
+    margin: 0 0 0.6rem;
+    color: $text-light;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius;
+    padding-right: 0.25rem;
+
+    @each $level, $color in $pain-colors {
+      &--pain-#{$level} {
+        border-left: 4px solid $color;
+
+        .injuries__item-pain {
+          background: $color;
+        }
+      }
+    }
+  }
+
+  &__item-open {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.4rem 0.6rem;
+    background: transparent;
+    border: none;
+    color: $text-light;
+    text-align: left;
+  }
+
+  &__item-pain {
+    flex-shrink: 0;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: $parchment;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  }
+
+  &__item-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__item-region {
+    font-weight: 600;
+  }
+
+  &__item-note {
+    font-size: 0.88rem;
+    color: $text-muted;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.injury-form {
+  padding: 1.5rem;
+  min-width: min(100%, 22rem);
+
+  &__pain {
+    border: none;
+    margin: 0;
+    padding: 0;
+
+    legend {
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: $text-muted;
+    }
+  }
+
+  &__level {
+    @each $level, $color in $pain-colors {
+      &--pain-#{$level}.chip--active {
+        background: rgba($color, 0.35);
+        border-color: $color;
+        color: $parchment;
+      }
+    }
+  }
+
+  &__remove {
+    margin-right: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .injuries__region path {
+    transition: none;
+  }
+}

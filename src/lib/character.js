@@ -69,6 +69,9 @@ export function emptyMechanics() {
     exhaustion: 0,
     concentration: { active: false, spell: '' },
     deathSaves: { success: 0, failure: 0 },
+    // Where the character has been hit: [{ region, pain (1-5), note, at }],
+    // one entry per body region (see session/InjuriesPanel.jsx).
+    injuries: [],
     inventory: [],
     proficiencies: '',
     features: '',

@@ -7,6 +7,7 @@ import { initiativeBonus } from '../lib/character.js'
 import { formatDateTime, getActiveSession, setActiveSession } from '../lib/sessionMode.js'
 import TabNav from './TabNav.jsx'
 import VitalsPanel from './session/VitalsPanel.jsx'
+import InjuriesPanel from './session/InjuriesPanel.jsx'
 import QuickNotesPanel from './session/QuickNotesPanel.jsx'
 import InitiativeTracker from './session/InitiativeTracker.jsx'
 import ReferencePanel from './session/ReferencePanel.jsx'
@@ -38,6 +39,7 @@ function CharacterPanels({ campaignId, character, nav, panelClass }) {
     <>
       <div className={panelClass('vitals')}>
         <VitalsPanel character={character} sheetApi={sheetApi} onEditSheet={() => nav.goTo('character')} />
+        <InjuriesPanel sheetApi={sheetApi} />
       </div>
       <div className={panelClass('initiative')}>
         <InitiativeTracker
