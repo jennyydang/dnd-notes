@@ -4,6 +4,9 @@ import {
   AUDIO_BUCKET,
   formatDuration,
   addRecordingMark,
+  downloadSessionRecording,
+  isSplitRecording,
+  loadRecordingBlob,
   recordingSupported,
   removeAudio,
   startRecording,
@@ -25,7 +28,12 @@ function SessionAudio({ session, onChanged }) {
   const fileRef = useRef(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
-  const src = getPublicUrl(AUDIO_BUCKET, session.audioPath)
+  // A recording over 45MB is stored in pieces: the player and Download
+  // join them back into the one file.
+  const split = isSplitRecording(session)
+  const src = split ? null : getPublicUrl(AUDIO_BUCKET, session.audioPath)
+  const hasAudio = Boolean(session.audioPath)
+  const [saving, setSaving] = useState(null)
   const mine = rec.target === session.id
   const live = mine && (rec.status === 'recording' || rec.status === 'paused')
   const recorderBusy = rec.status !== 'idle'
@@ -94,11 +102,12 @@ function SessionAudio({ session, onChanged }) {
         </div>
       ) : mine && rec.status === 'saving' ? (
         <p className="session-audio__hint">Saving the recording…</p>
-      ) : src ? (
+      ) : hasAudio ? (
         <>
           <AudioPlayer
-            key={src}
+            key={session.audioPath}
             src={src}
+            load={split ? (onProgress) => loadRecordingBlob(session, onProgress) : undefined}
             seconds={session.audioSeconds}
             label={`${session.title || 'Session'} recording`}
             marks={session.audioMarks}
@@ -106,7 +115,7 @@ function SessionAudio({ session, onChanged }) {
             onTime={setPosition}
           />
           <RecordingMarks
-            key={`${src}-${session.audioMarks.length}`}
+            key={`${session.audioPath}-${session.audioMarks.length}`}
             sessionId={session.id}
             marks={session.audioMarks}
             player={player}
@@ -135,18 +144,35 @@ function SessionAudio({ session, onChanged }) {
             <Icon name="upload" /> {busy ? 'Uploading…' : 'Upload audio'}
           </button>
           <input ref={fileRef} type="file" accept="audio/*" hidden onChange={pickFile} />
-          {src && (
+          {hasAudio && (
             <>
-              <a className="btn btn--text" href={src} download>
-                <Icon name="download" /> Download
-              </a>
+              {split ? (
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  disabled={saving != null}
+                  onClick={() => {
+                    setSaving(0)
+                    setError(null)
+                    downloadSessionRecording(session, setSaving)
+                      .catch((err) => setError(err.message))
+                      .finally(() => setSaving(null))
+                  }}
+                >
+                  <Icon name="download" /> {saving != null ? `Preparing… ${Math.round(saving * 100)}%` : 'Download'}
+                </button>
+              ) : (
+                <a className="btn btn--text" href={src} download>
+                  <Icon name="download" /> Download
+                </a>
+              )}
               <button
                 type="button"
                 className="btn btn--text session-audio__remove"
                 disabled={busy}
                 onClick={() =>
                   window.confirm('Remove this recording? The audio file is deleted and can’t be recovered.') &&
-                  run(() => removeAudio(session.id, session.audioPath))
+                  run(() => removeAudio(session.id, session))
                 }
               >
                 <Icon name="trash" /> Remove recording

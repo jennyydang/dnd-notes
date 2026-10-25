@@ -14,8 +14,16 @@ const SPEEDS = [1, 1.5, 2]
 // `marks` ([{ t, label }]) show as ticks on the seek bar. `controlRef`
 // gets { seek(seconds, play?), time() } so a marks list can jump the
 // player; `onTime(seconds)` reports where playback is.
-function AudioPlayer({ src, seconds, label = 'Session recording', compact = false, marks = [], controlRef, onTime }) {
+//
+// A recording stored in pieces has no single URL: pass `load(onProgress)`
+// instead of `src`, which resolves to a Blob of the whole file. It's
+// fetched on the first play and kept for the life of the player.
+function AudioPlayer({ src, load, seconds, label = 'Session recording', compact = false, marks = [], controlRef, onTime }) {
   const audioRef = useRef(null)
+  const [blobUrl, setBlobUrl] = useState(null)
+  const [loading, setLoading] = useState(null) // 0..1 while fetching pieces
+  const url = src || blobUrl
+  useEffect(() => () => blobUrl && URL.revokeObjectURL(blobUrl), [blobUrl])
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(seconds || 0)
@@ -41,11 +49,28 @@ function AudioPlayer({ src, seconds, label = 'Session recording', compact = fals
       return
     }
     setError(null)
+    if (!url && load) {
+      if (loading != null) return
+      setLoading(0)
+      try {
+        const blob = await load(setLoading)
+        const next = URL.createObjectURL(blob)
+        audio.src = next
+        setBlobUrl(next)
+      } catch (err) {
+        setError(err.message || 'This recording couldn’t be loaded.')
+        return
+      } finally {
+        setLoading(null)
+      }
+    }
     window.dispatchEvent(new CustomEvent(PLAY_EVENT, { detail: audio }))
     try {
       await audio.play()
     } catch (err) {
-      if (err.name !== 'AbortError') setError('This recording couldn’t be played here.')
+      // After a long download some browsers (iOS) no longer count the tap
+      // as permission to play; it's ready now, so the next tap plays.
+      if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') setError('This recording couldn’t be played here.')
     }
   }
 
@@ -87,7 +112,9 @@ function AudioPlayer({ src, seconds, label = 'Session recording', compact = fals
     <div className={`audio-player${compact ? ' audio-player--compact' : ''}${playing ? ' is-playing' : ''}`}>
       <audio
         ref={audioRef}
-        src={src}
+        // A joined recording's blob URL is set on the element directly
+        // (see toggle): rendering it would reload the audio mid-play.
+        src={src || undefined}
         preload="none"
         onPlay={() => {
           setPlaying(true)
@@ -110,6 +137,7 @@ function AudioPlayer({ src, seconds, label = 'Session recording', compact = fals
         }}
         onDurationChange={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
         onError={() => {
+          if (!url) return
           setPlaying(false)
           setError('This recording couldn’t be loaded.')
         }}
@@ -118,9 +146,14 @@ function AudioPlayer({ src, seconds, label = 'Session recording', compact = fals
         type="button"
         className="audio-player__play"
         onClick={toggle}
-        aria-label={`${playing ? 'Pause' : 'Play'} ${label}`}
+        aria-label={loading != null ? `Loading ${label}` : `${playing ? 'Pause' : 'Play'} ${label}`}
+        aria-busy={loading != null}
       >
-        <Icon name={playing ? 'pause' : 'play'} />
+        {loading != null ? (
+          <span className="audio-player__loading">{Math.round(loading * 100)}%</span>
+        ) : (
+          <Icon name={playing ? 'pause' : 'play'} />
+        )}
       </button>
       <span className="audio-player__track">
       <input

@@ -2033,3 +2033,7 @@ end $$;
 -- limit" (Dashboard → Storage → Settings), so raise that to 100MB too —
 -- on Supabase's Free plan it tops out at 50MB.
 update storage.buckets set file_size_limit = 104857600 where id = 'session-audio';
+
+-- Recordings over 45MB are stored in pieces (Supabase Free caps uploads
+-- at 50MB); audio_parts lists them in order. Null for a single file.
+alter table session_notes add column if not exists audio_parts jsonb;

@@ -11,6 +11,13 @@
   border-radius: 999px;
   background: fade($bg-deep, 0.6);
 
+  // Percentage shown while a recording stored in pieces downloads.
+  &__loading {
+    font-size: 0.62rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
   &__play {
     flex: 0 0 auto;
     display: grid;

@@ -13,6 +13,58 @@ export const AUDIO_BUCKET = 'session-audio'
 // project's upload limit is 100MB or more (see supabase/schema.sql).
 const BITS_PER_SECOND = 24000
 export const MAX_AUDIO_BYTES = 100 * 1024 * 1024
+// Supabase's Free plan won't take a file over 50MB, so bigger recordings
+// are cut into byte-for-byte pieces under that and stored side by side
+// (session_notes.audio_parts lists them in order). Joining the pieces
+// gives back the exact original file — the app does that to play or
+// download it, so it's still one recording to the player.
+export const PART_BYTES = 45 * 1024 * 1024
+
+const AUDIO_TYPES = { webm: 'audio/webm', m4a: 'audio/mp4', mp4: 'audio/mp4', aac: 'audio/aac', mp3: 'audio/mpeg', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg', wav: 'audio/wav', flac: 'audio/flac' }
+
+// A recap's audio files in order: its pieces, or just the one file.
+export function audioPartsOf(session) {
+  if (Array.isArray(session?.audioParts) && session.audioParts.length) return session.audioParts
+  return session?.audioPath ? [session.audioPath] : []
+}
+
+export const isSplitRecording = (session) => audioPartsOf(session).length > 1
+
+function typeForPath(path) {
+  const ext = (path.split('.').pop() || '').toLowerCase()
+  return AUDIO_TYPES[ext] || 'audio/webm'
+}
+
+// Downloads a recap's pieces and joins them into one Blob (the original
+// file). onProgress(0..1) reports how far along it is.
+export async function loadRecordingBlob(session, onProgress) {
+  const parts = audioPartsOf(session)
+  const blobs = []
+  for (const [i, path] of parts.entries()) {
+    const url = supabase.storage.from(AUDIO_BUCKET).getPublicUrl(path).data.publicUrl
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Couldn’t load part ${i + 1} of ${parts.length} of the recording.`)
+    blobs.push(await res.blob())
+    onProgress?.((i + 1) / parts.length)
+  }
+  return new Blob(blobs, { type: typeForPath(parts[0]) })
+}
+
+// Saves a recap's recording to the device as one file, whole even when
+// it's stored in pieces.
+export async function downloadSessionRecording(session, onProgress) {
+  const blob = await loadRecordingBlob(session, onProgress)
+  const ext = (audioPartsOf(session)[0].split('.').pop() || 'webm').toLowerCase()
+  const name = `${(session.title || 'session-recording').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'session-recording'}.${ext}`
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
+}
 const TYPES = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus']
 
 const idle = { status: 'idle', target: null, error: null, pending: null, startedAt: 0, banked: 0, marks: [] }
@@ -195,29 +247,52 @@ export function discardRecording() {
   set(idle)
 }
 
+// Uploads a recording, in pieces when it's over PART_BYTES. Returns the
+// stored paths in order; on a failure, any pieces already up are removed.
 async function upload(file, ext) {
   if (file.size > MAX_AUDIO_BYTES) {
     throw new Error('That recording is over 100MB — too big to upload. (Try a shorter or more compressed clip.)')
   }
-  const path = `${crypto.randomUUID()}.${ext}`
-  const { error } = await supabase.storage.from(AUDIO_BUCKET).upload(path, file, { contentType: file.type })
-  if (error) throw new Error(error.message)
-  return path
+  const id = crypto.randomUUID()
+  const count = Math.max(1, Math.ceil(file.size / PART_BYTES))
+  const contentType = file.type || typeForPath(`x.${ext}`)
+  const paths = []
+  try {
+    for (let i = 0; i < count; i++) {
+      const path = count === 1 ? `${id}.${ext}` : `${id}-part${i + 1}of${count}.${ext}`
+      const piece = count === 1 ? file : file.slice(i * PART_BYTES, (i + 1) * PART_BYTES, contentType)
+      const { error } = await supabase.storage.from(AUDIO_BUCKET).upload(path, piece, { contentType })
+      if (error) throw new Error(count === 1 ? error.message : `Part ${i + 1} of ${count}: ${error.message}`)
+      paths.push(path)
+    }
+  } catch (err) {
+    if (paths.length) await supabase.storage.from(AUDIO_BUCKET).remove(paths)
+    throw err
+  }
+  return paths
 }
+
+const storedParts = (row) => (Array.isArray(row?.audio_parts) && row.audio_parts.length ? row.audio_parts : row?.audio_path ? [row.audio_path] : [])
 
 // Saves an audio file onto a recap, replacing (and deleting) any it had.
 async function saveAudio(sessionId, file, ext, seconds, marks = []) {
-  const { data: before } = await supabase.from('session_notes').select('audio_path').eq('id', sessionId).single()
-  const path = await upload(file, ext)
-  const { error } = await supabase
-    .from('session_notes')
-    .update({ audio_path: path, audio_seconds: seconds ?? null })
-    .eq('id', sessionId)
+  const { data: before } = await supabase.from('session_notes').select('*').eq('id', sessionId).single()
+  const paths = await upload(file, ext)
+  // audio_parts is only written when needed (pieces, or clearing old
+  // ones), so single-file recordings still save before its SQL is run.
+  const patch = { audio_path: paths[0], audio_seconds: seconds ?? null }
+  if (paths.length > 1 || before?.audio_parts) patch.audio_parts = paths.length > 1 ? paths : null
+  const { error } = await supabase.from('session_notes').update(patch).eq('id', sessionId)
   if (error) {
-    await supabase.storage.from(AUDIO_BUCKET).remove([path])
-    throw new Error(error.message)
+    await supabase.storage.from(AUDIO_BUCKET).remove(paths)
+    throw new Error(
+      paths.length > 1 && /audio_parts/.test(error.message)
+        ? 'Recordings over 45MB are saved in pieces, which needs the latest supabase/schema.sql (the audio_parts column).'
+        : error.message,
+    )
   }
-  if (before?.audio_path) await supabase.storage.from(AUDIO_BUCKET).remove([before.audio_path])
+  const old = storedParts(before)
+  if (old.length) await supabase.storage.from(AUDIO_BUCKET).remove(old)
   // Marks go on separately: if they can't be saved (say the audio_marks
   // column isn't there yet), the recording itself is still kept.
   try {
@@ -264,13 +339,13 @@ export async function uploadAudioFile(sessionId, file) {
   await saveAudio(sessionId, file, ext, seconds)
 }
 
-export async function removeAudio(sessionId, path) {
-  const { error } = await supabase
-    .from('session_notes')
-    .update({ audio_path: null, audio_seconds: null })
-    .eq('id', sessionId)
+export async function removeAudio(sessionId, session) {
+  const parts = audioPartsOf(session)
+  const patch = { audio_path: null, audio_seconds: null }
+  if (session?.audioParts) patch.audio_parts = null
+  const { error } = await supabase.from('session_notes').update(patch).eq('id', sessionId)
   if (error) throw new Error(error.message)
-  if (path) await supabase.storage.from(AUDIO_BUCKET).remove([path])
+  if (parts.length) await supabase.storage.from(AUDIO_BUCKET).remove(parts)
   await saveMarks(sessionId, []).catch(() => {})
 }
 
