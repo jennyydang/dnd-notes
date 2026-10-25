@@ -9,6 +9,9 @@ import { RichText } from '../RichText.jsx'
 import Modal from '../Modal.jsx'
 import Icon from '../Icon.jsx'
 import ShopWindow from './ShopWindow.jsx'
+import TradeWindow from './TradeWindow.jsx'
+import { ACTIVE, tradeFromRow } from '../../lib/trade.js'
+import { notifyPlayer } from '../../lib/notifications.js'
 import ItemIcon from './ItemIcon.jsx'
 import './Inventory.scss'
 
@@ -63,6 +66,7 @@ function useOwners(loot, playerId) {
       holder: m.name,
       photo: getPublicUrl('party-portraits', m.photo_path),
       mine: Boolean(playerId && m.claimed_by === playerId),
+      playerId: m.claimed_by || null,
     }))
     const known = new Set(owners.map((o) => o.key))
     for (const l of loot) {
@@ -92,6 +96,13 @@ function InventoryWindow({ campaignId, playerId }) {
   })
   const merchants = useSupabaseTable('merchants', { fromRow: merchantFromRow, filters: { campaign_id: campaignId } })
   const openShops = merchants.items.filter((m) => m.isOpen)
+  const trades = useSupabaseTable('trades', { fromRow: tradeFromRow, filters: { campaign_id: campaignId }, ascending: false })
+  const myTrades = playerId
+    ? trades.items.filter((t) => ACTIVE.includes(t.status) && (t.fromPlayer === playerId || t.toPlayer === playerId))
+    : []
+  const invites = myTrades.filter((t) => t.status === 'invite' && t.toPlayer === playerId)
+  const [tradeId, setTradeId] = useState(null)
+  const openTrade = trades.items.find((t) => t.id === tradeId) || null
 
   const owners = useOwners(allLoot, playerId)
   const [ownerKeyState, setOwnerKey] = useState(null)
@@ -169,6 +180,44 @@ function InventoryWindow({ campaignId, playerId }) {
   const wallet = wallets.items[0]
   const purse = wallet ? totalValue(wallet) : 0
 
+  // Trading is between players' characters: you trade as the character of
+  // yours you last had open (or your first).
+  const myOwners = owners.filter((o) => o.mine)
+  const [tradingAs, setTradingAs] = useState(null)
+  useEffect(() => {
+    if (owner.mine) setTradingAs(owner.key)
+  }, [owner.key, owner.mine])
+  const me = myOwners.find((o) => o.key === tradingAs) || myOwners[0]
+  const canTradeWith = playerId && me && owner.playerId && owner.playerId !== playerId
+
+  async function startTrade() {
+    setError(null)
+    const existing = myTrades.find(
+      (t) => (t.fromPlayer === owner.playerId || t.toPlayer === owner.playerId) && t.status !== 'executing',
+    )
+    if (existing) {
+      setTradeId(existing.id)
+      return
+    }
+    try {
+      const row = await trades.addItem({
+        from_player: playerId,
+        to_player: owner.playerId,
+        from_holder: me.holder,
+        to_holder: owner.holder,
+        status: 'invite',
+      })
+      setTradeId(row.id)
+      notifyPlayer(owner.playerId, {
+        kind: 'trade',
+        title: `${me.label} wants to trade with ${owner.label}`,
+        body: 'Open your inventory (Loot tab) to accept.',
+      }).catch(() => {})
+    } catch (err) {
+      setError(/trades/.test(err.message) ? 'Run the latest supabase/schema.sql first (it adds trades).' : err.message)
+    }
+  }
+
   return (
     <div className="inventory">
       {openShops.length > 0 && (
@@ -178,6 +227,52 @@ function InventoryWindow({ campaignId, playerId }) {
               <Icon name="coins" /> <strong>{m.name}</strong> is open — visit the shop
             </button>
           ))}
+        </div>
+      )}
+
+      {myTrades.length > 0 && (
+        <div className="inventory__shops" role="status">
+          {myTrades.map((t) => {
+            const incoming = t.status === 'invite' && t.toPlayer === playerId
+            const other = t.fromPlayer === playerId ? t.toHolder : t.fromHolder
+            return (
+              <div key={t.id} className="inventory__trade-banner">
+                <Icon name="handshake" />
+                <span>
+                  {incoming ? (
+                    <>
+                      <strong>{t.fromHolder}</strong> wants to trade with {t.toHolder}
+                    </>
+                  ) : (
+                    <>
+                      Trade with <strong>{other}</strong> {t.status === 'invite' ? '— waiting for them' : 'in progress'}
+                    </>
+                  )}
+                </span>
+                {incoming ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      onClick={async () => {
+                        await trades.updateItem(t.id, { status: 'open' })
+                        setTradeId(t.id)
+                      }}
+                    >
+                      Accept
+                    </button>
+                    <button type="button" className="btn btn--text" onClick={() => trades.updateItem(t.id, { status: 'declined' })}>
+                      Decline
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="btn" onClick={() => setTradeId(t.id)}>
+                    Open
+                  </button>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -206,6 +301,13 @@ function InventoryWindow({ campaignId, playerId }) {
           </button>
         ))}
       </div>
+
+      {canTradeWith && (
+        <button type="button" className="btn inventory__trade" onClick={startTrade}>
+          <Icon name="handshake" /> Trade with {owner.label}
+          {myOwners.length > 1 ? ` as ${me.label}` : ''}
+        </button>
+      )}
 
       <div className="inventory__layout">
         <section className="game-window inventory__window" aria-label={`${owner.label}’s inventory`}>
@@ -337,6 +439,17 @@ function InventoryWindow({ campaignId, playerId }) {
               throw new Error(/bag/.test(err.message) ? SCHEMA_HINT : err.message)
             }
           }}
+        />
+      )}
+
+      {openTrade && (
+        <TradeWindow
+          trade={openTrade}
+          playerId={playerId}
+          loot={loot}
+          wallet={wallet}
+          tradesTable={trades}
+          onClose={() => setTradeId(null)}
         />
       )}
 

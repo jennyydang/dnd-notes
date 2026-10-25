@@ -700,3 +700,373 @@ $outline: 2px solid #120d0a;
     align-self: flex-start;
   }
 }
+
+.inventory__trade {
+  align-self: flex-start;
+}
+
+.inventory__trade-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.55rem 0.9rem;
+  background: fade($green, 0.25);
+  border: 2px solid fade($green-light, 0.7);
+  border-radius: $radius-lg;
+  color: $text-light;
+
+  > span {
+    flex: 1 1 12rem;
+  }
+
+  strong {
+    color: $green-text;
+  }
+}
+
+// ── Trade window ─────────────────────────────────────────────────────────
+.trade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
+  gap: 0.75rem;
+
+  @media (max-width: 760px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  &__main {
+    gap: 0.5rem;
+  }
+
+  &__stages {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: $parchment;
+    border: $outline;
+    border-radius: 6px;
+  }
+
+  &__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  // MapleStory's pill buttons: orange Trade, green Cancel.
+  &__btn {
+    min-width: 5.5rem;
+    min-height: 2.2rem;
+    padding: 0.2rem 0.8rem;
+    border: 2px solid #120d0a;
+    border-radius: 6px;
+    font-family: $pixel;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    &--trade {
+      background: linear-gradient(#f6b33c, #e08a12);
+    }
+
+    &--cancel {
+      background: linear-gradient(#a5d24a, #6fa121);
+    }
+
+    &--enter {
+      min-width: 0;
+      background: linear-gradient(#8a8a8a, #5a5a5a);
+    }
+  }
+
+  &__offers {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  &__side {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  &__chat {
+    flex: 1;
+    gap: 0.4rem;
+  }
+
+  &__log {
+    flex: 1;
+    min-height: 10rem;
+    max-height: 18rem;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0.5rem;
+    list-style: none;
+    background: $parchment;
+    border: $outline;
+    border-radius: 6px;
+    color: $ink;
+    font-size: 0.9rem;
+
+    li + li {
+      margin-top: 0.2rem;
+    }
+
+    .is-mine strong {
+      color: $maroon;
+    }
+  }
+
+  &__log-empty,
+  &__log-system {
+    color: $ink-soft;
+    font-style: italic;
+  }
+
+  &__say {
+    display: flex;
+    gap: 0.35rem;
+
+    input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  &__rules {
+    padding: 0.6rem 0.75rem;
+    background: #3a3a3a;
+    border: $outline;
+    border-radius: 6px;
+    color: #f0f0f0;
+    font-size: 0.82rem;
+
+    p {
+      margin: 0;
+    }
+
+    p + p {
+      margin-top: 0.35rem;
+      color: #cfcfcf;
+    }
+
+    .icon {
+      color: $gold-light;
+    }
+  }
+}
+
+// A character's stage: the sprite stands on a soft floor shadow.
+.trade-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+
+  &__floor {
+    position: relative;
+    width: 100%;
+    height: 11rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0.6rem;
+    border-radius: 6px;
+    background:
+      radial-gradient(ellipse 45% 8% at 50% 92%, rgba(0, 0, 0, 0.28), transparent 70%),
+      linear-gradient(#fbf6e6, $parchment-dark);
+    color: $ink-soft;
+    overflow: hidden;
+  }
+
+  &.is-ready &__floor {
+    box-shadow: inset 0 0 0 3px $gold, 0 0 12px fade($gold, 0.5);
+  }
+
+  &__sprite {
+    position: relative;
+    max-width: 90%;
+    max-height: 100%;
+    object-fit: contain;
+    image-rendering: auto;
+  }
+
+  &__portrait {
+    width: 6.5rem;
+    height: 6.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid $ink;
+  }
+
+  &__ready {
+    position: absolute;
+    top: 0.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.1rem 0.6rem;
+    background: $gold;
+    border: 2px solid #120d0a;
+    border-radius: 999px;
+    font-family: $pixel;
+    font-size: 0.7rem;
+    color: $ink;
+  }
+
+  // The name plate under the sprite (MapleStory's grey bar).
+  &__name {
+    max-width: 100%;
+    padding: 0.15rem 0.7rem;
+    background: rgba(40, 40, 40, 0.75);
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__change {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    color: $maroon;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.trade-offer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+
+  &__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 0;
+    padding: 0.3rem;
+    list-style: none;
+    background: #1a1411;
+    border: $outline;
+    border-radius: 6px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.9rem;
+    padding: 0.15rem;
+    background: #2a221c;
+    border-radius: 4px;
+  }
+
+  &__slot {
+    flex-shrink: 0;
+    width: 2.6rem;
+    font-size: 1.1rem;
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $text-light;
+    font-size: 0.9rem;
+  }
+
+  &__meta {
+    font-size: 0.78rem;
+    color: $text-muted;
+  }
+
+  &__add {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.4rem;
+    padding: 0 0.5rem;
+    border: 1px dashed $ink-soft;
+    border-radius: 4px;
+    background: none;
+    color: $gold-light;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  &__coins {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    input.game-window__purse {
+      width: 100%;
+    }
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: $text-muted;
+  }
+}
+
+.trade-picker {
+  grid-template-columns: repeat(auto-fill, minmax(3.4rem, 1fr));
+
+  &__chosen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: $text-light;
+  }
+}
+
+.modal__panel--trade {
+  max-width: min(60rem, 100%);
+}
+
+.trade__status {
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  background: #15110e;
+  color: $gold-light;
+  font-size: 0.9rem;
+  text-align: center;
+
+  &.is-done {
+    color: $green-text;
+  }
+}

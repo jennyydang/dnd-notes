@@ -2112,3 +2112,46 @@ begin
     end if;
   end loop;
 end $$;
+
+-- ── Player trades ────────────────────────────────────────────────────────
+-- A character's full-body sprite for the trade window (party-portraits
+-- bucket); the portrait is used when there's none.
+alter table party_members add column if not exists sprite_path text;
+
+-- One trade between two players' characters. Offers are [{ id, qty }] of
+-- loot rows; coins in copper. Changing an offer clears both ready flags;
+-- once both are ready the swap runs (see src/lib/trade.js).
+-- status: invite | open | executing | done | cancelled | declined
+create table if not exists trades (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  from_player uuid not null references players(id) on delete cascade,
+  to_player uuid not null references players(id) on delete cascade,
+  from_holder text not null,
+  to_holder text not null,
+  from_offer jsonb not null default '[]'::jsonb,
+  to_offer jsonb not null default '[]'::jsonb,
+  from_coins_cp integer not null default 0 check (from_coins_cp >= 0),
+  to_coins_cp integer not null default 0 check (to_coins_cp >= 0),
+  from_ready boolean not null default false,
+  to_ready boolean not null default false,
+  status text not null default 'invite',
+  messages jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+create index if not exists trades_campaign_idx on trades (campaign_id, created_at desc);
+
+alter table trades enable row level security;
+drop policy if exists "anon full access trades" on trades;
+create policy "anon full access trades" on trades for all to anon using (true) with check (true);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'trades'
+  ) then
+    alter publication supabase_realtime add table public.trades;
+  end if;
+end $$;
