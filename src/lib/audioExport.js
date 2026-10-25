@@ -37,8 +37,34 @@ export function needsConversion(blob, format) {
 
 // onProgress(0..1) reports the conversion; resolves to the new Blob.
 export async function convertRecording(blob, format, onProgress) {
-  const target = EXPORT_FORMATS[format]
   if (!needsConversion(blob, format)) return blob
+  return transcode(blob, format, onProgress)
+}
+
+// Uploaded audio above this bitrate is worth shrinking; the app's own
+// recordings (24kbps) and already-small files are left alone.
+const SHRINK_ABOVE_BPS = 48000
+
+// Re-saves an uploaded recording as speech-quality WebM (Opus) when that
+// makes it meaningfully lighter — a 128kbps MP3 comes out about a quarter
+// of the size. Returns the original if it's already small, if shrinking
+// saves under 10%, or if this device can't convert it.
+export async function shrinkRecording(file, seconds, onProgress) {
+  const bps = seconds ? (file.size * 8) / seconds : null
+  if (bps != null ? bps <= SHRINK_ABOVE_BPS : file.size < 2 * 1024 * 1024) return file
+  try {
+    const out = await transcode(file, 'webm', onProgress)
+    if (out.size > file.size * 0.9) return file
+    const base = (file.name || 'recording').replace(/\.[^.]+$/, '') || 'recording'
+    return new File([out], `${base}.webm`, { type: 'audio/webm' })
+  } catch (err) {
+    console.warn('Couldn’t shrink the recording; uploading it as is.', err)
+    return file
+  }
+}
+
+async function transcode(blob, format, onProgress) {
+  const target = EXPORT_FORMATS[format]
   const ffmpeg = await getFFmpeg()
   const report = ({ progress }) => Number.isFinite(progress) && onProgress?.(Math.min(1, Math.max(0, progress)))
   ffmpeg.on('progress', report)

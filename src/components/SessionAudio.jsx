@@ -37,6 +37,7 @@ function SessionAudio({ session, onChanged }) {
   const src = split ? null : getPublicUrl(AUDIO_BUCKET, session.audioPath)
   const hasAudio = Boolean(session.audioPath)
   const [exporting, setExporting] = useState(null) // { format, stage, value }
+  const [uploading, setUploading] = useState(null) // { stage, value }
 
   function exportAs(format) {
     setExporting({ format, stage: 'loading', value: 0 })
@@ -85,7 +86,7 @@ function SessionAudio({ session, onChanged }) {
     event.target.value = ''
     if (!file) return
     if (session.audioPath && !window.confirm('Replace this session’s recording with this file?')) return
-    run(() => uploadAudioFile(session.id, file))
+    run(() => uploadAudioFile(session.id, file, setUploading)).finally(() => setUploading(null))
   }
 
   return (
@@ -152,7 +153,11 @@ function SessionAudio({ session, onChanged }) {
             </button>
           )}
           <button type="button" className="btn btn--text" onClick={() => fileRef.current?.click()} disabled={busy}>
-            <Icon name="upload" /> {busy ? 'Uploading…' : 'Upload audio'}
+            <Icon name="upload" /> {uploading?.stage === 'shrinking'
+              ? `Shrinking… ${Math.round(uploading.value * 100)}%`
+              : busy
+                ? 'Uploading…'
+                : 'Upload audio'}
           </button>
           <input ref={fileRef} type="file" accept="audio/*" hidden onChange={pickFile} />
           {hasAudio && (

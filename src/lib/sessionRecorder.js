@@ -327,16 +327,21 @@ export async function attachRecording(sessionId) {
   }
 }
 
-// An audio file chosen from the device, for a recap.
-export async function uploadAudioFile(sessionId, file) {
-  const ext = (file.name.split('.').pop() || 'webm').toLowerCase()
+// An audio file chosen from the device, for a recap. Big, high-bitrate
+// files are shrunk to speech-quality WebM first (see shrinkRecording).
+// onProgress({ stage: 'shrinking' | 'uploading', value: 0..1 }).
+export async function uploadAudioFile(sessionId, original, onProgress) {
   const seconds = await new Promise((resolve) => {
     const audio = new Audio()
     audio.preload = 'metadata'
     audio.onloadedmetadata = () => resolve(Number.isFinite(audio.duration) ? Math.round(audio.duration) : null)
     audio.onerror = () => resolve(null)
-    audio.src = URL.createObjectURL(file)
+    audio.src = URL.createObjectURL(original)
   })
+  const { shrinkRecording } = await import('./audioExport.js')
+  const file = await shrinkRecording(original, seconds, (value) => onProgress?.({ stage: 'shrinking', value }))
+  onProgress?.({ stage: 'uploading', value: 0 })
+  const ext = (file.name.split('.').pop() || 'webm').toLowerCase()
   await saveAudio(sessionId, file, ext, seconds)
 }
 

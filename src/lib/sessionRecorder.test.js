@@ -32,6 +32,9 @@ vi.mock('./supabaseClient.js', () => {
   return { supabase: { from: table, storage: { from: bucket } } }
 })
 
+// Shrinking needs ffmpeg.wasm (a browser); these tests are about splitting.
+vi.mock('./audioExport.js', () => ({ shrinkRecording: async (file) => file }))
+
 const rec = await import('./sessionRecorder.js')
 
 // Audio metadata can't be read in Node; the upload carries on without a length.

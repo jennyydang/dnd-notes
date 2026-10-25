@@ -250,13 +250,12 @@ function ImageCropDialog({
       const left = frame.width / 2 - imgW / 2 + offset.x
       const top = frame.height / 2 - imgH / 2 + offset.y
       ctx.drawImage(img, left, top, imgW, imgH)
-      // Zoomed out leaves see-through edges, which only PNG keeps.
-      const covers = left <= 0.5 && top <= 0.5 && left + imgW >= frame.width - 0.5 && top + imgH >= frame.height - 0.5
-      const type = covers ? 'image/jpeg' : 'image/png'
-      const blob = await new Promise((r) => canvas.toBlob(r, type, 0.9))
+      // Lossless here: the upload re-saves it once, as WebP (see
+      // imageCompress.js), so it isn't compressed twice.
+      const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'))
       if (!blob) throw new Error('Couldn’t prepare the image.')
       const base = fileName.replace(/\.[^.]+$/, '') || 'image'
-      onDone(new File([blob], `${base}.${covers ? 'jpg' : 'png'}`, { type }))
+      onDone(new File([blob], `${base}.png`, { type: 'image/png' }))
     } catch (err) {
       setLoadError(err.message)
       setSaving(false)

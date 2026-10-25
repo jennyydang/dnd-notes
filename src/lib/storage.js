@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js'
+import { compressImage } from './imageCompress.js'
 
 // Generous for a portrait/cover photo, but without this an oversized file
 // (an unconverted high-res phone photo, say) has no fast failure path — it
@@ -11,7 +12,10 @@ export function getPublicUrl(bucket, path) {
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
 }
 
-export async function uploadImage(bucket, file) {
+// Pictures are shrunk first (see imageCompress.js); the size check is on
+// what's actually uploaded, so a big phone photo is fine.
+export async function uploadImage(bucket, original) {
+  const file = await compressImage(original, bucket)
   if (file.size > MAX_IMAGE_BYTES) {
     throw new Error('Photo is too large (max 8MB) — try a smaller image or a compressed export.')
   }
