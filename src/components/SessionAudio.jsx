@@ -23,6 +23,9 @@ export const AUDIO_SEEK_EVENT = 'dnd-notes-audio-seek'
 // A session recap's audio: play it, or record / upload one. Recording
 // runs in the shared recorder, so it keeps going on other tabs (the
 // recording bar shows it) and attaches itself here when stopped.
+const exportLabel = ({ stage, value }) =>
+  `${stage === 'converting' ? 'Converting' : 'Preparing'}… ${Math.round(value * 100)}%`
+
 function SessionAudio({ session, onChanged }) {
   const rec = useSessionRecorder()
   const fileRef = useRef(null)
@@ -33,7 +36,15 @@ function SessionAudio({ session, onChanged }) {
   const split = isSplitRecording(session)
   const src = split ? null : getPublicUrl(AUDIO_BUCKET, session.audioPath)
   const hasAudio = Boolean(session.audioPath)
-  const [saving, setSaving] = useState(null)
+  const [exporting, setExporting] = useState(null) // { format, stage, value }
+
+  function exportAs(format) {
+    setExporting({ format, stage: 'loading', value: 0 })
+    setError(null)
+    downloadSessionRecording(session, format, (p) => setExporting({ format, ...p }))
+      .catch((err) => setError(`Couldn’t export the recording: ${err.message}`))
+      .finally(() => setExporting(null))
+  }
   const mine = rec.target === session.id
   const live = mine && (rec.status === 'recording' || rec.status === 'paused')
   const recorderBusy = rec.status !== 'idle'
@@ -146,26 +157,19 @@ function SessionAudio({ session, onChanged }) {
           <input ref={fileRef} type="file" accept="audio/*" hidden onChange={pickFile} />
           {hasAudio && (
             <>
-              {split ? (
+              {['mp3', 'webm'].map((format) => (
                 <button
+                  key={format}
                   type="button"
                   className="btn btn--text"
-                  disabled={saving != null}
-                  onClick={() => {
-                    setSaving(0)
-                    setError(null)
-                    downloadSessionRecording(session, setSaving)
-                      .catch((err) => setError(err.message))
-                      .finally(() => setSaving(null))
-                  }}
+                  disabled={exporting != null}
+                  title={format === 'webm' ? 'Smaller file (about 15MB an hour)' : 'Plays on anything (about 22MB an hour)'}
+                  onClick={() => exportAs(format)}
                 >
-                  <Icon name="download" /> {saving != null ? `Preparing… ${Math.round(saving * 100)}%` : 'Download'}
+                  <Icon name="download" />{' '}
+                  {exporting?.format === format ? exportLabel(exporting) : `Download ${format === 'webm' ? 'WebM' : 'MP3'}`}
                 </button>
-              ) : (
-                <a className="btn btn--text" href={src} download>
-                  <Icon name="download" /> Download
-                </a>
-              )}
+              ))}
               <button
                 type="button"
                 className="btn btn--text session-audio__remove"

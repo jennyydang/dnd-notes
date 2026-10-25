@@ -28,4 +28,8 @@ function localApi() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), localApi()],
+  // ffmpeg.wasm (recording export) starts its own module worker, which
+  // Vite's dependency pre-bundling would break.
+  optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'] },
+  worker: { format: 'es' },
 })

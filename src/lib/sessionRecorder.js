@@ -50,12 +50,19 @@ export async function loadRecordingBlob(session, onProgress) {
   return new Blob(blobs, { type: typeForPath(parts[0]) })
 }
 
-// Saves a recap's recording to the device as one file, whole even when
-// it's stored in pieces.
-export async function downloadSessionRecording(session, onProgress) {
-  const blob = await loadRecordingBlob(session, onProgress)
-  const ext = (audioPartsOf(session)[0].split('.').pop() || 'webm').toLowerCase()
-  const name = `${(session.title || 'session-recording').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'session-recording'}.${ext}`
+// Saves a recap's recording to the device as one MP3 or WebM file, whole
+// even when it's stored in pieces. A recording already in that format is
+// saved as is; otherwise it's converted first (see audioExport.js).
+// onProgress({ stage: 'loading' | 'converting', value: 0..1 }).
+export async function downloadSessionRecording(session, format, onProgress) {
+  const original = await loadRecordingBlob(session, (value) => onProgress?.({ stage: 'loading', value }))
+  const { convertRecording, needsConversion } = await import('./audioExport.js')
+  let blob = original
+  if (needsConversion(original, format)) {
+    onProgress?.({ stage: 'converting', value: 0 })
+    blob = await convertRecording(original, format, (value) => onProgress?.({ stage: 'converting', value }))
+  }
+  const name = `${(session.title || 'session-recording').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'session-recording'}.${format}`
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

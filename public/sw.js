@@ -111,6 +111,9 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(staleWhileRevalidate(event))
     return
   }
+  // Session recordings are big (pieces up to 45MB) and fetched whole to
+  // play or export: caching them would also download each one twice.
+  if (url.pathname.includes('/storage/v1/object/public/session-audio/')) return
   if (url.pathname.includes('/storage/v1/object/public/')) {
     event.respondWith(staleWhileRevalidate(event))
   }
