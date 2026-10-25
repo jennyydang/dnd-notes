@@ -2027,3 +2027,9 @@ begin
     end if;
   end loop;
 end $$;
+
+-- Session recordings up to 100MB (the app checks this before uploading).
+-- A bucket's limit can't go above the project-wide "Upload file size
+-- limit" (Dashboard → Storage → Settings), so raise that to 100MB too —
+-- on Supabase's Free plan it tops out at 50MB.
+update storage.buckets set file_size_limit = 104857600 where id = 'session-audio';

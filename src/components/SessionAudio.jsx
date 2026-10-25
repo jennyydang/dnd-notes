@@ -145,11 +145,11 @@ function SessionAudio({ session, onChanged }) {
                 className="btn btn--text session-audio__remove"
                 disabled={busy}
                 onClick={() =>
-                  window.confirm('Delete this recording? This can’t be undone.') &&
+                  window.confirm('Remove this recording? The audio file is deleted and can’t be recovered.') &&
                   run(() => removeAudio(session.id, session.audioPath))
                 }
               >
-                <Icon name="trash" /> Delete
+                <Icon name="trash" /> Remove recording
               </button>
             </>
           )}

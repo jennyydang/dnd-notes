@@ -214,6 +214,8 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
     if (viewingId === id) setViewingId(null)
   }
 
+  const editingSession = editingId ? sortedSessions.find((s) => s.id === editingId) || null : null
+
   function renderSessionForm() {
     return (
       <SessionNoteForm
@@ -227,7 +229,13 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
         onDelete={editingId ? () => removeSession(editingId) : undefined}
         submitting={submitting}
         submitLabel={submitting ? 'Saving…' : editingId ? 'Save Changes' : 'Add Session Notes'}
-      />
+      >
+        {/* Add, replace or remove the recording while editing. It saves
+            straight away, separately from the notes' Save Changes. */}
+        {editingSession && (
+          <SessionAudio session={editingSession} onChanged={() => refetch({ silent: true })} />
+        )}
+      </SessionNoteForm>
     )
   }
 

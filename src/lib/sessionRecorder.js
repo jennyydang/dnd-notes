@@ -8,10 +8,11 @@ import { supabase } from './supabaseClient.js'
 // null for "the session being played now" — End Session attaches it to
 // the recap it saves (see attachRecording).
 export const AUDIO_BUCKET = 'session-audio'
-// Speech-quality Opus/AAC: about 11MB an hour, so a four-hour session
-// stays under Supabase's default 50MB upload limit.
+// Speech-quality Opus/AAC: about 11MB an hour, so even a long session
+// stays well under the 100MB cap. The cap only works if the Supabase
+// project's upload limit is 100MB or more (see supabase/schema.sql).
 const BITS_PER_SECOND = 24000
-export const MAX_AUDIO_BYTES = 50 * 1024 * 1024
+export const MAX_AUDIO_BYTES = 100 * 1024 * 1024
 const TYPES = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus']
 
 const idle = { status: 'idle', target: null, error: null, pending: null, startedAt: 0, banked: 0, marks: [] }
@@ -196,7 +197,7 @@ export function discardRecording() {
 
 async function upload(file, ext) {
   if (file.size > MAX_AUDIO_BYTES) {
-    throw new Error('That recording is over 50MB — too big to upload. (Try a shorter clip.)')
+    throw new Error('That recording is over 100MB — too big to upload. (Try a shorter or more compressed clip.)')
   }
   const path = `${crypto.randomUUID()}.${ext}`
   const { error } = await supabase.storage.from(AUDIO_BUCKET).upload(path, file, { contentType: file.type })
