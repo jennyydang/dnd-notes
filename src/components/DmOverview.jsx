@@ -5,6 +5,9 @@ import { goalFromRow, goalProgress, nextStep, sortGoals } from '../lib/partyGoal
 import { ProgressRing } from './PartyGoals.jsx'
 import AnimatedNumber from './AnimatedNumber.jsx'
 import { SectionCard } from './ui.jsx'
+import PainBadge from './PainBadge.jsx'
+import { usePartyHealth } from '../hooks/usePartyHealth.js'
+import { painLabel } from '../lib/injuries.js'
 import Icon from './Icon.jsx'
 import { ATTITUDES } from '../lib/attitude.js'
 import { STANDINGS, isFaction, standingInfo } from '../lib/standing.js'
@@ -48,6 +51,7 @@ function DmOverview() {
   const { entities, tables } = useCampaignData()
   const nav = useCampaignNav()
   const polls = usePolls()
+  const { health } = usePartyHealth()
 
   const by = useMemo(() => {
     const groups = Object.fromEntries(DISCOVERY_TYPES.map((t) => [t, []]))
@@ -109,6 +113,48 @@ function DmOverview() {
         </p>
       ) : (
         <div className="dm-overview__grid">
+          {health.length > 0 && (
+            <SectionCard title="Party health" icon="heart" className="dm-overview__card dm-overview__health">
+              <ul className="party-health">
+                {health.map(({ member, injuries, worst, hp, conditions }) => {
+                  const pct = hp ? Math.max(0, Math.min(100, (Number(hp.current) / Number(hp.max)) * 100)) : null
+                  return (
+                    <li key={member.id} className="party-health__member">
+                      <div className="party-health__head">
+                        <strong>{member.name}</strong>
+                        <span className="party-health__status">
+                          {hp ? `${hp.current} / ${hp.max} HP` : 'No sheet yet'}
+                          {worst > 0 && ` · worst: ${painLabel(worst)}`}
+                        </span>
+                      </div>
+                      {pct != null && (
+                        <span
+                          className={`party-health__bar${pct <= 25 ? ' party-health__bar--low' : pct <= 50 ? ' party-health__bar--mid' : ''}`}
+                          aria-hidden="true"
+                        >
+                          <span style={{ width: `${pct}%` }} />
+                        </span>
+                      )}
+                      {(injuries.length > 0 || conditions.length > 0) && (
+                        <div className="party-health__badges">
+                          {injuries.map((i) => (
+                            <PainBadge key={i.region} injury={i} />
+                          ))}
+                          {conditions.map((c) => (
+                            <span key={c} className="party-health__condition">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+              <p className="dm-overview__foot">Live from their character sheets. Rests ease injuries; healing clears them.</p>
+            </SectionCard>
+          )}
+
           <SectionCard title="What they’re chasing" icon="quest" className="dm-overview__card">
             {activeQuests.length + rumours.length === 0 ? (
               <p className="inline-state">No active quests or rumours.</p>

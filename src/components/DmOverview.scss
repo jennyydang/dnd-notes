@@ -335,3 +335,79 @@
     animation: none;
   }
 }
+
+// Party health: HP and injuries, live from the character sheets.
+.party-health {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__member {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid fade($gold-dim, 0.2);
+
+    &:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+  }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+
+    strong {
+      color: $parchment;
+    }
+  }
+
+  &__status {
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  &__bar {
+    height: 0.4rem;
+    border-radius: 999px;
+    background: $bg-deep;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: $green-light;
+      border-radius: inherit;
+    }
+
+    &--mid span {
+      background: $gold;
+    }
+
+    &--low span {
+      background: $maroon-light;
+    }
+  }
+
+  &__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  &__condition {
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    color: $gold-light;
+    border: 1px dashed fade($gold-dim, 0.7);
+  }
+}

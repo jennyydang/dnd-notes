@@ -11,6 +11,7 @@ import {
 } from '../../lib/character.js'
 import { Chip, SaveStatus, SectionCard, Stepper } from '../ui.jsx'
 import AnimatedNumber from '../AnimatedNumber.jsx'
+import { healInjuries } from '../../lib/injuries.js'
 
 function StatTile({ label, value, hint }) {
   return (
@@ -108,7 +109,8 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
       const resources = mech.resources.map((r) =>
         r.reset === 'short' || (kind === 'long' && r.reset === 'long') ? { ...r, current: r.max } : r,
       )
-      if (kind === 'short') return { resources }
+      const injuries = healInjuries(mech.injuries, kind)
+      if (kind === 'short') return { resources, injuries }
       const spellSlots = Object.fromEntries(
         Object.entries(mech.spellSlots).map(([lvl, s]) => [lvl, { ...s, used: 0 }]),
       )
@@ -118,6 +120,7 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
         hp: isBlank(mech.hp.max) ? mech.hp : { ...mech.hp, current: Number(mech.hp.max), temp: 0 },
         deathSaves: { success: 0, failure: 0 },
         exhaustion: Math.max(0, (mech.exhaustion || 0) - 1),
+        injuries,
       }
     })
   }
@@ -339,7 +342,7 @@ function VitalsPanel({ character, sheetApi, onEditSheet }) {
           type="button"
           className="btn"
           onClick={() => {
-            if (window.confirm('Long rest: restore HP, spell slots and rest-based resources?')) rest('long')
+            if (window.confirm('Long rest: restore HP, spell slots and rest-based resources, and ease injuries?')) rest('long')
           }}
         >
           Long rest

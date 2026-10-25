@@ -5,6 +5,9 @@ import { formatSessionDate } from '../../lib/sessionNotes.js'
 import { buildPreviously, sortedSessions } from '../../lib/previously.js'
 import { getPublicUrl } from '../../lib/storage.js'
 import Icon from '../Icon.jsx'
+import PainBadge from '../PainBadge.jsx'
+import { usePartyHealth } from '../../hooks/usePartyHealth.js'
+import { painLabel, regionLabel } from '../../lib/injuries.js'
 import './PreviouslyOn.scss'
 import { lockScroll } from '../../lib/scrollLock.js'
 
@@ -16,6 +19,7 @@ const canSpeak = () => typeof window !== 'undefined' && 'speechSynthesis' in win
 // "Begin session" button; closing never starts anything.
 function PreviouslyOn({ campaignName, onClose, onBegin }) {
   const { entities } = useCampaignData()
+  const hurting = usePartyHealth().health.filter((h) => h.injuries.length > 0)
   const [speaking, setSpeaking] = useState(false)
   const beginRef = useRef(null)
 
@@ -28,6 +32,7 @@ function PreviouslyOn({ campaignName, onClose, onBegin }) {
       mentions: extractMentions(notes),
       npcs: entities.filter((e) => e.type === 'npc'),
       threads: entities.filter((e) => e.open),
+      loot: entities.filter((e) => e.type === 'loot'),
     })
   }, [entities])
 
@@ -61,7 +66,13 @@ function PreviouslyOn({ campaignName, onClose, onBegin }) {
     const parts = [
       `Previously, on ${campaignName}.`,
       ...card.recap,
+      card.loot.length ? `You came away with ${card.loot.map((l) => l.title).join(', ')}.` : '',
       card.threads.length ? `Still unresolved: ${card.threads.map((t) => t.title).join(', ')}.` : '',
+      hurting.length
+        ? `Still hurting: ${hurting
+            .map((h) => `${h.member.name}'s ${h.injuries.map((i) => `${regionLabel(i.region).toLowerCase()}, ${painLabel(i.pain).toLowerCase()}`).join(' and ')}`)
+            .join('; ')}.`
+        : '',
     ]
     const utterance = new SpeechSynthesisUtterance(parts.filter(Boolean).join(' '))
     utterance.rate = 0.95
@@ -116,6 +127,41 @@ function PreviouslyOn({ campaignName, onClose, onBegin }) {
           </section>
         )}
 
+        {card.loot.length > 0 && (
+          <section className="previously__section">
+            <h3>Loot found</h3>
+            <ul className="previously__chips">
+              {card.loot.map((l) => {
+                const photo = l.raw?.photo_path ? getPublicUrl('loot-photos', l.raw.photo_path) : ''
+                return (
+                  <li key={l.id} className="previously__chip previously__chip--loot">
+                    {photo ? <img src={photo} alt="" /> : <Icon name="coins" />}
+                    {l.title}
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
+
+        {hurting.length > 0 && (
+          <section className="previously__section">
+            <h3>Still hurting</h3>
+            <ul className="previously__hurt">
+              {hurting.map((h) => (
+                <li key={h.member.id}>
+                  <strong>{h.member.name}</strong>
+                  <span className="previously__badges">
+                    {h.injuries.map((i) => (
+                      <PainBadge key={i.region} injury={i} />
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {(card.faces.length > 0 || card.places.length > 0) && (
           <section className="previously__section">
             <h3>{card.facesAreTagged ? 'Who and where' : 'Faces you’ve met'}</h3>
@@ -139,7 +185,7 @@ function PreviouslyOn({ campaignName, onClose, onBegin }) {
         )}
 
         <div className="previously__actions">
-          {canSpeak() && card.recap.length > 0 && (
+          {canSpeak() && (card.recap.length > 0 || card.loot.length > 0 || hurting.length > 0) && (
             <button type="button" className="btn btn--text previously__speak" onClick={readAloud} aria-pressed={speaking}>
               <Icon name={speaking ? 'pause' : 'speech'} /> {speaking ? 'Stop reading' : 'Read it aloud'}
             </button>

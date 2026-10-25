@@ -1,5 +1,6 @@
 @use 'sass:color';
 @use '../styles/variables' as *;
+@use '../styles/pain' as *;
 
 .session-mode {
   display: flex;
@@ -1136,16 +1137,8 @@
 }
 
 // ── Injuries (session/InjuriesPanel.jsx) ─────────────────────────────────
-// Pain 1 → 5 runs candle-gold → blood-red; the number is always drawn too.
-// A fixed scale (build-time hex, not the themeable custom properties) so
-// the shades can be lightened and tinted below.
-$pain-colors: (
-  1: color.adjust(raw('gold'), $lightness: 8%),
-  2: raw('gold'),
-  3: #c9772a,
-  4: raw('maroon-light'),
-  5: raw('maroon'),
-);
+// Pain colours ($pain-colors) live in styles/_pain.scss, shared with the
+// party-health badges.
 
 .session-mode__panel--vitals {
   .injuries {
@@ -1240,6 +1233,12 @@ $pain-colors: (
   &__worst {
     margin: 0 0 0.6rem;
     color: $text-light;
+  }
+
+  &__rest {
+    margin: -0.3rem 0 0.6rem;
+    font-size: 0.85rem;
+    color: $text-muted;
   }
 
   &__list {

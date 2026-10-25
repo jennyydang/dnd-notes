@@ -2,31 +2,10 @@ import { useState } from 'react'
 import Modal from '../Modal.jsx'
 import { SectionCard } from '../ui.jsx'
 import Icon from '../Icon.jsx'
+import { PAIN_LEVELS, REST_HEALING, byPain, painLabel, regionLabel, worstPain } from '../../lib/injuries.js'
 
-// Body regions on the figure. The figure faces you, so the character's
-// right side is drawn on the viewer's left.
-const REGIONS = [
-  { id: 'head', label: 'Head' },
-  { id: 'chest', label: 'Chest' },
-  { id: 'stomach', label: 'Stomach' },
-  { id: 'right-arm', label: 'Right arm' },
-  { id: 'left-arm', label: 'Left arm' },
-  { id: 'right-leg', label: 'Right leg' },
-  { id: 'left-leg', label: 'Left leg' },
-  { id: 'back', label: 'Back' },
-]
-
-const PAIN_LEVELS = [
-  { value: 1, label: 'Sore' },
-  { value: 2, label: 'Aching' },
-  { value: 3, label: 'Painful' },
-  { value: 4, label: 'Severe' },
-  { value: 5, label: 'Agonizing' },
-]
-
-const painLabel = (value) => PAIN_LEVELS.find((p) => p.value === value)?.label || ''
-const regionLabel = (id) => REGIONS.find((r) => r.id === id)?.label || id
-
+// The figure faces you, so the character's right side is drawn on the
+// viewer's left.
 // Simple front-facing figure on a 120×240 grid. `label` is where the pain
 // number is drawn so the level never relies on colour alone.
 const SHAPES = {
@@ -48,8 +27,8 @@ function InjuriesPanel({ sheetApi }) {
   if (!sheet) return null
   const injuries = sheet.mechanics.injuries || []
   const byRegion = Object.fromEntries(injuries.map((i) => [i.region, i]))
-  const worst = injuries.reduce((max, i) => Math.max(max, i.pain), 0)
-  const sorted = [...injuries].sort((a, b) => b.pain - a.pain)
+  const worst = worstPain(injuries)
+  const sorted = byPain(injuries)
 
   function open(region) {
     const existing = byRegion[region]
@@ -72,7 +51,9 @@ function InjuriesPanel({ sheetApi }) {
   }
 
   function clearAll() {
-    if (window.confirm('Clear every injury? (Say, after a long rest or healing.)')) updateMechanics({ injuries: [] })
+    if (window.confirm('Fully healed? This clears every injury (say, after healing magic or a healer’s care).')) {
+      updateMechanics({ injuries: [] })
+    }
   }
 
   const regionButton = (id) => {
@@ -100,7 +81,7 @@ function InjuriesPanel({ sheetApi }) {
       action={
         injuries.length > 0 && (
           <button type="button" className="btn btn--text" onClick={clearAll}>
-            Clear all
+            Fully healed
           </button>
         )
       }
@@ -139,6 +120,9 @@ function InjuriesPanel({ sheetApi }) {
             <>
               <p className="injuries__worst">
                 Worst pain: <strong>{worst} · {painLabel(worst)}</strong>
+              </p>
+              <p className="injuries__rest">
+                Rests ease every injury: a short rest by {REST_HEALING.short}, a long rest by {REST_HEALING.long}.
               </p>
               <ul className="injuries__list">
                 {sorted.map((i) => (

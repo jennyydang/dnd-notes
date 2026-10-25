@@ -145,6 +145,44 @@
     &--place {
       padding-left: 0.65rem;
     }
+
+    &--loot > .icon {
+      margin-left: 0.4rem;
+      color: $maroon;
+    }
+  }
+
+  &__hurt {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 0.75rem;
+    }
+
+    strong {
+      font-family: $font-display;
+    }
+  }
+
+  &__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  // Pain badges are styled for dark panels; on parchment, use ink.
+  .pain-badge {
+    background: $parchment-dark;
+    color: $ink;
+    font-size: 0.92rem;
   }
 
   &__actions {

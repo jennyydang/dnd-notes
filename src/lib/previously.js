@@ -6,6 +6,7 @@ import { sessionDateTimestamp } from './sessionNotes.js'
 const MAX_RECAP_CHARS = 700
 const MAX_FACES = 5
 const MAX_THREADS = 5
+const MAX_LOOT = 6
 
 // Tags in a recap read as "@Ismark" / "#Barovia" in plain text; on the
 // card (and read aloud) they should just be names.
@@ -31,8 +32,22 @@ export function recapExcerpt(text) {
   return kept
 }
 
-// `sessions` newest first; `npcs` and `threads` are normalized entities.
-export function buildPreviously({ sessions, recapText, mentions, npcs, threads }) {
+// Loot from last session: what the recap tags, or else what was added to
+// the Loot tab since the recap before it was written.
+export function lastSessionLoot(sessions, mentions, loot) {
+  const tagged = (mentions?.loot || []).map((m) => loot.find((l) => l.id === m.id) || { id: m.id, title: m.label, raw: {} })
+  if (tagged.length) return tagged.slice(0, MAX_LOOT)
+  const since = sessions[1]?.createdAt
+  if (!since) return []
+  return loot
+    .filter((l) => new Date(l.createdAt || 0) > new Date(since))
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .slice(0, MAX_LOOT)
+}
+
+// `sessions` newest first; `npcs`, `threads` and `loot` are normalized
+// entities.
+export function buildPreviously({ sessions, recapText, mentions, npcs, threads, loot = [] }) {
   const last = sessions[0] || null
   const tagged = (mentions?.person || [])
     .map((m) => npcs.find((n) => n.id === m.id) || { id: m.id, title: m.label, raw: {} })
@@ -48,6 +63,7 @@ export function buildPreviously({ sessions, recapText, mentions, npcs, threads }
     facesAreTagged: tagged.length > 0,
     places: (mentions?.place || []).map((p) => p.label).slice(0, MAX_FACES),
     threads: threads.slice(0, MAX_THREADS),
+    loot: last ? lastSessionLoot(sessions, mentions, loot) : [],
   }
 }
 

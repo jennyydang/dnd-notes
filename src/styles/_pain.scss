@@ -1,0 +1,13 @@
+@use 'sass:color';
+@use 'variables' as *;
+
+// Pain 1 → 5 runs candle-gold → blood-red; the number is always drawn too.
+// A fixed scale (build-time hex, not the themeable custom properties) so
+// the shades can be lightened and tinted.
+$pain-colors: (
+  1: color.adjust(raw('gold'), $lightness: 8%),
+  2: raw('gold'),
+  3: #c9772a,
+  4: raw('maroon-light'),
+  5: raw('maroon'),
+);
