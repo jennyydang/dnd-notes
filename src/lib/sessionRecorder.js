@@ -8,13 +8,10 @@ import { supabase } from './supabaseClient.js'
 // null for "the session being played now" — End Session attaches it to
 // the recap it saves (see attachRecording).
 export const AUDIO_BUCKET = 'session-audio'
-// Speech-quality Opus/AAC: about 11MB an hour, so even a long session
-// stays well under the 100MB cap. The cap only works if the Supabase
-// project's upload limit is 100MB or more (see supabase/schema.sql).
+// Speech-quality Opus/AAC: about 11MB an hour.
 const BITS_PER_SECOND = 24000
-export const MAX_AUDIO_BYTES = 100 * 1024 * 1024
-// Supabase's Free plan won't take a file over 50MB, so bigger recordings
-// are cut into byte-for-byte pieces under that and stored side by side
+// There's no size cap: Supabase's Free plan won't take a file over 50MB,
+// so bigger recordings (any size) are cut into byte-for-byte pieces under that and stored side by side
 // (session_notes.audio_parts lists them in order). Joining the pieces
 // gives back the exact original file — the app does that to play or
 // download it, so it's still one recording to the player.
@@ -257,9 +254,6 @@ export function discardRecording() {
 // Uploads a recording, in pieces when it's over PART_BYTES. Returns the
 // stored paths in order; on a failure, any pieces already up are removed.
 async function upload(file, ext) {
-  if (file.size > MAX_AUDIO_BYTES) {
-    throw new Error('That recording is over 100MB — too big to upload. (Try a shorter or more compressed clip.)')
-  }
   const id = crypto.randomUUID()
   const count = Math.max(1, Math.ceil(file.size / PART_BYTES))
   const contentType = file.type || typeForPath(`x.${ext}`)

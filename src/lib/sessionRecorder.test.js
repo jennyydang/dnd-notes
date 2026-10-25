@@ -94,8 +94,11 @@ describe('recordings over the upload limit', () => {
     expect(store.row).toMatchObject({ audio_path: null, audio_parts: null })
   })
 
-  it('still refuses anything over 100MB', async () => {
-    await expect(rec.uploadAudioFile('s1', fileOf(101 * 1024 * 1024))).rejects.toThrow(/over 100MB/)
-    expect(store.files.size).toBe(0)
+  it('takes files over 100MB too, in as many pieces as needed', async () => {
+    const file = fileOf(150 * 1024 * 1024)
+    await rec.uploadAudioFile('s1', file)
+    expect(store.row.audio_parts).toHaveLength(4)
+    const joined = await rec.loadRecordingBlob(fromRow(store.row))
+    expect(joined.size).toBe(file.size)
   })
 })
