@@ -276,6 +276,8 @@ async function upload(file, ext) {
 const storedParts = (row) => (Array.isArray(row?.audio_parts) && row.audio_parts.length ? row.audio_parts : row?.audio_path ? [row.audio_path] : [])
 
 // Saves an audio file onto a recap, replacing (and deleting) any it had.
+// marks: the new recording's bookmarks, or null to keep the recap's own
+// (when it's the same recording, just re-saved smaller).
 async function saveAudio(sessionId, file, ext, seconds, marks = []) {
   const { data: before } = await supabase.from('session_notes').select('*').eq('id', sessionId).single()
   const paths = await upload(file, ext)
@@ -294,6 +296,7 @@ async function saveAudio(sessionId, file, ext, seconds, marks = []) {
   }
   const old = storedParts(before)
   if (old.length) await supabase.storage.from(AUDIO_BUCKET).remove(old)
+  if (marks === null) return
   // Marks go on separately: if they can't be saved (say the audio_marks
   // column isn't there yet), the recording itself is still kept.
   try {
@@ -343,6 +346,13 @@ export async function uploadAudioFile(sessionId, original, onProgress) {
   onProgress?.({ stage: 'uploading', value: 0 })
   const ext = (file.name.split('.').pop() || 'webm').toLowerCase()
   await saveAudio(sessionId, file, ext, seconds)
+}
+
+// Swaps a recap's recording for a smaller copy of the same audio,
+// keeping its length and bookmarks (see storageUsage.js).
+export async function replaceAudioFile(sessionId, file, seconds) {
+  const ext = (file.name.split('.').pop() || 'webm').toLowerCase()
+  await saveAudio(sessionId, file, ext, seconds, null)
 }
 
 export async function removeAudio(sessionId, session) {

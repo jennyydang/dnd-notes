@@ -27,11 +27,13 @@ import TabNav from './TabNav.jsx'
 import { PasswordInput } from './ui.jsx'
 import Icon from './Icon.jsx'
 import { InviteDialog, InviteList, LinkBox } from './InvitePlayers.jsx'
+import StorageManager, { useStorageUsage } from './StorageManager.jsx'
+import { STORAGE_LIMIT_BYTES, formatBytes } from '../lib/storageUsage.js'
 import './AdminGate.scss'
 
 const SECTION_KEY = 'dnd-notes-admin-section'
-const SECTIONS = ['campaigns', 'players', 'feedback']
-const SECTION_TITLES = { campaigns: 'Campaigns', players: 'Players', feedback: 'Player feedback' }
+const SECTIONS = ['campaigns', 'players', 'feedback', 'storage']
+const SECTION_TITLES = { campaigns: 'Campaigns', players: 'Players', feedback: 'Player feedback', storage: 'Storage' }
 
 const campaignFromRow = (r) => ({ id: r.id, name: r.name, archived: r.archived })
 const feedbackFromRow = (r) => ({
@@ -184,6 +186,8 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
   const resets = useResetRequests(adminPassword)
   const { items: campaigns } = useSupabaseTable('campaigns', { fromRow: campaignFromRow })
   const feedback = useSupabaseTable('feedback', { fromRow: feedbackFromRow, ascending: false })
+  const storage = useStorageUsage()
+  const storagePct = storage.usage ? Math.round((storage.usage.total / STORAGE_LIMIT_BYTES) * 100) : null
 
   const activeCampaigns = campaigns.filter((c) => !c.archived).length
   const archivedCampaigns = campaigns.length - activeCampaigns
@@ -218,6 +222,14 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
       value: feedback.loading ? '–' : feedback.items.filter((f) => f.status !== 'solved').length,
       detail: issues ? `${issues} issue${issues === 1 ? '' : 's'} reported` : 'No open issues',
       attention: issues > 0,
+    },
+    {
+      id: 'storage',
+      icon: 'storage',
+      label: 'Storage',
+      value: storage.usage ? formatBytes(storage.usage.total) : '–',
+      detail: storage.error ? 'Couldn’t read storage' : storagePct == null ? 'Adding up…' : `${storagePct}% of 1GB`,
+      attention: storagePct >= 80,
     },
   ]
 
@@ -260,6 +272,7 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
           <ManagePlayers adminPassword={adminPassword} campaigns={campaigns} resets={resets} {...playerData} />
         )}
         {section === 'feedback' && <FeedbackInbox {...feedback} />}
+        {section === 'storage' && <StorageManager {...storage} />}
       </div>
     </div>
   )

@@ -4,7 +4,7 @@ import {
   Image, Inbox, LayoutGrid, Library, Lightbulb, Link, ListTodo, Lock, Map, MapPin, Menu, Maximize, MessageCircle, MessageSquare, Mic, Minus, Bookmark, Move, Square, Undo2, Upload,
   NotebookPen, Pause, PawPrint, Pencil, Pin, Play, Plus, RefreshCw, Rows3, ScrollText, Search, Send, Shield, ShieldCheck, Skull,
   Sparkles, Speech, SquareCheck, Star, Swords, Target, Trash2, TrendingUp, TriangleAlert, User, Users, VenetianMask, WifiOff, Wrench, X, Zap,
-  ZoomIn, Check, Vote, Network, ListTree,
+  ZoomIn, Check, Vote, Network, ListTree, Database, Minimize2,
 } from 'lucide-react'
 
 // The app's icon set (Grimoire: no emoji in the UI). Line icons from
@@ -83,9 +83,11 @@ const ICONS = {
   send: Send,
   shield: Shield,
   'shield-check': ShieldCheck,
+  shrink: Minimize2,
   speech: Speech,
   spell: Sparkles,
   star: Star,
+  storage: Database,
   stop: Square,
   sync: RefreshCw,
   target: Target,
