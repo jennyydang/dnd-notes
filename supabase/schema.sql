@@ -2037,3 +2037,16 @@ update storage.buckets set file_size_limit = 104857600 where id = 'session-audio
 -- Recordings over 45MB are stored in pieces (Supabase Free caps uploads
 -- at 50MB); audio_parts lists them in order. Null for a single file.
 alter table session_notes add column if not exists audio_parts jsonb;
+
+-- A session recording's transcript: timed segments ([{ start, end, text }]
+-- in seconds), made with the player's own OpenAI key. Its own table so
+-- recap lists don't load every transcript; removed with its recap.
+create table if not exists session_transcripts (
+  session_id uuid primary key references session_notes(id) on delete cascade,
+  segments jsonb not null default '[]'::jsonb,
+  audio_path text,
+  created_at timestamptz not null default now()
+);
+alter table session_transcripts enable row level security;
+drop policy if exists "anon full access session_transcripts" on session_transcripts;
+create policy "anon full access session_transcripts" on session_transcripts for all to anon using (true) with check (true);

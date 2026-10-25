@@ -17,6 +17,7 @@ import { getPublicUrl } from '../lib/storage.js'
 import Icon from './Icon.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
 import RecordingMarks from './RecordingMarks.jsx'
+import SessionTranscript from './SessionTranscript.jsx'
 
 export const AUDIO_SEEK_EVENT = 'dnd-notes-audio-seek'
 
@@ -26,7 +27,7 @@ export const AUDIO_SEEK_EVENT = 'dnd-notes-audio-seek'
 const exportLabel = ({ stage, value }) =>
   `${stage === 'converting' ? 'Converting' : 'Preparing'}… ${Math.round(value * 100)}%`
 
-function SessionAudio({ session, onChanged }) {
+function SessionAudio({ session, onChanged, showTranscript = true }) {
   const rec = useSessionRecorder()
   const fileRef = useRef(null)
   const [busy, setBusy] = useState(false)
@@ -134,6 +135,9 @@ function SessionAudio({ session, onChanged }) {
             position={position}
             onSaved={onChanged}
           />
+          {showTranscript && (
+            <SessionTranscript session={session} player={player} position={position} onChanged={onChanged} />
+          )}
         </>
       ) : (
         <p className="session-audio__hint">No recording yet. Record the table as you play, or upload one.</p>

@@ -82,3 +82,35 @@ async function transcode(blob, format, onProgress) {
     await ffmpeg.deleteFile(output).catch(() => {})
   }
 }
+
+// Cuts a recording into speech-quality chunks of `chunkSeconds` for
+// transcription (services cap uploads at 25MB; 20 minutes of 24kbps mono
+// Opus is about 4MB). Resolves to [{ start, blob }]. `seconds` is the
+// recording's length if known; otherwise it cuts until the audio runs out.
+export async function splitForTranscription(blob, seconds, chunkSeconds, onProgress) {
+  const ffmpeg = await getFFmpeg()
+  const input = `split-in-${Date.now()}`
+  const chunks = []
+  const total = seconds ? Math.ceil(seconds / chunkSeconds) : null
+  try {
+    await ffmpeg.writeFile(input, new Uint8Array(await blob.arrayBuffer()))
+    for (let i = 0; total == null ? i < 100 : i < total; i++) {
+      const start = i * chunkSeconds
+      const output = `split-${i}.webm`
+      const code = await ffmpeg.exec([
+        '-ss', String(start), '-t', String(chunkSeconds), '-i', input,
+        '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'libopus', '-b:a', '24k', '-application', 'voip', output,
+      ])
+      const data = code === 0 ? await ffmpeg.readFile(output).catch(() => null) : null
+      await ffmpeg.deleteFile(output).catch(() => {})
+      // Past the end there's only a container header left.
+      if (!data || data.length < 2048) break
+      chunks.push({ start, blob: new Blob([data], { type: 'audio/webm' }) })
+      onProgress?.(total ? (i + 1) / total : null)
+    }
+  } finally {
+    await ffmpeg.deleteFile(input).catch(() => {})
+  }
+  if (!chunks.length) throw new Error('This recording couldn’t be read.')
+  return chunks
+}

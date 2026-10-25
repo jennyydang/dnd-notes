@@ -234,7 +234,8 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
         {/* Add, replace or remove the recording while editing. It saves
             straight away, separately from the notes' Save Changes. */}
         {editingSession && (
-          <SessionAudio session={editingSession} onChanged={() => refetch({ silent: true })} />
+          // No transcript in the edit form: its "Add to recap" would race the form’s own notes.
+          <SessionAudio session={editingSession} onChanged={() => refetch({ silent: true })} showTranscript={false} />
         )}
       </SessionNoteForm>
     )

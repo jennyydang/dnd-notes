@@ -297,12 +297,23 @@ async function saveAudio(sessionId, file, ext, seconds, marks = []) {
   const old = storedParts(before)
   if (old.length) await supabase.storage.from(AUDIO_BUCKET).remove(old)
   if (marks === null) return
+  // A new recording: any transcript was of the old one.
+  await dropTranscript(sessionId)
   // Marks go on separately: if they can't be saved (say the audio_marks
   // column isn't there yet), the recording itself is still kept.
   try {
     await saveMarks(sessionId, marks)
   } catch (err) {
     console.warn('Recording marks not saved:', err.message)
+  }
+}
+
+// (Fine before the session_transcripts table exists: the error is ignored.)
+async function dropTranscript(sessionId) {
+  try {
+    await supabase.from('session_transcripts').delete().eq('session_id', sessionId)
+  } catch {
+    // nothing to drop
   }
 }
 
@@ -363,6 +374,7 @@ export async function removeAudio(sessionId, session) {
   if (error) throw new Error(error.message)
   if (parts.length) await supabase.storage.from(AUDIO_BUCKET).remove(parts)
   await saveMarks(sessionId, []).catch(() => {})
+  await dropTranscript(sessionId)
 }
 
 // Tries the failed upload again, onto the same recap.

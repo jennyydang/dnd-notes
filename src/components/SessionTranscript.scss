@@ -1,0 +1,180 @@
+@use '../styles/variables' as *;
+
+.transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid fade($gold-dim, 0.25);
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-family: $font-display;
+    color: $parchment;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.88rem;
+    color: $text-muted;
+  }
+
+  &__empty,
+  &__key {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__key label {
+    font-size: 0.9rem;
+    color: $text-light;
+  }
+
+  &__key-row {
+    display: flex;
+    gap: 0.5rem;
+
+    input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  &__actions,
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__search {
+    flex: 1 1 12rem;
+    min-width: 0;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid $ink-soft;
+    background: $bg-deep;
+    color: $text-light;
+
+    &:focus {
+      border-color: $gold;
+    }
+  }
+
+  &__job {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: $gold-light;
+  }
+
+  &__job-bar {
+    height: 0.4rem;
+    border-radius: 999px;
+    background: $bg-deep;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: $gold;
+      transition: width 0.3s ease;
+    }
+  }
+
+  &__lines {
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem;
+    max-height: 24rem;
+    overflow-y: auto;
+    background: $bg-deep;
+    border: 1px solid $ink-soft;
+    border-radius: $radius-lg;
+  }
+
+  &__line {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: $radius;
+    line-height: 1.45;
+
+    &.is-current {
+      background: fade($gold, 0.12);
+    }
+
+    mark {
+      background: fade($gold, 0.45);
+      color: inherit;
+      border-radius: 2px;
+    }
+  }
+
+  &__time {
+    flex-shrink: 0;
+    min-width: 3.4rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $gold-light;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.82rem;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  &__text {
+    color: $text-light;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__mark button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.25rem 0.4rem;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid fade($gold-dim, 0.7);
+    border-radius: 999px;
+    background: fade($gold, 0.08);
+    color: $gold-light;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+
+  &__remove {
+    margin-left: auto;
+    color: $maroon-text;
+  }
+}
+
+.transcript-draft__body {
+  max-height: 55vh;
+  overflow-y: auto;
+  color: $text-light;
+  line-height: 1.55;
+
+  p {
+    margin: 0 0 0.75rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: $text-muted;
+  }
+}
