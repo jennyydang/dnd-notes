@@ -9,8 +9,9 @@ import SecretNpcsTab from './SecretNpcsTab.jsx'
 import ArtGallery from './ArtGallery.jsx'
 import DmMapsTab from './DmMapsTab.jsx'
 import DmCreaturesTab from './DmCreaturesTab.jsx'
+import DmMerchantsTab from './DmMerchantsTab.jsx'
 import { NotificationBell } from './DmSharesInbox.jsx'
-import LootTab from './LootTab.jsx'
+import LootScreen from './LootScreen.jsx'
 import QuestsTab from './QuestsTab.jsx'
 import SessionNotesTab from './SessionNotesTab.jsx'
 import TimelineTab from './TimelineTab.jsx'
@@ -80,6 +81,7 @@ const TAB_DEFS = {
   'dm-art': { label: 'Art', icon: 'image' },
   'dm-maps': { label: 'Maps', icon: 'map' },
   'dm-creatures': { label: 'Creatures', icon: 'creature' },
+  'dm-merchants': { label: 'Merchants', icon: 'coins' },
   'dm-combat': { label: 'Combat', icon: 'quest' },
   'dm-overview': { label: 'Party Overview', icon: 'compass' },
   'dm-players': { label: 'Players', icon: 'shield' },
@@ -98,7 +100,7 @@ const AREAS = [
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
   { id: 'prep', label: 'Prep', icon: 'prep', tabs: ['prep', 'wiki'] },
   // The admin's view of the DM tools (DMs themselves get DM_AREAS).
-  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-overview', 'dm-players', 'dm-npcs', 'dm-creatures', 'dm-art', 'dm-maps'], dmOnly: true },
+  { id: 'dm', label: 'DM', icon: 'eye', tabs: ['dm-overview', 'dm-players', 'dm-npcs', 'dm-creatures', 'dm-merchants', 'dm-art', 'dm-maps'], dmOnly: true },
 ]
 
 // A DM's whole view of the campaign: just their private NPCs, creatures, art and maps,
@@ -112,6 +114,7 @@ const DM_AREAS = [
   { id: 'dm-players', label: 'Players', icon: 'shield', tabs: ['dm-players'] },
   { id: 'dm-npcs', label: 'NPCs', icon: 'users', tabs: ['dm-npcs'] },
   { id: 'dm-creatures', label: 'Creatures', icon: 'creature', tabs: ['dm-creatures'] },
+  { id: 'dm-merchants', label: 'Merchants', icon: 'coins', tabs: ['dm-merchants'] },
   { id: 'dm-art', label: 'Art', icon: 'image', tabs: ['dm-art'] },
   { id: 'dm-maps', label: 'Maps', icon: 'map', tabs: ['dm-maps'] },
   // The shared initiative tracker, so the DM can run turn order.
@@ -547,7 +550,7 @@ function CampaignView({ campaignId, campaignName, slug, admin = false, playerId,
               {knownTab === 'spells' && <SpellsTab campaignId={campaignId} playerId={playerId} />}
               {knownTab === 'party' && <PartyTab campaignId={campaignId} playerId={playerId} />}
               {knownTab === 'maps' && <MapsTab campaignId={campaignId} />}
-              {knownTab === 'loot' && <LootTab campaignId={campaignId} />}
+              {knownTab === 'loot' && <LootScreen campaignId={campaignId} playerId={playerId} />}
               {knownTab === 'quests' && <QuestsTab campaignId={campaignId} />}
               {knownTab === 'npcs' && <NpcsTab campaignId={campaignId} />}
               {knownTab === 'creatures' && <CreaturesTab campaignId={campaignId} />}
@@ -559,6 +562,7 @@ function CampaignView({ campaignId, campaignName, slug, admin = false, playerId,
               {isDm && knownTab === 'dm-art' && <ArtGallery campaignId={campaignId} manage />}
               {isDm && knownTab === 'dm-maps' && <DmMapsTab campaignId={campaignId} />}
               {isDm && knownTab === 'dm-creatures' && <DmCreaturesTab campaignId={campaignId} />}
+              {isDm && knownTab === 'dm-merchants' && <DmMerchantsTab />}
               {isDm && knownTab === 'dm-overview' && <DmOverview />}
               {isDm && knownTab === 'dm-players' && <DmPlayersTab campaignName={campaignName} />}
               {isDm && knownTab === 'dm-combat' && (

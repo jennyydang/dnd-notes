@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { listCampaignMembers } from '../lib/campaigns.js'
-import { CURRENCIES, formatAmount, toCopper } from '../lib/currency.js'
+import { CURRENCIES, formatAmount, spendFromCounts, toCopper, totalValue } from '../lib/currency.js'
 import AnimatedNumber from './AnimatedNumber.jsx'
 
 const emptyCounts = { platinum: 0, gold: 0, silver: 0, shilling: 0, copper: 0 }
@@ -16,51 +16,8 @@ const fromRow = (r) => ({
   copper: r.copper,
 })
 
-function totalValue(counts) {
-  return CURRENCIES.reduce((sum, c) => sum + (counts[c.id] || 0) * c.copperValue, 0)
-}
-
 function describeCounts(counts) {
   return CURRENCIES.map((c) => `${counts[c.id]} ${c.label.toLowerCase()}`).join(', ')
-}
-
-// Spending a specific denomination you don't have enough of means breaking
-// a higher-value coin for change — exactly like a real coin purse. The
-// currency ladder is a clean base-10 chain (gold=10 silver=10 shillings=10
-// copper), so subtracting the spend from the total "ordinary" value and
-// re-expressing what's left via floor division reproduces manual
-// decimal subtraction-with-borrowing: any denomination the subtraction
-// doesn't need to break is left exactly as it was. Platinum sits outside
-// that chain (worth the same as gold, but not part of everyday spending
-// per this world's lore) and is only broken — 1-for-1 into gold — as a
-// last resort if gold/silver/shilling/copper alone can't cover it.
-function spendFromCounts(counts, spendCopper) {
-  const ordinaryCopper =
-    counts.gold * 1000 + counts.silver * 100 + counts.shilling * 10 + counts.copper
-  const platinumCopper = counts.platinum * 1000
-
-  if (spendCopper > ordinaryCopper + platinumCopper) {
-    throw new Error('Not enough money for that.')
-  }
-
-  let platinum = counts.platinum
-  let usableOrdinary = ordinaryCopper
-  if (spendCopper > ordinaryCopper) {
-    const shortfall = spendCopper - ordinaryCopper
-    const platinumToBreak = Math.ceil(shortfall / 1000)
-    platinum -= platinumToBreak
-    usableOrdinary += platinumToBreak * 1000
-  }
-
-  const remainder = usableOrdinary - spendCopper
-  const gold = Math.floor(remainder / 1000)
-  const afterGold = remainder - gold * 1000
-  const silver = Math.floor(afterGold / 100)
-  const afterSilver = afterGold - silver * 100
-  const shilling = Math.floor(afterSilver / 10)
-  const copper = afterSilver - shilling * 10
-
-  return { platinum, gold, silver, shilling, copper }
 }
 
 function WalletTracker({ campaignId, playerId }) {

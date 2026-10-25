@@ -2050,3 +2050,65 @@ create table if not exists session_transcripts (
 alter table session_transcripts enable row level security;
 drop policy if exists "anon full access session_transcripts" on session_transcripts;
 create policy "anon full access session_transcripts" on session_transcripts for all to anon using (true) with check (true);
+
+-- ── Inventory & merchants ───────────────────────────────────────────────
+-- The inventory view sorts loot into bags (equip / use / etc / quest;
+-- '' = guessed from the item) and remembers each item's grid slot.
+-- value_cp: what an item is worth in copper (set when bought from a
+-- merchant), so it can be sold back.
+alter table loot add column if not exists bag text not null default '';
+alter table loot add column if not exists slot integer;
+alter table loot add column if not exists equipped boolean not null default false;
+alter table loot add column if not exists value_cp integer;
+
+-- A DM's shop. Players see it while it's open. sell_rate: the share of an
+-- item's value the merchant pays when buying it back.
+create table if not exists merchants (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  name text not null,
+  greeting text not null default '',
+  photo_path text,
+  is_open boolean not null default false,
+  sell_rate numeric not null default 0.5,
+  created_at timestamptz not null default now()
+);
+create index if not exists merchants_campaign_idx on merchants (campaign_id);
+
+-- What a merchant sells. price_cp in copper; stock null = unlimited.
+-- photo_path is in the loot-photos bucket, copied onto bought items.
+create table if not exists merchant_items (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  merchant_id uuid not null references merchants(id) on delete cascade,
+  item text not null,
+  bag text not null default '',
+  kind text not null default '',
+  notes text not null default '',
+  photo_path text,
+  price_cp integer not null default 0 check (price_cp >= 0),
+  stock integer check (stock is null or stock >= 0),
+  usable boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists merchant_items_merchant_idx on merchant_items (merchant_id);
+
+alter table merchants enable row level security;
+alter table merchant_items enable row level security;
+drop policy if exists "anon full access merchants" on merchants;
+drop policy if exists "anon full access merchant_items" on merchant_items;
+create policy "anon full access merchants" on merchants for all to anon using (true) with check (true);
+create policy "anon full access merchant_items" on merchant_items for all to anon using (true) with check (true);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['merchants', 'merchant_items'] loop
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;
