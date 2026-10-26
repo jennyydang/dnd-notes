@@ -2160,3 +2160,7 @@ end $$;
 -- back, body, waist, feet, main, off, hands, ring1, ring2); null when not
 -- worn. `equipped` stays true while it's worn.
 alter table loot add column if not exists equip_slot text;
+
+-- The choices behind a sprite made in the sprite creator, so it can be
+-- edited later (sprite_path is the rendered PNG).
+alter table party_members add column if not exists sprite_config jsonb;

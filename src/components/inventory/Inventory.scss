@@ -1215,3 +1215,34 @@ $outline: 2px solid #120d0a;
   padding: 0;
   list-style: none;
 }
+
+.trade-stage__changes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.15rem 0.75rem;
+}
+
+button.trade-stage__change {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.equipment__make {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border: 2px solid #120d0a;
+  border-radius: 6px;
+  background: $maroon-light;
+  color: #fff;
+  font-size: 0.78rem;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: $maroon;
+  }
+}

@@ -9,19 +9,21 @@ import { executeTrade, offerPatch, sides } from '../../lib/trade.js'
 import Modal from '../Modal.jsx'
 import Icon from '../Icon.jsx'
 import ItemIcon from './ItemIcon.jsx'
+import SpriteCreator from './SpriteCreator.jsx'
 
 const OFFER_SLOTS = 6
 const MAX_OFFER = 9
 
 // One character's stage: their full-body sprite (or portrait), name and
 // whether they've pressed Trade. Your own can take a new sprite.
-function SpriteStage({ member, holder, ready, mine, onSprite }) {
+function SpriteStage({ member, holder, ready, mine, onSprite, onSaved }) {
+  const [creating, setCreating] = useState(false)
   const sprite = member?.sprite_path ? getPublicUrl('party-portraits', member.sprite_path) : ''
   const portrait = member?.photo_path ? getPublicUrl('party-portraits', member.photo_path) : ''
   const crop = useImageCrop({ aspect: 3 / 4, shape: 'rect', onCropped: onSprite })
   return (
     <div className={`trade-stage${ready ? ' is-ready' : ''}`}>
-      <div className="trade-stage__floor">
+      <div className={`trade-stage__floor${sprite ? ' has-sprite' : ''}`}>
         {sprite ? (
           <img className="trade-stage__sprite" src={sprite} alt="" />
         ) : portrait ? (
@@ -33,12 +35,18 @@ function SpriteStage({ member, holder, ready, mine, onSprite }) {
       </div>
       <span className="trade-stage__name">{holder}</span>
       {mine && member && (
-        <label className="trade-stage__change">
-          <Icon name="upload" /> {sprite ? 'Change sprite' : 'Add sprite'}
-          <input type="file" accept="image/*" hidden onChange={crop.fromInput} />
-        </label>
+        <span className="trade-stage__changes">
+          <button type="button" className="trade-stage__change" onClick={() => setCreating(true)}>
+            <Icon name="user" /> {member.sprite_config ? 'Edit sprite' : 'Create sprite'}
+          </button>
+          <label className="trade-stage__change">
+            <Icon name="upload" /> Upload
+            <input type="file" accept="image/*" hidden onChange={crop.fromInput} />
+          </label>
+        </span>
       )}
       {crop.dialog}
+      {creating && <SpriteCreator member={member} onClose={() => setCreating(false)} onSaved={onSaved} />}
     </div>
   )
 }
@@ -192,7 +200,14 @@ function TradeWindow({ trade, playerId, loot, wallet, tradesTable, onClose }) {
             {status}
           </p>
           <div className="trade__stages">
-            <SpriteStage member={memberFor(me.holder)} holder={me.holder} ready={me.ready} mine onSprite={setSprite} />
+            <SpriteStage
+              member={memberFor(me.holder)}
+              holder={me.holder}
+              ready={me.ready}
+              mine
+              onSprite={setSprite}
+              onSaved={() => tables.character.refetch?.({ silent: true })}
+            />
             <div className="trade__buttons">
               {open ? (
                 <>

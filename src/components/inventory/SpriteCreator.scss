@@ -1,0 +1,182 @@
+@use '../../styles/variables' as *;
+
+$pixel: 'Silkscreen', 'Courier New', monospace;
+
+// Pixel art stays crisp wherever a sprite is shown.
+.sprite-maker canvas,
+.trade-stage__sprite,
+.equipment__sprite {
+  image-rendering: pixelated;
+}
+
+.sprite-maker {
+  display: grid;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  grid-template-areas:
+    'stage options'
+    'footer footer';
+  gap: 1rem;
+  align-items: start;
+
+  @media (max-width: 760px) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'stage'
+      'options'
+      'footer';
+  }
+
+  &__stage-window {
+    grid-area: stage;
+    gap: 0.5rem;
+
+    @media (min-width: 761px) {
+      position: sticky;
+      top: 0;
+    }
+  }
+
+  &__stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.25rem;
+    border: 2px solid #120d0a;
+    border-radius: 6px;
+    // The deep blue of the reference sheet, with a floor glow.
+    background:
+      radial-gradient(ellipse 55% 12% at 50% 88%, rgba(255, 255, 255, 0.08), transparent 70%),
+      #1d4f6e;
+  }
+
+  &__preview {
+    width: min(12rem, 60vw);
+    height: auto;
+  }
+
+  &__turn {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: grid;
+    place-items: center;
+    border: 2px solid #120d0a;
+    border-radius: 50%;
+    background: $parchment;
+    color: $ink;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: $gold-light;
+    }
+  }
+
+  &__views {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.3rem;
+  }
+
+  &__view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.25rem 0;
+    border: 2px solid #120d0a;
+    border-radius: 6px;
+    background: #1d4f6e;
+    color: $parchment;
+    font-family: $pixel;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    canvas {
+      width: 100%;
+      max-width: 3.5rem;
+      height: auto;
+    }
+
+    &.is-active {
+      border-color: $gold-light;
+      box-shadow: 0 0 0 2px fade($gold, 0.4);
+    }
+  }
+
+  &__stage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  &__options {
+    grid-area: options;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  &__field {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+
+    legend {
+      margin-bottom: 0.35rem;
+      font-family: $pixel;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: $gold-light;
+    }
+  }
+
+  &__swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  &__swatch {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid #120d0a;
+    border-radius: 4px;
+    background: var(--swatch);
+    box-shadow: inset -3px -3px 0 rgba(0, 0, 0, 0.25), inset 2px 2px 0 rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+
+    &.is-active {
+      outline: 3px solid $gold-light;
+      outline-offset: 1px;
+    }
+  }
+
+  &__footer {
+    grid-area: footer;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid fade($gold-dim, 0.3);
+
+    .field-error {
+      flex: 1 1 100%;
+      margin: 0;
+    }
+  }
+}
+
+// A made sprite brings its own shadow; drop the stage's.
+.equipment__figure.has-sprite,
+.trade-stage__floor.has-sprite {
+  background: linear-gradient(#fbf6e6, $parchment-dark);
+}

@@ -6,6 +6,7 @@ import { EQUIP_SLOTS, guessSlotKind } from '../../lib/equipment.js'
 import Modal from '../Modal.jsx'
 import Icon from '../Icon.jsx'
 import ItemIcon from './ItemIcon.jsx'
+import SpriteCreator from './SpriteCreator.jsx'
 
 const kindOf = (slotId) => (slotId.startsWith('ring') ? 'ring' : slotId)
 
@@ -18,6 +19,7 @@ function EquipmentWindow({ owner, worn, bagItems, selectedId, dragged, onSelect,
   const sprite = member?.sprite_path ? getPublicUrl('party-portraits', member.sprite_path) : ''
   const portrait = member?.photo_path ? getPublicUrl('party-portraits', member.photo_path) : ''
   const [picking, setPicking] = useState(null) // slot id
+  const [creating, setCreating] = useState(false)
 
   if (owner.key === STASH) {
     return (
@@ -71,17 +73,25 @@ function EquipmentWindow({ owner, worn, bagItems, selectedId, dragged, onSelect,
       </header>
       <ol className="equipment__board">
         {EQUIP_SLOTS.map(slot)}
-        <li className="equipment__figure" aria-hidden="true">
+        <li className={`equipment__figure${sprite ? ' has-sprite' : ''}`}>
           {sprite ? (
-            <img className="equipment__sprite" src={sprite} alt="" />
+            <img className="equipment__sprite" src={sprite} alt={`${owner.label}’s sprite`} />
           ) : portrait ? (
             <img className="equipment__portrait" src={portrait} alt="" />
           ) : (
             <Icon name="user" size="4rem" />
           )}
           <span className="equipment__name">{owner.label}</span>
+          {owner.mine && member && (
+            <button type="button" className="equipment__make" onClick={() => setCreating(true)}>
+              <Icon name="user" /> {member.sprite_config ? 'Edit sprite' : sprite ? 'New sprite' : 'Create sprite'}
+            </button>
+          )}
         </li>
       </ol>
+      {creating && (
+        <SpriteCreator member={member} onClose={() => setCreating(false)} onSaved={() => tables.character.refetch?.({ silent: true })} />
+      )}
 
       {picking && (
         <EquipPicker
