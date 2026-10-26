@@ -2155,3 +2155,8 @@ begin
     alter publication supabase_realtime add table public.trades;
   end if;
 end $$;
+
+-- Where an equipped item is worn on the equipment window (head, neck,
+-- back, body, waist, feet, main, off, hands, ring1, ring2); null when not
+-- worn. `equipped` stays true while it's worn.
+alter table loot add column if not exists equip_slot text;

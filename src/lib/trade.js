@@ -115,7 +115,11 @@ export function planTrade(trade, loot, wallets) {
     }
     const patch = {}
     if (after.quantity !== before.quantity) patch.quantity = after.quantity
-    if (after.holder !== before.holder) Object.assign(patch, { holder: after.holder, slot: null, equipped: false })
+    if (after.holder !== before.holder) {
+      Object.assign(patch, { holder: after.holder, slot: null, equipped: false })
+      // Only written when it was worn, so trades work before that column exists.
+      if (before.equipSlot) patch.equip_slot = null
+    }
     if (Object.keys(patch).length) updates.push({ id, patch })
   }
 
@@ -163,6 +167,7 @@ const lootRow = (r) => ({
   photoPath: r.photo_path || null,
   bag: r.bag || '',
   valueCp: r.value_cp ?? null,
+  equipSlot: r.equip_slot || null,
 })
 
 // Runs the swap. Only one screen gets to: the status flips open →

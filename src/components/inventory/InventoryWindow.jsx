@@ -12,12 +12,18 @@ import ShopWindow from './ShopWindow.jsx'
 import TradeWindow from './TradeWindow.jsx'
 import { ACTIVE, tradeFromRow } from '../../lib/trade.js'
 import { notifyPlayer } from '../../lib/notifications.js'
+import { equipChanges, freeSlotFor, layoutEquipment, slotLabel, unequipPatch } from '../../lib/equipment.js'
+import EquipmentWindow from './EquipmentWindow.jsx'
 import ItemIcon from './ItemIcon.jsx'
 import './Inventory.scss'
 
 const LOOT_BUCKET = 'loot-photos'
 const BAG_KEY = 'dnd-notes-inventory-bag'
 const SCHEMA_HINT = 'Run the latest supabase/schema.sql first (it adds inventory bags and slots).'
+const EQUIP_HINT = 'Run the latest supabase/schema.sql first (it adds equipment slots).'
+// Taking an item off: equip_slot is only written when it had one, so this
+// works before the equipment SQL has been run.
+const offPatch = (entry) => (entry.equipSlot ? unequipPatch : { equipped: false })
 
 export const invFromRow = (r) => ({
   id: r.id,
@@ -34,6 +40,7 @@ export const invFromRow = (r) => ({
   bag: r.bag || '',
   slot: r.slot ?? null,
   equipped: Boolean(r.equipped),
+  equipSlot: r.equip_slot || null,
   valueCp: r.value_cp ?? null,
   createdAt: r.created_at,
 })
@@ -124,8 +131,13 @@ function InventoryWindow({ campaignId, playerId }) {
   const [shopId, setShopId] = useState(null)
 
   const ownerItems = loot.filter((l) => ownerKey(l.holder) === owner.key)
-  const counts = Object.fromEntries(BAGS.map((b) => [b.id, ownerItems.filter((l) => bagOf(l) === b.id).length]))
-  const slots = useMemo(() => layoutBag(ownerItems.filter((l) => bagOf(l) === bag)), [ownerItems, bag])
+  // Worn items are on the equipment figure, not in the bag.
+  const worn = useMemo(() => layoutEquipment(ownerItems), [ownerItems])
+  const wornIds = new Set(Object.values(worn).map((w) => w.id))
+  const inBag = ownerItems.filter((l) => !wornIds.has(l.id))
+  const counts = Object.fromEntries(BAGS.map((b) => [b.id, inBag.filter((l) => bagOf(l) === b.id).length]))
+  const slots = useMemo(() => layoutBag(inBag.filter((l) => bagOf(l) === bag)), [inBag, bag])
+  const dragged = dragFrom ? loot.find((l) => l.id === dragFrom) || null : null
   const selected = loot.find((l) => l.id === selectedId) || null
 
   useEffect(() => {
@@ -138,8 +150,31 @@ function InventoryWindow({ campaignId, playerId }) {
     try {
       await updateItem(id, patch)
     } catch (err) {
-      setError(/bag|slot|equipped|value_cp/.test(err.message) ? SCHEMA_HINT : err.message)
+      setError(/equip_slot/.test(err.message) ? EQUIP_HINT : /bag|slot|equipped|value_cp/.test(err.message) ? SCHEMA_HINT : err.message)
     }
+  }
+
+  async function equip(entry, slotId = freeSlotFor(entry, worn)) {
+    for (const change of equipChanges(worn, entry, slotId)) {
+      const target = loot.find((l) => l.id === change.id)
+      // Old-style equipped items (no slot yet) only need equipped cleared.
+      await save(change.id, change.patch.equipped ? change.patch : offPatch(target || {}))
+    }
+  }
+
+  const unequip = (entry, extra = {}) => save(entry.id, { ...offPatch(entry), ...extra })
+
+  // Something dropped on a bag slot: moved within the bag, or taken off.
+  function dropOnSlot(index) {
+    const item = dragged
+    setDragFrom(null)
+    if (!item) return
+    if (wornIds.has(item.id)) {
+      unequip(item, bagOf(item) === bag && !slots[index] ? { slot: index } : {})
+      return
+    }
+    const from = slots.findIndex((s) => s?.id === item.id)
+    if (from >= 0) moveTo(from, index)
   }
 
   async function moveTo(from, to) {
@@ -163,7 +198,7 @@ function InventoryWindow({ campaignId, playerId }) {
   }
 
   async function giveTo(entry, target) {
-    await save(entry.id, { holder: target.holder, slot: null, equipped: false })
+    await save(entry.id, { holder: target.holder, slot: null, ...offPatch(entry) })
     setSelectedId(null)
   }
 
@@ -288,7 +323,7 @@ function InventoryWindow({ campaignId, playerId }) {
             onDragOver={(e) => dragFrom != null && o.key !== owner.key && e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault()
-              const item = slots[dragFrom]
+              const item = dragged
               setDragFrom(null)
               if (item) giveTo(item, o)
             }}
@@ -327,9 +362,9 @@ function InventoryWindow({ campaignId, playerId }) {
                 onDragOver={(e) => dragFrom != null && b.id !== bag && e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault()
-                  const item = slots[dragFrom]
+                  const item = dragged
                   setDragFrom(null)
-                  if (item) save(item.id, { bag: b.id, slot: null, ...(b.id === 'equip' ? {} : { equipped: false }) })
+                  if (item) save(item.id, { bag: b.id, slot: null, ...offPatch(item) })
                 }}
               >
                 {b.label}
@@ -358,15 +393,14 @@ function InventoryWindow({ campaignId, playerId }) {
                   onDragOver={(e) => dragFrom != null && e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault()
-                    if (dragFrom != null) moveTo(dragFrom, index)
-                    setDragFrom(null)
+                    dropOnSlot(index)
                   }}
                 >
                   <button
                     type="button"
                     className="inv-slot__button"
                     draggable={Boolean(item)}
-                    onDragStart={() => setDragFrom(index)}
+                    onDragStart={() => item && setDragFrom(item.id)}
                     onDragEnd={() => setDragFrom(null)}
                     onClick={() => onSlotTap(index)}
                     aria-label={
@@ -402,18 +436,35 @@ function InventoryWindow({ campaignId, playerId }) {
           </footer>
         </section>
 
+        <EquipmentWindow
+          owner={owner}
+          worn={worn}
+          bagItems={inBag}
+          selectedId={selectedId}
+          dragged={dragged}
+          onSelect={(id) => setSelectedId(id === selectedId ? null : id)}
+          onDragStart={(id) => setDragFrom(id)}
+          onDragEnd={() => setDragFrom(null)}
+          onEquip={(item, slotId) => {
+            setDragFrom(null)
+            equip(item, slotId)
+          }}
+        />
+
         <ItemDetails
           entry={selected}
           bag={bag}
           owners={owners}
           ownerKeyNow={owner.key}
+          wornSlot={selected ? Object.keys(worn).find((k) => worn[k].id === selected.id) || null : null}
           onUse={useItem}
-          onEquip={(e) => save(e.id, { equipped: !e.equipped })}
+          onEquip={(e) => equip(e)}
+          onUnequip={(e) => unequip(e)}
           onMove={(e) => {
             setMoving(e.id)
             setSelectedId(null)
           }}
-          onBag={(e, b) => save(e.id, { bag: b, slot: null, ...(b === 'equip' ? {} : { equipped: false }) })}
+          onBag={(e, b) => save(e.id, { bag: b, slot: null, ...(b === 'equip' ? {} : offPatch(e)) })}
           onGive={giveTo}
           onDiscard={discard}
           onOpen={(e) => openEntity('loot', e.id)}
@@ -422,8 +473,8 @@ function InventoryWindow({ campaignId, playerId }) {
 
       {error && <p className="field-error">{error}</p>}
       <p className="inventory__hint">
-        Drag items between slots, onto a bag tab, or onto someone’s name to hand them over. On a phone, tap an item and
-        choose Move.
+        Drag items between slots, onto a bag tab, onto the equipment figure, or onto someone’s name to hand them over. On a
+        phone, tap an item and choose Move or Equip, or tap an empty gear slot.
       </p>
 
       {adding && (
@@ -472,7 +523,7 @@ function InventoryWindow({ campaignId, playerId }) {
 }
 
 // The dark tooltip box: the selected item and what you can do with it.
-function ItemDetails({ entry, bag, owners, ownerKeyNow, onUse, onEquip, onMove, onBag, onGive, onDiscard, onOpen }) {
+function ItemDetails({ entry, bag, owners, ownerKeyNow, wornSlot, onUse, onEquip, onUnequip, onMove, onBag, onGive, onDiscard, onOpen }) {
   if (!entry) {
     return (
       <aside className="item-details item-details--empty">
@@ -498,7 +549,11 @@ function ItemDetails({ entry, bag, owners, ownerKeyNow, onUse, onEquip, onMove, 
             {entry.quantity !== null && <li>Quantity: {entry.quantity}</li>}
             {entry.valueCp != null && <li>Worth {formatCoins(entry.valueCp)}</li>}
             {entry.foundAt && <li>Found: {entry.foundAt}</li>}
-            {entry.equipped && <li className="item-details__equipped">Equipped</li>}
+            {wornSlot ? (
+              <li className="item-details__equipped">Worn: {slotLabel(wornSlot)}</li>
+            ) : (
+              entry.equipped && <li className="item-details__equipped">Equipped</li>
+            )}
           </ul>
         </div>
       </div>
@@ -508,9 +563,9 @@ function ItemDetails({ entry, bag, owners, ownerKeyNow, onUse, onEquip, onMove, 
             <Icon name="flame" /> Use{entry.quantity !== null ? ' one' : ''}
           </button>
         )}
-        {entryBag === 'equip' && (
-          <button type="button" className="btn" onClick={() => onEquip(entry)}>
-            <Icon name="shield" /> {entry.equipped ? 'Unequip' : 'Equip'}
+        {(entryBag === 'equip' || wornSlot) && (
+          <button type="button" className="btn" onClick={() => (wornSlot ? onUnequip(entry) : onEquip(entry))}>
+            <Icon name="shield" /> {wornSlot ? 'Take off' : 'Equip'}
           </button>
         )}
         <button type="button" className="btn" onClick={() => onMove(entry)}>
