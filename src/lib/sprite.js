@@ -56,8 +56,8 @@ const FIXED = {
   white: ['#ffffff', '#ffffff', '#ffffff'],
   mouth: ['#8a3a2a', '#8a3a2a', '#8a3a2a'],
 }
-const OUTLINE = '#1a1210'
-const SHADOW = 'rgba(0,0,0,0.28)'
+const OUTLINE = '#120d16'
+const SHADOW = 'rgba(0,0,0,0.38)'
 
 // ── Options ──────────────────────────────────────────────────────────────
 export const OPTIONS = {
@@ -109,7 +109,7 @@ export const OPTIONS = {
 
 // Races set skin and traits; everything stays editable after.
 export const RACES = {
-  human: { label: 'Human', skin: 'fair', ears: false, horns: false, beard: false, tusks: false },
+  human: { label: 'Human', skin: 'tan', ears: false, horns: false, beard: false, tusks: false },
   elf: { label: 'Elf', skin: 'fair', ears: true, horns: false, beard: false, tusks: false },
   drow: { label: 'Drow', skin: 'ash', ears: true, horns: false, beard: false, tusks: false, hairColor: 'white' },
   dwarf: { label: 'Dwarf', skin: 'tan', ears: false, horns: false, beard: true, tusks: false },
@@ -121,8 +121,8 @@ export const RACES = {
 
 export const DEFAULT_SPRITE = {
   race: 'human',
-  skin: 'fair',
-  hairStyle: 'spiky',
+  skin: 'tan',
+  hairStyle: 'short',
   hairColor: 'ember',
   eyes: 'round',
   eyeColor: 'brown',
@@ -172,6 +172,8 @@ export function randomSprite(rand = Math.random) {
 }
 
 // ── Painting ─────────────────────────────────────────────────────────────
+// Proportions follow classic 16-bit RPG field sprites: a big round head
+// (nearly half the height), a short stubby body and tiny legs.
 function canvasGrid() {
   return Array.from({ length: H }, () => Array(W).fill(null))
 }
@@ -193,161 +195,161 @@ function painter(grid) {
         if (dx * dx + dy * dy <= 1 && test(x, y)) put(x, y, m)
       }
   }
-  const at = (x, y) => grid[y + Y]?.[x] ?? null
-  return { put, rect, ellipse, at }
+  return { put, rect, ellipse }
 }
 
-const HEAD = { cx: 11.5, cy: 9, rx: 6.6, ry: 6.4 }
+const HEAD = { cx: 11.5, cy: 9.5, rx: 7.6, ry: 7 }
 const inHead = (x, y) => ((x - HEAD.cx) / HEAD.rx) ** 2 + ((y - HEAD.cy) / HEAD.ry) ** 2 <= 1
+// Rows (before the hat room is added).
+const EYE_Y = 11
+const MOUTH = 14
+const TOP = 17 // shoulders
+const BELT = 21
+const HAND = 21
+const LEG = 23
+const BOOT = 25
 
-// Leg / arm offsets for the walk: frame 1 lifts the left foot, 2 the right.
-const step = (frame) => (frame === 1 ? [2, 0] : frame === 2 ? [0, 2] : [0, 0])
+// Frame 1 lifts the left foot, 2 the right.
+const step = (frame) => (frame === 1 ? [1, 0] : frame === 2 ? [0, 1] : [0, 0])
+
+const SIDE_TO = { short: 12, spiky: 12, long: 20, bob: 15, ponytail: 12, bun: 12 }
+
+// Chunky tufts on top of the head.
+function spikes(p) {
+  p.rect(6, 1, 7, 2, 'hair')
+  p.rect(10, 0, 11, 2, 'hair')
+  p.rect(13, 0, 14, 2, 'hair')
+  p.rect(16, 1, 17, 2, 'hair')
+}
+
+function frontHair(p, hs) {
+  if (hs === 'bald') return
+  if (hs === 'mohawk') {
+    p.rect(10, 0, 13, 8, 'hair')
+    return
+  }
+  // A full mop: the crown, heavy bangs down to the eyes, and the sides.
+  p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx, HEAD.ry, 'hair', (x, y) => y <= 8)
+  for (let x = 5; x <= 18; x++) p.put(x, 9, 'hair')
+  for (const x of [5, 6, 8, 9, 11, 14, 15, 17, 18]) p.put(x, 10, 'hair')
+  if (hs === 'bob') p.rect(5, 10, 18, 10, 'hair')
+  const sideTo = SIDE_TO[hs] || 12
+  p.rect(4, 7, 5, sideTo, 'hair')
+  p.rect(18, 7, 19, sideTo, 'hair')
+  if (hs === 'spiky') spikes(p)
+  if (hs === 'ponytail') p.rect(20, 6, 21, 14, 'hair')
+}
 
 function drawFrontBack(p, c, view, frame) {
   const back = view === 'back'
   const [liftL, liftR] = step(frame)
+  const armL = liftR - liftL
+  const o = c.outfit
+  const hs = c.hairStyle
 
   // Long hair and capes fall behind the body.
-  if (c.hairStyle === 'long' && c.hat !== 'hood') p.rect(4, 9, 19, back ? 20 : 18, 'hair')
-  if (c.outfit === 'cloak' && !back) {
-    p.rect(5, 16, 6, 27, 'accent')
-    p.rect(17, 16, 18, 27, 'accent')
-  }
+  if (hs === 'long' && c.hat !== 'hood') p.rect(3, 9, 20, 21, 'hair')
 
-  // Legs and boots.
-  if (c.outfit !== 'robe' && c.outfit !== 'dress') {
-    p.rect(9, 24, 10, 27 - liftL, 'pants')
-    p.rect(13, 24, 14, 27 - liftR, 'pants')
+  // Legs and boots: short and stubby.
+  if (o !== 'robe' && o !== 'dress') {
+    p.rect(9, LEG - liftL, 10, BOOT - 1 - liftL, 'pants')
+    p.rect(13, LEG - liftR, 14, BOOT - 1 - liftR, 'pants')
   }
-  p.rect(8, 28 - liftL, 10, 29 - liftL, 'boots')
-  p.rect(13, 28 - liftR, 15, 29 - liftR, 'boots')
+  p.rect(8, BOOT - liftL, 10, BOOT + 1 - liftL, 'boots')
+  p.rect(13, BOOT - liftR, 15, BOOT + 1 - liftR, 'boots')
 
   // Torso.
-  const o = c.outfit
   if (o === 'robe' || o === 'dress') {
-    for (let y = 16; y <= 28; y++) {
-      const spread = Math.floor((y - 16) / 4)
+    for (let y = TOP; y <= BOOT; y++) {
+      const spread = Math.floor((y - TOP) / 3)
       p.rect(8 - spread, y, 15 + spread, y, 'cloth')
     }
-    if (o === 'dress' && !back) p.rect(10, 18, 13, 26, 'accent')
-    if (o === 'robe') p.rect(8, 22, 15, 22, 'belt')
+    if (o === 'dress' && !back) p.rect(10, TOP + 2, 13, BOOT - 1, 'accent')
+    if (o === 'robe') p.rect(8, BELT, 15, BELT, 'belt')
   } else if (o === 'armor') {
-    p.rect(8, 16, 15, 23, 'metal')
-    if (!back) p.rect(11, 17, 12, 21, 'cloth')
-    p.rect(8, 23, 15, 23, 'belt')
+    p.rect(8, TOP, 15, LEG - 1, 'metal')
+    if (!back) p.rect(11, TOP + 1, 12, BELT - 1, 'cloth')
+    p.rect(8, BELT + 1, 15, BELT + 1, 'belt')
   } else {
-    p.rect(8, 16, 15, 23, 'cloth')
-    p.rect(8, 22, 15, 22, 'belt')
-    if (!back && o === 'tunic') p.rect(11, 16, 12, 18, 'accent')
+    p.rect(8, TOP, 15, LEG - 1, 'cloth')
+    p.rect(8, BELT, 15, BELT, 'belt')
+    if (!back && o === 'tunic') p.rect(11, TOP, 12, TOP + 1, 'accent')
   }
+
+  // Arms hug the body and swing a little with the step.
+  const sleeve = o === 'armor' ? 'metal' : 'cloth'
+  p.rect(6, TOP + 1 + armL, 7, HAND - 1 + armL, sleeve)
+  p.rect(16, TOP + 1 - armL, 17, HAND - 1 - armL, sleeve)
+  p.rect(6, HAND + armL, 7, HAND + 1 + armL, 'skin')
+  p.rect(16, HAND - armL, 17, HAND + 1 - armL, 'skin')
+  if (o === 'armor') {
+    p.rect(5, TOP, 8, TOP + 1, 'metal')
+    p.rect(15, TOP, 18, TOP + 1, 'metal')
+  }
+
+  // A cloak drapes over the shoulders like a poncho.
   if (o === 'cloak') {
-    if (back) p.rect(6, 16, 17, 27, 'accent')
-    else {
-      p.rect(6, 16, 17, 17, 'accent')
-      p.put(11, 18, 'gold')
+    for (let y = TOP; y <= BOOT - 1; y++) {
+      const spread = Math.min(3, Math.floor((y - TOP) / 2))
+      p.rect(7 - spread, y, 16 + spread, y, 'accent')
+    }
+    if (!back) {
+      p.rect(11, TOP + 2, 12, BOOT - 1, 'cloth')
+      p.put(11, TOP + 1, 'gold')
     }
   }
 
-  // Arms swing opposite the legs.
-  const armL = Math.sign(liftR - liftL)
-  const sleeve = o === 'armor' ? 'metal' : 'cloth'
-  p.rect(6, 17 + armL, 7, 22 + armL, sleeve)
-  p.rect(16, 17 - armL, 17, 22 - armL, sleeve)
-  p.rect(6, 23 + armL, 7, 24 + armL, 'skin')
-  p.rect(16, 23 - armL, 17, 24 - armL, 'skin')
-  if (o === 'armor') {
-    p.rect(5, 16, 8, 17, 'metal')
-    p.rect(15, 16, 18, 17, 'metal')
-  }
-
-  // Neck and head.
-  p.rect(11, 15, 12, 15, 'skin')
+  // Head.
   p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx, HEAD.ry, 'skin')
   if (c.ears) {
-    p.rect(4, 9, 5, 10, 'skin')
-    p.put(3, 8, 'skin')
-    p.rect(18, 9, 19, 10, 'skin')
-    p.put(20, 8, 'skin')
+    p.rect(2, 10, 3, 11, 'skin')
+    p.put(1, 9, 'skin')
+    p.rect(20, 10, 21, 11, 'skin')
+    p.put(22, 9, 'skin')
   }
 
-  // Hair.
-  const hs = c.hairStyle
   if (back) {
-    if (hs !== 'bald' && hs !== 'mohawk') p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx, HEAD.ry, 'hair', (x, y) => y <= 14)
-    if (hs === 'mohawk') p.rect(10, 1, 13, 14, 'hair')
-    if (hs === 'ponytail') p.rect(10, 13, 13, 20, 'hair')
-    if (hs === 'bob') p.rect(5, 9, 18, 14, 'hair')
+    if (hs !== 'bald' && hs !== 'mohawk') p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx, HEAD.ry, 'hair')
+    if (hs === 'mohawk') p.rect(10, 0, 13, 16, 'hair')
+    if (hs === 'ponytail') p.rect(10, 15, 13, 22, 'hair')
+    if (hs === 'bob') p.rect(4, 9, 19, 15, 'hair')
+    if (hs === 'spiky') spikes(p)
   } else {
-    if (hs === 'mohawk') p.rect(10, 1, 13, 6, 'hair')
-    else if (hs !== 'bald') {
-      p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx, HEAD.ry, 'hair', (x, y) => y <= 6)
-      // Bangs: a ragged fringe.
-      for (let x = 6; x <= 17; x++) if (x % 3 !== 0 || hs === 'bob') p.put(x, 7, 'hair')
-      if (hs === 'bob') p.rect(6, 8, 17, 8, 'hair')
-      const sideTo = hs === 'long' ? 17 : hs === 'bob' ? 13 : 10
-      p.rect(5, 6, 6, sideTo, 'hair')
-      p.rect(17, 6, 18, sideTo, 'hair')
+    frontHair(p, hs)
+    // Small eyes, set low, just under the bangs.
+    const iris = 'eye'
+    if (c.eyes === 'round') {
+      p.rect(8, EYE_Y, 8, EYE_Y + 1, 'pupil')
+      p.rect(15, EYE_Y, 15, EYE_Y + 1, 'pupil')
+      p.put(7, EYE_Y + 1, iris)
+      p.put(16, EYE_Y + 1, iris)
+    } else if (c.eyes === 'dot') {
+      p.put(8, EYE_Y + 1, 'pupil')
+      p.put(15, EYE_Y + 1, 'pupil')
+    } else {
+      p.rect(7, EYE_Y + 1, 8, EYE_Y + 1, 'pupil')
+      p.rect(15, EYE_Y + 1, 16, EYE_Y + 1, 'pupil')
     }
-    if (hs === 'spiky') {
-      for (const [x, y] of [
-        [7, 2],
-        [10, 1],
-        [13, 1],
-        [16, 2],
-        [11, 0],
-        [5, 4],
-        [18, 4],
-      ])
-        p.put(x, y, 'hair')
+    if (c.beard) {
+      p.ellipse(HEAD.cx, 15.5, 5.5, 3.2, 'hair', (x, y) => y >= 13)
+      p.rect(11, MOUTH, 12, MOUTH, 'mouth')
+    } else {
+      p.rect(11, MOUTH, 12, MOUTH, 'mouth')
     }
-    if (hs === 'ponytail') p.rect(18, 7, 20, 13, 'hair')
+    if (c.tusks) {
+      p.rect(10, MOUTH - 1, 10, MOUTH, 'tusk')
+      p.rect(13, MOUTH - 1, 13, MOUTH, 'tusk')
+    }
   }
   if (hs === 'bun') p.ellipse(11.5, 1.5, 2.5, 2, 'hair')
 
-  // Face.
-  if (!back) {
-    const iris = 'eye'
-    const lx = 8
-    const rx = 15
-    if (c.eyes === 'round') {
-      p.rect(lx, 10, lx + 1, 11, 'pupil')
-      p.rect(rx - 1, 10, rx, 11, 'pupil')
-      p.put(lx + 1, 11, iris)
-      p.put(rx - 1, 11, iris)
-      p.put(lx, 10, 'white')
-      p.put(rx - 1, 10, 'white')
-    } else if (c.eyes === 'dot') {
-      p.rect(lx + 1, 10, lx + 1, 11, 'pupil')
-      p.rect(rx - 1, 10, rx - 1, 11, 'pupil')
-    } else {
-      p.rect(lx, 11, lx + 1, 11, 'pupil')
-      p.rect(rx - 1, 11, rx, 11, 'pupil')
-      p.put(lx + 1, 11, iris)
-      p.put(rx - 1, 11, iris)
-    }
-    if (c.beard) {
-      p.ellipse(HEAD.cx, 13.5, 5, 3, 'hair', (x, y) => y >= 12 && inHead(x, y + 1))
-      p.rect(9, 15, 14, 16, 'hair')
-      p.rect(11, 13, 12, 13, 'mouth')
-    } else {
-      p.rect(11, 13, 12, 13, 'mouth')
-    }
-    if (c.tusks) {
-      p.put(10, 13, 'tusk')
-      p.put(13, 13, 'tusk')
-      p.put(10, 12, 'tusk')
-      p.put(13, 12, 'tusk')
-    }
-  }
-
-  // Horns.
   if (c.horns) {
-    p.rect(5, 1, 6, 3, 'horn')
-    p.put(5, 0, 'horn')
-    p.put(4, -1, 'horn')
-    p.rect(17, 1, 18, 3, 'horn')
-    p.put(18, 0, 'horn')
-    p.put(19, -1, 'horn')
+    p.rect(4, 2, 5, 4, 'horn')
+    p.put(4, 1, 'horn')
+    p.put(3, 0, 'horn')
+    p.rect(18, 2, 19, 4, 'horn')
+    p.put(19, 1, 'horn')
+    p.put(20, 0, 'horn')
   }
 
   drawHat(p, c, back)
@@ -355,33 +357,40 @@ function drawFrontBack(p, c, view, frame) {
   else drawGearBack(p, c)
 }
 
-function drawHat(p, c, back) {
+function drawHat(p, c, back, side = false) {
   switch (c.hat) {
     case 'hood':
-      p.ellipse(HEAD.cx, HEAD.cy - 0.5, HEAD.rx + 1, HEAD.ry + 1, 'accent', (x, y) => back || !(y >= 7 && x >= 7 && x <= 16 && y <= 15))
-      if (back) p.rect(8, 15, 15, 17, 'accent')
+      p.ellipse(HEAD.cx, HEAD.cy - 0.5, HEAD.rx + 1, HEAD.ry + 1, 'accent', (x, y) =>
+        back ? true : side ? !(x >= 13 && y >= 9 && y <= 16) : !(y >= 9 && x >= 6 && x <= 17 && y <= 16),
+      )
+      if (back) p.rect(7, 16, 16, 19, 'accent')
       break
     case 'wizard':
-      p.rect(3, 4, 20, 4, 'accent')
-      for (let y = -3; y <= 3; y++) {
-        const half = Math.max(0, Math.floor((y + 4) * 0.8))
-        p.rect(11 - half, y, 12 + half, y, 'accent')
+      p.rect(2, 3, 21, 3, 'accent')
+      p.rect(4, 2, 19, 2, 'accent')
+      for (let y = -3; y <= 1; y++) {
+        const half = y + 4
+        p.rect(Math.round(11.5 - half), y, Math.round(11.5 + half), y, 'accent')
       }
-      p.put(14, -3, 'accent')
-      p.put(15, -3, 'accent')
-      if (!back) p.rect(9, 3, 14, 3, 'gold')
+      p.rect(13, -4, 15, -4, 'accent')
+      p.put(16, -3, 'accent')
+      if (!back) p.rect(8, 1, 15, 1, 'gold')
       break
     case 'helmet':
-      p.ellipse(HEAD.cx, HEAD.cy - 1, HEAD.rx + 0.6, HEAD.ry, 'metal', (x, y) => y <= 6)
-      if (!back) p.rect(11, 6, 12, 10, 'metal')
+      p.ellipse(HEAD.cx, HEAD.cy - 0.5, HEAD.rx + 0.6, HEAD.ry + 0.3, 'metal', (x, y) => y <= 8)
+      if (!back && !side) p.rect(11, 8, 12, 12, 'metal')
       break
     case 'headband':
-      p.rect(5, 5, 18, 5, 'accent')
+      p.rect(4, 6, 19, 6, 'accent')
+      if (back) {
+        p.put(11, 7, 'accent')
+        p.put(12, 8, 'accent')
+      }
       break
     case 'crown':
-      p.rect(6, 4, 17, 4, 'gold')
-      for (const x of [7, 11, 12, 16]) p.put(x, 3, 'gold')
-      if (!back) p.put(11, 4, 'gem')
+      p.rect(5, 4, 18, 4, 'gold')
+      for (const x of [6, 11, 12, 17]) p.put(x, 3, 'gold')
+      if (!back && !side) p.rect(11, 4, 12, 4, 'gem')
       break
     default:
   }
@@ -389,36 +398,36 @@ function drawHat(p, c, back) {
 
 // Weapon in the right hand (viewer's left), off-hand item on the left.
 function drawGear(p, c, armL) {
-  const hy = 23 + armL
+  const hy = HAND + armL
   switch (c.weapon) {
     case 'sword':
-      p.rect(4, hy - 10, 4, hy - 1, 'metal')
-      p.rect(3, hy, 5, hy, 'gold')
-      p.put(4, hy + 1, 'wood')
+      p.rect(5, hy - 9, 5, hy - 1, 'metal')
+      p.rect(4, hy, 6, hy, 'gold')
+      p.put(5, hy + 1, 'wood')
       break
     case 'staff':
-      p.rect(4, hy - 14, 4, hy + 6, 'wood')
-      p.ellipse(4, hy - 15, 1.2, 1.2, 'gem')
+      p.rect(5, hy - 13, 5, hy + 5, 'wood')
+      p.ellipse(5, hy - 14, 1.3, 1.3, 'gem')
       break
     case 'axe':
-      p.rect(4, hy - 8, 4, hy + 2, 'wood')
-      p.rect(1, hy - 8, 3, hy - 5, 'metal')
+      p.rect(5, hy - 8, 5, hy + 2, 'wood')
+      p.rect(2, hy - 8, 4, hy - 5, 'metal')
       break
     case 'dagger':
-      p.rect(4, hy - 4, 4, hy - 1, 'metal')
-      p.put(4, hy, 'gold')
+      p.rect(5, hy - 3, 5, hy - 1, 'metal')
+      p.put(5, hy, 'gold')
       break
     case 'bow':
-      for (let y = -6; y <= 6; y++) p.put(3 - Math.round(Math.cos((y / 6) * 1.3) * 2) + 2, hy + y - 2, 'wood')
-      p.rect(5, hy - 8, 5, hy + 4, 'white')
+      for (let y = -6; y <= 6; y++) p.put(5 - Math.round(Math.cos((y / 6) * 1.3) * 2), hy + y - 1, 'wood')
+      p.rect(5, hy - 7, 5, hy + 5, 'white')
       break
     default:
   }
-  const oy = 23 - armL
+  const oy = HAND - armL
   switch (c.offhand) {
     case 'shield':
-      p.ellipse(19, oy - 3, 2.6, 3.6, 'metal')
-      p.ellipse(19, oy - 3, 1.2, 1.8, 'accent')
+      p.ellipse(19, oy - 2, 2.6, 3.4, 'metal')
+      p.ellipse(19, oy - 2, 1.1, 1.6, 'accent')
       break
     case 'book':
       p.rect(17, oy - 1, 20, oy + 2, 'accent')
@@ -434,137 +443,153 @@ function drawGear(p, c, armL) {
 }
 
 function drawGearBack(p, c) {
-  // From behind you mostly see what's slung on the back.
-  if (c.weapon === 'staff' || c.weapon === 'bow') {
-    for (let i = 0; i < 14; i++) p.put(7 + Math.floor(i * 0.7), 13 + i, c.weapon === 'bow' ? 'wood' : 'wood')
-  }
-  if (c.weapon === 'sword' || c.weapon === 'axe') {
-    for (let i = 0; i < 11; i++) p.put(16 - Math.floor(i * 0.6), 14 + i, i < 2 ? 'gold' : 'metal')
-  }
-  if (c.offhand === 'shield') p.ellipse(11.5, 20, 4, 4.5, 'metal')
+  // From behind you mostly see what's slung across the back.
+  if (c.weapon === 'staff' || c.weapon === 'bow') for (let i = 0; i < 11; i++) p.put(8 + Math.floor(i * 0.7), 16 + i * 0.8, 'wood')
+  if (c.weapon === 'sword' || c.weapon === 'axe') for (let i = 0; i < 9; i++) p.put(15 - Math.floor(i * 0.6), 15 + i * 0.9, i < 2 ? 'gold' : 'metal')
+  if (c.offhand === 'shield') p.ellipse(11.5, 20, 4, 3.6, 'metal')
 }
 
 // Facing right (left is this, mirrored).
 function drawSide(p, c, frame) {
   const [liftL, liftR] = step(frame)
-  const fwd = liftL ? 2 : liftR ? -2 : 0
-  if (c.hairStyle === 'long' && c.hat !== 'hood') p.rect(6, 9, 11, 19, 'hair')
-  if (c.outfit === 'cloak') p.rect(7, 16, 10, 27, 'accent')
-  // Legs: one forward, one back while walking.
-  if (c.outfit !== 'robe' && c.outfit !== 'dress') {
-    p.rect(10 - fwd / 2, 24, 11 - fwd / 2, 27, 'pants')
-    p.rect(12 + fwd / 2, 24, 13 + fwd / 2, 27, 'pants')
-  }
-  p.rect(9 - fwd / 2, 28, 11 - fwd / 2, 29, 'boots')
-  p.rect(12 + fwd / 2, 28, 15 + fwd / 2, 29, 'boots')
-
+  const fwd = liftL ? 1 : liftR ? -1 : 0
   const o = c.outfit
+  const hs = c.hairStyle
+  if (hs === 'long' && c.hat !== 'hood') p.rect(4, 9, 11, 20, 'hair')
+  if (o === 'cloak') p.rect(7, TOP, 10, BOOT - 1, 'accent')
+  // One leg forward, one back while walking.
+  if (o !== 'robe' && o !== 'dress') {
+    p.rect(10 - fwd, LEG, 11 - fwd, BOOT - 1, 'pants')
+    p.rect(12 + fwd, LEG, 13 + fwd, BOOT - 1, 'pants')
+  }
+  p.rect(9 - fwd, BOOT, 11 - fwd, BOOT + 1, 'boots')
+  p.rect(12 + fwd, BOOT, 14 + fwd, BOOT + 1, 'boots')
+
   if (o === 'robe' || o === 'dress') {
-    for (let y = 16; y <= 28; y++) {
-      const spread = Math.floor((y - 16) / 5)
+    for (let y = TOP; y <= BOOT; y++) {
+      const spread = Math.floor((y - TOP) / 4)
       p.rect(9 - spread, y, 14 + spread, y, 'cloth')
     }
   } else {
-    p.rect(9, 16, 14, 23, o === 'armor' ? 'metal' : 'cloth')
-    p.rect(9, o === 'armor' ? 23 : 22, 14, o === 'armor' ? 23 : 22, 'belt')
+    p.rect(9, TOP, 14, LEG - 1, o === 'armor' ? 'metal' : 'cloth')
+    p.rect(9, o === 'armor' ? BELT + 1 : BELT, 14, o === 'armor' ? BELT + 1 : BELT, 'belt')
   }
-  // The near arm swings with the step; the weapon is drawn now, so the
-  // head passes in front of a tall staff instead of under it.
-  const swing = fwd / 2
-  sideWeapon(p, c, 13 + swing)
-  p.rect(11 + swing, 17, 12 + swing, 22, o === 'armor' ? 'metal' : 'cloth')
-  p.rect(11 + swing, 23, 12 + swing, 24, 'skin')
-  p.rect(11, 15, 12, 15, 'skin')
-  p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx - 0.4, HEAD.ry, 'skin')
-  if (c.ears) {
-    p.rect(9, 8, 10, 10, 'skin')
-    p.put(8, 7, 'skin')
-  }
-  const hs = c.hairStyle
-  if (hs === 'mohawk') p.rect(8, 1, 13, 5, 'hair')
+  sideWeapon(p, c, 13 + fwd)
+  p.rect(11 + fwd, TOP + 1, 12 + fwd, HAND - 1, o === 'armor' ? 'metal' : 'cloth')
+  p.rect(11 + fwd, HAND, 12 + fwd, HAND + 1, 'skin')
+  if (o === 'cloak') p.rect(8, TOP, 13, TOP + 1, 'accent')
+
+  p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx - 0.6, HEAD.ry, 'skin')
+  p.put(19, 12, 'skin') // nose
+  if (hs === 'mohawk') p.rect(8, 0, 12, 8, 'hair')
   else if (hs !== 'bald') {
-    p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx - 0.4, HEAD.ry, 'hair', (x, y) => y <= 6 || x <= 9 + (y > 11 ? 0 : 1))
-    if (hs === 'spiky') for (const [x, y] of [[8, 1], [11, 0], [14, 1], [6, 3]]) p.put(x, y, 'hair')
-    if (hs === 'long') p.rect(5, 9, 9, 17, 'hair')
-    if (hs === 'bob') p.rect(5, 9, 9, 13, 'hair')
-    if (hs === 'ponytail') p.rect(3, 7, 5, 14, 'hair')
-    p.put(16, 7, 'hair')
-    p.put(17, 7, 'hair')
+    // Hair over the back and top of the head, bangs over the brow.
+    p.ellipse(HEAD.cx, HEAD.cy, HEAD.rx - 0.6, HEAD.ry, 'hair', (x, y) => y <= 9 || x <= 10)
+    for (const x of [13, 14, 16, 17]) p.put(x, 10, 'hair')
+    if (hs === 'spiky') {
+      p.rect(7, 1, 8, 2, 'hair')
+      p.rect(11, 0, 12, 2, 'hair')
+      p.rect(15, 1, 16, 2, 'hair')
+    }
+    if (hs === 'bob') p.rect(4, 10, 10, 15, 'hair')
+    if (hs === 'ponytail') p.rect(2, 7, 4, 14, 'hair')
   }
-  if (hs === 'bun') p.ellipse(8, 2.5, 2.2, 2, 'hair')
-  if (c.ears) p.rect(10, 9, 10, 10, 'skin')
-  // Eye, mouth, nose.
-  if (c.eyes === 'narrow') p.rect(15, 11, 16, 11, 'pupil')
-  else p.rect(15, 10, 15, 11, 'pupil')
-  if (c.eyes === 'round') p.put(16, 11, 'eye')
-  p.put(18, 10, 'skin')
-  if (c.beard) p.ellipse(14, 13.5, 4, 2.6, 'hair', (x, y) => y >= 12 && x >= 11 && inHead(x, y + 1))
-  p.put(16, 13, 'mouth')
-  if (c.tusks) p.put(16, 12, 'tusk')
+  if (hs === 'bun') p.ellipse(8, 1.5, 2.2, 2, 'hair')
+  if (c.ears) {
+    p.rect(9, 10, 10, 12, 'skin')
+    p.put(8, 9, 'skin')
+  }
+  if (c.eyes === 'narrow') p.rect(16, EYE_Y + 1, 17, EYE_Y + 1, 'pupil')
+  else if (c.eyes === 'dot') p.put(16, EYE_Y + 1, 'pupil')
+  else {
+    p.rect(16, EYE_Y, 16, EYE_Y + 1, 'pupil')
+    p.put(17, EYE_Y + 1, 'eye')
+  }
+  if (c.beard) p.ellipse(15, 15.5, 4, 2.8, 'hair', (x, y) => y >= 13 && x >= 11)
+  p.put(17, MOUTH, 'mouth')
+  if (c.tusks) p.rect(17, MOUTH - 1, 17, MOUTH - 1, 'tusk')
   if (c.horns) {
-    p.rect(9, 1, 10, 3, 'horn')
-    p.put(9, 0, 'horn')
-    p.put(8, -1, 'horn')
+    p.rect(9, 2, 10, 4, 'horn')
+    p.put(9, 1, 'horn')
+    p.put(8, 0, 'horn')
   }
-  drawHat(p, c, false)
-  if (c.hat === 'hood') p.ellipse(HEAD.cx, HEAD.cy - 0.5, HEAD.rx + 0.6, HEAD.ry + 1, 'accent', (x, y) => !(x >= 13 && y >= 7 && y <= 15))
-  if (c.offhand === 'shield') p.ellipse(8, 20, 1.5, 3.5, 'metal')
+  drawHat(p, c, false, true)
+  if (c.offhand === 'shield') p.ellipse(8, 20, 1.5, 3, 'metal')
 }
 
 function sideWeapon(p, c, hx) {
-  const hy = 23
+  const hy = HAND
   if (c.weapon === 'sword') {
     p.rect(hx + 1, hy - 9, hx + 1, hy - 1, 'metal')
     p.rect(hx, hy, hx + 2, hy, 'gold')
   } else if (c.weapon === 'staff') {
-    p.rect(hx + 1, hy - 14, hx + 1, hy + 6, 'wood')
-    p.ellipse(hx + 1, hy - 15, 1.2, 1.2, 'gem')
+    p.rect(hx + 1, hy - 13, hx + 1, hy + 5, 'wood')
+    p.ellipse(hx + 1, hy - 14, 1.3, 1.3, 'gem')
   } else if (c.weapon === 'axe') {
     p.rect(hx + 1, hy - 8, hx + 1, hy + 2, 'wood')
     p.rect(hx + 2, hy - 8, hx + 4, hy - 5, 'metal')
   } else if (c.weapon === 'dagger') {
-    p.rect(hx + 1, hy - 4, hx + 1, hy - 1, 'metal')
+    p.rect(hx + 1, hy - 3, hx + 1, hy - 1, 'metal')
   } else if (c.weapon === 'bow') {
-    for (let y = -6; y <= 6; y++) p.put(hx + 2 + Math.round(Math.cos((y / 6) * 1.3) * 2), hy + y - 2, 'wood')
+    for (let y = -6; y <= 6; y++) p.put(hx + 2 + Math.round(Math.cos((y / 6) * 1.3) * 2), hy + y - 1, 'wood')
   }
 }
 
 // ── Shading, outline, colour ─────────────────────────────────────────────
+function mix(a, b, t) {
+  const pa = parseInt(a.slice(1), 16)
+  const pb = parseInt(b.slice(1), 16)
+  const ch = (n, s) => (n >> s) & 255
+  return `#${[16, 8, 0]
+    .map((s) => Math.round(ch(pa, s) + (ch(pb, s) - ch(pa, s)) * t).toString(16).padStart(2, '0'))
+    .join('')}`
+}
+const shadeOf = (hex) => mix(hex, '#000000', 0.28)
+
 function materialColors(c) {
   const cloth = CLOTH[c.outfitColor] || CLOTH.teal
   const accent = CLOTH[c.accentColor] || CLOTH.umber
   const boots = CLOTH[c.bootsColor] || CLOTH.umber
-  const pantsSet = c.outfit === 'armor' ? CLOTH.slate : [accent[1], shadeOf(accent[1]), accent[0]]
+  const hair = HAIR[c.hairColor] || HAIR.ember
+  const eye = EYE_COLORS[c.eyeColor] || EYE_COLORS.brown
   return {
     skin: SKIN[c.skin] || SKIN.fair,
-    hair: HAIR[c.hairColor] || HAIR.ember,
+    hair,
+    shine: [mix(hair[2], '#ffe48a', 0.55)],
     cloth,
     accent,
-    pants: pantsSet,
+    pants: c.outfit === 'armor' ? CLOTH.slate : [accent[1], shadeOf(accent[1]), accent[0]],
     boots: [boots[1], shadeOf(boots[1]), boots[0]],
     belt: [boots[1], shadeOf(boots[1]), boots[0]],
-    eye: [EYE_COLORS[c.eyeColor] || EYE_COLORS.brown, EYE_COLORS[c.eyeColor] || EYE_COLORS.brown, EYE_COLORS[c.eyeColor] || EYE_COLORS.brown],
-    pupil: ['#1a1210', '#1a1210', '#1a1210'],
+    eye: [eye],
+    pupil: ['#140e12'],
     gold: CLOTH.gold,
     ...FIXED,
   }
 }
 
-function shadeOf(hex) {
-  const n = parseInt(hex.slice(1), 16)
-  const f = (v) => Math.max(0, Math.round(v * 0.72))
-  return `#${[(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => f(v).toString(16).padStart(2, '0')).join('')}`
-}
-
-const FLAT = new Set(['pupil', 'eye', 'white', 'mouth', 'gem'])
+const FLAT = new Set(['pupil', 'eye', 'white', 'mouth', 'gem', 'shine'])
+// Big shapes get a 2-pixel shade on their right, like the reference art.
+const WIDE_SHADE = new Set(['skin', 'hair', 'cloth', 'accent', 'metal'])
 
 // The finished sprite as a grid of CSS colours (null = transparent).
 export function renderSprite(config, view = 'front', frame = 0) {
   const c = { ...DEFAULT_SPRITE, ...config }
   const grid = canvasGrid()
   const p = painter(grid)
-  if (view === 'left' || view === 'right') drawSide(p, c, frame)
+  const side = view === 'left' || view === 'right'
+  if (side) drawSide(p, c, frame)
   else drawFrontBack(p, c, view, frame)
+
+  // The shine streak across the hair: an arc on the upper-left of the head.
+  const sx = HEAD.cx + (side ? -1 : -1.5)
+  const sy = HEAD.cy + Y + 1.5
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (grid[y][x] !== 'hair' || y > HEAD.cy + Y - 2) continue
+      const d = Math.hypot((x - sx) / (HEAD.rx - 1.2), (y - sy) / (HEAD.ry - 0.6))
+      if (d >= 0.74 && d <= 0.88 && x <= HEAD.cx + 3) grid[y][x] = 'shine'
+    }
 
   const colors = materialColors(c)
   const out = canvasGrid()
@@ -573,16 +598,22 @@ export function renderSprite(config, view = 'front', frame = 0) {
     for (let x = 0; x < W; x++) {
       const mat = grid[y][x]
       if (!mat) continue
-      const [base, shade, light] = colors[mat] || ['#ff00ff', '#ff00ff', '#ff00ff']
+      const [base, shade = base, light = base] = colors[mat] || ['#ff00ff']
       if (FLAT.has(mat)) {
         out[y][x] = base
         continue
       }
-      // Light from the top-left: shade the bottom/right edges of each
-      // material, highlight hair and metal on their top-left edges.
-      const edgeBR = m(x + 1, y) !== mat || m(x, y + 1) !== mat
-      const edgeTL = m(x - 1, y) !== mat || m(x, y - 1) !== mat
-      if (edgeBR && !edgeTL) out[y][x] = shade
+      const same = (dx, dy) => {
+        const n = m(x + dx, y + dy)
+        return n === mat || (mat === 'hair' && n === 'shine')
+      }
+      // Light from the top-left: the bottom and right of each part are in
+      // shade; hair and metal catch a highlight on their top-left edge.
+      const edgeTL = !same(-1, 0) || !same(0, -1)
+      const edgeBR = !same(1, 0) || !same(0, 1) || (WIDE_SHADE.has(mat) && !same(2, 0) && x > 1)
+      // Bangs and hats cast a shadow on the forehead.
+      const cast = mat === 'skin' && ['hair', 'shine', 'accent', 'metal'].includes(m(x, y - 1))
+      if (cast || (edgeBR && !edgeTL)) out[y][x] = shade
       else if (edgeTL && !edgeBR && (mat === 'hair' || mat === 'metal' || mat === 'gem')) out[y][x] = light
       else out[y][x] = base
     }
@@ -595,10 +626,11 @@ export function renderSprite(config, view = 'front', frame = 0) {
       if (filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1)) out[y][x] = OUTLINE
     }
   }
-  // Soft shadow under the feet.
-  for (let x = 6; x <= 17; x++) {
-    for (const y of [30 + Y, 31 + Y]) {
-      if (y < H && !out[y][x] && ((x - 11.5) / 6) ** 2 + ((y - 30.5 - Y) / 1.2) ** 2 <= 1) out[y][x] = SHADOW
+  // A dark shadow under the feet.
+  const fy = BOOT + 2 + Y
+  for (let x = 5; x <= 18; x++) {
+    for (const y of [fy, fy + 1]) {
+      if (y < H && !out[y][x] && ((x - 11.5) / 6.5) ** 2 + ((y - fy - 0.4) / 1.3) ** 2 <= 1) out[y][x] = SHADOW
     }
   }
   if (view === 'left') return out.map((row) => [...row].reverse())

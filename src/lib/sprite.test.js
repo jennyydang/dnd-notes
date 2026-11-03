@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_SPRITE, H, OPTIONS, RACES, W, applyRace, randomSprite, renderSprite } from './sprite.js'
 
 const filled = (grid) => grid.flat().filter(Boolean).length
-const OUTLINE = '#1a1210'
+const OUTLINE = '#120d16'
 
 describe('renderSprite', () => {
   it('draws every view and frame on the sprite grid', () => {
@@ -24,7 +24,7 @@ describe('renderSprite', () => {
     // Leftmost filled pixel on each row is outline (or the floor shadow).
     for (const row of grid) {
       const first = row.find(Boolean)
-      if (first) expect([OUTLINE, 'rgba(0,0,0,0.28)']).toContain(first)
+      if (first) expect([OUTLINE, 'rgba(0,0,0,0.38)']).toContain(first)
     }
   })
   it('walking frames differ from standing', () => {
