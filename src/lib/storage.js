@@ -14,10 +14,8 @@ export function getPublicUrl(bucket, path) {
 
 // Pictures are shrunk first (see imageCompress.js); the size check is on
 // what's actually uploaded, so a big phone photo is fine.
-// Pixel art passes { compress: false }: re-saving it as WebP would blur
-// its hard edges, and its PNG is already tiny.
-export async function uploadImage(bucket, original, { compress = true } = {}) {
-  const file = compress ? await compressImage(original, bucket) : original
+export async function uploadImage(bucket, original) {
+  const file = await compressImage(original, bucket)
   if (file.size > MAX_IMAGE_BYTES) {
     throw new Error('Photo is too large (max 8MB) — try a smaller image or a compressed export.')
   }
