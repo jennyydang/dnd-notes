@@ -725,6 +725,25 @@ $outline: 2px solid #120d0a;
   &__switch {
     align-self: flex-start;
   }
+
+  &__wip {
+    margin: 0;
+    padding: 0.6rem 0.9rem;
+    border: 1px dashed fade($gold-dim, 0.8);
+    border-radius: $radius-lg;
+    background: fade($gold, 0.08);
+    color: $text-light;
+    font-size: 0.92rem;
+
+    strong {
+      color: $gold-light;
+    }
+
+    .icon {
+      color: $gold-light;
+      vertical-align: -0.15em;
+    }
+  }
 }
 
 .inventory__trade {

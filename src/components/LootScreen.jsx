@@ -44,7 +44,17 @@ function LootScreen({ campaignId, playerId }) {
           </button>
         ))}
       </div>
-      {view === 'inventory' ? <InventoryWindow campaignId={campaignId} playerId={playerId} /> : <LootTab campaignId={campaignId} />}
+      {view === 'inventory' ? (
+        <>
+          <p className="loot-screen__wip" role="note">
+            <Icon name="tools" /> <strong>Work in progress.</strong> The inventory, shops, trading and equipment are new and
+            still being polished — if something looks off, the All loot list has every item too.
+          </p>
+          <InventoryWindow campaignId={campaignId} playerId={playerId} />
+        </>
+      ) : (
+        <LootTab campaignId={campaignId} />
+      )}
     </div>
   )
 }
