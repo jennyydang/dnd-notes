@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js'
-import { addToCounts, spendFromCounts, totalValue } from './currency.js'
+import { addToCounts, formatCoins, spendFromCounts, totalValue } from './currency.js'
 import { bagOf, findStack, ownerKey } from './inventory.js'
 
 // Player-to-player trades, MapleStory style. A trade row is shared by both
@@ -42,6 +42,19 @@ export function sides(trade, playerId) {
     ready: trade[`${key}Ready`],
   })
   return { me: side(mine), them: side(theirs) }
+}
+
+// One side's offer in words, for the confirmation before pressing Trade:
+// "2 × Potion of Healing, Warhammer and 3g", or "nothing".
+export function describeOffer(offer, coins, loot) {
+  const parts = offer.map(({ id, qty }) => {
+    const item = loot.find((l) => l.id === id)
+    const name = item ? item.item : 'an item'
+    return item && item.quantity !== null && qty > 1 ? `${qty} × ${name}` : name
+  })
+  if (coins) parts.push(formatCoins(coins))
+  if (!parts.length) return 'nothing'
+  return parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`
 }
 
 // The columns to write when one side changes their offer: both presses

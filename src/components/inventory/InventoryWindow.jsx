@@ -198,6 +198,10 @@ function InventoryWindow({ campaignId, playerId }) {
   }
 
   async function giveTo(entry, target) {
+    const what = entry.quantity !== null && entry.quantity > 1 ? `all ${entry.quantity} × ${entry.item}` : entry.item
+    const to = target.key === STASH ? 'the party stash' : target.label
+    const worn = entry.equipped ? ' It will be taken off first.' : ''
+    if (!window.confirm(`Give ${what} to ${to}?${worn}`)) return
     await save(entry.id, { holder: target.holder, slot: null, ...offPatch(entry) })
     setSelectedId(null)
   }

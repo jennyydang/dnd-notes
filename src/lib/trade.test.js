@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('./supabaseClient.js', () => ({ supabase: {} }))
-const { planTrade, offerPatch, sides } = await import('./trade.js')
+const { planTrade, offerPatch, sides, describeOffer } = await import('./trade.js')
 
 const base = {
   campaignId: 'c1',
@@ -72,5 +72,13 @@ describe('offers', () => {
   })
   it('sees the trade from either side', () => {
     expect(sides({ ...base, fromReady: true, toReady: false }, 'p2').me).toMatchObject({ key: 'to', holder: 'Bram', ready: false })
+  })
+})
+
+describe('describeOffer', () => {
+  it('lists items, counts and coins in words', () => {
+    expect(describeOffer([{ id: 'potA', qty: 2 }, { id: 'sword', qty: 1 }], 3000, loot)).toBe('2 × Potion of Healing, Longsword and 3g')
+    expect(describeOffer([{ id: 'sword', qty: 1 }], 0, loot)).toBe('Longsword')
+    expect(describeOffer([], 0, loot)).toBe('nothing')
   })
 })

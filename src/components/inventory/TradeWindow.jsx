@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabaseClient.js'
 import { getPublicUrl, removeImage, uploadImage } from '../../lib/storage.js'
 import { formatCoins, goldToCopper, totalValue } from '../../lib/currency.js'
 import { ownerKey } from '../../lib/inventory.js'
-import { executeTrade, offerPatch, sides } from '../../lib/trade.js'
+import { describeOffer, executeTrade, offerPatch, sides } from '../../lib/trade.js'
 import Modal from '../Modal.jsx'
 import Icon from '../Icon.jsx'
 import ItemIcon from './ItemIcon.jsx'
@@ -200,7 +200,15 @@ function TradeWindow({ trade, playerId, loot, wallet, tradesTable, onClose }) {
                     type="button"
                     className="btn btn--primary"
                     disabled={trade.status !== 'open' || me.ready}
-                    onClick={() => patch({ [`${me.key}_ready`]: true })}
+                    onClick={() => {
+                      const ok = window.confirm(
+                        `Trade with ${them.holder}?\n\n` +
+                          `You give: ${describeOffer(me.offer, me.coins, loot)}\n` +
+                          `You get: ${describeOffer(them.offer, them.coins, loot)}\n\n` +
+                          'Once you both press Trade, the swap happens and can’t be undone.',
+                      )
+                      if (ok) patch({ [`${me.key}_ready`]: true })
+                    }}
                   >
                     {me.ready ? 'Ready' : 'Trade'}
                   </button>
