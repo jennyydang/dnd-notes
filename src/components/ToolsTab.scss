@@ -226,6 +226,7 @@
   }
 
   &__count {
+    position: relative;
     align-self: center;
     min-width: 6rem;
     text-align: center;
@@ -314,6 +315,11 @@
       height: 2.4rem;
       font-size: 1.25rem;
     }
+  }
+
+  // A player's own + / − under their count.
+  &__give--mine {
+    align-self: center;
   }
 
   &__amount-input {

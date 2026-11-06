@@ -4,11 +4,22 @@ import { listCampaignPlayers } from '../lib/campaigns.js'
 import Icon from './Icon.jsx'
 
 const fromRow = (r) => ({ id: r.id, playerId: r.player_id, shards: r.shards })
+
+// Totals this screen just saved for the player's own count, so ShardAlert
+// can tell their own change from the DM's.
+const ownChanges = []
+export function isOwnShardChange(total) {
+  const now = Date.now()
+  const i = ownChanges.findIndex((c) => c.total === total && now - c.at < 15000)
+  if (i < 0) return false
+  ownChanges.splice(i, 1)
+  return true
+}
 const plural = (n) => `${n} shard${n === 1 ? '' : 's'}`
 
-// Shards are the DM's to hand out. The DM (or the admin, with no playerId)
-// gives and takes them per player; a player just sees their own count —
-// and gets a ShardAlert whenever the DM changes it.
+// The DM (or the admin, with no playerId) gives and takes shards per
+// player. Players can add or spend their own too. A ShardAlert pops up
+// when someone else changes your count, not for changes you made.
 function ShardTracker({ campaignId, playerId, manage = false }) {
   return manage || !playerId ? (
     <DmShards campaignId={campaignId} playerId={playerId} />
@@ -18,11 +29,20 @@ function ShardTracker({ campaignId, playerId, manage = false }) {
 }
 
 function MyShards({ campaignId, playerId }) {
-  const { items, loading, error } = useSupabaseTable('player_shards', {
+  const { items: rows, loading, error, addItem, updateItem } = useSupabaseTable('player_shards', {
     fromRow,
     filters: { campaign_id: campaignId, player_id: playerId },
   })
-  const count = items[0]?.shards ?? 0
+  // Remember what we saved, so the pop-up alert skips our own changes.
+  const { countFor, change, flash, saveError } = useShardCounter({
+    rows,
+    addItem,
+    updateItem,
+    onSaving: (total) => ownChanges.push({ total, at: Date.now() }),
+  })
+  const [amount, setAmount] = useState('')
+  const count = countFor(playerId)
+  const n = Math.max(1, Math.floor(Number(amount) || 1))
 
   return (
     <div className="shard-tracker panel">
@@ -33,10 +53,46 @@ function MyShards({ campaignId, playerId }) {
         <>
           <output className="shard-tracker__count" aria-live="polite">
             <Icon name="gem" /> {count}
+            {flash && (
+              <span
+                key={flash.key}
+                className={`shard-tracker__flash shard-tracker__flash--${flash.delta > 0 ? 'gain' : 'loss'}`}
+                aria-hidden="true"
+              >
+                {flash.delta > 0 ? '+' : '−'}
+                {Math.abs(flash.delta)}
+              </span>
+            )}
           </output>
-          <p className="shard-tracker__note">Your DM gives and takes shards — you’ll see it the moment they do.</p>
+          <div className="shard-tracker__give shard-tracker__give--mine">
+            <button
+              type="button"
+              className="shard-tracker__step"
+              onClick={() => change(playerId, -n)}
+              disabled={count === 0}
+              aria-label={`Spend ${plural(n)}`}
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              inputMode="numeric"
+              className="shard-tracker__amount-input"
+              value={amount}
+              placeholder="1"
+              aria-label="How many shards"
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <button type="button" className="shard-tracker__step" onClick={() => change(playerId, n)} aria-label={`Add ${plural(n)}`}>
+              +
+            </button>
+          </div>
+          <p className="shard-tracker__note">Add shards you’ve earned or spend them here. Your DM can give and take them too.</p>
         </>
       )}
+      {saveError && <p className="empty-state empty-state--error">Couldn’t save: {saveError}</p>}
     </div>
   )
 }
@@ -48,18 +104,8 @@ function DmShards({ campaignId, playerId }) {
   })
   const [players, setPlayers] = useState(null)
   const [playersError, setPlayersError] = useState(null)
+  const { countFor, change, flash, saveError } = useShardCounter({ rows, addItem, updateItem })
   const [amounts, setAmounts] = useState({})
-  // Counts changed here but not yet saved, shown instead of the saved row.
-  const [pending, setPending] = useState({})
-  const [flash, setFlash] = useState(null)
-  const [saveError, setSaveError] = useState(null)
-
-  const rowsRef = useRef(rows)
-  rowsRef.current = rows
-  const pendingRef = useRef({})
-  const rowIds = useRef({})
-  const saving = useRef(new Set())
-  const dirty = useRef(new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -72,49 +118,6 @@ function DmShards({ campaignId, playerId }) {
       cancelled = true
     }
   }, [campaignId, playerId])
-
-  const countFor = (pid) => pending[pid] ?? rows.find((r) => r.playerId === pid)?.shards ?? 0
-
-  // Saves for one player never overlap: clicks while a save is in flight
-  // just mark it dirty, and the loop writes the latest count when it's done.
-  async function flush(pid) {
-    if (saving.current.has(pid)) {
-      dirty.current.add(pid)
-      return
-    }
-    saving.current.add(pid)
-    try {
-      do {
-        dirty.current.delete(pid)
-        const shards = pendingRef.current[pid]
-        const id = rowIds.current[pid] || rowsRef.current.find((r) => r.playerId === pid)?.id
-        if (id) await updateItem(id, { shards })
-        else rowIds.current[pid] = (await addItem({ player_id: pid, shards })).id
-      } while (dirty.current.has(pid))
-      setSaveError(null)
-    } catch (err) {
-      setSaveError(err.message)
-    } finally {
-      saving.current.delete(pid)
-      delete pendingRef.current[pid]
-      setPending((p) => {
-        const next = { ...p }
-        delete next[pid]
-        return next
-      })
-    }
-  }
-
-  function change(pid, sign) {
-    const n = Math.max(1, Math.floor(Number(amounts[pid]) || 1))
-    const current = countFor(pid)
-    const next = Math.max(0, current + sign * n)
-    if (next === current) return
-    pendingRef.current[pid] = next
-    setPending((p) => ({ ...p, [pid]: next }))
-    setFlash({ pid, delta: next - current, key: Date.now() })
-    flush(pid)
-  }
 
   const busy = loading || players === null
 
@@ -152,7 +155,7 @@ function DmShards({ campaignId, playerId }) {
                   <button
                     type="button"
                     className="shard-tracker__step"
-                    onClick={() => change(p.playerId, -1)}
+                    onClick={() => change(p.playerId, -amount)}
                     disabled={count === 0}
                     aria-label={`Take ${plural(amount)} from ${name}`}
                   >
@@ -172,7 +175,7 @@ function DmShards({ campaignId, playerId }) {
                   <button
                     type="button"
                     className="shard-tracker__step"
-                    onClick={() => change(p.playerId, 1)}
+                    onClick={() => change(p.playerId, amount)}
                     aria-label={`Give ${plural(amount)} to ${name}`}
                   >
                     +
@@ -186,6 +189,67 @@ function DmShards({ campaignId, playerId }) {
       {saveError && <p className="empty-state empty-state--error">Couldn’t save: {saveError}</p>}
     </div>
   )
+}
+
+
+// A player's shard count changed by + / − buttons (see flush below).
+function useShardCounter({ rows, addItem, updateItem, onSaving }) {
+  // Counts changed here but not yet saved, shown instead of the saved row.
+  const [pending, setPending] = useState({})
+  const [flash, setFlash] = useState(null)
+  const [saveError, setSaveError] = useState(null)
+
+  const rowsRef = useRef(rows)
+  rowsRef.current = rows
+  const pendingRef = useRef({})
+  const rowIds = useRef({})
+  const saving = useRef(new Set())
+  const dirty = useRef(new Set())
+
+  const countFor = (pid) => pending[pid] ?? rows.find((r) => r.playerId === pid)?.shards ?? 0
+
+  // Saves for one player never overlap: clicks while a save is in flight
+  // just mark it dirty, and the loop writes the latest count when it's done.
+  async function flush(pid) {
+    if (saving.current.has(pid)) {
+      dirty.current.add(pid)
+      return
+    }
+    saving.current.add(pid)
+    try {
+      do {
+        dirty.current.delete(pid)
+        const shards = pendingRef.current[pid]
+        const id = rowIds.current[pid] || rowsRef.current.find((r) => r.playerId === pid)?.id
+        if (id) await updateItem(id, { shards })
+        else rowIds.current[pid] = (await addItem({ player_id: pid, shards })).id
+      } while (dirty.current.has(pid))
+      setSaveError(null)
+    } catch (err) {
+      setSaveError(err.message)
+    } finally {
+      saving.current.delete(pid)
+      delete pendingRef.current[pid]
+      setPending((p) => {
+        const next = { ...p }
+        delete next[pid]
+        return next
+      })
+    }
+  }
+
+  function change(pid, delta) {
+    const current = countFor(pid)
+    const next = Math.max(0, current + delta)
+    if (next === current) return
+    onSaving?.(next)
+    pendingRef.current[pid] = next
+    setPending((p) => ({ ...p, [pid]: next }))
+    setFlash({ pid, delta: next - current, key: Date.now() })
+    flush(pid)
+  }
+
+  return { countFor, change, flash, saveError }
 }
 
 export default ShardTracker

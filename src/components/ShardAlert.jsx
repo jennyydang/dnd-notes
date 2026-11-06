@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import Icon from './Icon.jsx'
+import { isOwnShardChange } from './ShardTracker.jsx'
 import './ShardAlert.scss'
 
 const SHOW_MS = 4000
@@ -10,8 +11,8 @@ const fromRow = (r) => ({ id: r.id, shards: r.shards })
 
 // When the DM gives or takes a player's shards (on any device), that
 // player sees it: gained shards burst out of a glowing gem, lost ones
-// crack and fall away. The count seen when the campaign opens is just
-// remembered, so nothing replays.
+// crack and fall away. Their own changes in Tools don't pop up, and the
+// count seen when the campaign opens is just remembered, so nothing replays.
 function ShardAlert({ campaignId, playerId }) {
   const { items, loading } = useSupabaseTable('player_shards', {
     fromRow,
@@ -23,7 +24,8 @@ function ShardAlert({ campaignId, playerId }) {
   useEffect(() => {
     if (loading) return
     const total = items[0]?.shards ?? 0
-    if (known.current !== null && total !== known.current) {
+    // Your own + / − on this screen doesn't need announcing.
+    if (known.current !== null && total !== known.current && !isOwnShardChange(total)) {
       const delta = total - known.current
       setQueue((q) => [...q, { key: `${Date.now()}:${total}`, delta, total }])
     }
