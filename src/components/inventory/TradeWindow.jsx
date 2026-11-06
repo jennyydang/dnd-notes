@@ -198,7 +198,7 @@ function TradeWindow({ trade, playerId, loot, wallet, tradesTable, onClose }) {
                 <>
                   <button
                     type="button"
-                    className="trade__btn trade__btn--trade"
+                    className="btn btn--primary"
                     disabled={trade.status !== 'open' || me.ready}
                     onClick={() => patch({ [`${me.key}_ready`]: true })}
                   >
@@ -206,7 +206,7 @@ function TradeWindow({ trade, playerId, loot, wallet, tradesTable, onClose }) {
                   </button>
                   <button
                     type="button"
-                    className="trade__btn trade__btn--cancel"
+                    className="btn"
                     onClick={async () => {
                       await patch({ status: 'cancelled' })
                       onClose()
@@ -216,7 +216,7 @@ function TradeWindow({ trade, playerId, loot, wallet, tradesTable, onClose }) {
                   </button>
                 </>
               ) : (
-                <button type="button" className="trade__btn trade__btn--trade" onClick={onClose}>
+                <button type="button" className="btn btn--primary" onClick={onClose}>
                   {finished ? 'Close' : '…'}
                 </button>
               )}
@@ -269,7 +269,7 @@ function TradeWindow({ trade, playerId, loot, wallet, tradesTable, onClose }) {
               }}
             >
               <input value={chat} onChange={(e) => setChat(e.target.value)} aria-label="Message" maxLength={200} disabled={finished} />
-              <button type="submit" className="trade__btn trade__btn--enter" disabled={finished}>
+              <button type="submit" className="btn" disabled={finished}>
                 Enter
               </button>
             </form>

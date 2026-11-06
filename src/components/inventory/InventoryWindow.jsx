@@ -536,7 +536,7 @@ function ItemDetails({ entry, bag, owners, ownerKeyNow, wornSlot, onUse, onEquip
   return (
     <aside className="item-details" aria-label={`${entry.item} details`}>
       <h4 className="item-details__name">
-        <span aria-hidden="true">•</span> {entry.item}
+        {entry.item}
       </h4>
       <div className="item-details__body">
         <span className={`item-details__icon${entry.kind === 'Magic Item' || entry.kind === 'Artifact' ? ' is-magic' : ''}`}>
