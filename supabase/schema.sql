@@ -2160,3 +2160,35 @@ end $$;
 -- back, body, waist, feet, main, off, hands, ring1, ring2); null when not
 -- worn. `equipped` stays true while it's worn.
 alter table loot add column if not exists equip_slot text;
+
+-- ── Dictionary ───────────────────────────────────────────────────────────
+-- The world's words: invented vocabulary, names and how to say them,
+-- titles, phrases, oaths. Shared by the whole campaign. A word can be
+-- linked to the NPC, place or lore entry it belongs to (entity_links).
+create table if not exists dictionary_terms (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references campaigns(id) on delete cascade,
+  term text not null,
+  pronunciation text not null default '',
+  kind text not null default 'Word',
+  language text not null default '',
+  meaning text not null default '',
+  notes text not null default '',
+  created_by uuid references players(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists dictionary_terms_campaign_idx on dictionary_terms (campaign_id, term);
+
+alter table dictionary_terms enable row level security;
+drop policy if exists "anon full access dictionary_terms" on dictionary_terms;
+create policy "anon full access dictionary_terms" on dictionary_terms for all to anon using (true) with check (true);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'dictionary_terms'
+  ) then
+    alter publication supabase_realtime add table public.dictionary_terms;
+  end if;
+end $$;

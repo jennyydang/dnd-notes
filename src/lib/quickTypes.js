@@ -1,4 +1,5 @@
 import { TAG_GROUPS } from './tags.js'
+import { TERM_KINDS } from './dictionary.js'
 
 // The kinds of entry that can be created in one step. Each maps onto an
 // existing table/tab — a "clue" is a Lore entry with category Clue,
@@ -30,6 +31,17 @@ export const QUICK_TYPES = {
     nameLabel: 'Item',
     placeholder: 'Ring of Feather Falling',
     kinds: TAG_GROUPS.loot.kinds,
+  },
+  word: {
+    label: 'Word',
+    icon: 'speech',
+    entity: 'term',
+    nameLabel: 'Word',
+    placeholder: 'Vistani',
+    kinds: TERM_KINDS,
+    kindLabel: 'Kind',
+    kindRequired: true,
+    notesLabel: 'Meaning',
   },
   // A character in the party: a player's or a companion NPC.
   party: {
@@ -66,6 +78,8 @@ export function payloadFor(type, { name, kind, notes, extra, session = '' }) {
       return { title: name, category: kind, notes }
     case 'loot':
       return { item: name, kind, found_at: extra, holder: '', notes }
+    case 'word':
+      return { term: name, kind: kind || 'Word', pronunciation: extra, meaning: notes }
     case 'party':
       return { name, member_type: kind || 'Player', race_class: extra, notes }
     default:
@@ -73,4 +87,4 @@ export function payloadFor(type, { name, kind, notes, extra, session = '' }) {
   }
 }
 
-export const EXTRA_LABELS = { npc: 'Where you met', quest: 'Given by', loot: 'Where you got it', party: 'Race & class' }
+export const EXTRA_LABELS = { npc: 'Where you met', quest: 'Given by', loot: 'Where you got it', party: 'Race & class', word: 'How to say it' }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import TabNav from './TabNav.jsx'
 import MapsTab from './MapsTab.jsx'
 import LoreTab from './LoreTab.jsx'
+import DictionaryTab from './DictionaryTab.jsx'
 import PartyTab from './PartyTab.jsx'
 import NpcsTab from './NpcsTab.jsx'
 import CreaturesTab from './CreaturesTab.jsx'
@@ -73,6 +74,7 @@ const TAB_DEFS = {
   quests: { label: 'Quests', icon: 'quest' },
   loot: { label: 'Loot', icon: 'coins' },
   lore: { label: 'Lore & Clues', icon: 'lore' },
+  dictionary: { label: 'Dictionary', icon: 'speech' },
   character: { label: 'Character Sheet', icon: 'character' },
   spells: { label: 'Spells', icon: 'spell' },
   party: { label: 'Party', icon: 'shield' },
@@ -94,7 +96,7 @@ const AREAS = [
     id: 'journal',
     label: 'Journal',
     icon: 'book',
-    tabs: ['sessions', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'art'],
+    tabs: ['sessions', 'timeline', 'web', 'npcs', 'creatures', 'maps', 'quests', 'loot', 'lore', 'dictionary', 'art'],
     custom: true,
   },
   { id: 'character', label: 'Character', icon: 'character', tabs: ['character', 'spells', 'party'] },
@@ -110,6 +112,8 @@ const DM_AREAS = [
   { id: 'dm-overview', label: 'Overview', icon: 'compass', tabs: ['dm-overview'] },
   // Everything the party has written about the world, as a wiki.
   { id: 'dm-wiki', label: 'World Wiki', icon: 'library', tabs: ['wiki'] },
+  // The world's words and names, and how to say them.
+  { id: 'dm-dictionary', label: 'Dictionary', icon: 'speech', tabs: ['dictionary'] },
   // Who's in the campaign, their characters, and sign-up invite links.
   { id: 'dm-players', label: 'Players', icon: 'shield', tabs: ['dm-players'] },
   { id: 'dm-npcs', label: 'NPCs', icon: 'users', tabs: ['dm-npcs'] },
@@ -555,6 +559,7 @@ function CampaignView({ campaignId, campaignName, slug, admin = false, playerId,
               {knownTab === 'npcs' && <NpcsTab campaignId={campaignId} />}
               {knownTab === 'creatures' && <CreaturesTab campaignId={campaignId} />}
               {knownTab === 'lore' && <LoreTab campaignId={campaignId} />}
+              {knownTab === 'dictionary' && <DictionaryTab campaignName={campaignName} />}
               {knownTab === 'art' && <ArtGallery campaignId={campaignId} />}
               {isDm && knownTab === 'dm-npcs' && (
                 <SecretNpcsTab campaignId={campaignId} addRequest={addRequestFor('dm-npcs')} />

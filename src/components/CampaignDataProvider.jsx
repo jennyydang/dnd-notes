@@ -33,6 +33,7 @@ function CampaignDataProvider({ campaignId, playerId, children }) {
     spell: useSupabaseTable('spells', opts('spell')),
     map: useSupabaseTable('maps', opts('map')),
     creature: useSupabaseTable('creatures', opts('creature')),
+    term: useSupabaseTable('dictionary_terms', opts('term')),
   }
   const links = useSupabaseTable('entity_links', { fromRow: identity, filters: shared })
   // The in-world calendar: one row per campaign, made on first use.

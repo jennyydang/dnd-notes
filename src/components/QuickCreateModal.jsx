@@ -193,7 +193,7 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
                   type="text"
                   value={extra}
                   onChange={(e) => setExtra(e.target.value)}
-                  placeholder={type === 'party' ? 'Half-elf Ranger' : undefined}
+                  placeholder={type === 'party' ? 'Half-elf Ranger' : type === 'word' ? 'vis-TAH-nee' : undefined}
                 />
               </div>
             )}
@@ -201,7 +201,7 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
         )}
 
         <div className="field">
-          <label htmlFor="quick-create-notes">Notes</label>
+          <label htmlFor="quick-create-notes">{def.notesLabel || 'Notes'}</label>
           <textarea
             id="quick-create-notes"
             className="field--wide"

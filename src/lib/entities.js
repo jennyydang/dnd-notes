@@ -161,6 +161,21 @@ ENTITY_TYPES.creature = {
   }),
 }
 
+// Words in the world's dictionary.
+ENTITY_TYPES.term = {
+  table: 'dictionary_terms',
+  label: 'Word',
+  plural: 'Dictionary',
+  icon: 'speech',
+  tab: 'dictionary',
+  normalize: (r) => ({
+    title: text(r.term),
+    subtitle: [r.pronunciation && `/${r.pronunciation}/`, r.kind, r.language].filter(Boolean).join(' · '),
+    body: [text(r.meaning), text(r.notes)].filter(Boolean).join('\n'),
+    tags: [r.language, r.kind].filter(Boolean),
+  }),
+}
+
 // Searchable but not stored as linkable rows of their own kind: spells
 // (private per player), maps and their pins, custom-tab entries, and
 // timeline events (read out of session recaps — see CampaignDataProvider).
