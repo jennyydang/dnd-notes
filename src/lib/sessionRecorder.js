@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js'
+import { isAppleWebKit } from './device.js'
 
 // One audio recording at a time, kept outside React so it carries on
 // while the player moves between tabs (a component's own MediaRecorder
@@ -26,6 +27,37 @@ export function audioPartsOf(session) {
 }
 
 export const isSplitRecording = (session) => audioPartsOf(session).length > 1
+
+// A WebM recording on an iPhone, iPad or Mac Safari, which can crash the
+// page playing WebM: it's converted to M4A first (see makePlayableCopy).
+export const needsPlayableCopy = (session) =>
+  isAppleWebKit() && audioPartsOf(session).some((p) => /\.webm$/i.test(p))
+
+// What a recap's player plays: the file's link, or — for a recording in
+// pieces, or one this device has to convert — a loader that builds it.
+export function playbackSource(session, { onConverted } = {}) {
+  if (needsPlayableCopy(session)) {
+    return { src: null, load: (onProgress) => makePlayableCopy(session, onProgress).then((blob) => (onConverted?.(), blob)), converting: true }
+  }
+  if (isSplitRecording(session)) return { src: null, load: (onProgress) => loadRecordingBlob(session, onProgress) }
+  return { src: supabase.storage.from(AUDIO_BUCKET).getPublicUrl(session.audioPath).data.publicUrl, load: undefined }
+}
+
+// Converts a WebM recording to M4A on this device and saves it over the
+// original (same length and bookmarks), so it plays here and on every
+// other phone from then on. Resolves to the M4A, ready to play even if
+// the save didn't go through. onProgress(0..1).
+export async function makePlayableCopy(session, onProgress) {
+  const original = await loadRecordingBlob(session, (v) => onProgress?.(v * 0.25))
+  const { convertRecording } = await import('./audioExport.js')
+  const m4a = await convertRecording(original, 'm4a', (v) => onProgress?.(0.25 + v * 0.75))
+  try {
+    await replaceAudioFile(session.id, new File([m4a], 'recording.m4a', { type: 'audio/mp4' }), session.audioSeconds)
+  } catch (err) {
+    console.warn('Couldn’t save the M4A copy of the recording:', err.message)
+  }
+  return m4a
+}
 
 function typeForPath(path) {
   const ext = (path.split('.').pop() || '').toLowerCase()
@@ -70,6 +102,9 @@ export async function downloadSessionRecording(session, format, onProgress) {
   setTimeout(() => URL.revokeObjectURL(url), 60000)
 }
 const TYPES = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/ogg;codecs=opus']
+// iPhones and Safari record M4A: they can record WebM, but playing it back
+// can crash the page (see device.js).
+const recordingTypes = () => (isAppleWebKit() ? ['audio/mp4', ...TYPES.filter((t) => t !== 'audio/mp4')] : TYPES)
 
 const idle = { status: 'idle', target: null, error: null, pending: null, startedAt: 0, banked: 0, marks: [] }
 // status: idle | recording | paused | saving
@@ -149,7 +184,7 @@ export async function startRecording(target = null) {
     })
     return
   }
-  const mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported?.(t))
+  const mimeType = recordingTypes().find((t) => MediaRecorder.isTypeSupported?.(t))
   try {
     recorder = new MediaRecorder(stream, { ...(mimeType ? { mimeType } : {}), audioBitsPerSecond: BITS_PER_SECOND })
   } catch {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSupabaseTable } from '../hooks/useSupabaseTable.js'
 import { getPublicUrl, removeImage } from '../lib/storage.js'
-import { AUDIO_BUCKET, audioPartsOf, isSplitRecording, loadRecordingBlob } from '../lib/sessionRecorder.js'
+import { AUDIO_BUCKET, audioPartsOf, playbackSource } from '../lib/sessionRecorder.js'
 import SessionAudio from './SessionAudio.jsx'
 import SessionReel from './SessionReel.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
@@ -31,6 +31,12 @@ const fromRow = (r) => ({
   audioSeconds: r.audio_seconds ?? null,
   audioMarks: Array.isArray(r.audio_marks) ? r.audio_marks : [],
 })
+
+// The list's compact player: same source as the recap's (see playbackSource).
+function playbackProps(session, onConverted) {
+  const { src, load, converting } = playbackSource(session, { onConverted })
+  return { src, load, loadingNote: converting ? 'Making this playable on this device — once only.' : undefined }
+}
 
 const partyFromRow = (r) => ({
   id: r.id,
@@ -360,8 +366,7 @@ function SessionNotesTab({ campaignId, campaignName, playerId, onOpenTab, addReq
                   {session.audioPath && (
                     <AudioPlayer
                       key={session.audioPath}
-                      src={isSplitRecording(session) ? null : getPublicUrl(AUDIO_BUCKET, session.audioPath)}
-                      load={isSplitRecording(session) ? (onProgress) => loadRecordingBlob(session, onProgress) : undefined}
+                      {...playbackProps(session, () => refetch({ silent: true }))}
                       seconds={session.audioSeconds}
                       label={`${session.title || 'Untitled Session'} recording`}
                       marks={session.audioMarks}

@@ -1,19 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSessionRecorder } from '../hooks/useSessionRecorder.js'
 import {
-  AUDIO_BUCKET,
   formatDuration,
   addRecordingMark,
   downloadSessionRecording,
-  isSplitRecording,
-  loadRecordingBlob,
+  playbackSource,
   recordingSupported,
   removeAudio,
   startRecording,
   stopRecording,
   uploadAudioFile,
 } from '../lib/sessionRecorder.js'
-import { getPublicUrl } from '../lib/storage.js'
 import Icon from './Icon.jsx'
 import AudioPlayer from './AudioPlayer.jsx'
 import RecordingMarks from './RecordingMarks.jsx'
@@ -32,10 +29,9 @@ function SessionAudio({ session, onChanged, showTranscript = true }) {
   const fileRef = useRef(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
-  // A recording over 45MB is stored in pieces: the player and Download
-  // join them back into the one file.
-  const split = isSplitRecording(session)
-  const src = split ? null : getPublicUrl(AUDIO_BUCKET, session.audioPath)
+  // A recording over 45MB is stored in pieces, joined back for the player
+  // and Download; a WebM on an iPhone is converted first (playbackSource).
+  const source = playbackSource(session, { onConverted: onChanged })
   const hasAudio = Boolean(session.audioPath)
   const [exporting, setExporting] = useState(null) // { format, stage, value }
   const [uploading, setUploading] = useState(null) // { stage, value }
@@ -119,8 +115,9 @@ function SessionAudio({ session, onChanged, showTranscript = true }) {
         <>
           <AudioPlayer
             key={session.audioPath}
-            src={src}
-            load={split ? (onProgress) => loadRecordingBlob(session, onProgress) : undefined}
+            src={source.src}
+            load={source.load}
+            loadingNote={source.converting ? 'Making this recording playable on this device — once only, then it plays everywhere. Keep this page open.' : undefined}
             seconds={session.audioSeconds}
             label={`${session.title || 'Session'} recording`}
             marks={session.audioMarks}

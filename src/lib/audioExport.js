@@ -1,6 +1,7 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import coreURL from '@ffmpeg/core?url'
 import wasmURL from '@ffmpeg/core/wasm?url'
+import { isAppleWebKit } from './device.js'
 
 // Converts a session recording to MP3 or WebM in the browser with
 // ffmpeg.wasm. The converter (~32MB) loads only the first time someone
@@ -12,6 +13,9 @@ import wasmURL from '@ffmpeg/core/wasm?url'
 export const EXPORT_FORMATS = {
   mp3: { label: 'MP3', type: 'audio/mpeg', args: ['-vn', '-ac', '1', '-ar', '24000', '-c:a', 'libmp3lame', '-b:a', '48k'] },
   webm: { label: 'WebM', type: 'audio/webm', args: ['-vn', '-ac', '1', '-c:a', 'libopus', '-b:a', '32k', '-vbr', 'constrained', '-application', 'voip'] },
+  // AAC (48kbps), about 22MB an hour: what iPhones and Safari play safely
+  // (see device.js); every other browser plays it too.
+  m4a: { label: 'M4A', type: 'audio/mp4', args: ['-vn', '-ac', '1', '-c:a', 'aac', '-b:a', '48k', '-movflags', '+faststart'] },
 }
 
 let loading = null
@@ -45,7 +49,8 @@ export async function convertRecording(blob, format, onProgress) {
 // recordings (24kbps) and already-small files are left alone.
 const SHRINK_ABOVE_BPS = 48000
 
-// Re-saves an uploaded recording as speech-quality WebM (Opus) when that
+// Re-saves an uploaded recording as speech-quality WebM (Opus) — M4A on
+// iPhones and Safari, which can't play WebM safely — when that
 // makes it meaningfully lighter — a 128kbps MP3 comes out about a quarter
 // of the size. Returns the original if it's already small, if shrinking
 // saves under 10%, or if this device can't convert it.
@@ -53,10 +58,11 @@ export async function shrinkRecording(file, seconds, onProgress) {
   const bps = seconds ? (file.size * 8) / seconds : null
   if (bps != null ? bps <= SHRINK_ABOVE_BPS : file.size < 2 * 1024 * 1024) return file
   try {
-    const out = await transcode(file, 'webm', onProgress)
+    const format = isAppleWebKit() ? 'm4a' : 'webm'
+    const out = await transcode(file, format, onProgress)
     if (out.size > file.size * 0.9) return file
     const base = (file.name || 'recording').replace(/\.[^.]+$/, '') || 'recording'
-    return new File([out], `${base}.webm`, { type: 'audio/webm' })
+    return new File([out], `${base}.${format}`, { type: EXPORT_FORMATS[format].type })
   } catch (err) {
     console.warn('Couldn’t shrink the recording; uploading it as is.', err)
     return file

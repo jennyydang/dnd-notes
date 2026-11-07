@@ -18,7 +18,7 @@ const SPEEDS = [1, 1.5, 2]
 // A recording stored in pieces has no single URL: pass `load(onProgress)`
 // instead of `src`, which resolves to a Blob of the whole file. It's
 // fetched on the first play and kept for the life of the player.
-function AudioPlayer({ src, load, seconds, label = 'Session recording', compact = false, marks = [], controlRef, onTime }) {
+function AudioPlayer({ src, load, loadingNote, seconds, label = 'Session recording', compact = false, marks = [], controlRef, onTime }) {
   const audioRef = useRef(null)
   const [blobUrl, setBlobUrl] = useState(null)
   const [loading, setLoading] = useState(null) // 0..1 while fetching pieces
@@ -29,6 +29,7 @@ function AudioPlayer({ src, load, seconds, label = 'Session recording', compact 
   const [duration, setDuration] = useState(seconds || 0)
   const [speed, setSpeed] = useState(1)
   const [error, setError] = useState(null)
+  const [ready, setReady] = useState(false) // loaded, but the browser wants another tap
   // A jump asked for before the audio has loaded (it loads only when
   // played): applied once it knows its length.
   const pendingSeek = useRef(null)
@@ -49,6 +50,7 @@ function AudioPlayer({ src, load, seconds, label = 'Session recording', compact 
       return
     }
     setError(null)
+    setReady(false)
     if (!url && load) {
       if (loading != null) return
       setLoading(0)
@@ -70,7 +72,8 @@ function AudioPlayer({ src, load, seconds, label = 'Session recording', compact 
     } catch (err) {
       // After a long download some browsers (iOS) no longer count the tap
       // as permission to play; it's ready now, so the next tap plays.
-      if (err.name !== 'AbortError' && err.name !== 'NotAllowedError') setError('This recording couldn’t be played here.')
+      if (err.name === 'NotAllowedError') setReady(true)
+      else if (err.name !== 'AbortError') setError('This recording couldn’t be played here.')
     }
   }
 
@@ -192,6 +195,16 @@ function AudioPlayer({ src, load, seconds, label = 'Session recording', compact 
       <button type="button" className="audio-player__speed" onClick={nextSpeed} aria-label={`Playback speed ${speed}×`}>
         {speed}×
       </button>
+      {loading != null && loadingNote && (
+        <p className="audio-player__note" role="status">
+          {loadingNote}
+        </p>
+      )}
+      {ready && !playing && (
+        <p className="audio-player__note" role="status">
+          Ready — tap play.
+        </p>
+      )}
       {error && (
         <p className="audio-player__error" role="alert">
           {error}
