@@ -73,7 +73,21 @@ function ShopWindow({ campaignId, playerId, merchantId, owner, loot, lootTable, 
     }
   }
 
-  const buy = (ware, count) =>
+  function buy(ware, count) {
+    const what = count > 1 ? `${count} × ${ware.item}` : ware.item
+    if (!window.confirm(`Buy ${what} for ${formatCoins(ware.priceCp * count)}?\n\nIt goes into ${owner.label}’s inventory.`)) return
+    return buyNow(ware, count)
+  }
+
+  function sell(entry, count) {
+    const what = count > 1 ? `${count} × ${entry.item}` : entry.item
+    const each = Math.floor((entry.valueCp || 0) * (merchant?.sellRate ?? 0.5))
+    const worn = entry.equipped ? ' It’s equipped — it comes off when sold.' : ''
+    if (!window.confirm(`Sell ${what} for ${formatCoins(each * count)}?${worn}\n\nThe merchant keeps it.`)) return
+    return sellNow(entry, count)
+  }
+
+  const buyNow = (ware, count) =>
     run(async () => {
       if (!playerId) throw new Error('Only players can buy — the DM and admin have no coin purse.')
       const cost = ware.priceCp * count
@@ -109,7 +123,7 @@ function ShopWindow({ campaignId, playerId, merchantId, owner, loot, lootTable, 
       return `Bought ${count > 1 ? `${count} × ` : ''}${ware.item} for ${formatCoins(cost)}.`
     })
 
-  const sell = (entry, count) =>
+  const sellNow = (entry, count) =>
     run(async () => {
       if (!playerId) throw new Error('Only players can sell — the DM and admin have no coin purse.')
       const each = Math.floor((entry.valueCp || 0) * (merchant?.sellRate ?? 0.5))
