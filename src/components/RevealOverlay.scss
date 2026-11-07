@@ -1,5 +1,35 @@
 @use '../styles/variables' as *;
 
+@mixin still-reveal {
+  &__seal,
+  &__sparks,
+  &__glow {
+    display: none;
+  }
+
+  &__scroll {
+    clip-path: none;
+    animation: none;
+  }
+
+  &__roller {
+    opacity: 1;
+    animation: none;
+
+    &--top {
+      top: -0.3rem;
+    }
+
+    &--bottom {
+      bottom: -0.3rem;
+    }
+  }
+
+  &__card > * {
+    animation: none;
+  }
+}
+
 .reveal {
   position: fixed;
   inset: 0;
@@ -158,34 +188,14 @@
     }
   }
 
+  // Stills the seal, sparks and unrolling: for reduced motion, or when the
+  // player turned off DM animations in Settings.
   @media (prefers-reduced-motion: reduce) {
-    &__seal,
-    &__sparks,
-    &__glow {
-      display: none;
-    }
+    @include still-reveal;
+  }
 
-    &__scroll {
-      clip-path: none;
-      animation: none;
-    }
-
-    &__roller {
-      opacity: 1;
-      animation: none;
-
-      &--top {
-        top: -0.3rem;
-      }
-
-      &--bottom {
-        bottom: -0.3rem;
-      }
-    }
-
-    &__card > * {
-      animation: none;
-    }
+  :root[data-dm-animations='off'] & {
+    @include still-reveal;
   }
 
   &__eyebrow {

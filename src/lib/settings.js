@@ -14,6 +14,9 @@ const DEFAULTS = {
   fontSize: 'medium',
   // The moving background: 'embers' (embers and fog), 'fog' or 'off'.
   ambience: 'embers',
+  // The seal-and-scroll reveal and the shard burst when the DM sends
+  // something: 'on' or 'off' (the pop-up still shows, just still).
+  dmAnimations: 'on',
   // Storage object key for a player-uploaded background (bucket:
   // player-backgrounds), only meaningful when bg === 'custom'.
   customBgPath: null,
@@ -83,4 +86,7 @@ export function applySettings(settings) {
 
   if (applied.ambience !== DEFAULTS.ambience) root.setAttribute('data-ambience', applied.ambience)
   else root.removeAttribute('data-ambience')
+
+  if (applied.dmAnimations !== DEFAULTS.dmAnimations) root.setAttribute('data-dm-animations', applied.dmAnimations)
+  else root.removeAttribute('data-dm-animations')
 }

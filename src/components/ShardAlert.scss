@@ -178,6 +178,19 @@
   }
 }
 
+// Reduced motion, or DM animations turned off in Settings: the alert just
+// appears, no burst.
+:root[data-dm-animations='off'] {
+  .shard-alert__sparks {
+    display: none;
+  }
+
+  .shard-alert,
+  .shard-alert * {
+    animation: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shard-alert,
   .shard-alert * {

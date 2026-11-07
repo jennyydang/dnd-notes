@@ -17,6 +17,11 @@ const AMBIENCE = [
   { value: 'off', label: 'Off' },
 ]
 
+const DM_ANIMATIONS = [
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' },
+]
+
 const FONTS = [
   { value: 'classic', label: 'Classic' },
   { value: 'modern', label: 'Modern' },
@@ -181,6 +186,12 @@ function SettingsPanel({ onDone }) {
       <div className="settings-panel__section">
         <h4>Moving Background</h4>
         {renderGroup('ambience', AMBIENCE)}
+      </div>
+
+      <div className="settings-panel__section">
+        <h4>Animations From Your DM</h4>
+        <p className="field-hint">The wax seal and scroll when your DM reveals something, and the gem burst when they give or take shards. Off still shows them, just without the animation.</p>
+        {renderGroup('dmAnimations', DM_ANIMATIONS)}
       </div>
 
       <div className="settings-panel__section">
