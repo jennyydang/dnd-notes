@@ -10,7 +10,7 @@ import Icon from './Icon.jsx'
 
 const MAX_NAME = 120
 
-// Creates an NPC / location / quest / clue / lore / loot entry in one
+// Creates an NPC / location / quest / clue / lore / loot / party member entry in one
 // step, optionally linked to an existing entry. `initial` can pre-fill
 // the fields (e.g. when converting a quick note) and `onCreated` receives
 // the new entity.
@@ -174,9 +174,9 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
           <div className="form-row">
             {def.kinds && (
               <div className="field">
-                <label htmlFor="quick-create-kind">Tag</label>
+                <label htmlFor="quick-create-kind">{def.kindLabel || 'Tag'}</label>
                 <select id="quick-create-kind" value={kind} onChange={(e) => setKind(e.target.value)}>
-                  {type !== 'place' && <option value="">None</option>}
+                  {type !== 'place' && !def.kindRequired && <option value="">None</option>}
                   {def.kinds.map((k) => (
                     <option key={k} value={k}>
                       {k}
@@ -193,6 +193,7 @@ function QuickCreateModal({ initialType = 'npc', initial = {}, onClose, onCreate
                   type="text"
                   value={extra}
                   onChange={(e) => setExtra(e.target.value)}
+                  placeholder={type === 'party' ? 'Half-elf Ranger' : undefined}
                 />
               </div>
             )}

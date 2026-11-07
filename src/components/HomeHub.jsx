@@ -25,6 +25,7 @@ const QUICK_ACTIONS = [
   { type: 'place', label: 'Location', icon: 'pin' },
   { type: 'quest', label: 'Quest', icon: 'quest' },
   { type: 'clue', label: 'Clue', icon: 'search' },
+  { type: 'party', label: 'Party member', icon: 'users' },
 ]
 
 const RECENT_LIMIT = 5

@@ -31,6 +31,17 @@ export const QUICK_TYPES = {
     placeholder: 'Ring of Feather Falling',
     kinds: TAG_GROUPS.loot.kinds,
   },
+  // A character in the party: a player's or a companion NPC.
+  party: {
+    label: 'Party member',
+    icon: 'users',
+    entity: 'character',
+    nameLabel: 'Name',
+    placeholder: 'Thessaly Brightwater',
+    kinds: ['Player', 'NPC'],
+    kindLabel: 'Who plays them',
+    kindRequired: true,
+  },
 }
 
 export function payloadFor(type, { name, kind, notes, extra, session = '' }) {
@@ -55,9 +66,11 @@ export function payloadFor(type, { name, kind, notes, extra, session = '' }) {
       return { title: name, category: kind, notes }
     case 'loot':
       return { item: name, kind, found_at: extra, holder: '', notes }
+    case 'party':
+      return { name, member_type: kind || 'Player', race_class: extra, notes }
     default:
       throw new Error(`Unknown type ${type}`)
   }
 }
 
-export const EXTRA_LABELS = { npc: 'Where you met', quest: 'Given by', loot: 'Where you got it' }
+export const EXTRA_LABELS = { npc: 'Where you met', quest: 'Given by', loot: 'Where you got it', party: 'Race & class' }

@@ -13,6 +13,7 @@ const QUICK_ADD = [
   { type: 'place', label: 'Place', icon: 'pin' },
   { type: 'quest', label: 'Quest', icon: 'quest' },
   { type: 'clue', label: 'Clue', icon: 'search' },
+  { type: 'party', label: 'Party member', icon: 'users' },
 ]
 const ENDED_MESSAGE_MS = 5000
 

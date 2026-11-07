@@ -39,6 +39,7 @@ const QUICK_ADD = [
   { type: 'place', label: 'Place', icon: 'pin' },
   { type: 'quest', label: 'Quest', icon: 'quest' },
   { type: 'clue', label: 'Clue', icon: 'search' },
+  { type: 'party', label: 'Party member', icon: 'users' },
 ]
 
 // Needs the sheet, so it only renders once a character is chosen; keyed
