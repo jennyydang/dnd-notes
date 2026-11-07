@@ -215,19 +215,18 @@ so your whole party can share one set of notes from any browser.
    npm install
    npm run dev
    ```
-6. Visit `/admin` on your deployed (or local) app and enter the starting
-   admin password (`dndrules`). The dashboard asks you to change it right
-   away — do, since it's in this public code. Then create the first player
-   account. Without at least one player account, the main app URL only
-   shows a login screen with no way in.
+6. Visit `/admin` on your deployed (or local) app and enter the admin
+   password (`dndrules` — see below to change it) to create the first
+   player account. Without at least one player account, the main app URL
+   only shows a login screen with no way in.
 
 ### Logins and access model
 
-- **Admin**: visiting `/admin` prompts for the admin password. It starts
-  as `dndrules` and is stored hashed in the database (the `app_admin`
-  table); change it with **Change admin password** on the admin dashboard,
-  which warns until you do. The admin can create player accounts and sees
-  every campaign, unrestricted.
+- **Admin**: visiting `/admin` prompts for a password (`dndrules`,
+  hardcoded in `supabase/schema.sql` — search that file for `dndrules`
+  and replace both occurrences, then re-run the script, if you want to
+  change it). The admin can create player accounts and sees every
+  campaign, unrestricted.
 - **Players**: accounts are **by invite only**. The admin either creates
   an account directly (**+ Add Player**) or uses **Invite by link** on the
   Players screen: optionally pick a campaign the new player joins on
@@ -261,22 +260,18 @@ so your whole party can share one set of notes from any browser.
   is added as a member. The creator (or admin) can rename/archive/delete
   a campaign and manage its members; other members can fully edit tab
   content but don't see those campaign-management controls.
-- **Database security (Supabase Auth + Row Level Security).** Every
-  account, and the admin, has a Supabase login with the same id and
-  password (kept in step automatically). After the usual username and
-  password check the app signs in for real, and the database only lets a
-  signed-in player read or change the campaigns they're a member of; the
-  admin sees everything. The public `anon` key on its own can't read or
-  change anything. Within a campaign, members share its data (private
-  recaps and notes are kept private by the app, not the database). Works
-  on Supabase's Free plan.
-
-  Upgrading a database from before this: run
-  `supabase/security-1-accounts.sql` (safe any time; the app keeps working
-  as before), deploy the app, then run `supabase/security-2-lockdown.sql`.
-  Everyone logs in once more after the update. Both are also at the end
-  of `supabase/schema.sql`. A new table needs a "members" policy like the
-  ones in `security-1-accounts.sql`, or signed-in players can't see it.
+- **This is a lightweight login, not real database-level security.**
+  Supabase's Row Level Security can only truly isolate individual users
+  with its own built-in Auth system (real signed-in sessions), which this
+  app doesn't use — everything still goes through one shared public
+  `anon` key, same as before logins existed. In practice this means: the
+  `players` table itself is locked down (no anon policies at all — the
+  anon key can never read password hashes or dump usernames), but a
+  technically sophisticated person with access to the deployed app could
+  still bypass the login UI entirely and query campaign data directly.
+  This is the same "small trusted group" tradeoff this app has always
+  made, just now with proper accounts and personalized dashboards on top
+  of it. Don't reuse the admin or player passwords anywhere sensitive.
 
 ## Scripts
 

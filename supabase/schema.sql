@@ -450,11 +450,10 @@ join campaigns c on c.id = cm.campaign_id;
 grant select on campaign_memberships to anon;
 
 -- ── Row Level Security ──────────────────────────────────────────────
--- These open "anon full access" rules are where the app started. The
--- SECURITY section at the end of this file replaces them with signed-in,
--- members-only access (and removes them), so re-running the whole file
--- ends locked down. A new table needs a "members" policy like the ones
--- there.
+-- No login for this app: everyone who has the app URL shares access, so
+-- the anon role gets full read/write/delete. Anyone who obtains the
+-- public anon key can also read/write directly — acceptable for a small
+-- private link shared with your table, not for a public URL.
 
 alter table campaigns          enable row level security;
 alter table maps               enable row level security;
@@ -598,30 +597,10 @@ create policy "anon full access player-backgrounds bucket"
 -- password hashing doesn't depend on search_path guessing correctly.
 -- `extensions` is kept in search_path too as a harmless second layer.
 
--- ── The admin password ──────────────────────────────────────────────
--- Stored hashed in a table nothing can read directly, instead of written
--- in this (public) file. It starts as the old password; change it in the
--- admin dashboard (it warns until you do).
-create table if not exists app_admin (
-  id integer primary key default 1 check (id = 1),
-  password_hash text not null,
-  updated_at timestamptz not null default now()
-);
-alter table app_admin enable row level security;
-insert into app_admin (password_hash)
-values (extensions.crypt('dndrules', extensions.gen_salt('bf', 8)))
-on conflict (id) do nothing;
-
-create or replace function check_admin_password(p_password text)
-returns boolean
-language sql stable security definer set search_path = public, extensions, pg_temp as $$
-  select coalesce((select password_hash = extensions.crypt(coalesce(p_password, ''), password_hash) from app_admin where id = 1), false);
-$$;
-
 create or replace function verify_admin_password(p_admin_password text)
 returns boolean
 language sql security definer set search_path = public, extensions, pg_temp as $$
-  select check_admin_password(p_admin_password);
+  select p_admin_password = 'dndrules';
 $$;
 grant execute on function verify_admin_password(text) to anon;
 
@@ -631,7 +610,7 @@ language plpgsql security definer set search_path = public, extensions, pg_temp 
 declare
   v_id uuid;
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
 
@@ -661,7 +640,7 @@ create or replace function update_player(
 returns void
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
 
@@ -689,7 +668,7 @@ create or replace function delete_player(p_player_id uuid, p_admin_password text
 returns void
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
 
@@ -715,12 +694,11 @@ end;
 $$;
 grant execute on function verify_login(text, text) to anon;
 
-drop function if exists list_players(text);
 create or replace function list_players(p_admin_password text)
 returns table(id uuid, username text, created_at timestamptz)
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
 
@@ -1201,7 +1179,7 @@ create or replace function create_player_invite(p_admin_password text, p_campaig
 returns table(id uuid, token text)
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
   if p_campaign_id is not null and not exists (select 1 from campaigns c where c.id = p_campaign_id) then
@@ -1223,7 +1201,7 @@ returns table(
 )
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
   return query
@@ -1240,7 +1218,7 @@ create or replace function revoke_player_invite(p_admin_password text, p_invite_
 returns void
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
   update player_invites set revoked_at = now() where id = p_invite_id and used_at is null and revoked_at is null;
@@ -1341,7 +1319,7 @@ create function list_players(p_admin_password text)
 returns table(id uuid, username text, display_name text, email text, created_at timestamptz)
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
   return query
@@ -1601,7 +1579,7 @@ create or replace function list_password_reset_requests(p_admin_password text)
 returns table(id uuid, player_id uuid, username text, display_name text, email text, created_at timestamptz)
 language plpgsql security definer set search_path = public, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
   return query
@@ -1617,7 +1595,7 @@ create or replace function dismiss_password_reset_request(p_admin_password text,
 returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
   update password_reset_requests set handled_at = now() where id = p_request_id;
@@ -1633,7 +1611,7 @@ language plpgsql security definer set search_path = public, extensions, pg_temp 
 declare
   v_token text := encode(extensions.gen_random_bytes(18), 'hex');
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
   if not exists (select 1 from players where id = p_player_id) then
@@ -1955,7 +1933,7 @@ create or replace function delete_player_invite(p_admin_password text, p_invite_
 returns void
 language plpgsql security definer set search_path = public, extensions, pg_temp as $$
 begin
-  if not check_admin_password(p_admin_password) then
+  if p_admin_password <> 'dndrules' then
     raise exception 'Invalid admin password';
   end if;
   delete from player_invites where id = p_invite_id;
@@ -2182,682 +2160,3 @@ end $$;
 -- back, body, waist, feet, main, off, hands, ring1, ring2); null when not
 -- worn. `equipped` stays true while it's worn.
 alter table loot add column if not exists equip_slot text;
-
--- ══ SECURITY (generated) ══
--- Real logins and member-only access: the same SQL as security-1-accounts.sql
--- then security-2-lockdown.sql, which can also be run on their own.
-
--- ═════════════════════════════════════════════════════════════════════
--- Security, part 1 of 2: real logins
--- Safe to run any time, and again: it only adds things, so the app keeps
--- working as it is. Run it BEFORE deploying the app update that signs
--- players in, then run part 2 (security-2-lockdown.sql) after.
---
--- Every player gets a Supabase login with the same id and password as
--- their account (passwords are already bcrypt, which Supabase Auth
--- reads), kept in step automatically when an account is made, changes
--- its password or is deleted. The admin gets one too. Players still log
--- in with their username: the app looks up their id, then signs in.
--- The emails on these logins (u-<id>@players.example.com) are internal
--- and never receive mail. Works on Supabase's Free plan.
--- ═════════════════════════════════════════════════════════════════════
-
--- ── The admin password ──────────────────────────────────────────────
--- Stored hashed in a table nothing can read directly, instead of written
--- in this (public) file. It starts as the old password; change it in the
--- admin dashboard (it warns until you do).
-create table if not exists app_admin (
-  id integer primary key default 1 check (id = 1),
-  password_hash text not null,
-  updated_at timestamptz not null default now()
-);
-alter table app_admin enable row level security;
-insert into app_admin (password_hash)
-values (extensions.crypt('dndrules', extensions.gen_salt('bf', 8)))
-on conflict (id) do nothing;
-
-create or replace function check_admin_password(p_password text)
-returns boolean
-language sql stable security definer set search_path = public, extensions, pg_temp as $$
-  select coalesce((select password_hash = extensions.crypt(coalesce(p_password, ''), password_hash) from app_admin where id = 1), false);
-$$;
-
--- The admin's login id, and the internal email every login uses.
-create or replace function admin_user_id()
-returns uuid
-language sql immutable as $$ select '00000000-0000-4000-8000-00000000ad01'::uuid $$;
-
-create or replace function auth_email(p_id uuid)
-returns text
-language sql immutable as $$ select 'u-' || p_id::text || '@players.example.com' $$;
-
--- Creates or updates the Supabase login for an id, with a bcrypt hash.
-create or replace function sync_auth_user(p_id uuid, p_password_hash text)
-returns void
-language plpgsql security definer set search_path = public, auth, extensions, pg_temp as $$
-declare
-  v_email text := auth_email(p_id);
-begin
-  insert into auth.users (
-    instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
-    confirmation_token, recovery_token, email_change_token_new, email_change,
-    email_change_token_current, phone_change, phone_change_token, reauthentication_token
-  ) values (
-    '00000000-0000-0000-0000-000000000000', p_id, 'authenticated', 'authenticated', v_email, p_password_hash, now(),
-    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, now(), now(),
-    '', '', '', '', '', '', '', ''
-  )
-  on conflict (id) do update set encrypted_password = excluded.encrypted_password, email = excluded.email, updated_at = now();
-
-  insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-  values (p_id::text, p_id, jsonb_build_object('sub', p_id::text, 'email', v_email, 'email_verified', true), 'email', now(), now(), now())
-  on conflict (provider_id, provider) do nothing;
-end;
-$$;
--- Never callable from the app: it would let anyone set any password.
-revoke execute on function sync_auth_user(uuid, text) from public, anon, authenticated;
-
-create or replace function players_sync_auth()
-returns trigger
-language plpgsql security definer set search_path = public, auth, pg_temp as $$
-begin
-  if tg_op = 'DELETE' then
-    delete from auth.users where id = old.id;
-    return old;
-  end if;
-  perform sync_auth_user(new.id, new.password_hash);
-  return new;
-end;
-$$;
-revoke execute on function players_sync_auth() from public, anon, authenticated;
-drop trigger if exists players_sync_auth on players;
-create trigger players_sync_auth
-  after insert or update of password_hash or delete on players
-  for each row execute function players_sync_auth();
-
--- Logins for everyone who already has an account, and for the admin.
-select sync_auth_user(id, password_hash) from players;
-select sync_auth_user(admin_user_id(), password_hash) from app_admin where id = 1;
-
--- Changing the admin password (from the admin dashboard).
-create or replace function change_admin_password(p_current text, p_new text)
-returns void
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-declare
-  v_hash text;
-begin
-  if not check_admin_password(p_current) then
-    raise exception 'The current admin password isn’t right';
-  end if;
-  if length(coalesce(p_new, '')) < 10 then
-    raise exception 'Use at least 10 characters for the admin password';
-  end if;
-  v_hash := extensions.crypt(p_new, extensions.gen_salt('bf', 8));
-  update app_admin set password_hash = v_hash, updated_at = now() where id = 1;
-  perform sync_auth_user(admin_user_id(), v_hash);
-end;
-$$;
-grant execute on function change_admin_password(text, text) to anon, authenticated;
-
--- Whether the admin still uses the old password that was in the code.
-create or replace function admin_password_is_default()
-returns boolean
-language sql stable security definer set search_path = public, extensions, pg_temp as $$
-  select case when auth.uid() = admin_user_id() then check_admin_password('dndrules') end;
-$$;
-grant execute on function admin_password_is_default() to authenticated;
-
--- ── Who may see what ─────────────────────────────────────────────────
-create or replace function is_admin()
-returns boolean
-language sql stable as $$ select auth.uid() is not null and auth.uid() = admin_user_id() $$;
-
--- Is the signed-in player in this campaign (or the admin)?
-create or replace function is_member(p_campaign_id uuid)
-returns boolean
-language sql stable security definer set search_path = public, pg_temp as $$
-  select is_admin() or exists (
-    select 1 from campaign_members where campaign_id = p_campaign_id and player_id = auth.uid()
-  );
-$$;
-
--- The campaign a row belongs to, for tables keyed by a parent row.
-create or replace function campaign_of_map(p_id uuid) returns uuid
-language sql stable security definer set search_path = public, pg_temp as $$ select campaign_id from maps where id = p_id $$;
-create or replace function campaign_of_tab(p_id uuid) returns uuid
-language sql stable security definer set search_path = public, pg_temp as $$ select campaign_id from custom_tabs where id = p_id $$;
-create or replace function campaign_of_party_member(p_id uuid) returns uuid
-language sql stable security definer set search_path = public, pg_temp as $$ select campaign_id from party_members where id = p_id $$;
-create or replace function campaign_of_share(p_id uuid) returns uuid
-language sql stable security definer set search_path = public, pg_temp as $$ select campaign_id from dm_shares where id = p_id $$;
-create or replace function campaign_of_session(p_id uuid) returns uuid
-language sql stable security definer set search_path = public, pg_temp as $$ select campaign_id from session_notes where id = p_id $$;
-
--- ── Signed-in access ─────────────────────────────────────────────────
--- Added next to the old open ("anon") rules, which part 2 removes. A
--- campaign's data is for its members (and the admin) only.
-do $$
-declare t text;
-begin
-  foreach t in array array['maps', 'npcs', 'loot', 'places', 'quests', 'party_members', 'party_goals', 'spells', 'player_wallets', 'player_shards', 'session_notes', 'lore_entries', 'custom_tabs', 'character_sheets', 'quick_notes', 'entity_links', 'session_prep', 'creatures', 'dm_npcs', 'campaign_art', 'dm_maps', 'dm_shares', 'dm_creatures', 'encounters', 'polls', 'poll_votes', 'personal_goals', 'campaign_calendar', 'mysteries', 'theories', 'theory_votes', 'merchants', 'merchant_items', 'trades'] loop
-    if to_regclass('public.' || t) is not null then
-      execute format('drop policy if exists "members %1$s" on %1$I', t);
-      execute format('create policy "members %1$s" on %1$I for all to authenticated using (is_member(campaign_id)) with check (is_member(campaign_id))', t);
-    end if;
-  end loop;
-end $$;
-
-drop policy if exists "members map_markers" on map_markers;
-create policy "members map_markers" on map_markers for all to authenticated using (is_member(campaign_of_map(map_id))) with check (is_member(campaign_of_map(map_id)));
-drop policy if exists "members map_pin_moves" on map_pin_moves;
-create policy "members map_pin_moves" on map_pin_moves for all to authenticated using (is_member(campaign_of_map(map_id))) with check (is_member(campaign_of_map(map_id)));
-drop policy if exists "members custom_tab_entries" on custom_tab_entries;
-create policy "members custom_tab_entries" on custom_tab_entries for all to authenticated using (is_member(campaign_of_tab(custom_tab_id))) with check (is_member(campaign_of_tab(custom_tab_id)));
-drop policy if exists "members party_notes" on party_notes;
-create policy "members party_notes" on party_notes for all to authenticated using (is_member(campaign_of_party_member(party_member_id))) with check (is_member(campaign_of_party_member(party_member_id)));
-drop policy if exists "members dm_share_dismissals" on dm_share_dismissals;
-create policy "members dm_share_dismissals" on dm_share_dismissals for all to authenticated using (is_member(campaign_of_share(share_id))) with check (is_member(campaign_of_share(share_id)));
-drop policy if exists "members session_transcripts" on session_transcripts;
-create policy "members session_transcripts" on session_transcripts for all to authenticated using (is_member(campaign_of_session(session_id))) with check (is_member(campaign_of_session(session_id)));
-
--- Campaigns: members see them; the DM (or creator) and the admin change them.
-drop policy if exists "members read campaigns" on campaigns;
-drop policy if exists "dm changes campaigns" on campaigns;
-drop policy if exists "dm deletes campaigns" on campaigns;
-drop policy if exists "admin adds campaigns" on campaigns;
-create policy "members read campaigns" on campaigns for select to authenticated using (is_member(id));
-create policy "dm changes campaigns" on campaigns for update to authenticated using (is_admin() or is_campaign_dm(auth.uid(), id)) with check (is_admin() or is_campaign_dm(auth.uid(), id) or is_member(id));
-create policy "dm deletes campaigns" on campaigns for delete to authenticated using (is_admin() or is_campaign_dm(auth.uid(), id));
-create policy "admin adds campaigns" on campaigns for insert to authenticated with check (is_admin());
-
--- Memberships: members see who's in; the DM and admin add and change them;
--- anyone can leave.
-drop policy if exists "members read memberships" on campaign_members;
-drop policy if exists "dm adds members" on campaign_members;
-drop policy if exists "dm changes members" on campaign_members;
-drop policy if exists "dm or self removes members" on campaign_members;
-create policy "members read memberships" on campaign_members for select to authenticated using (is_member(campaign_id));
-create policy "dm adds members" on campaign_members for insert to authenticated with check (is_admin() or is_campaign_dm(auth.uid(), campaign_id));
-create policy "dm changes members" on campaign_members for update to authenticated using (is_admin() or is_campaign_dm(auth.uid(), campaign_id));
-create policy "dm or self removes members" on campaign_members for delete to authenticated using (is_admin() or player_id = auth.uid() or is_campaign_dm(auth.uid(), campaign_id));
-
--- Profile pictures: everyone signed in sees them; you change your own.
-drop policy if exists "signed-in read profiles" on player_profiles;
-drop policy if exists "own profile" on player_profiles;
-create policy "signed-in read profiles" on player_profiles for select to authenticated using (true);
-create policy "own profile" on player_profiles for all to authenticated using (player_id = auth.uid() or is_admin()) with check (player_id = auth.uid() or is_admin());
-
--- Notifications: yours to read and clear; anyone signed in can send one.
-drop policy if exists "own notifications" on notifications;
-drop policy if exists "send notifications" on notifications;
-create policy "own notifications" on notifications for all to authenticated using (player_id = auth.uid() or is_admin()) with check (player_id = auth.uid() or is_admin());
-create policy "send notifications" on notifications for insert to authenticated with check (true);
-
--- Feedback: anyone signed in sends it; only the admin reads it.
-drop policy if exists "send feedback" on feedback;
-drop policy if exists "admin reads feedback" on feedback;
-create policy "send feedback" on feedback for insert to authenticated with check (true);
-create policy "admin reads feedback" on feedback for all to authenticated using (is_admin()) with check (is_admin());
-
--- The admin's view of every membership.
-grant select on campaign_memberships to authenticated;
-
--- Files: anyone signed in can add, change and remove them (pictures are
--- still shown by their public links).
-drop policy if exists "signed-in files" on storage.objects;
-create policy "signed-in files" on storage.objects for all to authenticated using (bucket_id in ('maps', 'npc-portraits', 'party-portraits', 'campaign-covers', 'map-marker-photos', 'player-backgrounds', 'campaign-art', 'loot-photos', 'player-avatars', 'session-audio', 'creature-photos')) with check (bucket_id in ('maps', 'npc-portraits', 'party-portraits', 'campaign-covers', 'map-marker-photos', 'player-backgrounds', 'campaign-art', 'loot-photos', 'player-avatars', 'session-audio', 'creature-photos'));
-
--- ── Admin functions check the stored admin password ────────────────
--- (They used to compare against the password written in the code.)
-drop function if exists list_players(text);
-create or replace function verify_admin_password(p_admin_password text)
-returns boolean
-language sql security definer set search_path = public, extensions, pg_temp as $$
-  select check_admin_password(p_admin_password);
-$$;
-grant execute on function verify_admin_password(text) to anon;
-
-create or replace function create_player(p_username text, p_password text, p_admin_password text)
-returns uuid
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-declare
-  v_id uuid;
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-
-  if trim(p_username) = '' then
-    raise exception 'Username is required';
-  end if;
-
-  begin
-    insert into players (username, password_hash)
-    values (trim(p_username), extensions.crypt(p_password, extensions.gen_salt('bf', 8)))
-    returning id into v_id;
-  exception when unique_violation then
-    raise exception 'That username is already taken';
-  end;
-
-  return v_id;
-end;
-$$;
-grant execute on function create_player(text, text, text) to anon;
-
-create or replace function update_player(
-  p_player_id uuid,
-  p_username text,
-  p_password text,
-  p_admin_password text
-)
-returns void
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-
-  if trim(p_username) = '' then
-    raise exception 'Username is required';
-  end if;
-
-  begin
-    if p_password is not null and p_password <> '' then
-      update players
-      set username = trim(p_username),
-          password_hash = extensions.crypt(p_password, extensions.gen_salt('bf', 8))
-      where id = p_player_id;
-    else
-      update players set username = trim(p_username) where id = p_player_id;
-    end if;
-  exception when unique_violation then
-    raise exception 'That username is already taken';
-  end;
-end;
-$$;
-grant execute on function update_player(uuid, text, text, text) to anon;
-
-create or replace function delete_player(p_player_id uuid, p_admin_password text)
-returns void
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-
-  delete from players where id = p_player_id;
-end;
-$$;
-grant execute on function delete_player(uuid, text) to anon;
-
-create or replace function list_players(p_admin_password text)
-returns table(id uuid, username text, display_name text, email text, created_at timestamptz)
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-  return query
-    select p.id, p.username, p.display_name, p.email, p.created_at from players p order by p.created_at;
-end;
-$$;
-grant execute on function list_players(text) to anon;
-
-create or replace function create_player_invite(p_admin_password text, p_campaign_id uuid, p_note text default '')
-returns table(id uuid, token text)
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-  if p_campaign_id is not null and not exists (select 1 from campaigns c where c.id = p_campaign_id) then
-    raise exception 'That campaign no longer exists';
-  end if;
-  return query
-    insert into player_invites (token, campaign_id, note)
-    values (encode(extensions.gen_random_bytes(18), 'hex'), p_campaign_id, left(trim(coalesce(p_note, '')), 120))
-    returning player_invites.id, player_invites.token;
-end;
-$$;
-grant execute on function create_player_invite(text, uuid, text) to anon;
-
-create or replace function list_player_invites(p_admin_password text)
-returns table(
-  id uuid, token text, campaign_id uuid, campaign_name text, note text,
-  created_at timestamptz, expires_at timestamptz, used_at timestamptz,
-  used_by_username text, revoked_at timestamptz
-)
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-  return query
-    select i.id, i.token, i.campaign_id, c.name, i.note, i.created_at, i.expires_at, i.used_at, p.username, i.revoked_at
-    from player_invites i
-    left join campaigns c on c.id = i.campaign_id
-    left join players p on p.id = i.used_by
-    order by i.created_at desc;
-end;
-$$;
-grant execute on function list_player_invites(text) to anon;
-
-create or replace function revoke_player_invite(p_admin_password text, p_invite_id uuid)
-returns void
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-  update player_invites set revoked_at = now() where id = p_invite_id and used_at is null and revoked_at is null;
-end;
-$$;
-grant execute on function revoke_player_invite(text, uuid) to anon;
-
-create or replace function list_password_reset_requests(p_admin_password text)
-returns table(id uuid, player_id uuid, username text, display_name text, email text, created_at timestamptz)
-language plpgsql security definer set search_path = public, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-  return query
-    select r.id, p.id, p.username, p.display_name, p.email, r.created_at
-    from password_reset_requests r join players p on p.id = r.player_id
-    where r.handled_at is null
-    order by r.created_at desc;
-end;
-$$;
-grant execute on function list_password_reset_requests(text) to anon;
-
-create or replace function dismiss_password_reset_request(p_admin_password text, p_request_id uuid)
-returns void
-language plpgsql security definer set search_path = public, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-  update password_reset_requests set handled_at = now() where id = p_request_id;
-end;
-$$;
-grant execute on function dismiss_password_reset_request(text, uuid) to anon;
-
-create or replace function create_password_reset(p_admin_password text, p_player_id uuid)
-returns text
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-declare
-  v_token text := encode(extensions.gen_random_bytes(18), 'hex');
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-  if not exists (select 1 from players where id = p_player_id) then
-    raise exception 'That player no longer exists';
-  end if;
-  update password_resets set expires_at = least(expires_at, now())
-    where player_id = p_player_id and used_at is null;
-  insert into password_resets (player_id, token) values (p_player_id, v_token);
-  update password_reset_requests set handled_at = now() where player_id = p_player_id and handled_at is null;
-  return v_token;
-end;
-$$;
-grant execute on function create_password_reset(text, uuid) to anon;
-
-create or replace function delete_player_invite(p_admin_password text, p_invite_id uuid)
-returns void
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-begin
-  if not check_admin_password(p_admin_password) then
-    raise exception 'Invalid admin password';
-  end if;
-  delete from player_invites where id = p_invite_id;
-end;
-$$;
-grant execute on function delete_player_invite(text, uuid) to anon;
-
-notify pgrst, 'reload schema';
-
--- ═════════════════════════════════════════════════════════════════════
--- Security, part 2 of 2: lock it down
--- Run AFTER part 1 (security-1-accounts.sql) AND after the app update
--- that signs players in is live. From here on only signed-in players see
--- their own campaigns, and the admin sees everything; the public key on
--- its own can't read or change anything. Anyone with the app already open
--- is asked to log in again.
--- ═════════════════════════════════════════════════════════════════════
-
--- Remove the old open access ("anon full access …") everywhere.
-do $$
-declare r record;
-begin
-  for r in
-    select schemaname, tablename, policyname from pg_policies
-    where schemaname in ('public', 'storage') and 'anon' = any (roles)
-  loop
-    execute format('drop policy if exists %I on %I.%I', r.policyname, r.schemaname, r.tablename);
-  end loop;
-end $$;
-
--- The admin's membership list follows the same rules as its tables.
-revoke select on campaign_memberships from anon;
-alter view campaign_memberships set (security_invoker = true);
-
--- Functions that act for a player now check it's really them.
-create or replace function assert_caller(p_player_id uuid)
-returns void
-language plpgsql stable as $$
-begin
-  if p_player_id is null or (p_player_id is distinct from auth.uid() and not is_admin()) then
-    raise exception 'Please log in again';
-  end if;
-end;
-$$;
-
-create or replace function is_campaign_dm(p_player_id uuid, p_campaign_id uuid)
-returns boolean
-language sql stable security definer set search_path = public, pg_temp as $$
-  select is_admin() or (
-    p_player_id = auth.uid() and (
-      exists (
-        select 1 from campaign_members
-        where campaign_id = p_campaign_id and player_id = p_player_id and role in ('dm', 'creator')
-      ) or exists (
-        select 1 from campaigns where id = p_campaign_id and created_by = p_player_id
-      )
-    )
-  );
-$$;
-
-create or replace function create_campaign(
-  p_player_id uuid,
-  p_name text,
-  p_description text default '',
-  p_cover_image_path text default null
-)
-returns table(id uuid, join_code text)
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-declare
-  v_alphabet text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; -- no 0/O/1/I/L, easy to read aloud
-  v_code text;
-  v_campaign_id uuid;
-  v_attempts int := 0;
-  i int;
-begin
-  perform assert_caller(p_player_id);
-  loop
-    v_code := '';
-    for i in 1..6 loop
-      v_code := v_code || substr(v_alphabet, (floor(random() * length(v_alphabet)) + 1)::int, 1);
-    end loop;
-
-    begin
-      insert into campaigns (name, description, cover_image_path, created_by, join_code)
-      values (p_name, p_description, p_cover_image_path, p_player_id, v_code)
-      returning campaigns.id into v_campaign_id;
-      exit;
-    exception when unique_violation then
-      v_attempts := v_attempts + 1;
-      if v_attempts > 20 then
-        raise exception 'Could not generate a unique join code, please try again';
-      end if;
-    end;
-  end loop;
-
-  insert into campaign_members (campaign_id, player_id, role)
-  values (v_campaign_id, p_player_id, 'creator');
-
-  return query select v_campaign_id, v_code;
-end;
-$$;
-grant execute on function create_campaign(uuid, text, text, text) to anon;
-
-create or replace function join_campaign(p_player_id uuid, p_join_code text)
-returns uuid
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-declare
-  v_campaign_id uuid;
-begin
-  perform assert_caller(p_player_id);
-  select campaigns.id into v_campaign_id
-  from campaigns
-  where upper(join_code) = upper(trim(p_join_code));
-
-  if v_campaign_id is null then
-    raise exception 'Invalid join code';
-  end if;
-
-  insert into campaign_members (campaign_id, player_id, role)
-  values (v_campaign_id, p_player_id, 'player')
-  on conflict (campaign_id, player_id) do nothing;
-
-  return v_campaign_id;
-end;
-$$;
-grant execute on function join_campaign(uuid, text) to anon;
-
-create or replace function accept_player_invite(p_player_id uuid, p_token text)
-returns table(campaign_id uuid, campaign_name text)
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-#variable_conflict use_column
-declare
-  v_invite player_invites%rowtype;
-  v_added integer;
-begin
-  perform assert_caller(p_player_id);
-  if not exists (select 1 from players where id = p_player_id) then
-    raise exception 'Log in again, then open the invite link';
-  end if;
-  select * into v_invite from player_invites where token = trim(coalesce(p_token, '')) for update;
-  if v_invite.id is null or v_invite.revoked_at is not null or v_invite.used_at is not null or v_invite.expires_at < now() then
-    raise exception 'This invite link is no longer valid — ask whoever invited you for a new one';
-  end if;
-  if v_invite.campaign_id is null then
-    raise exception 'This invite link is for making a new account. To join a campaign, use the join code from your DM.';
-  end if;
-
-  insert into campaign_members (campaign_id, player_id, role)
-  values (v_invite.campaign_id, p_player_id, 'player')
-  on conflict (campaign_id, player_id) do nothing;
-  get diagnostics v_added = row_count;
-  if v_added > 0 then
-    update player_invites set used_at = now(), used_by = p_player_id where id = v_invite.id;
-  end if;
-
-  return query select c.id, c.name from campaigns c where c.id = v_invite.campaign_id;
-end;
-$$;
-grant execute on function accept_player_invite(uuid, text) to anon;
-
-create or replace function update_my_account(
-  p_player_id uuid,
-  p_current_password text,
-  p_username text default null,
-  p_display_name text default null,
-  p_email text default null,
-  p_new_password text default null
-)
-returns void
-language plpgsql security definer set search_path = public, extensions, pg_temp as $$
-declare
-  v_player players%rowtype;
-  v_username text := nullif(trim(coalesce(p_username, '')), '');
-  v_name text := nullif(trim(coalesce(p_display_name, '')), '');
-  v_email text := nullif(lower(trim(coalesce(p_email, ''))), '');
-begin
-  perform assert_caller(p_player_id);
-  select * into v_player from players where id = p_player_id for update;
-  if v_player.id is null or v_player.password_hash <> extensions.crypt(coalesce(p_current_password, ''), v_player.password_hash) then
-    raise exception 'Your current password isn’t right';
-  end if;
-
-  if v_username is not null and v_username <> v_player.username then
-    if v_username !~ '^[A-Za-z0-9_.-]{3,30}$' then
-      raise exception 'Usernames are 3–30 letters, numbers, dots, dashes or underscores';
-    end if;
-    if exists (select 1 from players where lower(username) = lower(v_username) and id <> p_player_id) then
-      raise exception 'That username is already taken';
-    end if;
-  end if;
-  if v_name is not null and length(v_name) > 60 then
-    raise exception 'Names are up to 60 characters';
-  end if;
-  if v_email is not null then
-    if v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(v_email) > 254 then
-      raise exception 'Enter a valid email address';
-    end if;
-    if exists (select 1 from players where lower(email) = v_email and id <> p_player_id) then
-      raise exception 'An account with that email already exists';
-    end if;
-  end if;
-  if p_new_password is not null and p_new_password <> '' and length(p_new_password) < 8 then
-    raise exception 'Passwords need at least 8 characters';
-  end if;
-
-  begin
-    update players set
-      username = coalesce(v_username, username),
-      display_name = coalesce(v_name, display_name),
-      email = coalesce(v_email, email),
-      password_hash = case when coalesce(p_new_password, '') <> ''
-        then extensions.crypt(p_new_password, extensions.gen_salt('bf', 8)) else password_hash end
-    where id = p_player_id;
-  exception when unique_violation then
-    raise exception 'That username or email is already taken';
-  end;
-end;
-$$;
-grant execute on function update_my_account(uuid, text, text, text, text, text) to anon;
-
-create or replace function get_my_account(p_player_id uuid)
-returns table(username text, display_name text, email_hint text)
-language sql stable security definer set search_path = public, pg_temp as $$
-  select p.username, p.display_name,
-    case when p.email is null or p.email = '' then null
-         else left(p.email, 1) || '•••' || substring(p.email from position('@' in p.email)) end
-  from players p where p.id = p_player_id and (p.id = auth.uid() or is_admin());
-$$;
-grant execute on function get_my_account(uuid) to anon;
-
-create or replace function list_campaign_members(p_campaign_id uuid)
-returns table(membership_id uuid, player_id uuid, username text, role text)
-language sql security definer set search_path = public, extensions, pg_temp as $$
-  select cm.id, cm.player_id, p.username, cm.role
-  from campaign_members cm
-  join players p on p.id = cm.player_id
-  where cm.campaign_id = p_campaign_id and is_member(p_campaign_id);
-$$;
-grant execute on function list_campaign_members(uuid) to anon;
-
-create or replace function list_campaign_players(p_campaign_id uuid)
-returns table(player_id uuid, username text, display_name text, role text, joined_at timestamptz)
-language sql stable security definer set search_path = public, pg_temp as $$
-  select cm.player_id, p.username, p.display_name, cm.role, cm.created_at
-  from campaign_members cm
-  join players p on p.id = cm.player_id
-  where cm.campaign_id = p_campaign_id and is_member(p_campaign_id)
-  order by cm.role = 'player', lower(coalesce(nullif(p.display_name, ''), p.username));
-$$;
-grant execute on function list_campaign_players(uuid) to anon;
-
-notify pgrst, 'reload schema';

@@ -41,70 +41,6 @@ export function clearAdminSession() {
   localStorage.removeItem(ADMIN_SESSION_KEY)
 }
 
-// ── Supabase logins ─────────────────────────────────────────────────────
-// Every account (and the admin) has a Supabase login with the same id and
-// password (supabase/security-1-accounts.sql). The database only shows a
-// campaign to its signed-in members, so after the usual password check
-// the app signs in for real. The login's email is internal.
-export const ADMIN_USER_ID = '00000000-0000-4000-8000-00000000ad01'
-const authEmail = (id) => `u-${id}@players.example.com`
-const LOGINS_MISSING =
-  'Secure sign-in isn’t set up yet. Whoever runs this app needs to run supabase/security-1-accounts.sql in Supabase.'
-
-async function signInAs(id, password) {
-  const { error } = await supabase.auth.signInWithPassword({ email: authEmail(id), password })
-  if (error) throw new Error(/invalid login credentials/i.test(error.message) ? LOGINS_MISSING : error.message)
-}
-
-export async function signOutAuth() {
-  try {
-    await supabase.auth.signOut()
-  } catch {
-    // Already signed out (or offline): the local login is cleared anyway.
-  }
-}
-
-// After a reload: is the Supabase login still the one this page expects?
-// The admin is signed back in with their saved password; a player whose
-// login is missing or different has to log in again (returns false).
-export async function restoreAuth({ admin }) {
-  const { data } = await supabase.auth.getSession()
-  const uid = data.session?.user?.id || null
-  if (admin) {
-    const password = getAdminSession()
-    if (!password || uid === ADMIN_USER_ID) return true
-    try {
-      await signInAs(ADMIN_USER_ID, password)
-      return true
-    } catch {
-      clearAdminSession()
-      return false
-    }
-  }
-  const session = getPlayerSession()
-  if (!session || uid === session.playerId) return true
-  clearPlayerSession()
-  return false
-}
-
-// The admin's login: checks the password, then signs in. False if wrong.
-export async function signInAdmin(password) {
-  if (!(await verifyAdminPassword(password))) return false
-  await signInAs(ADMIN_USER_ID, password)
-  return true
-}
-
-export async function changeAdminPassword(current, next) {
-  const { error } = await supabase.rpc('change_admin_password', { p_current: current, p_new: next })
-  if (error) throw new Error(missingFn(error) ? LOGINS_MISSING : error.message)
-}
-
-// Whether the admin still uses the old password that was in the code.
-export async function adminPasswordIsDefault() {
-  const { data, error } = await supabase.rpc('admin_password_is_default')
-  return !error && data === true
-}
-
 export async function verifyAdminPassword(password) {
   const { data, error } = await supabase.rpc('verify_admin_password', {
     p_admin_password: password,
@@ -350,17 +286,14 @@ export async function registerPlayer({ token, username, displayName, password, e
     p_email: email.trim(),
   })
   if (error) throw new Error(missingFn(error) ? SIGNUP_MISSING : error.message)
-  await signInAs(data, password)
   return data
 }
 
-// Checks the username and password, then signs in. Returns the player id.
 export async function verifyLogin(username, password) {
   const { data, error } = await supabase.rpc('verify_login', {
     p_username: username,
     p_password: password,
   })
   if (error) throw new Error(error.message)
-  await signInAs(data, password)
   return data
 }

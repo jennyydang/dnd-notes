@@ -5,17 +5,9 @@ import PlayerDashboard from './components/PlayerDashboard.jsx'
 import CampaignView from './components/CampaignView.jsx'
 import ResetPassword from './components/ResetPassword.jsx'
 import Ambience from './components/Ambience.jsx'
-import {
-  PLAYER_SESSION_CHANGED,
-  clearPlayerSession,
-  getAdminSession,
-  getPlayerSession,
-  resetFromUrl,
-  restoreAuth,
-  signOutAuth,
-} from './lib/auth.js'
-import { isSupabaseConfigured, supabase } from './lib/supabaseClient.js'
-import { RESYNC_EVENT, clearCache } from './lib/offline.js'
+import { PLAYER_SESSION_CHANGED, clearPlayerSession, getAdminSession, getPlayerSession, resetFromUrl } from './lib/auth.js'
+import { isSupabaseConfigured } from './lib/supabaseClient.js'
+import { clearCache } from './lib/offline.js'
 import { applySettings, getSettings } from './lib/settings.js'
 import { installTapFeedback } from './lib/tapFeedback.js'
 import { installKeyboardAvoidance } from './lib/keyboard.js'
@@ -40,10 +32,6 @@ const OPEN_CAMPAIGN_KEY = `dnd-notes-open-campaign${isAdminPath ? ':admin' : ''}
 
 function App() {
   const [playerSession, setPlayerSession] = useState(() => getPlayerSession())
-  // The Supabase login is checked before anything loads: the database
-  // only shows a campaign to its signed-in members.
-  const [authChecked, setAuthChecked] = useState(!isSupabaseConfigured)
-  const [loginNotice, setLoginNotice] = useState(null)
   // A password reset link (…/?reset=TOKEN) shows its page first, even on
   // a device where someone is logged in.
   const [resetToken, setResetToken] = useState(() => (isAdminPath ? '' : resetFromUrl()))
@@ -138,37 +126,7 @@ function App() {
     clearPlayerSession()
     setPlayerSession(null)
     setSelectedCampaign(null)
-    signOutAuth()
   }
-
-  useEffect(() => {
-    if (!isSupabaseConfigured) return undefined
-    let cancelled = false
-    restoreAuth({ admin: isAdminPath }).then((ok) => {
-      if (cancelled) return
-      if (!ok && !isAdminPath) {
-        clearCache()
-        setPlayerSession(null)
-        setLoginNotice('Logins are more secure now — please log in again (just this once).')
-      }
-      setAuthChecked(true)
-      // Anything that loaded before the login was back loads again.
-      window.dispatchEvent(new CustomEvent(RESYNC_EVENT, { detail: {} }))
-    })
-    // A login that ends on its own (say, it couldn't be renewed) logs out.
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT' && !isAdminPath && getPlayerSession()) {
-        clearCache()
-        clearPlayerSession()
-        setPlayerSession(null)
-        setLoginNotice('You were signed out. Please log in again.')
-      }
-    })
-    return () => {
-      cancelled = true
-      data.subscription.unsubscribe()
-    }
-  }, [])
 
   let content
 
@@ -183,8 +141,6 @@ function App() {
         </p>
       </div>
     )
-  } else if (!authChecked) {
-    content = <p className="empty-state">Loading…</p>
   } else if (resetToken) {
     content = <ResetPassword token={resetToken} onDone={() => setResetToken('')} />
   } else if (route.campaign && loggedIn && !selectedCampaign) {
@@ -227,15 +183,7 @@ function App() {
   } else if (isAdminPath) {
     content = <AdminGate onOpenCampaign={setSelectedCampaign} />
   } else if (!playerSession) {
-    content = (
-      <PlayerLogin
-        notice={loginNotice}
-        onLoggedIn={(session) => {
-          setLoginNotice(null)
-          setPlayerSession(session)
-        }}
-      />
-    )
+    content = <PlayerLogin onLoggedIn={setPlayerSession} />
   } else {
     content = (
       <PlayerDashboard
