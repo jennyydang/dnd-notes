@@ -24,7 +24,7 @@ const INVITE_PROBLEMS = {
 // sign-up form (username, name, email, password); without one, this is
 // just the login. Someone who already has an account can log in from a
 // campaign's invite link instead, and the dashboard offers to join it.
-function PlayerLogin({ onLoggedIn }) {
+function PlayerLogin({ onLoggedIn, notice }) {
   const [token] = useState(inviteFromUrl)
   const [invite, setInvite] = useState(token ? { status: 'checking' } : null)
   const [mode, setMode] = useState(token ? 'signup' : 'login') // login | signup | forgot
@@ -282,6 +282,11 @@ function PlayerLogin({ onLoggedIn }) {
     <div className="player-login">
       <form className="player-login__form panel" onSubmit={submitLogin}>
         <h2>Log In</h2>
+        {notice && (
+          <p className="player-login__lead" role="status">
+            {notice}
+          </p>
+        )}
         {joinable && (
           <p className="player-login__lead">
             Log in to join <strong>{invite.campaignName}</strong>.

@@ -16,7 +16,10 @@ import {
   deleteInvite,
   setAdminSession,
   updatePlayer,
-  verifyAdminPassword,
+  signInAdmin,
+  signOutAuth,
+  changeAdminPassword,
+  adminPasswordIsDefault,
 } from '../lib/auth.js'
 import { addPlayerToCampaign, listAllMemberships, setMembershipRole } from '../lib/campaigns.js'
 import { getStored, setStored } from '../lib/sessionMode.js'
@@ -55,11 +58,77 @@ function AdminGate({ onOpenCampaign }) {
     <AdminDashboard
       adminPassword={adminPassword}
       onOpenCampaign={onOpenCampaign}
+      onPasswordChanged={(next) => {
+        setAdminSession(next)
+        setAdminPassword(next)
+      }}
       onLogOut={() => {
         clearAdminSession()
         setAdminPassword(null)
+        signOutAuth()
       }}
     />
+  )
+}
+
+function ChangeAdminPassword({ current, onClose, onChanged }) {
+  const [form, setForm] = useState({ next: '', confirm: '' })
+  const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  async function submit(event) {
+    event.preventDefault()
+    if (form.next !== form.confirm) {
+      setError('The two passwords don’t match.')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      await changeAdminPassword(current, form.next)
+      onChanged(form.next)
+    } catch (err) {
+      setError(err.message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal onClose={onClose} label="Change admin password" size="narrow">
+      <form className="form-stack" onSubmit={submit}>
+        <h3 className="section-card__title">
+          <Icon name="lock" /> Change admin password
+        </h3>
+        <p className="admin-dash__hint">At least 10 characters. You’ll use it the next time you log in as the admin.</p>
+        <div className="field">
+          <label htmlFor="admin-new-password">New password</label>
+          <PasswordInput
+            id="admin-new-password"
+            autoComplete="new-password"
+            value={form.next}
+            onChange={(e) => setForm({ ...form, next: e.target.value })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="admin-confirm-password">Type it again</label>
+          <PasswordInput
+            id="admin-confirm-password"
+            autoComplete="new-password"
+            value={form.confirm}
+            onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+          />
+        </div>
+        {error && <p className="field-error">{error}</p>}
+        <div className="form-actions">
+          <button type="button" className="btn btn--text" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="btn btn--primary" disabled={saving || form.next.length < 10}>
+            {saving ? 'Saving…' : 'Change password'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }
 
@@ -74,7 +143,7 @@ function AdminLogin({ onLogin }) {
     setError(null)
     setChecking(true)
     try {
-      if (!(await verifyAdminPassword(password))) {
+      if (!(await signInAdmin(password))) {
         setError('That password isn’t right.')
         return
       }
@@ -172,7 +241,12 @@ function useResetRequests(adminPassword) {
 const formatWhen = (value) =>
   new Date(value).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
-function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
+function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut, onPasswordChanged }) {
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [defaultPassword, setDefaultPassword] = useState(false)
+  useEffect(() => {
+    adminPasswordIsDefault().then(setDefaultPassword)
+  }, [adminPassword])
   const [section, setSectionState] = useState(() => {
     const saved = getStored(SECTION_KEY, 'campaigns')
     return SECTIONS.includes(saved) ? saved : 'campaigns'
@@ -240,10 +314,40 @@ function AdminDashboard({ adminPassword, onOpenCampaign, onLogOut }) {
           <h2 className="admin-dash__title">Admin dashboard</h2>
           <p className="admin-dash__subtitle">Pick a section below.</p>
         </div>
-        <button type="button" className="btn btn--text" onClick={onLogOut}>
-          Log out
-        </button>
+        <div className="admin-dash__header-actions">
+          <button type="button" className="btn btn--text" onClick={() => setChangingPassword(true)}>
+            <Icon name="lock" /> Change admin password
+          </button>
+          <button type="button" className="btn btn--text" onClick={onLogOut}>
+            Log out
+          </button>
+        </div>
       </header>
+
+      {defaultPassword && (
+        <div className="admin-dash__warning" role="alert">
+          <Icon name="alert" />
+          <p>
+            <strong>Change the admin password.</strong> It’s still the old one that was written in the app’s public code,
+            so anyone could find it.
+          </p>
+          <button type="button" className="btn btn--primary" onClick={() => setChangingPassword(true)}>
+            Change it now
+          </button>
+        </div>
+      )}
+
+      {changingPassword && (
+        <ChangeAdminPassword
+          current={adminPassword}
+          onClose={() => setChangingPassword(false)}
+          onChanged={(next) => {
+            setChangingPassword(false)
+            setDefaultPassword(false)
+            onPasswordChanged(next)
+          }}
+        />
+      )}
 
       {/* The summary tiles double as the section switcher. */}
       <div className="admin-dash__stats" role="tablist" aria-label="Admin sections">

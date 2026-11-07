@@ -624,3 +624,39 @@
   margin: 0;
   color: $text-light;
 }
+
+.admin-dash__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+// "Change the admin password" until the old public one is replaced.
+.admin-dash__warning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid $maroon-light;
+  border-radius: $radius-lg;
+  background: fade($maroon, 0.25);
+  color: $text-light;
+
+  > .icon {
+    color: $maroon-text;
+    font-size: 1.3rem;
+  }
+
+  p {
+    flex: 1 1 16rem;
+    margin: 0;
+  }
+}
+
+.admin-dash__hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: $text-muted;
+}
